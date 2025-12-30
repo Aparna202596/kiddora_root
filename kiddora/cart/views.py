@@ -1,3 +1,7 @@
 from django.shortcuts import render
 
-# Create your views here.
+# cart_detail_view
+# add_to_cart_view
+# update_cart_item_view
+# remove_cart_item_view
+

@@ -1,3 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
+# wallet_overview_view
+# wallet_transactions_view
+

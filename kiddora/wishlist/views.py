@@ -1,3 +1,6 @@
 from django.shortcuts import render
 
-# Create your views here.
+# wishlist_view
+# add_to_wishlist_view
+# remove_from_wishlist_view
+

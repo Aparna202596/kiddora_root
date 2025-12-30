@@ -1,3 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
+# initiate_payment_view
+# payment_callback_view
+# payment_status_view
