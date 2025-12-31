@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+            <title>{% block title %}Kiddora{% endblock %}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Base CSS -->
+            <link rel="stylesheet" href="{% static 'css/user.css' %}">
+    <!-- Icons (Font Awesome) -->
+            <link rel="stylesheet"
+                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+                integrity="sha512-..."
+                crossorigin="anonymous"
+                referrerpolicy="no-referrer" />
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="header-container">
+                <div class="logo">
+                    <a href="{% url 'store:home' %}">
+                        <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
+                    </a>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'accounts:profile' %}" class="icon-btn">
+                        <i class="fa-regular fa-user"></i>
+                    </a>
+                </div>
+            </div>
+        </header>
+                <nav class="sidebar-nav">
+            <ul>
+
+                <li>
+                    <a href="{% url 'accounts:admin_page' %}">
+                        <i class="fa-solid fa-gauge"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'orders:admin_orders' %}">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span>Orders</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'store:admin_products' %}">
+                        <i class="fa-solid fa-box"></i>
+                        <span>Products</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'reports:sales' %}">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Sales Report</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'accounts:admin_customer_list' %}">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Customers</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'offers:coupon_list' %}">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Coupons</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'reviews:admin_reviews' %}">
+                        <i class="fa-solid fa-star"></i>
+                        <span>Reviews</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'orders:admin_refunds' %}">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Refunds / Returns</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'banners:admin_banners' %}">
+                        <i class="fa-solid fa-image"></i>
+                        <span>Banners</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'referrals:admin_referrals' %}">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>Referrals</span>
+                    </a>
+                </li>
+
+                <li class="logout">
+                    <a href="{% url 'accounts:user_logout' %}">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Sign Out</span>
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+
+    </aside>
+        <main class="main-content">
+            {% block content %}
+            {% endblock %}
+        </main>
+        <footer class="site-footer">
+            <div class="footer-bottom">
+                © 2025 | Kiddora | All Rights Reserved
+            </div>
+        </footer>
+    </body>
+</html>

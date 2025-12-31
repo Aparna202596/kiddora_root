@@ -40,16 +40,18 @@ INSTALLED_APPS = [
 
     #local apps
     'accounts',
-    'store',
-    'orders',
-    'admin_panel',
-    'cart',
-    'payments',
+    #'accounts.apps.AccountsConfig',
     'products',
-    'returns',
-    'reviews',
-    'wallets',
+    'cart',
     'wishlist',
+    #'orders.apps.OrdersConfig',
+    'orders',
+    'payments',
+    'reviews',
+    #'returns.apps.ReturnsConfig',
+    'returns',
+    'wallet',
+
     # allauth
     'django.contrib.sites',
     # Third-party

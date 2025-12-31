@@ -1,0 +1,182 @@
+{% extends "base_user.html" %}
+{% block title %}Contact Us | Kiddora{% endblock %}
+
+{% block content %}
+<style>
+/* ------------------------------
+   CONTACT PAGE – FIGMA MATCH
+--------------------------------*/
+
+.contact-wrapper {
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            #fde7ea 0px,
+            #fde7ea 80px,
+            #fff 80px,
+            #fff 120px
+        );
+    padding: 4rem 0;
+}
+
+.contact-container {
+    max-width: 1200px;
+    margin: auto;
+    background: transparent;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+}
+
+/* LEFT SECTION */
+.contact-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #111;
+}
+
+.contact-left p {
+    color: #444;
+    line-height: 1.7;
+    max-width: 420px;
+    margin-bottom: 2.5rem;
+}
+
+.contact-info h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.contact-info p,
+.contact-info a {
+    color: #333;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    display: block;
+    text-decoration: none;
+}
+
+.social-links a {
+    display: block;
+    font-size: 0.95rem;
+    color: #333;
+    margin-bottom: 0.4rem;
+}
+
+/* RIGHT SECTION – FORM */
+.contact-form label {
+    font-size: 0.85rem;
+    color: #555;
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+.contact-form input,
+.contact-form select,
+.contact-form textarea {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #ccc;
+    padding: 0.6rem 0;
+    margin-bottom: 2rem;
+    background: transparent;
+    font-size: 0.95rem;
+}
+
+.contact-form textarea {
+    resize: none;
+    height: 100px;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus,
+.contact-form select:focus {
+    outline: none;
+    border-color: #000;
+}
+
+.submit-btn {
+    background: #1a0000;
+    color: #fff;
+    border: none;
+    padding: 0.9rem 3rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .contact-left h1 {
+        font-size: 2.4rem;
+    }
+}
+</style>
+
+<section class="contact-wrapper">
+    <div class="contact-container">
+        <div class="contact-grid">
+
+            <!-- LEFT -->
+            <div class="contact-left">
+
+                <h1>Let’s Talk</h1>
+                <p>
+                    Have some big idea or brand to develop and need help?
+                    Then reach out — we’d love to hear about your project and provide help.
+                </p>
+
+                <div class="contact-info">
+                    <h3>Email</h3>
+                    <p>support@kiddora.com</p>
+
+                    <h3>Socials</h3>
+                    <div class="social-links">
+                        <a href="#">Instagram</a>
+                        <a href="#">Twitter</a>
+                        <a href="#">Facebook</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="contact-right">
+                <form class="contact-form">
+                    <label>Email</label>
+                    <input type="email" placeholder="" required>
+
+                    <label>Subject</label>
+                    <select>
+                        <option>Select the message type</option>
+                        <option>General Inquiry</option>
+                        <option>Support</option>
+                        <option>Business</option>
+                    </select>
+
+                    <label>Message</label>
+                    <textarea></textarea>
+
+                    <button type="submit" class="submit-btn">Submit</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+
+
+

@@ -1,3 +1,8 @@
 from django.contrib import admin
+from .models import Return
 
-# Register your models here.
+
+@admin.register(Return)
+class ReturnAdmin(admin.ModelAdmin):
+    list_display = ("order", "product", "status", "created_at")
+    list_filter = ("status",)

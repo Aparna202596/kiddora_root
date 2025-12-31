@@ -1,3 +1,18 @@
 from django.db import models
+from orders.models import Order
+import uuid
 
-# Create your models here.
+
+class Payment(models.Model):
+    PAYMENT_STATUS_CHOICES = (
+        ("PENDING", "Pending"),
+        ("PAID", "Paid"),
+        ("FAILED", "Failed"),
+        ("REFUNDED", "Refunded"),
+    )
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    payment_method = models.CharField(max_length=30)
+    transaction_id = models.UUIDField(default=uuid.uuid4, unique=True)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES)
+    paid_at = models.DateTimeField(null=True, blank=True)

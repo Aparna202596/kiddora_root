@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Kiddora{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Icons (Font Awesome) -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha512-..."
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer" />
+    <style>
+/* GLOBAL RESET & BASE */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:"Segoe UI", Arial, sans-serif; background-color:#fff; color:#333; }
+        a { text-decoration:none; color:inherit; }
+        ul { list-style:none; }
+/* HEADER */
+        .site-header {
+            width: 100%;
+            background: #ffffff;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo img { height: 42px; }
+/* Navigation */
+        .main-nav ul { display: flex; gap: 20px; align-items:center; }
+        .main-nav ul li a { font-size: 15px; font-weight: 500; color: #333; }
+        .main-nav ul li a:hover { color: #ff66cc; }
+        .category-dropdown { padding: 5px 10px; border-radius: 5px; border:1px solid #ccc; }
+/* Header Actions */
+        .header-actions { display:flex; align-items:center; gap:15px; }
+        .search-form { position: relative; display:flex; }
+        .search-form input {
+            width: 180px; height:34px; padding:0 10px; border:1px solid #ccc; border-radius:18px;
+        }
+        .search-form button {
+            border:none; background:#f06292; color:#fff; padding:0 12px; border-radius:18px; cursor:pointer;
+        }
+        .search-form button:hover { background:#e91e63; }
+        .icon-btn { font-size:18px; color:#333; text-decoration:none; }
+        .icon-btn:hover { color:#ff66cc; }
+        .icon-btn.profile { border:1px solid #ddd; padding:7px; border-radius:50%; }
+/* MAIN CONTENT*/
+        .main-content { min-height:60vh; padding:40px 20px; }
+/* FOOTER */
+        .site-footer { background:#fff; padding-top:40px; border-top:1px solid #fff; }
+        .footer-container {
+            max-width:1200px; margin:auto; padding:0 20px;
+            display:grid; grid-template-columns:repeat(4,1fr); gap:30px;
+        }
+        .footer-logo img { height:50px; }
+        .footer-column h4 { font-size:15px; margin-bottom:15px; color:#000; }
+        .footer-column ul li { margin-bottom:8px; }
+        .footer-column ul li a { font-size:14px; color:#555; }
+        .footer-column ul li a:hover { color:#f06292; }
+        .footer-column form { display:flex; flex-direction:column; gap:10px; }
+        .footer-column input[type="email"] { padding:8px 10px; border:1px solid #fff; border-radius:5px; }
+        .footer-column button { padding:8px; border:none; background:#f06292; color:#fff; border-radius:5px; cursor:pointer; }
+        .footer-column button:hover { background:#e91e63; }
+        .social-icons { margin-top:15px; display:flex; gap:15px; }
+        .social-icons a { font-size:18px; color:#333; }
+        .social-icons a:hover { color:#f06292; }
+        .footer-bottom { text-align:center; padding:15px 0; margin-top:30px; font-size:13px; color:#393939; border-top:1px solid #fff; }
+/* RESPONSIVE */
+        @media (max-width:992px) { .main-nav { display:none; } .footer-container { grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:576px) { .footer-container { grid-template-columns:1fr; } .search-form input { width:140px; } }
+    </style>
+</head>
+<body>
+<!-- HEADER -->
+    <header class="site-header">
+        <div class="header-container">
+<!-- Logo -->
+            <div class="logo">
+                <a href="{% url 'store:home' %}">
+                    <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
+                </a>
+            </div>
+<!-- Navigation -->
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="{% url 'store:home' %}">Home</a></li>
+                    <li><a href="{% url 'store:about_us' %}">About Us</a></li>
+                    <li>
+                        <select class="category-dropdown" onchange="if(this.value) window.location.href=this.value;">
+                            <option value="">Categories</option>
+                            {% for category in header_categories %}
+                                <option value="{% url 'store:category_products' category.slug %}">
+                                    {{ category.category_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </li>
+                    <li><a href="#">Shop</a></li>
+                    <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
+                </ul>
+            </nav>
+<!-- Actions -->
+            <div class="header-actions">
+<!-- Search -->
+                <form method="get" action="{% url 'products:product_search' %}" class="search-form">
+                    <input 
+                        type="text"
+                        name="q"
+                        placeholder="Search products..."
+                        value="{{ request.GET.q|default:'' }}"
+                        required>
+                    <button type="submit" aria-label="Search">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </form>
+<!-- Wishlist -->
+                <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
+<!-- Profile -->
+                <a href="{% url 'accounts:profile' %}" class="icon-btn profile"><i class="fa-regular fa-user"></i></a>
+<!-- Cart -->
+                <a href="#" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
+            </div>
+        </div>
+    </header>
+<!-- MAIN CONTENT -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+<!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-logo"><img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo"></div>
+            <div class="footer-column">
+                <h4>Info</h4>
+                <ul>
+                    <li><a href="{% url 'store:contact_us' %}">Contact Us</a></li>
+                    <li><a href="{% url 'store:about_us' %}">About Us</a></li>
+                    <li><a href="{% url 'store:blog' %}">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Policies</h4>
+                <ul>
+                    <li><a href="{% url 'store:privacy_policy' %}">Privacy Notice</a></li>
+                    <li><a href="{% url 'store:return_policy' %}">Return Policy</a></li>
+                    <li><a href="{% url 'store:terms_conditions' %}">Terms and Conditions</a></li>
+                    <li><a href="{% url 'store:cookie_policy' %}">Cookie Policy</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Subscribe to Our Newsletter</h4>
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <input type="email" name="email" placeholder="Email Address" required>
+                    <button type="submit">Subscribe</button>
+                </form>
+                <div class="social-icons">
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">© 2025 | Kiddora | All Rights Reserved</div>
+    </footer>
+</body>
+</html>
