@@ -1,13 +1,11 @@
 from django.shortcuts import redirect
-from django.urls import reverse
 from django.http import HttpResponseForbidden
-
+from accounts.models import CustomUser
 
 class AdminAccessMiddleware:
     """
-    Global middleware to protect all admin URLs.
-    Checks if the user is authenticated and is a staff member.
-    If not, redirects to admin login or returns 403 Forbidden.
+    Middleware to protect all admin URLs.
+    Only allows authenticated, active, admin users to access URLs starting with /admin/ or /admin-panel/.
     """
 
     ADMIN_URL_PREFIXES = (
@@ -20,21 +18,16 @@ class AdminAccessMiddleware:
 
     def __call__(self, request):
         path = request.path
+        user = request.user
 
         if path.startswith(self.ADMIN_URL_PREFIXES):
-            user = request.user
-
-            # Not logged in
             if not user.is_authenticated:
-                #return redirect(reverse('accounts:admin_login'))
-                return redirect('accounts:login')
+                return redirect('accounts:admin_login')
 
-            # Blocked or inactive user
             if not user.is_active:
-                #return redirect(reverse('accounts:admin_login'))
-                return redirect('accounts:login')
-            # Not an admin/staff user
-            if not user.is_staff:
+                return redirect('accounts:blocked')
+
+            if user.role != CustomUser.ROLE_ADMIN:
                 return HttpResponseForbidden("You are not authorized to access this page.")
 
         return self.get_response(request)

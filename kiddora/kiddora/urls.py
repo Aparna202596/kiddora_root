@@ -14,9 +14,29 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.shortcuts import redirect
 
-urlpatterns = [
+urlpatterns=[
     path('admin/', admin.site.urls),
-]
+
+    path('accounts/', include('accounts.urls')),
+    path('products/', include('products.urls')),
+    path('cart/', include('cart.urls')),
+    path('orders/',include('orders.urls')),
+    path('payments/',include('payments.urls')),
+    path('returns/',include('returns.urls')),
+    path('reviews/',include('reviews.urls')),
+    path('store/',include('store.urls')),
+    path('wallet/',include('wallet.urls')),
+    path('wishlist/',include('wishlist.urls')),
+    # Root URL → anonymous home page
+    path('', lambda request: redirect('store:anonymous_user_home'), name='root_redirect'),
+    ]
+    
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
