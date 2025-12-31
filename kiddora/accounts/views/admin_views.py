@@ -1,22 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from accounts.models import CustomUser
 from django.core.paginator import Paginator
 from django.db.models import Q
+from accounts.decorators import admin_login_required
 
 
-# Decorator to allow only admin users
-def admin_required(view_func):
-    return user_passes_test(lambda u: u.is_authenticated and u.role == "admin")(view_func)
-
-
-# Admin dashboard or user list
-@admin_required
+# ------------------------------
+# ADMIN USER LIST (SEARCH + PAGINATION)
+# ------------------------------
+@admin_login_required
 def user_list(request):
-    # Search functionality
     query = request.GET.get("q", "")
-    users = CustomUser.objects.filter(role="customer")
+    users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER)
+
     if query:
         users = users.filter(
             Q(username__icontains=query) |
@@ -24,12 +21,11 @@ def user_list(request):
             Q(phone__icontains=query)
         )
 
-    # Sort by latest first
     users = users.order_by("-date_joined")
 
     # Pagination
+    paginator = Paginator(users, 10)
     page_number = request.GET.get("page", 1)
-    paginator = Paginator(users, 10)  # 10 users per page
     page_obj = paginator.get_page(page_number)
 
     return render(request, "accounts/admin/user_list.html", {
@@ -38,25 +34,31 @@ def user_list(request):
     })
 
 
-# Block user
-@admin_required
+# ------------------------------
+# BLOCK USER
+# ------------------------------
+@admin_login_required
 def block_user(request, user_id):
-    user = get_object_or_404(CustomUser, id=user_id, role="customer")
+    user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
     if request.method == "POST":
         user.is_active = False
         user.save()
-        messages.success(request, f"{user.username} has been blocked.")
-        return redirect("admin_user_list")
+        messages.success(request, f"{user.username} has been blocked")
+        return redirect("accounts:admin_user_list")
+
     return render(request, "accounts/admin/user_confirm_block.html", {"user": user})
 
 
-# Unblock user
-@admin_required
+# ------------------------------
+# UNBLOCK USER
+# ------------------------------
+@admin_login_required
 def unblock_user(request, user_id):
-    user = get_object_or_404(CustomUser, id=user_id, role="customer")
+    user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
     if request.method == "POST":
         user.is_active = True
         user.save()
-        messages.success(request, f"{user.username} has been unblocked.")
-        return redirect("admin_user_list")
+        messages.success(request, f"{user.username} has been unblocked")
+        return redirect("accounts:admin_user_list")
+
     return render(request, "accounts/admin/user_confirm_unblock.html", {"user": user})

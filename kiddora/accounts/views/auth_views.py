@@ -1,12 +1,15 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from accounts.models import CustomUser
-from accounts.decorators import user_login_required, admin_login_required
+from accounts.decorators import user_login_required
+from accounts.views.otp_views import generate_otp
+from django.utils import timezone
 
 
-# User login with "remember me"
+# ------------------------------
+# USER LOGIN
+# ------------------------------
 def login_view(request):
     if request.method == "POST":
         username_or_email = request.POST.get("username")
@@ -14,46 +17,64 @@ def login_view(request):
         remember_me = request.POST.get("remember_me") == "on"
 
         user = authenticate(request, username=username_or_email, password=password)
+
         if user and user.role == CustomUser.ROLE_CUSTOMER:
             if not user.is_active:
                 messages.error(request, "Your account is blocked")
                 return redirect("accounts:blocked")
+
             login(request, user)
+
+            # Remember me handling
             if not remember_me:
-                request.session.set_expiry(0)  # Expires on browser close
+                request.session.set_expiry(0)  # expires on browser close
+
             return redirect("home")
+
         messages.error(request, "Invalid credentials")
     return render(request, "accounts/auth/login.html")
 
 
-# Admin login restricted to @kiddora.com emails
+# ------------------------------
+# ADMIN LOGIN
+# ------------------------------
 def admin_login(request):
     if request.method == "POST":
         email = request.POST.get("username")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
 
+        # Admin email must be <admin_name>@kiddora.com
         if not email.endswith("@kiddora.com"):
-            messages.error(request, "Admin login requires @kiddora.com email")
+            messages.error(request, "Admin email must be <admin_name>@kiddora.com")
             return redirect("accounts:admin_login")
 
         user = authenticate(request, username=email, password=password)
         if user and user.role == CustomUser.ROLE_ADMIN:
+            if not user.is_active:
+                messages.error(request, "Your admin account is blocked")
+                return redirect("accounts:blocked")
+
             login(request, user)
             if not remember_me:
                 request.session.set_expiry(0)
+
             return redirect("accounts:admin_user_list")
+
         messages.error(request, "Invalid credentials")
-    return render(request, "accounts/auth/login.html")
+    return render(request, "accounts/auth/admin_login.html")
 
 
-# User signup
-def signup_view(request):
+# ------------------------------
+# USER SIGNUP
+# ------------------------------
+def signup(request):
     if request.method == "POST":
         username = request.POST.get("username")
         email = request.POST.get("email")
         password = request.POST.get("password")
 
+        # Check duplicates
         if CustomUser.objects.filter(username=username).exists():
             messages.error(request, "Username already exists")
         elif CustomUser.objects.filter(email=email).exists():
@@ -63,42 +84,74 @@ def signup_view(request):
                 username=username,
                 email=email,
                 password=password,
-                role=CustomUser.ROLE_CUSTOMER
+                role=CustomUser.ROLE_CUSTOMER,
+                email_verified=False
             )
-            # redirect to OTP verification
+
+            # Generate OTP for verification
+            user.otp = generate_otp()
+            user.otp_created_at = timezone.now()
+            user.save()
+
+            messages.success(request, "Signup successful. Verify OTP to continue.")
             return redirect("accounts:verify_otp", user_id=user.id)
+
     return render(request, "accounts/auth/signup.html")
 
 
-# Logout
-@login_required
+# ------------------------------
+# LOGOUT
+# ------------------------------
+@user_login_required
 def logout_view(request):
     logout(request)
     return redirect("home")
 
 
-# Forgot password
+# ------------------------------
+# FORGOT PASSWORD
+# ------------------------------
 def forgot_password(request):
     if request.method == "POST":
         email = request.POST.get("email")
         try:
             user = CustomUser.objects.get(email=email)
-            # Generate OTP and send email
+            if not user.is_active:
+                messages.error(request, "Your account is blocked")
+                return redirect("accounts:blocked")
+
+            # Generate OTP for password reset
+            user.otp = generate_otp()
+            user.otp_created_at = timezone.now()
+            user.save()
+
+            messages.success(request, "OTP sent to your email")
             return redirect("accounts:verify_otp", user_id=user.id)
         except CustomUser.DoesNotExist:
             messages.error(request, "Email not found")
     return render(request, "accounts/auth/forgot_password.html")
 
 
-# Reset password
+# ------------------------------
+# RESET PASSWORD
+# ------------------------------
 def reset_password(request, token):
-    # validate token logic
+    # Token validation logic (link OTP or password reset token)
     if request.method == "POST":
         new_password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
-        if new_password == confirm_password:
-            # fetch user from token
-            # set_password
+
+        if new_password != confirm_password:
+            messages.error(request, "Passwords do not match")
+            return redirect(request.path)
+
+        # Fetch user from token logic here
+        # Example: user = get_user_by_token(token)
+        user = None  # implement your token-to-user logic
+        if user:
+            user.set_password(new_password)
+            user.save()
+            messages.success(request, "Password reset successful")
             return redirect("accounts:login")
-        messages.error(request, "Passwords do not match")
+
     return render(request, "accounts/auth/reset_password.html")
