@@ -36,9 +36,12 @@ urlpatterns = [
     path("addresses/delete/<int:address_id>/", address_views.address_delete, name="address_delete"),
 
     # ADMIN – USER MANAGEMENT
-    path("admin/users/", admin_views.user_list, name="admin_user_list"),
+    path("admin/users_list/", admin_views.admin_user_list, name="admin_user_list"),
     path("admin/users/block/<int:user_id>/", admin_views.block_user, name="block_user"),
     path("admin/users/unblock/<int:user_id>/", admin_views.unblock_user, name="unblock_user"),
+    path('admin/dashboard/',admin_views.admin_dashboard_view,name='dashboard'),
+    path('admin/customer_list/',admin_views.user_management_view,name='customer_list'),
+    path('admin/users/<int:user_id>/block/',admin_views.block_unblock_user_view,name='block_unblock_user'),
 ]
 
 

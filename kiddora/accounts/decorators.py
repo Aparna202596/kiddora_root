@@ -23,5 +23,4 @@ def admin_login_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-admin_required = admin_login_required
 

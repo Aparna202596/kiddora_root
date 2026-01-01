@@ -6,10 +6,7 @@ from accounts.decorators import user_login_required
 from accounts.views.otp_views import generate_otp
 from django.utils import timezone
 
-
-# ------------------------------
 # USER LOGIN
-# ------------------------------
 def login_view(request):
     if request.method == "POST":
         username_or_email = request.POST.get("username")
@@ -29,15 +26,12 @@ def login_view(request):
             if not remember_me:
                 request.session.set_expiry(0)  # expires on browser close
 
-            return redirect("home")
+            return redirect("store:home")
 
         messages.error(request, "Invalid credentials")
     return render(request, "accounts/auth/login.html")
 
-
-# ------------------------------
 # ADMIN LOGIN
-# ------------------------------
 def admin_login(request):
     if request.method == "POST":
         email = request.POST.get("username")
@@ -64,10 +58,7 @@ def admin_login(request):
         messages.error(request, "Invalid credentials")
     return render(request, "accounts/auth/admin_login.html")
 
-
-# ------------------------------
 # USER SIGNUP
-# ------------------------------
 def signup(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -98,19 +89,13 @@ def signup(request):
 
     return render(request, "accounts/auth/signup.html")
 
-
-# ------------------------------
 # LOGOUT
-# ------------------------------
 @user_login_required
 def logout_view(request):
     logout(request)
-    return redirect("home")
+    return redirect("store:anonymous_home")
 
-
-# ------------------------------
 # FORGOT PASSWORD
-# ------------------------------
 def forgot_password(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -131,10 +116,7 @@ def forgot_password(request):
             messages.error(request, "Email not found")
     return render(request, "accounts/auth/forgot_password.html")
 
-
-# ------------------------------
 # RESET PASSWORD
-# ------------------------------
 def reset_password(request, token):
     # Token validation logic (link OTP or password reset token)
     if request.method == "POST":
@@ -144,10 +126,8 @@ def reset_password(request, token):
         if new_password != confirm_password:
             messages.error(request, "Passwords do not match")
             return redirect(request.path)
-
-        # Fetch user from token logic here
-        # Example: user = get_user_by_token(token)
-        user = None  # implement your token-to-user logic
+        
+        user = None  
         if user:
             user.set_password(new_password)
             user.save()
