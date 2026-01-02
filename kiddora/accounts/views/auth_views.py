@@ -10,22 +10,31 @@ from django.utils import timezone
 import random 
 
 # USER LOGIN
+from django.contrib.auth import authenticate, login
+from accounts.models import CustomUser
+
 def login_view(request):
     if request.method == "POST":
-        username_or_email = request.POST.get("username")
+        email = request.POST.get("username")  # field name is fine
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
-        user = authenticate(request, email=username_or_email, password=password)
+        try:
+            user_obj = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            messages.error(request, "Invalid credentials")
+            return render(request, "accounts/auth/login.html")
+        user = authenticate(request, username=user_obj.username, password=password)
         if user and user.role == CustomUser.ROLE_CUSTOMER:
             if not user.is_active:
                 messages.error(request, "Your account is blocked")
                 return redirect("accounts:blocked")
             login(request, user)
-            if not remember_me:     # Remember me handling
-                request.session.set_expiry(0)  # expires on browser close
+            if not remember_me:
+                request.session.set_expiry(0)
             return redirect("store:home")
         messages.error(request, "Invalid credentials")
     return render(request, "accounts/auth/login.html")
+
 
 # ADMIN LOGIN
 def admin_login(request):
@@ -52,31 +61,67 @@ def admin_login(request):
     return render(request, "accounts/auth/admin_login.html")
 
 # USER SIGNUP
+# def signup(request):
+#     if request.method == "POST":
+#         email = request.POST.get("email")
+#         password = request.POST.get("password")
+#         username = email.split("@")[0]    # Auto-generate username from email
+#         if CustomUser.objects.filter(email=email).exists():    # Check duplicates BEFORE creating user
+#             messages.error(request, "Email already exists")
+#             return render(request, "accounts/auth/signup.html")
+#         if CustomUser.objects.filter(username=username).exists():   # Optional: check username conflict (rare with email-based generation)
+#             username = f"{username}{random.randint(100, 999)}" # append random digits to avoid conflict
+#         # Create user
+#         user = CustomUser.objects.create_user(    
+#             username=username,
+#             email=email,
+#             password=password,
+#             role=CustomUser.ROLE_CUSTOMER,
+#             email_verified=False
+#         )
+#         # Generate OTP for verification
+#         user.otp = generate_otp()
+#         user.otp_created_at = timezone.now()
+#         user.save()
+#         messages.success(request, "Signup successful. Verify OTP to continue.")
+#         return redirect("accounts:verify_otp", user_id=user.id)
+#     return render(request, "accounts/auth/signup.html")
+import random
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from accounts.models import CustomUser
+
 def signup(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-        username = email.split("@")[0]    # Auto-generate username from email
-        if CustomUser.objects.filter(email=email).exists():    # Check duplicates BEFORE creating user
+        if not email or not password:
+            messages.error(request, "Email and password are required")
+            return render(request, "accounts/auth/signup.html")
+        # Check duplicate email
+        if CustomUser.objects.filter(email=email).exists():
             messages.error(request, "Email already exists")
             return render(request, "accounts/auth/signup.html")
-        if CustomUser.objects.filter(username=username).exists():   # Optional: check username conflict (rare with email-based generation)
-            username = f"{username}{random.randint(100, 999)}" # append random digits to avoid conflict
-        # Create user
-        user = CustomUser.objects.create_user(    
+        # Auto-generate username from email
+        base_username = email.split("@")[0]
+        username = base_username
+        # Ensure username uniqueness
+        counter = 1
+        while CustomUser.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+        # Create user (no email verification)
+        CustomUser.objects.create_user(
             username=username,
             email=email,
             password=password,
             role=CustomUser.ROLE_CUSTOMER,
-            email_verified=False
+            is_active=True
         )
-        # Generate OTP for verification
-        user.otp = generate_otp()
-        user.otp_created_at = timezone.now()
-        user.save()
-        messages.success(request, "Signup successful. Verify OTP to continue.")
-        return redirect("accounts:verify_otp", user_id=user.id)
+        messages.success(request, "Signup successful. Please login.")
+        return redirect("accounts:login")
     return render(request, "accounts/auth/signup.html")
+
 
 # LOGOUT
 @user_login_required

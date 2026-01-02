@@ -26,7 +26,7 @@ urlpatterns = [
     path("resend-otp/<int:user_id>/", otp_views.resend_otp, name="resend_otp"),
 
     # USER PROFILE
-    path("profile/", profile_views.profile_view, name="profile_view"),
+    path("profile/", profile_views.profile_view, name="profile"),
     path("profile/edit/", profile_views.profile_edit, name="profile_edit"),
     path("profile/change-password/", profile_views.change_password, name="change_password"),
     path("profile/change-email/", profile_views.change_email, name="change_email"),

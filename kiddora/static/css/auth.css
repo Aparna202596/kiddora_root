@@ -1,6 +1,4 @@
-/* ===============================
-   GLOBAL RESET
-================================ */
+/* GLOBAL RESET */
 * {
     margin: 0;
     padding: 0;
@@ -9,13 +7,10 @@
 
 body {
     font-family: "Segoe UI", Arial, sans-serif;
-    background-color: #f4caf6;
-    /* dark backdrop like Figma */
+    background-color: #e4dce4;
 }
 
-/* ===============================
-   AUTH LAYOUT
-================================ */
+/* AUTH LAYOUT */
 .auth-container {
     min-height: 100vh;
     display: flex;
@@ -32,9 +27,7 @@ body {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
-/* ===============================
-   LEFT SECTION
-================================ */
+/* LEFT SECTION*/
 .auth-left {
     flex: 1;
     padding-right: 30px;
@@ -53,9 +46,7 @@ body {
     margin-bottom: 18px;
 }
 
-/* ===============================
-   GOOGLE BUTTON
-================================ */
+/* GOOGLE BUTTON */
 .google-btn {
     display: flex;
     align-items: center;
@@ -73,9 +64,7 @@ body {
     height: 18px;
 }
 
-/* ===============================
-   DIVIDER
-================================ */
+/* DIVIDER */
 .divider {
     text-align: center;
     font-size: 13px;
@@ -83,9 +72,7 @@ body {
     margin: 12px 0 18px;
 }
 
-/* ===============================
-   FORM ELEMENTS
-================================ */
+/* FORM ELEMENTS */
 .auth-left form {
     display: flex;
     flex-direction: column;
@@ -104,9 +91,7 @@ body {
     border-color: #e8a1c6;
 }
 
-/* ===============================
-   PRIMARY BUTTON
-================================ */
+/* PRIMARY BUTTON */
 .primary-btn {
     margin-top: 10px;
     padding: 11px;
@@ -122,9 +107,7 @@ body {
     background-color: #d98ab2;
 }
 
-/* ===============================
-   LINKS & TEXT
-================================ */
+/* LINKS & TEXT */
 .link {
     display: inline-block;
     margin-top: 12px;
@@ -146,9 +129,7 @@ body {
     color: #e8a1c6;
 }
 
-/* ===============================
-   OTP
-================================ */
+/* OTP */
 .otp-inputs {
     display: flex;
     gap: 10px;

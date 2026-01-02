@@ -11,7 +11,7 @@
 
     <!-- Font Awesome (icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-          integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+            integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
         /* GLOBAL RESET */
@@ -172,12 +172,16 @@ ul {
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
 
-/* IMAGE 9:16 RATIO */
+/* IMAGE 2:3 RATIO */
+
 .card img {
     width: 100%;
-    aspect-ratio: 9 / 16;
+    aspect-ratio: 2 / 2;
     object-fit: cover;
     border-radius: 16px;
+}
+.shop-by-category .card img {
+    aspect-ratio: 2 / 3;
 }
 
 /* CARD TEXT */
@@ -238,47 +242,24 @@ ul {
 }
 
 /* ================= FOOTER ================= */
-.site-footer {
-    margin-top: 80px;
-    padding-top: 50px;
-    border-top: 1px solid #ffffffff;
-    background: #ffffffff;
-}
-
-.footer-container {
-    max-width: 1200px;
-    margin: auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 30px;
-    border-top: 1px solid #fff;
-}
-
-.footer-logo img {
-    height: 50px;
-}
-
-.footer-column h4 {
-    margin-bottom: 15px;
-    font-size: 16px;
-}
-
-.footer-column ul li {
-    margin-bottom: 8px;
-    font-size: 14px;
-}
-
-/* footer email row upgraded via Bootstrap input-group */
-.footer-column form {
-    margin-top: 10px;
-}
-
-.footer-bottom {
-    text-align: center;
-    padding: 20px 0;
-    font-size: 13px;
-    color: #666;
-}
+    .site-footer { background:#fff; padding-top:40px; border-top:1px solid #fff; }
+    .footer-container {
+        max-width:1200px; margin:auto; padding:0 20px;
+        display:grid; grid-template-columns:repeat(4,1fr); gap:30px;
+        }
+    .footer-logo img { height:50px; }
+    .footer-column h4 { font-size:15px; margin-bottom:15px; color:#000; }
+    .footer-column ul li { margin-bottom:8px; }
+    .footer-column ul li a { font-size:14px; color:#555; }
+    .footer-column ul li a:hover { color:#f06292; }
+    .footer-column form { display:flex; flex-direction:column; gap:10px; }
+    .footer-column input[type="email"] { padding:8px 10px; border:1px solid #fff; border-radius:5px; }
+    .footer-column button { padding:8px; border:none; background:#f06292; color:#fff; border-radius:5px; cursor:pointer; }
+    .footer-column button:hover { background:#e91e63; }
+    .social-icons { margin-top:15px; display:flex; gap:15px; }
+    .social-icons a { font-size:18px; color:#333; }
+    .social-icons a:hover { color:#f06292; }
+    .footer-bottom { text-align:center; padding:15px 0; margin-top:30px; font-size:13px; color:#393939; border-top:1px solid #fff; }
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 768px) {
@@ -379,7 +360,7 @@ ul {
     <section class="category-section">
         <h3 class="section-title"><strong>SHOP BY CATEGORY</strong></h3>
 
-        <div class="card-grid">
+        <div class="shop-by-category card-grid">
             <div class="card">
                 <img src="{% static 'images/new_born.jpeg' %}" alt="Newborn category">
                 <h4>Newborn</h4>
@@ -419,7 +400,7 @@ ul {
 
         <div class="card-grid">
             <div class="card">
-        <img src="{% static 'images/bcas_06.jpeg' %}" alt="Boys cord set">
+        <img src="{% static 'images/b_cord_set_01.jpeg' %}" alt="Boys cord set">
                 <h4>Boys Cord Set</h4>
             </div>
             <div class="card">
@@ -427,7 +408,7 @@ ul {
                 <h4>Shirt & Shorts</h4>
             </div>
             <div class="card">
-                <img src="{% static 'images/home/romber_01.jpeg' %}" alt="Rompers">
+                <img src="{% static 'images/romber_01.jpeg' %}" alt="Rompers">
                 <h4>Rompers</h4>
             </div>
             <div class="card">
@@ -437,6 +418,10 @@ ul {
             <div class="card">
                 <img src="{% static 'images/winter.jpeg' %}" alt="Sweaters">
                 <h4>Sweaters</h4>
+            </div>
+            <div class="card">
+                <img src="{% static 'images/gcas_01.jpeg' %}" alt="girl casual">
+                <h4>Girls Casual Set</h4>
             </div>
         </div>
     </section>
@@ -448,25 +433,25 @@ ul {
         <div class="card-grid">
 
             <div class="card">
-                <img src="{% static 'images/home/boys_shirt_shorts_02.jpeg' %}" alt="Boys Shirt & Shorts">
+                <img src="{% static 'images/bcas_04.jpeg' %}" alt="Boys Shirt & Shorts">
                 <div class="product-info">
-                    <h4>Boys Shirt & Shorts</h4>
-                    <div class="price">₹ 1,299</div>
+                    <h4>Boys T-Shirt & Shorts</h4>
+                    <div class="price">₹ 599</div>
                     <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
                 </div>
             </div>
 
             <div class="card">
-                <img src="{% static 'images/home/girls_cord_set_01.jpeg' %}" alt="Girls Cord Set">
+                <img src="{% static 'images/gcas_03.jpeg' %}" alt="Girls Cord Set">
                 <div class="product-info">
-                    <h4>Girls Cord Set</h4>
+                    <h4>Girls Shorts & Top Set</h4>
                     <div class="price">₹ 999</div>
                     <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
                 </div>
             </div>
 
             <div class="card">
-                <img src="{% static 'images/gcas9.jpeg' %}" alt="Casual Outfit">
+                <img src="{% static 'images/gcas_04.jpeg' %}" alt="Casual Outfit">
                 <div class="product-info">
                     <h4>Casual Outfit</h4>
                     <div class="price">₹ 1,199</div>
@@ -475,7 +460,7 @@ ul {
             </div>
 
             <div class="card">
-                <img src="{% static 'images/gcas5.jpeg' %}" alt="Girls Casual Outfit">
+                <img src="{% static 'images/gcas_05.jpeg' %}" alt="Girls Casual Outfit">
                 <div class="product-info">
                     <h4>Girls Casual Outfit</h4>
                     <div class="price">₹ 899</div>
@@ -484,60 +469,70 @@ ul {
             </div>
 
             <div class="card">
-                <img src="{% static 'images/gparty11.jpeg' %}" alt="Girls Party Wear">
+                <img src="{% static 'images/gethnic_01.jpeg' %}" alt="Girls Ethnic Wear">
                 <div class="product-info">
-                    <h4>Girls Party Wear</h4>
-                    <div class="price">₹ 899</div>
+                    <h4>Girls Ethnic Wear</h4>
+                    <div class="price">₹ 1,899</div>
                     <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
                 </div>
             </div>
 
+            <div class="card">
+                <img src="{% static 'images/gpajama_01.jpeg' %}" alt="Girls night Wear">
+                <div class="product-info">
+                    <h4>Pajama Set</h4>
+                    <div class="price">₹ 599</div>
+                    <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
+                </div>
+            </div>
         </div>
     </section>
 </div>
 
 <!-- FOOTER -->
     <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-logo"><img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo"></div>
-            <div class="footer-column">
-                <h4>Info</h4>
-                <ul>
-                    <li><a href="{% url 'store:contact_us' %}">Contact Us</a></li>
-                    <li><a href="{% url 'store:about_us' %}">About Us</a></li>
-                    <li><a href="{% url 'store:blog' %}">Blog</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h4>Policies</h4>
-                <ul>
-                    <li><a href="{% url 'store:privacy_policy' %}">Privacy Notice</a></li>
-                    <li><a href="{% url 'store:return_policy' %}">Return Policy</a></li>
-                    <li><a href="{% url 'store:terms_conditions' %}">Terms and Conditions</a></li>
-                    <li><a href="{% url 'store:cookie_policy' %}">Cookie Policy</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
+    <div class="footer-container">
+        <div class="footer-logo">
+            <img src="{% static 'images/kiddora_logo.PNG' %}">
+        </div>
+
+        <div class="footer-column">
+            <h4>Info</h4>
+            <ul>
+                <li><a href="{% url 'store:about_us' %}">About Us</a></li>
+                <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
+                <li><a href="{% url 'store:blog' %}">Blog</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-column">
+            <h4>Policies</h4>
+            <ul>
+                <li><a href="{% url 'store:privacy_policy' %}">Privacy</a></li>
+                <li><a href="{% url 'store:return_policy' %}">Returns</a></li>
+                <li><a href="{% url 'store:terms_conditions' %}">Terms</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-column">
                 <h4>Subscribe to Our Newsletter</h4>
-
-                <!-- improved, Bootstrap-friendly footer form -->
-                <form method="post" action="#" class="d-flex" role="form" aria-label="newsletter form">
+                <form method="post" action="#">
                     {% csrf_token %}
-                    <div class="input-group">
-                        <input type="email" name="email" class="form-control" placeholder="Email Address" aria-label="Email Address" required>
-                        <button class="btn btn-primary" type="submit" aria-label="Subscribe">Subscribe</button>
-                    </div>
+                    <input type="email" name="email" placeholder="Email Address" required>
+                    {% comment %} <button type="submit">Subscribe</button> {% endcomment %}
                 </form>
-
-                <div class="social-icons mt-3">
-                    <a href="#" aria-label="Instagram" class="me-3"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" aria-label="Facebook" class="me-3"><i class="fa-brands fa-facebook"></i></a>
+                <div class="social-icons">
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
                     <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
                 </div>
             </div>
-        </div>
-        <div class="footer-bottom">© 2025 | Kiddora | All Rights Reserved</div>
-    </footer>
+    </div>
+
+    <div class="footer-bottom">
+        © 2025 Kiddora. All Rights Reserved.
+    </div>
+</footer>
 
 <!-- Bootstrap JS (placed at the end for performance) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
