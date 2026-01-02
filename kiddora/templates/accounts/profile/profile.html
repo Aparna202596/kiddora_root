@@ -1,0 +1,82 @@
+{% extends "accounts/base_profile.html" %}
+{% load static %}
+
+{% block title %}Profile | Kiddora{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+
+        <!-- RIGHT PROFILE CARD -->
+        <div class="col-md-9">
+            <div class="card profile-card shadow-sm p-4">
+
+                <h4 class="text-center fw-bold mb-4">PROFILE</h4>
+
+                <!-- Profile Image -->
+                <div class="text-center mb-4">
+                    <div class="profile-img-wrapper">
+                        <img src="{% static 'images/default-avatar.png' %}" class="profile-img">
+                        <span class="camera-icon">
+                            <i class="fa fa-camera"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Profile Form -->
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" name="full_name"
+                               value="{{ request.user.full_name }}">
+                        <i class="fa fa-pen edit-icon"></i>
+                    </div>
+
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control"
+                               value="{{ request.user.email }}" disabled>
+                        <i class="fa fa-pen edit-icon"></i>
+                    </div>
+
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control"
+                               value="{{ request.user.phone }}">
+                        <i class="fa fa-pen edit-icon"></i>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Gender</label><br>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="gender" value="female"
+                                   {% if request.user.gender == "female" %}checked{% endif %}>
+                            <label class="form-check-label">Female</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="gender" value="male"
+                                   {% if request.user.gender == "male" %}checked{% endif %}>
+                            <label class="form-check-label">Male</label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'accounts:change_password' %}" class="text-primary fw-semibold">
+                            Change password
+                        </a>
+
+                        <button type="submit" class="btn btn-pink px-4">
+                            Save changes
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Address</h2>
+<form method="post">
+{% csrf_token %}
+<input name="address_line1" value="{{ address.address_line1 }}">
+<input name="city" value="{{ address.city }}">
+<input name="state" value="{{ address.state }}">
+<input name="country" value="{{ address.country }}">
+<input name="pincode" value="{{ address.pincode }}">
+<button>Update</button>
+</form>
+{% endblock %}

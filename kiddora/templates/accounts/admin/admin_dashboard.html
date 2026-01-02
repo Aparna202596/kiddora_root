@@ -1,0 +1,81 @@
+{% extends " base_admin.html" %}
+{% load static %}
+
+{% block title %}Admin Dashboard | Kiddora{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <!-- TODAY SALES CARDS -->
+    <h2 class="dashboard-title">Today's Sales</h2>
+
+    <div class="stats-grid">
+
+        <div class="stat-card pink">
+            <div class="stat-icon">💰</div>
+            <h3>${{ total_sales }}</h3>
+            <p>Total Sales</p>
+            <small>+8% from yesterday</small>
+        </div>
+
+        <div class="stat-card yellow">
+            <div class="stat-icon">🧾</div>
+            <h3>{{ total_orders }}</h3>
+            <p>Total Orders</p>
+            <small>+5% from yesterday</small>
+        </div>
+
+        <div class="stat-card green">
+            <div class="stat-icon">📦</div>
+            <h3>{{ products_sold }}</h3>
+            <p>Products Sold</p>
+            <small>+6% from yesterday</small>
+        </div>
+
+        <div class="stat-card purple">
+            <div class="stat-icon">👤</div>
+            <h3>{{ new_customers }}</h3>
+            <p>New Customers</p>
+            <small>+10% from yesterday</small>
+        </div>
+
+    </div>
+
+    <!-- CHARTS SECTION -->
+    <div class="charts-grid">
+
+        <!-- DONUT CHARTS -->
+        <div class="chart-card">
+            <h4>Total Order</h4>
+            <div class="donut red">81%</div>
+        </div>
+
+        <div class="chart-card">
+            <h4>Customer Growth</h4>
+            <div class="donut green">22%</div>
+        </div>
+
+        <div class="chart-card">
+            <h4>Total Revenue</h4>
+            <div class="donut blue">62%</div>
+        </div>
+
+        <!-- PRODUCT SOLD GRAPH -->
+        <div class="chart-wide">
+            <div class="chart-header">
+                <h4>Product Sold</h4>
+                <button class="btn-outline">Save Report</button>
+            </div>
+            <img src="{% static 'admin/images/product_sold_graph.png' %}" alt="Product Sold Graph">
+        </div>
+
+    </div>
+
+    <!-- TOTAL REVENUE GRAPH -->
+    <div class="chart-large">
+        <h4>Total Revenue</h4>
+        <img src="{% static 'admin/images/total_revenue_graph.png' %}" alt="Revenue Graph">
+    </div>
+
+</div>
+{% endblock %}

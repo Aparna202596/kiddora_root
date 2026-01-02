@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Add Address</h2>
+<form method="post">
+{% csrf_token %}
+<input name="address_line1" required>
+<input name="city" required>
+<input name="state" required>
+<input name="country" required>
+<input name="pincode" required>
+<select name="address_type">
+<option value="home">Home</option>
+<option value="office">Office</option>
+</select>
+<label><input type="checkbox" name="is_default"> Default</label>
+<button>Add</button>
+</form>
+{% endblock %}

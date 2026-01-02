@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Users</h2>
+<form method="get">
+<input name="q" value="{{ query }}" placeholder="Search">
+<button>Search</button>
+<a href="{% url 'accounts:admin_user_list' %}">Clear</a>
+</form>
+<table border="1">
+<tr><th>Email</th><th>Status</th><th>Action</th></tr>
+{% for u in users %}
+<tr>
+<td>{{ u.email }}</td>
+<td>{{ u.is_active }}</td>
+<td>
+{% if u.is_active %}
+<a href="{% url 'accounts:block_user' u.id %}">Block</a>
+{% else %}
+<a href="{% url 'accounts:unblock_user' u.id %}">Unblock</a>
+{% endif %}
+</td>
+</tr>
+{% endfor %}
+</table>
+{% if users.has_previous %}
+<a href="?page={{ users.previous_page_number }}">Prev</a>
+{% endif %}
+{% if users.has_next %}
+<a href="?page={{ users.next_page_number }}">Next</a>
+{% endif %}
+{% endblock %}

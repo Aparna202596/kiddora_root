@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Admin Login{% endblock %}
+{% block content %}
+<h2>Admin Login</h2>
+<form method="post">
+    {% csrf_token %}
+    <input type="email" name="username" placeholder="admin@kiddora.com" required>
+    <input type="password" name="password" required>
+    <label><input type="checkbox" name="remember_me"> Remember Me</label>
+    <button type="submit">Login</button>
+</form>
+{% endblock %}

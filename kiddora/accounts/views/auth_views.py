@@ -8,6 +8,8 @@ from accounts.decorators import user_login_required
 from accounts.views.otp_views import generate_otp
 from django.utils import timezone
 
+
+
 # USER LOGIN
 def login_view(request):
     if request.method == "POST":
@@ -63,31 +65,39 @@ def admin_login(request):
 # USER SIGNUP
 def signup(request):
     if request.method == "POST":
-        username = request.POST.get("username")
         email = request.POST.get("email")
         password = request.POST.get("password")
 
-        # Check duplicates
-        if CustomUser.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists")
-        elif CustomUser.objects.filter(email=email).exists():
+        # Auto-generate username from email
+        username = email.split("@")[0]
+
+        # Check duplicates BEFORE creating user
+        if CustomUser.objects.filter(email=email).exists():
             messages.error(request, "Email already exists")
-        else:
-            user = CustomUser.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                role=CustomUser.ROLE_CUSTOMER,
-                email_verified=False
-            )
+            return render(request, "accounts/auth/signup.html")
 
-            # Generate OTP for verification
-            user.otp = generate_otp()
-            user.otp_created_at = timezone.now()
-            user.save()
+        # Optional: check username conflict (rare with email-based generation)
+        if CustomUser.objects.filter(username=username).exists():
+            # append random digits to avoid conflict
+            import random
+            username = f"{username}{random.randint(100, 999)}"
 
-            messages.success(request, "Signup successful. Verify OTP to continue.")
-            return redirect("accounts:verify_otp", user_id=user.id)
+        # Create user
+        user = CustomUser.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            role=CustomUser.ROLE_CUSTOMER,
+            email_verified=False
+        )
+
+        # Generate OTP for verification
+        user.otp = generate_otp()
+        user.otp_created_at = timezone.now()
+        user.save()
+
+        messages.success(request, "Signup successful. Verify OTP to continue.")
+        return redirect("accounts:verify_otp", user_id=user.id)
 
     return render(request, "accounts/auth/signup.html")
 
@@ -148,3 +158,5 @@ def reset_password(request, token):
         return redirect("accounts:login")
 
     return render(request, "accounts/auth/reset_password.html")
+
+

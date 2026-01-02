@@ -1,0 +1,209 @@
+/* ===============================
+   GLOBAL RESET
+================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #f4caf6;
+    /* dark backdrop like Figma */
+}
+
+/* ===============================
+   AUTH LAYOUT
+================================ */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    background: #fff;
+    width: 820px;
+    border-radius: 14px;
+    display: flex;
+    padding: 35px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* ===============================
+   LEFT SECTION
+================================ */
+.auth-left {
+    flex: 1;
+    padding-right: 30px;
+}
+
+.auth-left h2 {
+    font-size: 26px;
+    margin-bottom: 8px;
+    color: #333;
+    font-family: "Segoe Script", cursive;
+}
+
+.auth-left p {
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 18px;
+}
+
+/* ===============================
+   GOOGLE BUTTON
+================================ */
+.google-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.google-btn img {
+    height: 18px;
+}
+
+/* ===============================
+   DIVIDER
+================================ */
+.divider {
+    text-align: center;
+    font-size: 13px;
+    color: #aaa;
+    margin: 12px 0 18px;
+}
+
+/* ===============================
+   FORM ELEMENTS
+================================ */
+.auth-left form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-left input {
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.auth-left input:focus {
+    outline: none;
+    border-color: #e8a1c6;
+}
+
+/* ===============================
+   PRIMARY BUTTON
+================================ */
+.primary-btn {
+    margin-top: 10px;
+    padding: 11px;
+    background-color: #e8a1c6;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background-color: #d98ab2;
+}
+
+/* ===============================
+   LINKS & TEXT
+================================ */
+.link {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #555;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.bottom-text {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #555;
+}
+
+.bottom-text a {
+    color: #e8a1c6;
+}
+
+/* ===============================
+   OTP
+================================ */
+.otp-inputs {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.otp-inputs input {
+    width: 45px;
+    height: 45px;
+    text-align: center;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.timer {
+    font-size: 13px;
+    color: #666;
+}
+
+.resend {
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.resend a {
+    color: #e8a1c6;
+}
+
+/* RIGHT IMAGE SECTION */
+.auth-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-right img {
+    width: 100%;
+    max-width: 260px;
+    border-radius: 12px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    .auth-card {
+        width: 90%;
+        flex-direction: column;
+    }
+
+    .auth-left {
+        padding-right: 0;
+    }
+
+    .auth-right {
+        margin-top: 20px;
+    }
+}

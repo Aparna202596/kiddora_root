@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Addresses</h2>
+<a href="{% url 'accounts:address_add' %}">Add Address</a>
+<ul>
+{% for addr in addresses %}
+<li>
+{{ addr.address_line1 }} - {{ addr.city }}
+<a href="{% url 'accounts:address_edit' addr.id %}">Edit</a>
+<a href="{% url 'accounts:address_delete' addr.id %}">Delete</a>
+</li>
+{% endfor %}
+</ul>
+{% endblock %}
+
