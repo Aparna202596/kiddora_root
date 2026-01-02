@@ -47,7 +47,6 @@ urlpatterns = [
     path('admin/customer_list/',admin_views.user_management_view,name='customer_list'),
 
     path('blocked/',TemplateView.as_view(template_name="accounts/auth/blocked.html"),name="blocked")
-
 ]
 
 

@@ -2,12 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from accounts.models import UserAddress
 from accounts.decorators import user_login_required
 
-
 @user_login_required
 def address_list(request):
     addresses = request.user.addresses.all()
     return render(request, "accounts/profile/addresses.html", {"addresses": addresses})
-
 
 @user_login_required
 def address_add(request):
