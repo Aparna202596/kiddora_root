@@ -1,7 +1,6 @@
 from django.shortcuts import redirect
 from django.contrib.auth import logout
-from accounts.models import CustomUser
-
+from django.urls import reverse
 class BlockedUserMiddleware:
     """
     Middleware to log out and redirect any blocked (inactive) user.
@@ -12,6 +11,6 @@ class BlockedUserMiddleware:
     def __call__(self, request):
         user = request.user
         if user.is_authenticated and not user.is_active:
-            logout(request)
-            return redirect('accounts:blocked')  # create a blocked.html page explaining status
-        return self.get_response(request)
+            if request.path != reverse('accounts:blocked'):
+                logout(request)
+                return redirect('accounts:blocked')

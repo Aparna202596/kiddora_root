@@ -24,16 +24,18 @@ urlpatterns=[
     path('admin/', admin.site.urls),
 
     path('accounts/', include('accounts.urls')),
-    path("accounts/", include("allauth.urls")),
+    path('auth/', include("allauth.urls")),
+    path('store/',include('store.urls')),
+
     path('products/', include('products.urls')),
     path('cart/', include('cart.urls')),
     path('orders/',include('orders.urls')),
     path('payments/',include('payments.urls')),
     path('returns/',include('returns.urls')),
     path('reviews/',include('reviews.urls')),
-    path('store/',include('store.urls')),
     path('wallet/',include('wallet.urls')),
     path('wishlist/',include('wishlist.urls')),
+    
     # Root URL → anonymous home page
     path('', lambda request: redirect('store:anonymous_user_home'), name='root_redirect'),
     ]

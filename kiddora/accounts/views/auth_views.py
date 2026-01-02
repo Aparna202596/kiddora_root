@@ -15,7 +15,7 @@ def login_view(request):
         username_or_email = request.POST.get("username")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
-        user = authenticate(request, username=username_or_email, password=password)
+        user = authenticate(request, email=username_or_email, password=password)
         if user and user.role == CustomUser.ROLE_CUSTOMER:
             if not user.is_active:
                 messages.error(request, "Your account is blocked")
@@ -47,7 +47,7 @@ def admin_login(request):
             login(request, user)
             if not remember_me:
                 request.session.set_expiry(0)
-            return redirect("accounts:admin_dashboard")
+            return redirect("accounts:dashboard")
         messages.error(request, "Invalid credentials")
     return render(request, "accounts/auth/admin_login.html")
 

@@ -161,8 +161,8 @@ ACCOUNT_SIGNUP_FIELDS = [
     'password2*',
 ]
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # can set 'mandatory'
-LOGIN_REDIRECT_URL = '/accounts/home/'
-LOGOUT_REDIRECT_URL = '/accounts/anonymous_user_home'
+LOGIN_REDIRECT_URL = 'store:home'
+LOGOUT_REDIRECT_URL = 'store:anonymous_user_home'
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
