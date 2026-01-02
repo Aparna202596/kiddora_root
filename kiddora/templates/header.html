@@ -1,0 +1,104 @@
+{% load static %}
+<style>
+/* ===== HEADER ===== */
+.site-header {
+    background:#fff;
+    border-bottom:1px solid #eaeaea;
+}
+.header-container {
+    max-width:1400px;
+    margin:auto;
+    padding:14px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+.logo img { height:42px; }
+
+/* NAV */
+.main-nav ul {
+    display:flex;
+    gap:20px;
+    align-items:center;
+}
+.main-nav a {
+    font-size:15px;
+    font-weight:500;
+}
+.main-nav a:hover { color:#ff66cc; }
+
+/* ACTIONS */
+.header-actions {
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+.search-form {
+    position:relative;
+}
+.search-form input {
+    width:180px;
+    height:34px;
+    padding:0 36px 0 12px;
+    border:1px solid #ccc;
+    border-radius:18px;
+}
+.search-form button {
+    position:absolute;
+    right:6px;
+    top:50%;
+    transform:translateY(-50%);
+    border:none;
+    background:none;
+    cursor:pointer;
+    color:#f06292;
+}
+.icon-btn {
+    font-size:18px;
+}
+.icon-btn:hover { color:#ff66cc; }
+.profile {
+    border:1px solid #ddd;
+    padding:7px;
+    border-radius:50%;
+}
+
+/* RESPONSIVE */
+@media(max-width:992px){
+    .main-nav { display:none; }
+}
+</style>
+
+<header class="site-header">
+    <div class="header-container">
+        <div class="logo">
+            <a href="{% url 'store:home' %}">
+                <img src="{% static 'images/kiddora_logo.PNG' %}">
+            </a>
+        </div>
+
+        <nav class="main-nav">
+            <ul>
+                <li><a href="{% url 'store:home' %}">Home</a></li>
+                <li><a href="{% url 'store:about_us' %}">About Us</a></li>
+                <li><a href="#">Category</a></li>
+                <li><a href="#">Shop</a></li>
+                <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
+            </ul>
+        </nav>
+
+        <div class="header-actions">
+            <form method="get" action="{% url 'products:product_search' %}" class="search-form">
+                <input type="text" name="q" placeholder="Search products..."
+                       value="{{ request.GET.q|default:'' }}">
+                <button type="submit"><i class="fa fa-search"></i></button>
+            </form>
+
+            <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
+            <a href="{% url 'accounts:profile' %}" class="icon-btn profile">
+                <i class="fa-regular fa-user"></i>
+            </a>
+            <a href="#" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
+        </div>
+    </div>
+</header>

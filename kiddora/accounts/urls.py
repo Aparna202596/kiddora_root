@@ -5,6 +5,7 @@ from accounts.views import admin_views
 from accounts.views import otp_views
 from accounts.views import profile_views
 from accounts.views import address_views
+from django.views.generic import TemplateView
 
 app_name = "accounts"
 
@@ -28,6 +29,9 @@ urlpatterns = [
     path("profile/", profile_views.profile_view, name="profile_view"),
     path("profile/edit/", profile_views.profile_edit, name="profile_edit"),
     path("profile/change-password/", profile_views.change_password, name="change_password"),
+    path("profile/change-email/", profile_views.change_email, name="change_email"),
+    path("profile/verify-email/", profile_views.verify_email_otp, name="verify_email_otp"),
+
 
     # USER ADDRESS MANAGEMENT
     path("addresses/", address_views.address_list, name="address_list"),
@@ -41,7 +45,9 @@ urlpatterns = [
     path("admin/users/unblock/<int:user_id>/", admin_views.unblock_user, name="unblock_user"),
     path('admin/dashboard/',admin_views.admin_dashboard_view,name='dashboard'),
     path('admin/customer_list/',admin_views.user_management_view,name='customer_list'),
-    path('admin/users/<int:user_id>/block/',admin_views.block_unblock_user_view,name='block_unblock_user'),
+
+    path('blocked/',TemplateView.as_view(template_name="accounts/auth/blocked.html"),name="blocked")
+
 ]
 
 

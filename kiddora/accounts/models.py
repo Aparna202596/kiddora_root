@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from django.utils import timezone
+import uuid
 
 class CustomUser(AbstractUser):
     ROLE_ADMIN = "admin"
@@ -23,6 +24,8 @@ class CustomUser(AbstractUser):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    pending_email = models.EmailField(null=True, blank=True)
+
 
     REQUIRED_FIELDS = ["email"]
 
@@ -51,3 +54,14 @@ class UserAddress(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.city}"
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timezone.timedelta(minutes=10)
+    
+    def __str__(self):
+        return f"{self.user.email} - reset token"    

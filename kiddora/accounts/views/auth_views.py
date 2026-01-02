@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
+from accounts.models import PasswordResetToken
 from django.contrib import messages
 from accounts.models import CustomUser
+from django.urls import reverse
 from accounts.decorators import user_login_required
 from accounts.views.otp_views import generate_otp
 from django.utils import timezone
@@ -110,6 +112,10 @@ def forgot_password(request):
             user.otp_created_at = timezone.now()
             user.save()
 
+            token = PasswordResetToken.objects.create(user=user)
+            reset_link = request.build_absolute_uri(
+                reverse("accounts:reset_password", args=[token.token]))
+            
             messages.success(request, "OTP sent to your email")
             return redirect("accounts:verify_otp", user_id=user.id)
         except CustomUser.DoesNotExist:
@@ -118,20 +124,27 @@ def forgot_password(request):
 
 # RESET PASSWORD
 def reset_password(request, token):
-    # Token validation logic (link OTP or password reset token)
-    if request.method == "POST":
-        new_password = request.POST.get("password")
-        confirm_password = request.POST.get("confirm_password")
+    reset_token = get_object_or_404(PasswordResetToken, token=token)
 
-        if new_password != confirm_password:
+    if reset_token.is_expired():
+        reset_token.delete()
+        messages.error(request, "Reset link expired")
+        return redirect("accounts:forgot_password")
+
+    if request.method == "POST":
+        p1 = request.POST.get("password")
+        p2 = request.POST.get("confirm_password")
+
+        if p1 != p2:
             messages.error(request, "Passwords do not match")
             return redirect(request.path)
-        
-        user = None  
-        if user:
-            user.set_password(new_password)
-            user.save()
-            messages.success(request, "Password reset successful")
-            return redirect("accounts:login")
+
+        user = reset_token.user
+        user.set_password(p1)
+        user.save()
+        reset_token.delete()
+
+        messages.success(request, "Password reset successful")
+        return redirect("accounts:login")
 
     return render(request, "accounts/auth/reset_password.html")

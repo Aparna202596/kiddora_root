@@ -1,126 +1,257 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-            <title>{% block title %}Kiddora{% endblock %}</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Base CSS -->
-            <link rel="stylesheet" href="{% static 'css/user.css' %}">
-    <!-- Icons (Font Awesome) -->
-            <link rel="stylesheet"
-                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-                integrity="sha512-..."
-                crossorigin="anonymous"
-                referrerpolicy="no-referrer" />
-    </head>
-    <body>
-        <header class="site-header">
-            <div class="header-container">
-                <div class="logo">
-                    <a href="{% url 'store:home' %}">
-                        <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
-                    </a>
-                </div>
-                <div class="header-actions">
-                    <a href="{% url 'accounts:profile' %}" class="icon-btn">
-                        <i class="fa-regular fa-user"></i>
-                    </a>
-                </div>
-            </div>
-        </header>
-                <nav class="sidebar-nav">
-            <ul>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Kiddora Admin{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-                <li>
-                    <a href="{% url 'accounts:admin_page' %}">
-                        <i class="fa-solid fa-gauge"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer">
 
-                <li>
-                    <a href="{% url 'orders:admin_orders' %}">
-                        <i class="fa-solid fa-cart-shopping"></i>
-                        <span>Orders</span>
-                    </a>
-                </li>
+    <!-- Embedded CSS (auth.css + admin base) -->
+    <style>
+        /* ===============================
+           GLOBAL RESET
+        ================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-                <li>
-                    <a href="{% url 'store:admin_products' %}">
-                        <i class="fa-solid fa-box"></i>
-                        <span>Products</span>
-                    </a>
-                </li>
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background-color: #ffffffff;
+        }
 
-                <li>
-                    <a href="{% url 'reports:sales' %}">
-                        <i class="fa-solid fa-chart-line"></i>
-                        <span>Sales Report</span>
-                    </a>
-                </li>
+        /* ===============================
+           AUTH LAYOUT
+        ================================ */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-                <li>
-                    <a href="{% url 'accounts:admin_customer_list' %}">
-                        <i class="fa-solid fa-users"></i>
-                        <span>Customers</span>
-                    </a>
-                </li>
+        .auth-card {
+            background: #fff;
+            width: 820px;
+            border-radius: 14px;
+            display: flex;
+            padding: 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
 
-                <li>
-                    <a href="{% url 'offers:coupon_list' %}">
-                        <i class="fa-solid fa-ticket"></i>
-                        <span>Coupons</span>
-                    </a>
-                </li>
+        .auth-left {
+            flex: 1;
+            padding-right: 30px;
+        }
 
-                <li>
-                    <a href="{% url 'reviews:admin_reviews' %}">
-                        <i class="fa-solid fa-star"></i>
-                        <span>Reviews</span>
-                    </a>
-                </li>
+        .auth-left h2 {
+            font-size: 26px;
+            margin-bottom: 8px;
+            color: #333;
+            font-family: "Segoe Script", cursive;
+        }
 
-                <li>
-                    <a href="{% url 'orders:admin_refunds' %}">
-                        <i class="fa-solid fa-rotate-left"></i>
-                        <span>Refunds / Returns</span>
-                    </a>
-                </li>
+        .auth-left p {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 18px;
+        }
 
-                <li>
-                    <a href="{% url 'banners:admin_banners' %}">
-                        <i class="fa-solid fa-image"></i>
-                        <span>Banners</span>
-                    </a>
-                </li>
+        .google-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
 
-                <li>
-                    <a href="{% url 'referrals:admin_referrals' %}">
-                        <i class="fa-solid fa-share-nodes"></i>
-                        <span>Referrals</span>
-                    </a>
-                </li>
+        .divider {
+            text-align: center;
+            font-size: 13px;
+            color: #aaa;
+            margin: 12px 0 18px;
+        }
 
-                <li class="logout">
-                    <a href="{% url 'accounts:user_logout' %}">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                        <span>Sign Out</span>
-                    </a>
-                </li>
+        .auth-left form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-            </ul>
-        </nav>
+        .auth-left input {
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
 
-    </aside>
-        <main class="main-content">
-            {% block content %}
-            {% endblock %}
-        </main>
-        <footer class="site-footer">
-            <div class="footer-bottom">
-                © 2025 | Kiddora | All Rights Reserved
-            </div>
-        </footer>
-    </body>
+        .primary-btn {
+            margin-top: 10px;
+            padding: 11px;
+            background-color: #e8a1c6;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .primary-btn:hover {
+            background-color: #d98ab2;
+        }
+
+        /* ===============================
+           ADMIN HEADER
+        ================================ */
+        .site-header {
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 12px 20px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 40px;
+        }
+
+        .icon-btn {
+            color: #333;
+            font-size: 18px;
+        }
+
+        /* ===============================
+           SIDEBAR
+        ================================ */
+        .sidebar-nav {
+            width: 240px;
+            position: fixed;
+            top: 70px;
+            bottom: 0;
+            background: #ffffff;
+            border-right: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        .sidebar-nav ul {
+            list-style: none;
+        }
+
+        .sidebar-nav li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .sidebar-nav li a:hover {
+            background-color: #f3e1ec;
+        }
+
+        .sidebar-nav .logout a {
+            color: #c0392b;
+        }
+
+        /* ===============================
+           MAIN CONTENT
+        ================================ */
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+            min-height: calc(100vh - 140px);
+        }
+
+        /* ===============================
+           FOOTER
+        ================================ */
+        .site-footer {
+            background: #fff;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        /* ===============================
+           RESPONSIVE
+        ================================ */
+        @media (max-width: 900px) {
+            .sidebar-nav {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .auth-card {
+                width: 90%;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="site-header">
+    <div class="header-container">
+        <div class="logo">
+            <a href="{% url 'store:home' %}">
+                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
+            </a>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'accounts:profile' %}" class="icon-btn">
+                <i class="fa-regular fa-user"></i>
+            </a>
+        </div>
+    </div>
+</header>
+
+<nav class="sidebar-nav">
+    <ul>
+        <li><a href="{% url 'accounts:admin_dashboard' %}"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+        <li><a href="#"><i class="fa-solid fa-bag-shopping"></i> Orders</a></li>
+        <li><a href="#"><i class="fa-solid fa-cubes"></i> Products</a></li>
+        <li><a href="#"><i class="fa-solid fa-chart-column"></i> Sales Report</a></li>
+        <li><a href="{% url 'accounts:user_list' %}"><i class="fa-solid fa-user-group"></i> Customers</a></li>
+        <li><a href="#"><i class="fa-solid fa-ticket"></i> Coupons</a></li>
+        <li><a href="#"><i class="fa-solid fa-tags"></i> Category</a></li>
+        <li><a href="#"><i class="fa-solid fa-rotate-left"></i> Refund / Return</a></li>
+        <li><a href="#"><i class="fa-solid fa-image"></i> Banners</a></li>
+        <li><a href="#"><i class="fa-solid fa-share-nodes"></i> Referrals</a></li>
+        <li class="logout"><a href="{% url 'accounts:logout' %}"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>
+    </ul>
+</nav>
+
+<main class="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+    © 2025 | Kiddora | All Rights Reserved
+</footer>
+
+</body>
 </html>

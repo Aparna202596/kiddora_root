@@ -121,19 +121,19 @@ def user_management_view(request):
         'search_query': search_query
     })
 
-@admin_login_required
-def block_unblock_user_view(request, user_id):
-    user = get_object_or_404(CustomUser,id=user_id,role=CustomUser.ROLE_CUSTOMER)
+# @admin_login_required
+# def block_unblock_user_view(request, user_id):
+#     user = get_object_or_404(CustomUser,id=user_id,role=CustomUser.ROLE_CUSTOMER)
 
-    if request.user.id == user.id:
-        messages.error(request, "You cannot block your own account.")
-        return redirect('accounts:user_list')
+#     if request.user.id == user.id:
+#         messages.error(request, "You cannot block your own account.")
+#         return redirect('accounts:user_list')
 
-    if request.method == 'POST':
-        user.is_active = not user.is_active
-        user.save()
+#     if request.method == 'POST':
+#         user.is_active = not user.is_active
+#         user.save()
 
-        status = "blocked" if not user.is_active else "unblocked"
-        messages.success(request, f"User has been {status} successfully.")
+#         status = "blocked" if not user.is_active else "unblocked"
+#         messages.success(request, f"User has been {status} successfully.")
 
-    return redirect('accounts:admin_user_management')
+#     return redirect('accounts:admin_user_management')

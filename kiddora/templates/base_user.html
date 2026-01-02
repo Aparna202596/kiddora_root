@@ -1,156 +1,100 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}Kiddora{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <head>
+        <meta charset="UTF-8">
+            <title>{% block title %}Kiddora{% endblock %}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Font Awesome -->
+            <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+            crossorigin="anonymous" />
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-          crossorigin="anonymous" />
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { font-family:"Segoe UI", Arial, sans-serif; background:#fff; color:#333; }
+                a { text-decoration:none; color:inherit; }
+                ul { list-style:none; }
+/* HEADER */
+                .site-header {background:#fff; border-bottom:1px solid #eaeaea;}
+                .header-container {
+                    max-width:1400px;
+                    margin:auto;
+                    padding:14px 32px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;}
+                .logo img { height:42px; }
 
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:"Segoe UI", Arial, sans-serif; background:#fff; color:#333; }
-        a { text-decoration:none; color:inherit; }
-        ul { list-style:none; }
+/* NAV */
+                .main-nav ul {display:flex; gap:20px; align-items:center;
+                }
+                .main-nav a {font-size:15px; font-weight:500;}
+                .main-nav a:hover { color:#ff66cc; }
 
-        /* HEADER */
-        .site-header {
-            background:#fff;
-            border-bottom:1px solid #eaeaea;
-        }
-        .header-container {
-            max-width:1400px;
-            margin:auto;
-            padding:14px 32px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-        }
-        .logo img { height:42px; }
+/* ACTIONS */
+                .header-actions {display:flex; align-items:center; gap:15px;}
+                .search-form {position:relative;}
+                .search-form input {
+                    width:180px;
+                    height:34px;
+                    padding:0 36px 0 12px;
+                    border:1px solid #ccc;
+                    border-radius:18px;
+                }
+                .search-form button {
+                    position:absolute;
+                    right:6px;
+                    top:50%;
+                    transform:translateY(-50%);
+                    border:none;
+                    background:none;
+                    cursor:pointer;
+                    color:#f06292;
+                    font-size:14px;
+                }
+                .icon-btn {font-size:18px;}
+                .icon-btn:hover { color:#ff66cc; }
+                .profile {border:1px solid #ddd;padding:7px;border-radius:50%;}
+/* CONTENT */
+                .main-content {
+                    min-height:60vh;
+                    padding:40px 20px;
+                }
 
-        /* NAV */
-        .main-nav ul {
-            display:flex;
-            gap:20px;
-            align-items:center;
-        }
-        .main-nav a {
-            font-size:15px;
-            font-weight:500;
-        }
-        .main-nav a:hover { color:#ff66cc; }
+/*  FOOTER */
 
-        /* ACTIONS */
-        .header-actions {
-            display:flex;
-            align-items:center;
-            gap:15px;
-        }
-
-        .search-form {
-            position:relative;
-        }
-        .search-form input {
-            width:180px;
-            height:34px;
-            padding:0 36px 0 12px;
-            border:1px solid #ccc;
-            border-radius:18px;
-        }
-        .search-form button {
-            position:absolute;
-            right:6px;
-            top:50%;
-            transform:translateY(-50%);
-            border:none;
-            background:none;
-            cursor:pointer;
-            color:#f06292;
-            font-size:14px;
-        }
-
-        .icon-btn {
-            font-size:18px;
-        }
-        .icon-btn:hover { color:#ff66cc; }
-        .profile {
-            border:1px solid #ddd;
-            padding:7px;
-            border-radius:50%;
-        }
-
-        /* CONTENT */
-        .main-content {
-            min-height:60vh;
-            padding:40px 20px;
-        }
-
-        /* ================= FOOTER ================= */
-.site-footer {
-    margin-top:80px;
-    border-top:1px solid #eee;
-}
-.footer-container {
-    max-width:1200px;
-    margin:auto;
-    padding:50px 20px;
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:30px;
-}
-.footer-logo img { height:50px; }
-.footer-column h4 { margin-bottom:15px; }
-.footer-column ul li { margin-bottom:8px; font-size:14px; }
-
-.footer-column form {
-    display:flex;
-    gap:8px;
-}
-.footer-column input {
-    flex:1;
-    padding:10px 12px;
-    border-radius:25px;
-    border:1px solid #ddd;
-}
-.footer-column button {
-    padding:10px 18px;
-    border-radius:25px;
-    background:#f06292;
-    color:#fff;
-    border:none;
-}
-.footer-bottom {
-    text-align:center;
-    font-size:13px;
-    padding:20px;
-    color:#666;
-}
-
-/* ================= RESPONSIVE ================= */
-@media(max-width:992px){
-    .main-nav { display:none; }
-    .footer-container { grid-template-columns:repeat(2,1fr); }
-}
-@media(max-width:576px){
-    .footer-container { grid-template-columns:1fr; }
-}
-    </style>
-
-    {% block extra_css %}{% endblock %}
-</head>
-
-<body>
-
-<header class="site-header">
-    <div class="header-container">
-        <div class="logo">
-            <a href="{% url 'store:home' %}">
-                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
-            </a>
+                .site-footer { background:#fff; padding-top:40px; border-top:1px solid #fff; }
+                .footer-container {
+                    max-width:1200px; margin:auto; padding:0 20px;
+                    display:grid; grid-template-columns:repeat(4,1fr); gap:30px;
+                }
+                .footer-logo img { height:50px; }
+                .footer-column h4 { font-size:15px; margin-bottom:15px; color:#000; }
+                .footer-column ul li { margin-bottom:8px; }
+                .footer-column ul li a { font-size:14px; color:#555; }
+                .footer-column ul li a:hover { color:#f06292; }
+                .footer-column form { display:flex; flex-direction:column; gap:10px; }
+                .footer-column input[type="email"] { padding:8px 10px; border:1px solid #fff; border-radius:5px; }
+                .footer-column button { padding:8px; border:none; background:#f06292; color:#fff; border-radius:5px; cursor:pointer; }
+                .footer-column button:hover { background:#e91e63; }
+                .social-icons { margin-top:15px; display:flex; gap:15px; }
+                .social-icons a { font-size:18px; color:#333; }
+                .social-icons a:hover { color:#f06292; }
+                .footer-bottom { text-align:center; padding:15px 0; margin-top:30px; font-size:13px; color:#393939; border-top:1px solid #fff; }
+/* RESPONSIVE */
+                @media(max-width:992px){.main-nav { display:none; } .footer-container { grid-template-columns:repeat(2,1fr); } }
+                @media(max-width:576px){.footer-container { grid-template-columns:1fr; } }
+            </style>
+            {% block extra_css %}{% endblock %}
+        </head>
+        <body>
+            <header class="site-header">
+                <div class="header-container">
+                    <div class="logo">
+                        <a href="{% url 'store:home' %}">
+                            <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
+                        </a>
         </div>
 
         <nav class="main-nav">
@@ -210,18 +154,18 @@
         </div>
 
         <div class="footer-column">
-            <h4>Newsletter</h4>
-            <form method="post">
-                {% csrf_token %}
-                <input type="email" placeholder="Email address" required>
-                <button type="submit">Subscribe</button>
-            </form>
-            <div class="social-icons mt-3">
-                    <a href="#" aria-label="Instagram" class="me-3"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" aria-label="Facebook" class="me-3"><i class="fa-brands fa-facebook"></i></a>
+                <h4>Subscribe to Our Newsletter</h4>
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <input type="email" name="email" placeholder="Email Address" required>
+                    {% comment %} <button type="submit">Subscribe</button> {% endcomment %}
+                </form>
+                <div class="social-icons">
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
                     <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
                 </div>
-        </div>
+            </div>
     </div>
 
     <div class="footer-bottom">
