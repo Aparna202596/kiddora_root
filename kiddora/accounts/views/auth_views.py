@@ -62,7 +62,7 @@ def admin_login(request):
             if not remember_me:
                 request.session.set_expiry(0)
 
-            return redirect("accounts:admin_user_list")
+            return redirect("accounts:admin_dashboard")
 
         messages.error(request, "Invalid credentials")
 

@@ -4,12 +4,12 @@ from accounts.decorators import user_login_required
 from django.utils import timezone
 from accounts.views.otp_views import generate_otp
 
-@user_login_required
+#@user_login_required
 def profile_view(request):
     return render(request, "accounts/profile/profile.html", {"user": request.user})
 
 
-@user_login_required
+#@user_login_required
 def profile_edit(request):
     user = request.user
     if request.method == "POST":
@@ -23,7 +23,7 @@ def profile_edit(request):
     return render(request, "accounts/profile/edit_profile.html", {"user": user})
 
 
-@user_login_required
+#@user_login_required
 def change_password(request):
     user = request.user
     if request.method == "POST":
@@ -41,7 +41,7 @@ def change_password(request):
             messages.error(request, "Current password incorrect")
     return render(request, "accounts/profile/change_password.html")
 
-@user_login_required
+#@user_login_required
 def change_email(request):
     if request.method == "POST":
         new_email = request.POST.get("email")
@@ -56,7 +56,7 @@ def change_email(request):
     return render(request, "accounts/profile/change_email.html")
 
 
-@user_login_required
+#@user_login_required
 def verify_email_otp(request):
     user = request.user
 
