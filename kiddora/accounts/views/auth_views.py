@@ -38,29 +38,36 @@ def login_view(request):
 # ADMIN LOGIN
 def admin_login(request):
     if request.method == "POST":
-        email = request.POST.get("username")
+        email = request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
 
-        # Admin email must be <admin_name>@kiddora.com
+        if not email:
+            messages.error(request, "Email is required")
+            return redirect("accounts:admin_login")
+
         if not email.endswith("@kiddora.com"):
             messages.error(request, "Admin email must be <admin_name>@kiddora.com")
             return redirect("accounts:admin_login")
 
         user = authenticate(request, username=email, password=password)
+
         if user and user.role == CustomUser.ROLE_ADMIN:
             if not user.is_active:
                 messages.error(request, "Your admin account is blocked")
                 return redirect("accounts:blocked")
 
             login(request, user)
+
             if not remember_me:
                 request.session.set_expiry(0)
 
             return redirect("accounts:admin_user_list")
 
         messages.error(request, "Invalid credentials")
+
     return render(request, "accounts/auth/admin_login.html")
+
 
 # USER SIGNUP
 def signup(request):

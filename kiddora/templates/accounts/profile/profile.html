@@ -4,70 +4,139 @@
 {% block title %}Profile | Kiddora{% endblock %}
 
 {% block content %}
+
+<!-- INTERNAL CSS -->
+<style>
+    .profile-card {
+        border-radius: 16px;
+        background: #ffffff;
+    }
+
+    .profile-img-wrapper {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        margin: auto;
+    }
+
+    .profile-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .camera-icon {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: #000;
+        color: #fff;
+        border-radius: 50%;
+        padding: 6px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .edit-icon {
+        position: absolute;
+        right: 12px;
+        top: 40px;
+        color: #777;
+        cursor: pointer;
+    }
+
+    .btn-pink {
+        background-color: #f062c0;
+        color: #fff;
+        border-radius: 20px;
+        padding: 6px 22px;
+    }
+
+    .btn-pink:hover {
+        background-color: #e94cab;
+        color: #fff;
+    }
+</style>
+
 <div class="container my-5">
     <div class="row">
 
-        <!-- RIGHT PROFILE CARD -->
+        <!-- RIGHT PROFILE CARD (Sidebar comes from base_profile.html) -->
         <div class="col-md-9">
             <div class="card profile-card shadow-sm p-4">
 
                 <h4 class="text-center fw-bold mb-4">PROFILE</h4>
 
-                <!-- Profile Image -->
+                <!-- PROFILE IMAGE -->
                 <div class="text-center mb-4">
                     <div class="profile-img-wrapper">
-                        <img src="{% static 'images/default-avatar.png' %}" class="profile-img">
+                        <img src="{% static 'images/default-avatar.png' %}" alt="Profile" class="profile-img">
                         <span class="camera-icon">
                             <i class="fa fa-camera"></i>
                         </span>
                     </div>
                 </div>
 
-                <!-- Profile Form -->
+                <!-- PROFILE FORM -->
                 <form method="post">
                     {% csrf_token %}
 
                     <div class="mb-3 position-relative">
                         <label class="form-label">Name</label>
-                        <input type="text" class="form-control" name="full_name"
-                               value="{{ request.user.full_name }}">
+                        <input type="text"
+                                class="form-control"
+                                name="full_name"
+                                value="{{ request.user.full_name }}">
                         <i class="fa fa-pen edit-icon"></i>
                     </div>
 
                     <div class="mb-3 position-relative">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control"
-                               value="{{ request.user.email }}" disabled>
+                        <input type="email"
+                                class="form-control"
+                                value="{{ request.user.email }}"
+                                disabled>
                         <i class="fa fa-pen edit-icon"></i>
                     </div>
 
                     <div class="mb-3 position-relative">
                         <label class="form-label">Phone</label>
-                        <input type="text" class="form-control"
-                               value="{{ request.user.phone }}">
+                        <input type="text"
+                                class="form-control"
+                                name="phone"
+                                value="{{ request.user.phone }}">
                         <i class="fa fa-pen edit-icon"></i>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label">Gender</label><br>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="gender" value="female"
-                                   {% if request.user.gender == "female" %}checked{% endif %}>
+                            <input class="form-check-input"
+                                    type="radio"
+                                    name="gender"
+                                    value="female"
+                                    {% if request.user.gender == "female" %}checked{% endif %}>
                             <label class="form-check-label">Female</label>
                         </div>
+
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="gender" value="male"
-                                   {% if request.user.gender == "male" %}checked{% endif %}>
+                            <input class="form-check-input"
+                                    type="radio"
+                                    name="gender"
+                                    value="male"
+                                    {% if request.user.gender == "male" %}checked{% endif %}>
                             <label class="form-check-label">Male</label>
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center">
-                        <a href="{% url 'accounts:change_password' %}" class="text-primary fw-semibold">
+                        <a href="{% url 'accounts:change_password' %}"
+                            class="fw-semibold text-primary">
                             Change password
                         </a>
 
-                        <button type="submit" class="btn btn-pink px-4">
+                        <button type="submit" class="btn btn-pink">
                             Save changes
                         </button>
                     </div>
@@ -78,5 +147,5 @@
 
     </div>
 </div>
-{% endblock %}
 
+{% endblock %}
