@@ -16,7 +16,7 @@ def anonymous_user_home(request):
         'products': products
     })
 
-#@user_login_required
+@user_login_required
 def home(request):
     categories = Category.objects.filter(is_active=True)
     products = Product.objects.filter(is_active=True).order_by('-id')[:8]

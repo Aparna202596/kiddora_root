@@ -12,7 +12,7 @@ from accounts.decorators import admin_login_required,user_login_required
 from django.contrib.auth import get_user_model
 
 # ADMIN USER LIST
-#@admin_login_required
+@admin_login_required
 def admin_user_list(request):
     query = request.GET.get("q", "").strip()
     users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER)
@@ -33,7 +33,7 @@ def admin_user_list(request):
     return render(request, "accounts/admin/user_list.html",context)
 
 # BLOCK USER
-#@admin_login_required
+@admin_login_required
 def block_user(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
     if request.method == "POST":
@@ -44,7 +44,7 @@ def block_user(request, user_id):
     return render(request, "accounts/admin/user_confirm_block.html", {"user": user})
 
 # UNBLOCK USER
-#@admin_login_required
+@admin_login_required
 def unblock_user(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
     if request.method == "POST":
@@ -54,7 +54,7 @@ def unblock_user(request, user_id):
         return redirect("accounts:user_list")
     return render(request, "accounts/admin/user_confirm_unblock.html", {"user": user})
 
-#@admin_login_required
+@admin_login_required
 def admin_dashboard_view(request):
     today = now()
     last_30_days = today - timedelta(days=30)
@@ -81,7 +81,7 @@ def admin_dashboard_view(request):
     }
     return render(request, "accounts/admin/admin_dashboard.html", context)
 
-#@admin_login_required
+@admin_login_required
 def user_management_view(request):
     search_query = request.GET.get('q', '').strip()
     users = CustomUser.objects.filter(
@@ -101,7 +101,7 @@ def user_management_view(request):
         'search_query': search_query
     })
 
-#@admin_login_required
+@admin_login_required
 def delete_user_view(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
 

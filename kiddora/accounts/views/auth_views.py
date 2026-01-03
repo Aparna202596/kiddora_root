@@ -4,7 +4,7 @@ from accounts.models import PasswordResetToken
 from django.contrib import messages
 from accounts.models import CustomUser
 from django.urls import reverse
-from accounts.decorators import user_login_required
+from accounts.decorators import user_login_required,admin_login_required
 from accounts.views.otp_views import generate_otp
 from django.utils import timezone
 import random 
@@ -61,7 +61,7 @@ def admin_login(request):
     return render(request, "accounts/auth/admin_login.html")
 
 # LOGOUT
-#@admin_login_required
+@admin_login_required
 def admin_logout_view(request):
     logout(request)
     return redirect("accounts:admin_login")
@@ -92,10 +92,6 @@ def admin_logout_view(request):
 #         messages.success(request, "Signup successful. Verify OTP to continue.")
 #         return redirect("accounts:verify_otp", user_id=user.id)
 #     return render(request, "accounts/auth/signup.html")
-import random
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from accounts.models import CustomUser
 
 def signup(request):
     if request.method == "POST":
