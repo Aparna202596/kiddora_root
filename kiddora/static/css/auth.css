@@ -33,14 +33,14 @@ body {
     padding-right: 30px;
 }
 
-.auth-left h2 {
+.auth-center h2 {
     font-size: 26px;
     margin-bottom: 8px;
     color: #333;
     font-family: "Segoe Script", cursive;
 }
 
-.auth-left p {
+.auth-center p {
     font-size: 14px;
     color: #777;
     margin-bottom: 18px;
