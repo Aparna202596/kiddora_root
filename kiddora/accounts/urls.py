@@ -20,7 +20,7 @@ urlpatterns = [
 
     # AUTHENTICATION – ADMIN
     path("admin/login/", auth_views.admin_login, name="admin_login"),
-
+    path("admin/logout/", auth_views.admin_logout_view, name="admin_logout"),
     # OTP VERIFICATION
     path("verify-otp/<int:user_id>/", otp_views.verify_otp, name="verify_otp"),
     path("resend-otp/<int:user_id>/", otp_views.resend_otp, name="resend_otp"),

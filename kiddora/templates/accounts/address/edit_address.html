@@ -1,13 +1,55 @@
-{% extends "base.html" %}
+{% extends "base_profile.html" %} 
 {% block content %}
-<h2>Edit Address</h2>
-<form method="post">
-{% csrf_token %}
-<input name="address_line1" value="{{ address.address_line1 }}">
-<input name="city" value="{{ address.city }}">
-<input name="state" value="{{ address.state }}">
-<input name="country" value="{{ address.country }}">
-<input name="pincode" value="{{ address.pincode }}">
-<button>Update</button>
-</form>
+<style>
+    .form-container {
+        max-width: 500px;
+        margin: 30px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .form-container h2 {
+        text-align: center;
+        color: #f062c0;
+        margin-bottom: 20px;
+    }
+    .form-container form input,
+    .form-container form select {
+        width: 100%;
+        padding: 10px 12px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+    }
+    .form-container form button {
+        width: 100%;
+        padding: 10px;
+        background: #f062c0;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        margin-top: 12px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .form-container form button:hover {
+        background: #e94cab;
+    }
+</style>
+
+<div class="form-container">
+    <h2>Edit Address</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input name="address_line1" value="{{ address.address_line1 }}" placeholder="Address Line 1">
+        <input name="city" value="{{ address.city }}" placeholder="City">
+        <input name="state" value="{{ address.state }}" placeholder="State">
+        <input name="country" value="{{ address.country }}" placeholder="Country">
+        <input name="pincode" value="{{ address.pincode }}" placeholder="Pincode">
+        <button type="submit">Update</button>
+    </form>
+</div>
 {% endblock %}

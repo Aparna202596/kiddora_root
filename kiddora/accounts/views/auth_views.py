@@ -60,6 +60,12 @@ def admin_login(request):
         messages.error(request, "Invalid credentials")
     return render(request, "accounts/auth/admin_login.html")
 
+# LOGOUT
+#@admin_login_required
+def admin_logout_view(request):
+    logout(request)
+    return redirect("accounts:admin_login")
+
 # USER SIGNUP
 # def signup(request):
 #     if request.method == "POST":

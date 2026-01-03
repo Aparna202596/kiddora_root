@@ -2,12 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from accounts.models import UserAddress
 from accounts.decorators import user_login_required
 
-@user_login_required
+#@user_login_required
 def address_list(request):
     addresses = request.user.addresses.all()
     return render(request, "accounts/profile/addresses.html", {"addresses": addresses})
 
-@user_login_required
+#@user_login_required
 def address_add(request):
     if request.method == "POST":
         is_default = request.POST.get("is_default") == "on"
@@ -27,7 +27,7 @@ def address_add(request):
     return render(request, "accounts/profile/add_address.html")
 
 
-@user_login_required
+#@user_login_required
 def address_edit(request, address_id):
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
     if request.method == "POST":
@@ -46,7 +46,7 @@ def address_edit(request, address_id):
     return render(request, "accounts/profile/edit_address.html", {"address": address})
 
 
-@user_login_required
+#@user_login_required
 def address_delete(request, address_id):
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
     address.delete()

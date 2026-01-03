@@ -1,15 +1,72 @@
-{% extends "base.html" %}
+{% extends "base_profile.html" %} 
 {% block content %}
-<h2>Addresses</h2>
-<a href="{% url 'accounts:address_add' %}">Add Address</a>
-<ul>
-{% for addr in addresses %}
-<li>
-{{ addr.address_line1 }} - {{ addr.city }}
-<a href="{% url 'accounts:address_edit' addr.id %}">Edit</a>
-<a href="{% url 'accounts:address_delete' addr.id %}">Delete</a>
-</li>
-{% endfor %}
-</ul>
+<style>
+    .addresses-container {
+        max-width: 700px;
+        margin: 30px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .addresses-container h2 {
+        text-align: center;
+        color: #f062c0;
+        margin-bottom: 20px;
+    }
+    .addresses-container a.add-btn {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 8px 16px;
+        background: #f062c0;
+        color: #fff;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: 0.3s;
+    }
+    .addresses-container a.add-btn:hover {
+        background: #e94cab;
+    }
+    ul.address-list {
+        list-style: none;
+        padding: 0;
+    }
+    ul.address-list li {
+        background: #f9f9f9;
+        margin-bottom: 12px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+    ul.address-list li a {
+        margin-left: 8px;
+        text-decoration: none;
+        color: #f062c0;
+        font-weight: 500;
+        transition: 0.3s;
+    }
+    ul.address-list li a:hover {
+        color: #e94cab;
+    }
+</style>
+
+<div class="addresses-container">
+    <h2>Addresses</h2>
+    <a href="{% url 'accounts:address_add' %}" class="add-btn">Add Address</a>
+    <ul class="address-list">
+        {% for addr in addresses %}
+        <li>
+            <span>{{ addr.address_line1 }}, {{ addr.city }}, {{ addr.state }}, {{ addr.country }} - {{ addr.pincode }}</span>
+            <span>
+                <a href="{% url 'accounts:address_edit' addr.id %}">Edit</a>
+                <a href="{% url 'accounts:address_delete' addr.id %}">Delete</a>
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
 {% endblock %}
 

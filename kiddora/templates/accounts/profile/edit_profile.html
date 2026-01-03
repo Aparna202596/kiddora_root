@@ -1,11 +1,104 @@
-{% extends "base.html" %}
+{% extends "base_profile.html" %}
 {% block content %}
-<h2>Edit Profile</h2>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input name="full_name" value="{{ user.full_name }}">
-    <input name="phone" value="{{ user.phone }}">
-    <input type="file" name="profile_image">
-    <button type="submit">Save</button>
-</form>
+
+<style>
+.profile-container {
+    max-width: 500px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    font-family: 'Arial', sans-serif;
+}
+
+.profile-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 26px;
+    color: #333;
+}
+
+.profile-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.profile-container input[type="text"],
+.profile-container input[type="file"],
+.profile-container input[type="tel"] {
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.profile-container input[type="file"] {
+    padding: 6px 10px;
+}
+
+.profile-container button {
+    padding: 12px 0;
+    border: none;
+    border-radius: 8px;
+    background-color: #e968afff;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.profile-container button:hover {
+    background-color: #bd35a2ff;
+}
+
+.profile-image-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 20px auto;
+    display: block;
+    border: 2px solid #ddd;
+}
+</style>
+
+<div class="profile-container">
+
+    <h2>Edit Profile</h2>
+
+    {% if user.profile_image %}
+        <img src="{{ user.profile_image.url }}" alt="Profile Image" class="profile-image-preview">
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="text" name="full_name" placeholder="Full Name" value="{{ user.full_name }}">
+        <input type="tel" name="phone" placeholder="Phone Number" value="{{ user.phone }}">
+        <input type="file" name="profile_image" accept="image/*">
+        <div class="profile-field">
+                <label>Gender</label>
+                <div class="gender-options">
+                    <label>
+                        <input type="radio" name="gender" value="female"
+                                {% if request.user.gender == "female" %}checked{% endif %}>
+                        Female
+                    </label>
+                    <label>
+                        <input type="radio" name="gender" value="male"
+                                {% if request.user.gender == "male" %}checked{% endif %}>
+                        Male
+                    </label>
+                </div>
+            </div>
+        <button type="submit">Save</button>
+    </form>
+
+</div>
+
 {% endblock %}
+

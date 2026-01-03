@@ -113,6 +113,11 @@
     font-weight: 600;
     text-decoration: none;
 }
+.edit_profile {
+    color: #3f51ff;
+    font-weight: 600;
+    text-decoration: none;
+}
 
 .btn-save {
     background: #f062c0;
@@ -137,7 +142,7 @@
         <!-- Profile Image -->
         <div class="profile-image-section">
             <div class="profile-img-wrapper">
-                <img src="{% static 'images/default_avatar.PNG' %}" alt="Profile">
+                <img src="{% static 'images/default_avatar.jpeg' %}" alt="Profile">
                 <span class="camera-icon">
                     <i class="fa fa-camera"></i>
                 </span>
@@ -189,13 +194,9 @@
             </div>
 
             <div class="profile-actions">
-                <a href="{% url 'accounts:change_password' %}" class="change-password">
-                    Change password
-                </a>
-
-                <button type="submit" class="btn-save">
-                    Save changes
-                </button>
+                <a href="{% url 'accounts:change_password' %}" class="change-password">Change password</a>
+                <a href="{% url 'accounts:profile_edit' %}" class="edit_profile">Edit Profile</a>
+                <button type="submit" class="btn-save">Save changes</button>
             </div>
         </form>
 
