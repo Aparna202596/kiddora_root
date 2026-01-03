@@ -7,9 +7,6 @@ from django.urls import reverse
 from accounts.decorators import user_login_required,admin_login_required
 from accounts.views.otp_views import generate_otp
 from django.utils import timezone
-import random 
-
-# USER LOGIN
 from django.contrib.auth import authenticate, login
 from accounts.models import CustomUser
 
@@ -37,8 +34,6 @@ def login_view(request):
             request.session.set_expiry(0)
         return redirect("store:home")
     return render(request, "accounts/auth/login.html")
-
-
 
 # ADMIN LOGIN
 def admin_login(request):
