@@ -15,25 +15,29 @@ from accounts.models import CustomUser
 
 def login_view(request):
     if request.method == "POST":
-        email = request.POST.get("username")  # field name is fine
+        email = request.POST.get("username")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
         try:
-            user_obj = CustomUser.objects.get(email=email)
+            user = CustomUser.objects.get(email=email)
         except CustomUser.DoesNotExist:
             messages.error(request, "Invalid credentials")
             return render(request, "accounts/auth/login.html")
-        user = authenticate(request, username=user_obj.username, password=password)
-        if user and user.role == CustomUser.ROLE_CUSTOMER:
-            if not user.is_active:
-                messages.error(request, "Your account is blocked")
-                return redirect("accounts:blocked")
-            login(request, user)
-            if not remember_me:
-                request.session.set_expiry(0)
-            return redirect("store:home")
-        messages.error(request, "Invalid credentials")
+        if not user.check_password(password):
+            messages.error(request, "Invalid credentials")
+            return render(request, "accounts/auth/login.html")
+        if user.role != CustomUser.ROLE_CUSTOMER:
+            messages.error(request, "Invalid credentials")
+            return render(request, "accounts/auth/login.html")
+        if not user.is_active:
+            messages.error(request, "Your account is blocked")
+            return redirect("accounts:blocked")
+        login(request, user)
+        if not remember_me:
+            request.session.set_expiry(0)
+        return redirect("store:home")
     return render(request, "accounts/auth/login.html")
+
 
 
 # ADMIN LOGIN
@@ -42,23 +46,40 @@ def admin_login(request):
         email = request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
+
         if not email:
             messages.error(request, "Email is required")
             return redirect("accounts:admin_login")
         if not email.endswith("@kiddora.com"):
             messages.error(request, "Admin email must be <admin_name>@kiddora.com")
             return redirect("accounts:admin_login")
-        user = authenticate(request, username=email, password=password)
-        if user and user.role == CustomUser.ROLE_ADMIN:
-            if not user.is_active:
-                messages.error(request, "Your admin account is blocked")
-                return redirect("accounts:blocked")
-            login(request, user)
-            if not remember_me:
-                request.session.set_expiry(0)
-            return redirect("accounts:dashboard")
-        messages.error(request, "Invalid credentials")
+        
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            messages.error(request, "Invalid credentials")
+            return redirect("accounts:admin_login")
+        
+        if not user.check_password(password):
+            messages.error(request, "Invalid credentials")
+            return redirect("accounts:admin_login")
+        
+        if user.role != CustomUser.ROLE_ADMIN:
+            messages.error(request, "You are not an admin")
+            return redirect("accounts:admin_login")
+        
+        if not user.is_active:
+            messages.error(request, "Your admin account is blocked")
+            return redirect("accounts:blocked")
+        
+        login(request, user)
+        if not remember_me:
+            request.session.set_expiry(0)
+        
+        return redirect("accounts:dashboard")
+    
     return render(request, "accounts/auth/admin_login.html")
+
 
 # LOGOUT
 @admin_login_required
