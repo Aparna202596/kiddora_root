@@ -12,7 +12,7 @@ from accounts.decorators import admin_login_required,user_login_required
 from django.contrib.auth import get_user_model
 
 # ADMIN USER LIST
-@admin_login_required
+#@admin_login_required
 def admin_user_list(request):
     query = request.GET.get("q", "").strip()
     users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER)
@@ -33,28 +33,28 @@ def admin_user_list(request):
     return render(request, "accounts/admin/user_list.html",context)
 
 # BLOCK USER
-@admin_login_required
+#@admin_login_required
 def block_user(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
     if request.method == "POST":
         user.is_active = False
         user.save()
         messages.success(request, f"{user.username} has been blocked")
-        return redirect("accounts:admin_user_list")
+        return redirect("accounts:user_list")
     return render(request, "accounts/admin/user_confirm_block.html", {"user": user})
 
 # UNBLOCK USER
-@admin_login_required
+#@admin_login_required
 def unblock_user(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
     if request.method == "POST":
         user.is_active = True
         user.save()
         messages.success(request, f"{user.username} has been unblocked")
-        return redirect("accounts:admin_user_list")
+        return redirect("accounts:user_list")
     return render(request, "accounts/admin/user_confirm_unblock.html", {"user": user})
 
-@admin_login_required
+#@admin_login_required
 def admin_dashboard_view(request):
     today = now()
     last_30_days = today - timedelta(days=30)
@@ -81,7 +81,7 @@ def admin_dashboard_view(request):
     }
     return render(request, "accounts/admin/admin_dashboard.html", context)
 
-@admin_login_required
+#@admin_login_required
 def user_management_view(request):
     search_query = request.GET.get('q', '').strip()
     users = CustomUser.objects.filter(
@@ -96,24 +96,23 @@ def user_management_view(request):
     paginator = Paginator(users, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'accounts/admin/customer_list.html', {
+    return render(request, 'accounts/admin/user_list.html', {
         'users': page_obj,
         'search_query': search_query
     })
 
-# @admin_login_required
-# def block_unblock_user_view(request, user_id):
-#     user = get_object_or_404(CustomUser,id=user_id,role=CustomUser.ROLE_CUSTOMER)
+#@admin_login_required
+def delete_user_view(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
 
-#     if request.user.id == user.id:
-#         messages.error(request, "You cannot block your own account.")
-#         return redirect('accounts:user_list')
+    if request.user.id == user.id:
+        messages.error(request, "You cannot delete your own account.")
+        return redirect("accounts:user_list")
 
-#     if request.method == 'POST':
-#         user.is_active = not user.is_active
-#         user.save()
+    if request.method == "POST":
+        username = user.username
+        user.delete()
+        messages.success(request, f"User {username} has been deleted successfully.")
+        return redirect("accounts:user_list")
 
-#         status = "blocked" if not user.is_active else "unblocked"
-#         messages.success(request, f"User has been {status} successfully.")
-
-#     return redirect('accounts:admin_user_management')
+    return render(request, "accounts/admin/delete_user.html", {"user": user})

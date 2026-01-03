@@ -1,4 +1,5 @@
 {% extends "base_admin.html" %}
+
 {% block content %}
 <style>
     .confirm-container {
@@ -39,22 +40,31 @@
         cursor: pointer;
         font-size: 16px;
         transition: background-color 0.3s;
+        margin-right: 10px;
     }
 
     .confirm-card button:hover {
         background-color: #c82333;
     }
+
+    .cancel-btn {
+        background-color: #6c757d;
+    }
+
+    .cancel-btn:hover {
+        background-color: #5a6268;
+    }
 </style>
 
 <div class="confirm-container">
     <div class="confirm-card">
-        <h2>Confirm Block</h2>
-        <p>Are you sure you want to block <strong>{{ user.username }}</strong>?</p>
+        <h2>Confirm Delete</h2>
+        <p>Are you sure you want to delete <strong>{{ user.username }}</strong>?</p>
         <form method="post">
             {% csrf_token %}
-            <button type="submit">Confirm</button>
+            <button type="submit">Delete</button>
+            <a href="{% url 'accounts:user_list' %}" class="cancel-btn" style="padding: 10px 25px; border-radius: 6px; color:#fff; text-decoration:none;">Cancel</a>
         </form>
     </div>
 </div>
 {% endblock %}
-

@@ -108,7 +108,7 @@
         </nav>
 
         <div class="header-actions">
-            <form method="get" action="{% url 'products:product_search' %}" class="search-form">
+            <form method="get" action="#" class="search-form">
                 <input type="text" name="q" placeholder="Search products..."
                         value="{{ request.GET.q|default:'' }}">
                 <button type="submit" aria-label="Search">
@@ -149,7 +149,7 @@
             <ul>
                 <li><a href="{% url 'store:privacy_policy' %}">Privacy</a></li>
                 <li><a href="{% url 'store:return_policy' %}">Returns</a></li>
-                <li><a href="{% url 'store:terms_conditions' %}">Terms</a></li>
+                <li><a href="{% url 'store:terms_conditions' %}">Terms & Conditions</a></li>
             </ul>
         </div>
 

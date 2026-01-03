@@ -8,15 +8,12 @@
 
     <!-- Font Awesome Icons -->
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer">
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer">
 
-    <!-- Embedded CSS (auth.css + admin base) -->
     <style>
-        /* ===============================
-           GLOBAL RESET
-        ================================ */
+        /* GLOBAL RESET */
         * {
             margin: 0;
             padding: 0;
@@ -28,9 +25,7 @@
             background-color: #ffffffff;
         }
 
-        /* ===============================
-           AUTH LAYOUT
-        ================================ */
+        /* AUTH LAYOUT */
         .auth-container {
             min-height: 100vh;
             display: flex;
@@ -113,9 +108,7 @@
             background-color: #d98ab2;
         }
 
-        /* ===============================
-           ADMIN HEADER
-        ================================ */
+        /* ADMIN HEADER */
         .site-header {
             background: #fff;
             border-bottom: 1px solid #e5e5e5;
@@ -137,9 +130,7 @@
             font-size: 18px;
         }
 
-        /* ===============================
-           SIDEBAR
-        ================================ */
+        /* SIDEBAR */
         .sidebar-nav {
             width: 240px;
             position: fixed;
@@ -172,18 +163,14 @@
             color: #c0392b;
         }
 
-        /* ===============================
-           MAIN CONTENT
-        ================================ */
+        /* MAIN CONTENT */
         .main-content {
             margin-left: 240px;
             padding: 30px;
             min-height: calc(100vh - 140px);
         }
 
-        /* ===============================
-           FOOTER
-        ================================ */
+        /* FOOTER */
         .site-footer {
             background: #fff;
             border-top: 1px solid #ddd;
@@ -192,9 +179,7 @@
             font-size: 13px;
         }
 
-        /* ===============================
-           RESPONSIVE
-        ================================ */
+        /* RESPONSIVE */
         @media (max-width: 900px) {
             .sidebar-nav {
                 display: none;
@@ -231,7 +216,7 @@
 
 <nav class="sidebar-nav">
     <ul>
-        <li><a href="{% url 'accounts:admin_dashboard' %}"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+        <li><a href="{% url 'accounts:dashboard' %}"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
         <li><a href="#"><i class="fa-solid fa-bag-shopping"></i> Orders</a></li>
         <li><a href="#"><i class="fa-solid fa-cubes"></i> Products</a></li>
         <li><a href="#"><i class="fa-solid fa-chart-column"></i> Sales Report</a></li>
