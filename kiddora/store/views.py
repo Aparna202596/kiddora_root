@@ -8,7 +8,7 @@ from products.models import Category, Product
 
 User = get_user_model()
 
-def anonymous_user_home(request):
+def anonymous_home(request):
     categories = Category.objects.filter(is_active=True)
     products = Product.objects.filter(is_active=True).order_by('-id')[:8]
     return render(request, 'store/anonymous_home.html', {

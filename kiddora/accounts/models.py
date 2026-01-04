@@ -11,11 +11,11 @@ class CustomUser(AbstractUser):
         (ROLE_ADMIN, "Admin"),
         (ROLE_CUSTOMER, "Customer"),
     )
-
+    
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
     full_name = models.CharField(max_length=100, null=True, blank=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, db_index=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, db_index=True,blank=True,null=True)
     email_verified = models.BooleanField(default=True)
     profile_image = models.ImageField(upload_to="profiles/", null=True, blank=True)
 
@@ -25,12 +25,12 @@ class CustomUser(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     pending_email = models.EmailField(null=True, blank=True)
-
-
-    REQUIRED_FIELDS = ["email"]
+    
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.username
+        return self.email or self.username
 
 
 class UserAddress(models.Model):

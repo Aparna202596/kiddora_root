@@ -4,7 +4,7 @@ from . import views
 app_name = 'store'
 
 urlpatterns = [
-    path('',views.anonymous_user_home,name='anonymous_user_home'),
+    path('',views.anonymous_home,name='anonymous_home'),
     path('home/',views.home,name='home'),
 
     path('about_us/',views.aboutus_view,name='about_us'),

@@ -12,29 +12,20 @@ from accounts.models import CustomUser
 
 def login_view(request):
     if request.method == "POST":
-        email = request.POST.get("username")
+        username_or_email = request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
-        try:
-            user = CustomUser.objects.get(email=email)
-        except CustomUser.DoesNotExist:
-            messages.error(request, "Invalid credentials")
-            return render(request, "accounts/auth/login.html")
-        if not user.check_password(password):
-            messages.error(request, "Invalid credentials")
-            return render(request, "accounts/auth/login.html")
-        if user.role != CustomUser.ROLE_CUSTOMER:
-            messages.error(request, "Invalid credentials")
-            return render(request, "accounts/auth/login.html")
-        if not user.is_active:
-            messages.error(request, "Your account is blocked")
-            return redirect("accounts:blocked")
-        login(request, user)
-        if not remember_me:
-            request.session.set_expiry(0)
-        return redirect("store:home")
+        user = authenticate(request, username=username_or_email, password=password)
+        if user and user.role == CustomUser.ROLE_CUSTOMER:
+            if not user.is_active:
+                messages.error(request, "Your account is blocked")
+                return redirect("accounts:blocked")
+            login(request, user)
+            if not remember_me: # Remember me handling
+                request.session.set_expiry(0) # expires on browser close
+            return redirect("store:home")
+        messages.error(request, "Invalid credentials")
     return render(request, "accounts/auth/login.html")
-
 # ADMIN LOGIN
 def admin_login(request):
     if request.method == "POST":
@@ -45,34 +36,34 @@ def admin_login(request):
         if not email:
             messages.error(request, "Email is required")
             return redirect("accounts:admin_login")
+
         if not email.endswith("@kiddora.com"):
             messages.error(request, "Admin email must be <admin_name>@kiddora.com")
             return redirect("accounts:admin_login")
-        
-        try:
-            user = CustomUser.objects.get(email=email)
-        except CustomUser.DoesNotExist:
+
+        # CRITICAL FIX HERE
+        user = authenticate(request, username=email, password=password)
+
+        if user is None:
             messages.error(request, "Invalid credentials")
             return redirect("accounts:admin_login")
-        
-        if not user.check_password(password):
-            messages.error(request, "Invalid credentials")
-            return redirect("accounts:admin_login")
-        
+
         if user.role != CustomUser.ROLE_ADMIN:
-            messages.error(request, "You are not an admin")
+            messages.error(request, "You are not authorized as admin")
             return redirect("accounts:admin_login")
-        
+
         if not user.is_active:
             messages.error(request, "Your admin account is blocked")
             return redirect("accounts:blocked")
-        
+
         login(request, user)
+
         if not remember_me:
             request.session.set_expiry(0)
-        
+
+        # CORRECT URL NAME
         return redirect("accounts:dashboard")
-    
+
     return render(request, "accounts/auth/admin_login.html")
 
 

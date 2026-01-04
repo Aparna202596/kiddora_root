@@ -37,7 +37,7 @@ urlpatterns=[
     path('wishlist/',include('wishlist.urls')),
     
     # Root URL → anonymous home page
-    path('', lambda request: redirect('store:anonymous_user_home'), name='root_redirect'),
+    path('', lambda request: redirect('store:anonymous_home'), name='root_redirect'),
     ]
     
 if settings.DEBUG:
