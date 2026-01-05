@@ -29,7 +29,7 @@ def verify_otp(request, user_id):
                 messages.error(request, "OTP expired")
         else:
             messages.error(request, "Invalid OTP")
-    return render(request, "accounts/auth/verify_otp.html", {"user": user})
+    return render(request, "accounts/auth/verify_otp.html", {"user_id": user.id})
 
 # Resend OTP View, for resending OTP if expired or lost
 def resend_otp(request):

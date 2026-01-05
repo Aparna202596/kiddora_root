@@ -16,7 +16,7 @@
               <input type="text" name="otp" placeholder="Enter OTP" required>
                 <button type="submit" class="primary-btn">Verify OTP</button>
             </form>
-            <p>Didn't receive OTP? <a href="{% url 'accounts:resend_otp' user.id %}" class="link">Resend OTP</a></p>
+            <p>Didn't receive OTP? <a href="{% url 'accounts:resend_otp' user_id %}" class="link">Resend OTP</a></p>
             {% if messages %}
             <ul>
               {% for message in messages %}

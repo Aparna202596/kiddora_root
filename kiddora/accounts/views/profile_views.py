@@ -3,6 +3,7 @@ from django.contrib import messages
 from accounts.decorators import user_login_required
 from django.utils import timezone
 from accounts.views.otp_views import generate_otp
+from django.contrib.auth.forms import PasswordChangeForm
 
 @user_login_required
 def profile_view(request):

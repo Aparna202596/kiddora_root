@@ -74,18 +74,19 @@
     </head>
 
     <body>
+        {%load static%}
         <div class="login-wrapper">
 <!-- Logo -->
             <div class="logo">
                 <img src="/static/images/kiddora_logo.PNG" alt="Kiddora Logo">
             </div>
 <!--Login Form -->
+            {% load static %}
             <form method="post">
-            {% csrf_token %}
-                <div class="form-group"><input type="email" name="email" placeholder="admin@kiddora.com" required></div>
+                {% csrf_token %}
+                <div class="form-group"><input type="email" name="username" placeholder="admin@kiddora.com" required></div>
                 <div class="form-group"><input type="password" name="password" placeholder="Password" required></div>
                 <label><input type="checkbox" name="remember_me"> Remember Me</label>
-                <a href="{% url 'accounts:forgot_password' %}" class="forgot-password">Forget Password?</a>
                 <button type="submit" class="login-btn">Login</button>
             </form>
         </div>

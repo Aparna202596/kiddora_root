@@ -68,13 +68,10 @@
 </style>
 
 <div class="profile-container">
-
     <h2>Edit Profile</h2>
-
-    {% if user.profile_image %}
-        <img src="{{ user.profile_image.url }}" alt="Profile Image" class="profile-image-preview">
+    {% if request.user.profile_image %}
+        <img src="{{ request.user.profile_image.url }}" alt="Profile Image" class="profile-image-preview">
     {% endif %}
-
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="text" name="full_name" placeholder="Full Name" value="{{ user.full_name }}">
@@ -97,8 +94,5 @@
             </div>
         <button type="submit">Save</button>
     </form>
-
 </div>
-
 {% endblock %}
-
