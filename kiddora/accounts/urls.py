@@ -22,10 +22,12 @@ urlpatterns = [
     path("admin/login/", auth_views.admin_login, name="admin_login"),
     path("admin/logout/", auth_views.admin_logout_view, name="admin_logout"),
     # OTP VERIFICATION
-    path("verify-otp/<int:user_id>/", otp_views.verify_otp, name="verify_otp"),
-    path("resend-otp/<int:user_id>/", otp_views.resend_otp, name="resend_otp"),
+    path("verify-otp/", otp_views.verify_otp, name="verify_otp"),
+    path("resend-otp/", otp_views.resend_otp, name="resend_otp"),
+    path("verify-forgot-password-otp/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
+    path("reset-password/", otp_views.reset_password, name="reset_password"),
 
-    # USER PROFILE
+    # USER PROFILE 
     path("profile/", profile_views.profile_view, name="profile"),
     path("profile/edit/", profile_views.profile_edit, name="profile_edit"),
     path("profile/change-password/", profile_views.change_password, name="change_password"),

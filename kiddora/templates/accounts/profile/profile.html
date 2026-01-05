@@ -136,23 +136,23 @@
 
 <div class="col-md-9">
     <div class="profile-card shadow-sm">
-
         <h4 class="profile-title">PROFILE</h4>
-
         <!-- Profile Image -->
         <div class="profile-image-section">
             <div class="profile-img-wrapper">
-                <img src="{% static 'images/default_avatar.jpeg' %}" alt="Profile">
+                {% if request.user.profile_image %}
+                    <img src="{{ request.user.profile_image.url }}" alt="Profile">
+                {% else %}
+                    <img src="{% static 'images/default_avatar.jpeg' %}" alt="Profile">
+                {% endif %}
                 <span class="camera-icon">
                     <i class="fa fa-camera"></i>
                 </span>
             </div>
         </div>
-
         <!-- Profile Form -->
         <form method="post">
             {% csrf_token %}
-
             <div class="profile-field">
                 <label>Name</label>
                 <div class="input-wrapper">
@@ -196,12 +196,10 @@
             <div class="profile-actions">
                 <a href="{% url 'accounts:change_password' %}" class="change-password">Change password</a>
                 <a href="{% url 'accounts:profile_edit' %}" class="edit_profile">Edit Profile</a>
-                <button type="submit" class="btn-save">Save changes</button>
+                {% comment %} <button type="submit" class="btn-save">Save changes</button> {% endcomment %}
             </div>
         </form>
 
     </div>
 </div>
-
-
 {% endblock %}

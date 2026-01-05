@@ -4,30 +4,29 @@ from django.utils import timezone
 import uuid
 
 class CustomUser(AbstractUser):
-    ROLE_ADMIN = "admin"
-    ROLE_CUSTOMER = "customer"
 
-    ROLE_CHOICES = (
-        (ROLE_ADMIN, "Admin"),
-        (ROLE_CUSTOMER, "Customer"),
-    )
     username=models.CharField(max_length=50,null=True, blank=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
     full_name = models.CharField(max_length=100, null=True, blank=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, db_index=True,blank=True,null=True)
     email_verified = models.BooleanField(default=True)
     profile_image = models.ImageField(upload_to="profiles/", null=True, blank=True)
-    phone = models.CharField(max_length=15, blank=True)
-    gender = models.CharField(max_length=10, choices=[('male','Male'),('female','Female')])
+    gender = models.CharField(max_length=10, choices=[('male','Male'),('female','Female')],blank=True)
+    ROLE_ADMIN = "admin"
+    ROLE_CUSTOMER = "customer"
+    role = models.CharField(
+        max_length=20,
+        choices=[(ROLE_ADMIN, "Admin"), (ROLE_CUSTOMER, "Customer")],
+        default=ROLE_CUSTOMER)
+    
     otp = models.CharField(max_length=6, null=True, blank=True)
     otp_created_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     pending_email = models.EmailField(null=True, blank=True)
     
-    USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = ["email"]
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username"]
 
     def __str__(self):
         return self.email or self.username

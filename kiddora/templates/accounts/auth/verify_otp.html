@@ -10,25 +10,61 @@
       <div class="auth-card">
         <div class="auth-left">
           <h2>Verify OTP</h2>
-            <p>Enter the OTP sent to your email address</p>
-            <form method="post">
-              {% csrf_token %}
-              <input type="text" name="otp" placeholder="Enter OTP" required>
-                <button type="submit" class="primary-btn">Verify OTP</button>
-            </form>
-            <p>Didn't receive OTP? <a href="{% url 'accounts:resend_otp' user_id %}" class="link">Resend OTP</a></p>
-            {% if messages %}
-            <ul>
-              {% for message in messages %}
-              <li>{{ message }}</li>
-              {% endfor %}
-            </ul>
-            {% endif %}
-            <a href="{% url 'accounts:login' %}" class="link">Go back to Login page</a>
+          <p>Enter the OTP sent to your email address</p>
+
+          <form method="post">
+            {% csrf_token %}
+            <input type="text" name="otp" placeholder="Enter OTP" required>
+            <button type="submit" class="primary-btn">Verify OTP</button>
+          </form>
+
+          <!-- OTP TIMER -->
+          <p id="timer"></p>
+
+          <!-- RESEND LINK (FIXED) -->
+          <p>
+            Didn't receive OTP?
+            <a href="{% url 'accounts:resend_otp' %}" class="link">Resend OTP</a>
+          </p>
+
+          {% if messages %}
+          <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+
+          <a href="{% url 'accounts:login' %}" class="link">Go back to Login page</a>
         </div>
-        <div class="auth-right"><img src="{% static 'images/verify_otp.PNG' %}" alt="Verify OTP"></div>
+
+        <div class="auth-right">
+          <img src="{% static 'images/verify_otp.PNG' %}" alt="Verify OTP">
+        </div>
       </div>
     </div>
+
+    <!-- TIMER SCRIPT -->
+    <script>
+      let timeLeft = 300; // 5 minutes
+
+      const timer = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+
+        document.getElementById("timer").innerText =
+          `OTP expires in ${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+        timeLeft--;
+
+        if (timeLeft < 0) {
+          clearInterval(timer);
+          document.getElementById("timer").innerText = "OTP expired";
+        }
+      }, 1000);
+    </script>
+
   </body>
 </html>
+
 
