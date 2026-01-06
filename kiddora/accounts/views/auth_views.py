@@ -15,30 +15,31 @@ import random
 #User Signup
 def signup(request):
     if request.method == "POST":
-        username = request.POST.get("username")
+        full_name = request.POST.get("full_name")
         email = request.POST.get("email")
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
         # Validation
-        if not all([username, email, password, confirm_password]):
+        if not all([full_name, email, password, confirm_password]):
             messages.error(request, "All fields are required")
             return redirect("accounts:signup")
         if password != confirm_password:
             messages.error(request, "Passwords do not match")
             return redirect("accounts:signup")
-        if CustomUser.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists")
-            return redirect("accounts:signup")
+        # if CustomUser.objects.filter(username=username).exists():
+        #     messages.error(request, "Username already exists")
+        #     return redirect("accounts:signup")
         if CustomUser.objects.filter(email=email).exists():
             messages.error(request, "Email already registered")
             return redirect("accounts:signup")
         # Create inactive user
         user = CustomUser.objects.create_user(
-            username=username,
             email=email,
             password=password,
             role=CustomUser.ROLE_CUSTOMER,
             is_active=False)
+        user.full_name = full_name
+        user.save()
         # Generate OTP
         otp = random.randint(100000, 999999)
         # Store OTP data in session
@@ -49,10 +50,10 @@ def signup(request):
         send_mail(
             subject="Verify your account",
             message=f"Your OTP is {otp}. Valid for 5 minutes.",
-            from_email=None,
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[email],)
         return redirect("accounts:verify_otp")
-    return render(request, "signup.html")
+    return render(request, "accounts/auth/signup.html")
 
 #User login View
 def login_view(request):
@@ -72,7 +73,7 @@ def login_view(request):
             return redirect("accounts:login")
         login(request, user)
         return redirect("store:home")
-    return render(request, "login.html")
+    return render(request, "accounts/auth/login.html")
 
 # User logout
 @user_login_required
@@ -83,6 +84,7 @@ def logout_view(request):
 #Admin Login View
 def admin_login(request):
     if request.method == "POST":
+        
         email = request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me") == "on"
@@ -95,7 +97,7 @@ def admin_login(request):
             return redirect("accounts:admin_login")
         login(request, user)
         return redirect("accounts:admin_dashboard")
-    return render(request, "admin_login.html")
+    return render(request, "accounts/auth/admin_login.html")
 
 # Admin logout
 @admin_login_required

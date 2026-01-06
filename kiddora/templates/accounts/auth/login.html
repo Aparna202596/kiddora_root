@@ -12,7 +12,7 @@
     <div class="auth-card">
         <div class="auth-left">
             <h2>Login</h2>
-            <a href="{% provider_login_url 'google' %}">Login with Google</a><br>
+            {% comment %} <a href="{% provider_login_url 'google' %}">Login with Google</a><br> {% endcomment %}
             <div class="divider">or</div>
             <form method="post">
                 {% csrf_token %}

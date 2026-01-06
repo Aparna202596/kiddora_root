@@ -4,11 +4,11 @@ from .models import CustomUser, UserAddress
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "username", "email", "role",
+        "id", "email","full_name", "role",
         "is_active", "email_verified", "date_joined"
     )
     list_filter = ("role", "is_active", "email_verified")
-    search_fields = ("username", "email", "phone")
+    search_fields = ("email", "phone","full_name")
     ordering = ("-date_joined",)
     readonly_fields = ("last_login", "date_joined", "created_at", "updated_at")
     actions = ["block_users", "unblock_users"]
@@ -21,5 +21,5 @@ class CustomUserAdmin(admin.ModelAdmin):
 class UserAddressAdmin(admin.ModelAdmin):
     list_display = ("user", "city", "state", "country", "is_default")
     list_filter = ("country", "state")
-    search_fields = ("user__username", "city", "pincode")
+    search_fields = ("user__email", "city", "pincode")
 

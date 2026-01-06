@@ -4,7 +4,7 @@ from accounts.decorators import user_login_required
 from django.utils import timezone
 from accounts.views.otp_views import generate_otp
 from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import Address
+from accounts.models import UserAddress
 from django.contrib.auth import update_session_auth_hash
 from django.core.mail import send_mail
 from django.conf import settings
@@ -13,7 +13,7 @@ from accounts.models import CustomUser
 
 @user_login_required
 def profile_view(request):
-    addresses = Address.objects.filter(user=request.user)
+    addresses = UserAddress.objects.filter(user=request.user)
     return render(
         request,
         "accounts/profile/profile.html",
