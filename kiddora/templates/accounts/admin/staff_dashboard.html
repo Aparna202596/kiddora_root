@@ -1,0 +1,16 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<h2>Staff Dashboard</h2>
+
+<p><strong>Welcome:</strong> {{ staff.username }}</p>
+<p><strong>Email:</strong> {{ staff.email }}</p>
+<p><strong>Last Login:</strong> {{ staff.last_login|default:"First login" }}</p>
+
+<br>
+
+<a href="{% url 'accounts:staff_logout' %}">
+    <button>Logout</button>
+</a>
+
+{% endblock %}

@@ -23,8 +23,8 @@ from django.shortcuts import redirect
 urlpatterns=[
     path('admin/', admin.site.urls),
 
+    path('accounts/', include('allauth.urls')),
     path('accounts/', include('accounts.urls')),
-    path('auth/', include("allauth.urls")),
     path('store/',include('store.urls')),
 
     path('products/', include('products.urls')),

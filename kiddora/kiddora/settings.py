@@ -31,15 +31,14 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS','127.0.0.1,localhost').split(',')
 # Application definition
 
 INSTALLED_APPS = [
+    # allauth
+    'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # allauth
-    'django.contrib.sites',
-    
     #local apps
     'accounts',
     #'accounts.apps.AccountsConfig',
@@ -53,8 +52,6 @@ INSTALLED_APPS = [
     #'returns.apps.ReturnsConfig',
     'returns',
     'wallet',
-
-    
     # Third-party
     'rest_framework',
     'django_filters',
@@ -70,12 +67,14 @@ SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
         'AUTH_PARAMS': {'access_type': 'online'},
-        },
-        'facebook': {
-            'METHOD': 'oauth2',
-            'SCOPE': ['email', 'public_profile'],
-            'FIELDS': ['id', 'email', 'name'],
-            'VERIFIED_EMAIL': False,}}
+    },
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'FIELDS': ['id', 'email', 'name'],
+        'VERIFIED_EMAIL': False,
+    },
+}
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -127,7 +126,6 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
-
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -166,7 +164,7 @@ LOGIN_REDIRECT_URL = 'store:home'
 LOGOUT_REDIRECT_URL = 'store:anonymous_home'
 
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 

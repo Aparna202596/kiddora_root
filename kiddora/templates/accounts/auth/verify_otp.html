@@ -45,24 +45,21 @@
     </div>
 
     <!-- TIMER SCRIPT -->
-    <script>
-      let timeLeft = 300; // 5 minutes
+<p id="timer">Resend OTP in 60s</p>
+<a id="resendBtn" href="{% url 'accounts:resend_otp' %}" style="display:none;">Resend OTP</a>
 
-      const timer = setInterval(() => {
-        const minutes = Math.floor(timeLeft / 60);
-        const seconds = timeLeft % 60;
-
-        document.getElementById("timer").innerText =
-          `OTP expires in ${minutes}:${seconds.toString().padStart(2, "0")}`;
-
-        timeLeft--;
-
-        if (timeLeft < 0) {
-          clearInterval(timer);
-          document.getElementById("timer").innerText = "OTP expired";
-        }
-      }, 1000);
-    </script>
+<script>
+let timeLeft = 60;
+let timer = setInterval(function(){
+    timeLeft--;
+    document.getElementById("timer").innerText = "Resend OTP in " + timeLeft + "s";
+    if(timeLeft <= 0){
+        clearInterval(timer);
+        document.getElementById("timer").style.display = "none";
+        document.getElementById("resendBtn").style.display = "block";
+    }
+},1000);
+</script>
 
   </body>
 </html>

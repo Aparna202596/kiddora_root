@@ -102,6 +102,26 @@ def user_management_view(request):
     })
 
 @admin_login_required
+def staff_management_view(request):
+    search_query = request.GET.get('q', '').strip()
+    users = CustomUser.objects.filter(
+        role=CustomUser.ROLE_STAFF
+    ).order_by('-date_joined')
+    if search_query:
+        users = users.filter(
+            Q(email__icontains=search_query) |
+            Q(full_name__icontains=search_query) |
+            Q(phone__icontains=search_query)
+        )
+    paginator = Paginator(users, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'accounts/admin/user_list.html', {
+        'users': page_obj,
+        'search_query': search_query
+    })
+
+@admin_login_required
 def delete_user_view(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
 
