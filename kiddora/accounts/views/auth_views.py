@@ -1,4 +1,5 @@
 from accounts.decorators import user_login_required,admin_login_required,staff_login_required
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate, get_user_model
@@ -123,36 +124,86 @@ def home_page(request):
     return render(request, 'store/home.html')
 
 @never_cache
-def admin_login(request):
-    if request.user.is_authenticated and request.user.role == CustomUser.ROLE_ADMIN:
-        return redirect("accounts:dashboard")
+def admin_staff_login(request):
+    # If already logged in, redirect based on role
+    if request.user.is_authenticated:
+        if request.user.role == CustomUser.ROLE_ADMIN:
+            return redirect("admin_page")
+        if request.user.role == CustomUser.ROLE_STAFF:
+            return redirect("staff_dashboard")
+
     if request.method == "POST":
-        email = request.POST.get("email")
+        identifier = request.POST.get("username") or request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-        if not email or not email.endswith("@kiddora.com"):
-            messages.error(request,"Admin email must be <admin_name>@kiddora.com",)
-            return redirect("accounts:admin_login")
-        user = authenticate(request, username=email, password=password)
-        if user and user.role == CustomUser.ROLE_ADMIN:
-            if not user.is_active:
-                messages.error(request, "Admin account is blocked")
-                return redirect("accounts:blocked")
-            login(request, user)
-            response = redirect("admin_page")
-            if remember_me:
-                response.set_cookie("remember_admin",email,max_age=7 * 24 * 60 * 60,)
-            return response
-        messages.error(request, "Invalid admin credentials")
+
+        # Authenticate user
+        user = authenticate(request, username=identifier, password=password)
+
+        if not user:
+            messages.error(request, "Invalid credentials")
+            return redirect("accounts:admin_staff_login")
+
+        # Block inactive accounts
+        if not user.is_active:
+            messages.error(request, "Your account is blocked")
+            return redirect("accounts:blocked")
+
+        # ROLE CHECK
+        if user.role not in [CustomUser.ROLE_ADMIN, CustomUser.ROLE_STAFF]:
+            messages.error(request, "Access denied")
+            return redirect("accounts:admin_staff_login")
+
+        # Admin domain validation
+        if user.role == CustomUser.ROLE_ADMIN and not user.email.endswith("@kiddora.com"):
+            messages.error(
+                request,
+                "Admin email must be <admin_name>@kiddora.com",
+            )
+            return redirect("accounts:admin_staff_login")
+
+        # LOGIN
+        login(request, user)
+
+        # Remember-me cookie
+        response = (
+            redirect("admin_page")
+            if user.role == CustomUser.ROLE_ADMIN
+            else redirect("staff_dashboard")
+        )
+
+        if remember_me:
+            cookie_name = (
+                "remember_admin"
+                if user.role == CustomUser.ROLE_ADMIN
+                else "remember_staff"
+            )
+            response.set_cookie(
+                cookie_name,
+                identifier,
+                max_age=7 * 24 * 60 * 60,
+            )
+
+        return response
+
     return render(request, "accounts/auth/admin_staff_login.html")
 
 @never_cache
-@admin_login_required
-def admin_logout(request):
+@login_required
+def admin_staff_logout(request):
+    role = request.user.role
+    # Only admin or staff can access this logout
+    if role not in [CustomUser.ROLE_ADMIN, CustomUser.ROLE_STAFF]:
+        return redirect("store:home")
     logout(request)
-    response = redirect("accounts:admin_login")
-    response.delete_cookie("remember_admin")
+    response = redirect("accounts:admin_staff_login")
+    # Remove role-specific remember-me cookie
+    if role == CustomUser.ROLE_ADMIN:
+        response.delete_cookie("remember_admin")
+    elif role == CustomUser.ROLE_STAFF:
+        response.delete_cookie("remember_staff")
     return response
+
 
 #admin add user
 @never_cache
@@ -237,34 +288,9 @@ def admin_delete(request, id):
         user.delete()
     return redirect("admin_page")
 
-@never_cache
-def staff_login(request):
-    if request.user.is_authenticated and request.user.role == CustomUser.ROLE_STAFF:
-        return redirect("staff_dashboard")
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        remember_me = request.POST.get("remember_me")
-        user = authenticate(request, username=username, password=password)
-        if user and user.role == CustomUser.ROLE_STAFF:
-            if not user.is_active:
-                messages.error(request, "Staff account is blocked")
-                return redirect("accounts:blocked")
-            login(request, user)
-            response = redirect("staff_dashboard")
-            if remember_me:
-                response.set_cookie("remember_staff",username,max_age=7 * 24 * 60 * 60,)
-            return response
-        messages.error(request, "Invalid staff credentials")
-    return render(request, "accounts/auth/admin_staff_login.html")
 
-@never_cache
-@staff_login_required
-def staff_logout(request):
-    logout(request)
-    response = redirect("accounts:staff_login")
-    response.delete_cookie("remember_staff")
-    return response
+
+
 
 @never_cache
 @staff_login_required

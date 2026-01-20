@@ -16,22 +16,26 @@ urlpatterns = [
     path("signup/", auth_views.signup_page, name="signup"),
     path("home/",auth_views.home_page,name="home"),
 
+    # AUTHENTICATION – ADMIN - STAFF
+    path("admin/auth_login/", auth_views.admin_staff_login, name="auth_login"),
+    path("admin/auth_logout/", auth_views.admin_staff_logout, name="auth_logout"),
+
     # AUTHENTICATION – ADMIN
-    path("admin/login/", auth_views.admin_login, name="admin_login"),
     path("admin/add/", auth_views.admin_add, name="admin_add"),
+    path("admin/edit/<int:user_id>/", auth_views.admin_page, name="admin_page"),
     path("admin/admin_page/", auth_views.admin_page, name="admin_page"),
-    path("admin/delete/", auth_views.admin_logout, name="admin_logout"),
-    path("admin/logout/", auth_views.admin_logout, name="admin_logout"),
+    path("admin/delete/<int:user_id>/", auth_views.admin_delete, name="admin_delete"),
+    
+    # AUTHENTICATION – STAFF
+    
+
 
     # ================= ADMIN =================
-    path("admin/login/", auth_views.admin_login, name="admin_login"),
-    path("admin/logout/", auth_views.admin_logout, name="admin_logout"),
     path("admin/dashboard/", admin_views.admin_dashboard_view, name="dashboard"),
     path("admin/users/", admin_views.admin_user_list, name="user_list"),
-    
-    #staff
 
     
+
     # OTP VERIFICATION
     path("verify-otp/", otp_views.verify_otp, name="verify_otp"),
     path("resend-otp/", otp_views.resend_otp, name="resend_otp"),

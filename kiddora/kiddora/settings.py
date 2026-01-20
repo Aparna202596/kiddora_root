@@ -65,16 +65,19 @@ INSTALLED_APPS = [
 SITE_ID = 1
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
-    },
-    'facebook': {
-        'METHOD': 'oauth2',
-        'SCOPE': ['email', 'public_profile'],
-        'FIELDS': ['id', 'email', 'name'],
-        'VERIFIED_EMAIL': False,
-    },
-}
+        'APP': {
+            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+            'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
+            'key': ''
+        }
+    }
+    # 'facebook': {
+    #     'METHOD': 'oauth2',
+    #     'SCOPE': ['email', 'public_profile'],
+    #     'FIELDS': ['id', 'email', 'name'],
+    #     'VERIFIED_EMAIL': False,
+    # },
+}   
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -146,7 +149,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # allauth settings
 AUTHENTICATION_BACKENDS = (
-    'accounts.backends.EmailBackend',
+    'accounts.backends.CustomBackend',
     'django.contrib.auth.backends.ModelBackend',  # default
     'allauth.account.auth_backends.AuthenticationBackend',  # allauth
 )
@@ -163,14 +166,15 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'  # can set 'mandatory'
 LOGIN_REDIRECT_URL = 'store:home'
 LOGOUT_REDIRECT_URL = 'store:anonymous_home'
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = "email"
+#ACCOUNT_EMAIL_REQUIRED = True
+#ACCOUNT_USERNAME_REQUIRED = True
+#ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
@@ -204,4 +208,3 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-
