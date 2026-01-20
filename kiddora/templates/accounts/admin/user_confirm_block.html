@@ -1,0 +1,59 @@
+{% extends "base_admin.html" %}
+{% block content %}
+<style>
+    .confirm-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        background-color: #f8f9fa;
+    }
+
+    .confirm-card {
+        background: #ffffff;
+        padding: 40px 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .confirm-card h2 {
+        margin-bottom: 20px;
+        color: #dc3545;
+    }
+
+    .confirm-card p {
+        font-size: 16px;
+        margin-bottom: 30px;
+        color: #333;
+    }
+
+    .confirm-card button {
+        background-color: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+    }
+
+    .confirm-card button:hover {
+        background-color: #c82333;
+    }
+</style>
+
+<div class="confirm-container">
+    <div class="confirm-card">
+        <h2>Confirm Block</h2>
+        <p>Are you sure you want to block <strong>{{ user.username }}</strong>?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit">Confirm</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

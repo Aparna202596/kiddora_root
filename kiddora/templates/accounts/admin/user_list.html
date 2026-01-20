@@ -1,0 +1,203 @@
+{% extends "base_admin.html" %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+.customer-container {
+    background: #fff;
+    padding: 24px;
+    border-radius: 14px;
+}
+
+.customer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.customer-header h2 {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 12px;
+}
+
+.filter-bar input,
+.filter-bar select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
+.filter-bar button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #f06292;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.filter-bar a {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.customer-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.customer-table th,
+.customer-table td {
+    padding: 14px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.customer-table th {
+    background: #f8f8f8;
+    font-weight: 600;
+}
+
+.customer-table tr {
+    border-bottom: 1px solid #eee;
+}
+
+.status-active {
+    color: #2ecc71;
+    font-weight: 600;
+}
+
+.status-blocked {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.action-icons a {
+    margin-right: 12px;
+    font-size: 16px;
+}
+
+.action-block { color: #e74c3c; }
+.action-unblock { color: #2ecc71; }
+.action-delete { color: #555; }
+
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pagination a {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+}
+</style>
+
+<div class="customer-container">
+
+    <!-- HEADER -->
+    <div class="customer-header">
+        <h2>Customer List</h2>
+
+        <form method="get" class="filter-bar">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search customer">
+            <select name="status">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="blocked">Blocked</option>
+            </select>
+            <button type="submit"><i class="fa fa-search"></i></button>
+            <a href="{% url 'accounts:admin_user_list' %}">Clear</a>
+        </form>
+    </div>
+
+    <!-- TABLE -->
+    <table class="customer-table">
+        <thead>
+            <tr>
+                <th>Customer Name / Email</th>
+                <th>Customer ID</th>
+                <th>Orders</th>
+                <th>Balance (₹)</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for u in users %}
+            <tr>
+                <td>{{ u.full_name|default:u.email }}</td>
+                <td>#{{ u.id }}</td>
+                <td>{{ u.total_orders|default:"0" }}</td>
+                <td>₹ {{ u.balance|default:"0" }}</td>
+
+                <td>
+                    {% if u.is_active %}
+                        <span class="status-active">Active</span>
+                    {% else %}
+                        <span class="status-blocked">Blocked</span>
+                    {% endif %}
+                </td>
+
+                <td class="action-icons">
+                    {% if u.is_active %}
+                        <a href="{% url 'accounts:block_user' u.id %}"
+                            class="action-block"
+                            title="Block User">
+                            <i class="fa-solid fa-user-slash"></i>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:unblock_user' u.id %}"
+                            class="action-unblock"
+                            title="Unblock User">
+                            <i class="fa-solid fa-user-check"></i>
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'accounts:delete_user' u.id %}"
+                            class="action-delete"
+                            title="Delete User">
+                            <i class="fa-solid fa-trash"></i>
+                        </a>
+
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6">No customers found.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- PAGINATION -->
+    <div class="pagination">
+        {% if users.has_previous %}
+            <a href="?page={{ users.previous_page_number }}">Prev</a>
+        {% endif %}
+        {% if users.has_next %}
+            <a href="?page={{ users.next_page_number }}">Next</a>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
