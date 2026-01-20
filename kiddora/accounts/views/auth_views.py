@@ -118,9 +118,9 @@ def admin_staff_login(request):
     # If already logged in, redirect based on role
     if request.user.is_authenticated:
         if request.user.role == CustomUser.ROLE_ADMIN:
-            return redirect("admin_page")
+            return redirect("accounts:admin_dashboard")
         if request.user.role == CustomUser.ROLE_STAFF:
-            return redirect("staff_dashboard")
+            return redirect("accounts:staff_dashboard")
     if request.method == "POST":
         identifier = request.POST.get("username") or request.POST.get("email")
         password = request.POST.get("password")
@@ -148,7 +148,7 @@ def admin_staff_login(request):
         # LOGIN
         login(request, user)
         # Remember-me cookie
-        response = (redirect("admin_page") if user.role == CustomUser.ROLE_ADMIN else redirect("staff_dashboard"))
+        response = (redirect("accounts:admin_dashboard") if user.role == CustomUser.ROLE_ADMIN else redirect("accounts:staff_dashboard"))
         if remember_me:
             cookie_name = ("remember_admin"if user.role == CustomUser.ROLE_ADMIN else "remember_staff")
             response.set_cookie(cookie_name,identifier, max_age=7 * 24 * 60 * 60,)
@@ -170,95 +170,4 @@ def admin_staff_logout(request):
     elif role == CustomUser.ROLE_STAFF:
         response.delete_cookie("remember_staff")
     return response
-
-#admin add user
-@never_cache
-@admin_login_required
-def admin_add(request):
-    error = ""
-    success = ""
-    if request.method == "POST":
-        username = request.POST["staffname"]
-        email = request.POST["email"]
-        password = request.POST["password"]
-        c_password = request.POST["c_password"]
-        if User.objects.filter(username__iexact=username).exists():
-            error = "Staff already exists."
-        elif len(username) < 6:
-            error = "Username must be at least 6 characters."
-        elif re.search(r"\s", username):
-            error = "Username cannot contain spaces."
-        elif User.objects.filter(email=email).exists():
-            error = "Email already exists."
-        elif len(password) < 6:
-            error = "Password must be at least 6 characters."
-        elif password != c_password:
-            error = "Passwords do not match."
-        else:
-            User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                role=CustomUser.ROLE_STAFF,
-                is_staff=True,
-                is_active=True,)
-            success = "Staff user created successfully."
-    return render(request,"accounts/auth/admin_add.html",{"error": error, "success": success},)
-
-#admin page
-@never_cache
-@admin_login_required
-def admin_page(request):
-    if request.user.role != CustomUser.ROLE_ADMIN:
-        return redirect("store:home")
-    query = request.GET.get("q", "")
-    staff_users = User.objects.filter(role=CustomUser.ROLE_STAFF)
-    if query:
-        staff_users = staff_users.filter(username__icontains=query)
-    return render(request,"accounts/admin/admin_dashboard.html",{"users": staff_users,"query": query,},)
-
-# ADMIN EDIT
-@never_cache
-@admin_login_required
-def admin_edit(request, id):
-    if request.user.role != CustomUser.ROLE_ADMIN:
-        return redirect("store:home")
-    user = get_object_or_404(User, id=id, role=CustomUser.ROLE_STAFF)
-    error = ""
-    if request.method == "POST":
-        username = request.POST["username"]
-        email = request.POST["email"]
-        if User.objects.filter(username=username).exclude(id=user.id).exists():
-            error = "Username already exists."
-        elif len(username) < 6 or re.search(r"\s", username):
-            error = "Username must be at least 6 characters and contain no spaces."
-        elif User.objects.filter(email=email).exclude(id=user.id).exists():
-            error = "Email already exists."
-        else:
-            user.username = username
-            user.email = email
-            user.save()
-            return redirect("admin_page")
-    return render(request,"staff_edit.html",{"user": user, "error": error},)
-
-# ADMIN  DELETE
-@never_cache
-@admin_login_required
-def admin_delete(request, id):
-    if request.user.role != CustomUser.ROLE_ADMIN:
-        return redirect("store:home")
-    user = get_object_or_404(User, id=id, role=CustomUser.ROLE_STAFF)
-    if request.method == "POST":
-        user.delete()
-    return redirect("admin_page")
-
-
-
-
-
-@never_cache
-@staff_login_required
-def staff_dashboard(request):
-    if request.user.role != CustomUser.ROLE_STAFF:
-        return redirect("store:home")
-    return render(request,"admin/staff_dashboard.html",{"staff": request.user,},)
+    

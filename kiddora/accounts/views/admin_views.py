@@ -10,50 +10,13 @@ from orders.models import Order, OrderItem
 from payments.models import Payment
 from accounts.decorators import admin_login_required,user_login_required
 from django.contrib.auth import get_user_model
+from django.views.decorators.cache import never_cache
+from accounts.decorators import user_login_required,admin_login_required,staff_login_required
+import re
 
-# ADMIN USER LIST
-@admin_login_required
-def admin_user_list(request):
-    query = request.GET.get("q", "").strip()
-    users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER)
-    if query:
-        users = users.filter(
-            Q(username__icontains=query) |
-            Q(email__icontains=query) |
-            Q(phone__icontains=query)
-        )
-    users = users.order_by("-date_joined")
-    paginator = Paginator(users, 10)
-    page_number = request.GET.get("page", 1)
-    page_obj = paginator.get_page(page_number)
-    context = {
-        "users": page_obj,
-        "query": query,
-    }
-    return render(request, "accounts/admin/user_list.html",context)
+User = get_user_model()
 
-# BLOCK USER
-@admin_login_required
-def block_user(request, user_id):
-    user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
-    if request.method == "POST":
-        user.is_active = False
-        user.save()
-        messages.success(request, f"{user.username} has been blocked")
-        return redirect("accounts:user_list")
-    return render(request, "accounts/admin/user_confirm_block.html", {"user": user})
-
-# UNBLOCK USER
-@admin_login_required
-def unblock_user(request, user_id):
-    user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
-    if request.method == "POST":
-        user.is_active = True
-        user.save()
-        messages.success(request, f"{user.username} has been unblocked")
-        return redirect("accounts:user_list")
-    return render(request, "accounts/admin/user_confirm_unblock.html", {"user": user})
-
+@never_cache
 @admin_login_required
 def admin_dashboard_view(request):
     today = now()
@@ -81,58 +44,154 @@ def admin_dashboard_view(request):
     }
     return render(request, "accounts/admin/admin_dashboard.html", context)
 
+# ADMIN USER LIST
+@never_cache
 @admin_login_required
-def user_management_view(request):
-    search_query = request.GET.get('q', '').strip()
-    users = CustomUser.objects.filter(
-        role=CustomUser.ROLE_CUSTOMER
-    ).order_by('-date_joined')
-    if search_query:
+def customer_list(request):
+    query = request.GET.get("q", "").strip()
+    users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER).order_by('-date_joined')
+    if query:
         users = users.filter(
-            Q(email__icontains=search_query) |
-            Q(full_name__icontains=search_query) |
-            Q(phone__icontains=search_query)
+            Q(username__icontains=query) |
+            Q(email__icontains=query) |
+            Q(phone__icontains=query)
         )
+    users = users.order_by("-date_joined")
     paginator = Paginator(users, 10)
-    page_number = request.GET.get('page')
+    page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
-    return render(request, 'accounts/admin/user_list.html', {
-        'users': page_obj,
-        'search_query': search_query
-    })
+    context = {"users": page_obj,"query": query,}
+    return render(request, "accounts/admin/customer_list.html",context)
 
+# BLOCK USER
+@never_cache
 @admin_login_required
-def staff_management_view(request):
-    search_query = request.GET.get('q', '').strip()
-    users = CustomUser.objects.filter(
-        role=CustomUser.ROLE_STAFF
-    ).order_by('-date_joined')
-    if search_query:
-        users = users.filter(
-            Q(email__icontains=search_query) |
-            Q(full_name__icontains=search_query) |
-            Q(phone__icontains=search_query)
-        )
-    paginator = Paginator(users, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    return render(request, 'accounts/admin/user_list.html', {
-        'users': page_obj,
-        'search_query': search_query
-    })
+def block_user(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
+    if request.method == "POST":
+        user.is_active = False
+        user.save()
+        messages.success(request, f"{user.username} has been blocked")
+        return redirect("accounts:customer_list")
+    return render(request, "accounts/admin/user_confirm_block.html", {"user": user})
 
+# UNBLOCK USER
+@never_cache
+@admin_login_required
+def unblock_user(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
+    if request.method == "POST":
+        user.is_active = True
+        user.save()
+        messages.success(request, f"{user.username} has been unblocked")
+        return redirect("accounts:customer_list")
+    return render(request, "accounts/admin/user_confirm_unblock.html", {"user": user})
+
+@never_cache
 @admin_login_required
 def delete_user_view(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
-
     if request.user.id == user.id:
         messages.error(request, "You cannot delete your own account.")
-        return redirect("accounts:user_list")
-
+        return redirect("accounts:customer_list")
     if request.method == "POST":
         username = user.username
         user.delete()
         messages.success(request, f"User {username} has been deleted successfully.")
-        return redirect("accounts:user_list")
-
+        return redirect("accounts:customer_list")
     return render(request, "accounts/admin/delete_user.html", {"user": user})
+
+@admin_login_required
+def staff_list(request):
+    query = request.GET.get("q","").strip()
+    users = CustomUser.objects.filter(role=CustomUser.ROLE_STAFF).order_by('-date_joined')
+    if query:
+        users = users.filter(
+            Q(username__icontains=query) |
+            Q(email__icontains=query) |
+            Q(phone__icontains=query)
+        )
+            # Q(email__icontains=query) |
+            # Q(full_name__icontains=query) |
+            # Q(phone__icontains=query)
+    users = users.order_by("-date_joined")
+    paginator = Paginator(users, 10)
+    page_number = request.GET.get("page",1)
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'accounts/admin/staff_list.html', {"users": page_obj,"query": query})
+
+#admin add user
+@never_cache
+@admin_login_required
+def admin_add(request):
+    error = ""
+    success = ""
+    if request.method == "POST":
+        username = request.POST["staffname"]
+        email = request.POST["email"]
+        password = request.POST["password"]
+        c_password = request.POST["c_password"]
+        if User.objects.filter(username__iexact=username).exists():
+            error = "Staff already exists."
+        elif len(username) < 6:
+            error = "Username must be at least 6 characters."
+        elif re.search(r"\s", username):
+            error = "Username cannot contain spaces."
+        elif User.objects.filter(email=email).exists():
+            error = "Email already exists."
+        elif len(password) < 6:
+            error = "Password must be at least 6 characters."
+        elif password != c_password:
+            error = "Passwords do not match."
+        else:
+            User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                role=CustomUser.ROLE_STAFF,
+                is_staff=True,
+                is_active=True,)
+            success = "Staff user created successfully."
+    return render(request,"accounts/auth/admin_add.html",{"error": error, "success": success},)
+
+# ADMIN EDIT
+@never_cache
+@admin_login_required
+def admin_edit(request, id):
+    if request.user.role != CustomUser.ROLE_ADMIN:
+        return redirect("accounts:staff_dashboard")
+    user = get_object_or_404(User, id=id, role=CustomUser.ROLE_STAFF)
+    error = ""
+    if request.method == "POST":
+        username = request.POST["username"]
+        email = request.POST["email"]
+        if User.objects.filter(username=username).exclude(id=user.id).exists():
+            error = "Username already exists."
+        elif len(username) < 6 or re.search(r"\s", username):
+            error = "Username must be at least 6 characters and contain no spaces."
+        elif User.objects.filter(email=email).exclude(id=user.id).exists():
+            error = "Email already exists."
+        else:
+            user.username = username
+            user.email = email
+            user.save()
+            return redirect("accounts:staff_list")
+    return render(request,"staff_edit.html",{"user": user, "error": error},)
+
+# ADMIN  DELETE
+@never_cache
+@admin_login_required
+def admin_delete(request, id):
+    if request.user.role != CustomUser.ROLE_ADMIN:
+        return redirect("store:home")
+    user = get_object_or_404(User, id=id, role=CustomUser.ROLE_STAFF)
+    if request.method == "POST":
+        user.delete()
+    return redirect("accounts:staff_list")
+
+@never_cache
+@staff_login_required
+def staff_dashboard(request):
+    if request.user.role != CustomUser.ROLE_STAFF:
+        return redirect("accounts:admin_dashboard")
+    return render(request,"accounts/admin/staff_dashboard.html",{"staff": request.user,},)
