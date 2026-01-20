@@ -16,26 +16,26 @@ User = get_user_model()
 
 #User_logout
 @never_cache
-@user_login_required
 def user_logout(request):
-    if request.user.is_authenticated:
-        logout(request)
-        response = redirect("store:anonymous_home")
-        response.delete_cookie("remember_user")
-        return response
-    return redirect("store:anonymous_home")
+    logout(request)
+    request.session.flush()
+    response = redirect("store:anonymous_home")
+    response.delete_cookie("remember_user")
+    return response
 
 #User_login
 @never_cache
 def user_login(request):
     if request.user.is_authenticated:
-        return redirect("store:home")
+        if request.user.role == CustomUser.ROLE_CUSTOMER:
+            return redirect("store:home")
+    
     remembered_user = request.COOKIES.get("remember_user", "")
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-        user = authenticate(request, email=username, password=password)
+        user = authenticate(request, username=username, password=password)
         if user and user.role == CustomUser.ROLE_CUSTOMER:
             if not user.email_verified:
                 messages.error(request, "Please verify your email first")
@@ -113,16 +113,6 @@ def signup_page(request):
         #     success = 'Account created successfully. Please log in'
     return render(request,'accounts/auth/signup.html',{'error':error,'success':success})
 
-#home page
-@never_cache
-@user_login_required
-def home_page(request):
-    if not request.user.is_authenticated:
-        return redirect('account:login')
-    # if request.user.is_superuser:
-    #     return redirect('admin_page')
-    return render(request, 'store/home.html')
-
 @never_cache
 def admin_staff_login(request):
     # If already logged in, redirect based on role
@@ -131,29 +121,23 @@ def admin_staff_login(request):
             return redirect("admin_page")
         if request.user.role == CustomUser.ROLE_STAFF:
             return redirect("staff_dashboard")
-
     if request.method == "POST":
         identifier = request.POST.get("username") or request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-
         # Authenticate user
         user = authenticate(request, username=identifier, password=password)
-
         if not user:
             messages.error(request, "Invalid credentials")
             return redirect("accounts:admin_staff_login")
-
         # Block inactive accounts
         if not user.is_active:
             messages.error(request, "Your account is blocked")
             return redirect("accounts:blocked")
-
         # ROLE CHECK
         if user.role not in [CustomUser.ROLE_ADMIN, CustomUser.ROLE_STAFF]:
             messages.error(request, "Access denied")
             return redirect("accounts:admin_staff_login")
-
         # Admin domain validation
         if user.role == CustomUser.ROLE_ADMIN and not user.email.endswith("@kiddora.com"):
             messages.error(
@@ -161,31 +145,14 @@ def admin_staff_login(request):
                 "Admin email must be <admin_name>@kiddora.com",
             )
             return redirect("accounts:admin_staff_login")
-
         # LOGIN
         login(request, user)
-
         # Remember-me cookie
-        response = (
-            redirect("admin_page")
-            if user.role == CustomUser.ROLE_ADMIN
-            else redirect("staff_dashboard")
-        )
-
+        response = (redirect("admin_page") if user.role == CustomUser.ROLE_ADMIN else redirect("staff_dashboard"))
         if remember_me:
-            cookie_name = (
-                "remember_admin"
-                if user.role == CustomUser.ROLE_ADMIN
-                else "remember_staff"
-            )
-            response.set_cookie(
-                cookie_name,
-                identifier,
-                max_age=7 * 24 * 60 * 60,
-            )
-
+            cookie_name = ("remember_admin"if user.role == CustomUser.ROLE_ADMIN else "remember_staff")
+            response.set_cookie(cookie_name,identifier, max_age=7 * 24 * 60 * 60,)
         return response
-
     return render(request, "accounts/auth/admin_staff_login.html")
 
 @never_cache
@@ -204,13 +171,10 @@ def admin_staff_logout(request):
         response.delete_cookie("remember_staff")
     return response
 
-
 #admin add user
 @never_cache
 @admin_login_required
 def admin_add(request):
-    # if request.user.role != CustomUser.ROLE_ADMIN:
-    #     return redirect("store:home")
     error = ""
     success = ""
     if request.method == "POST":

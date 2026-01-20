@@ -14,7 +14,6 @@ urlpatterns = [
     path("login/", auth_views.user_login, name="login"),
     path("logout/", auth_views.user_logout, name="logout"),
     path("signup/", auth_views.signup_page, name="signup"),
-    path("home/",auth_views.home_page,name="home"),
 
     # AUTHENTICATION – ADMIN - STAFF
     path("admin/auth_login/", auth_views.admin_staff_login, name="auth_login"),
@@ -22,7 +21,7 @@ urlpatterns = [
 
     # AUTHENTICATION – ADMIN
     path("admin/add/", auth_views.admin_add, name="admin_add"),
-    path("admin/edit/<int:user_id>/", auth_views.admin_page, name="admin_page"),
+    path("admin/edit/<int:id>/", auth_views.admin_edit, name="admin_edit"),
     path("admin/admin_page/", auth_views.admin_page, name="admin_page"),
     path("admin/delete/<int:user_id>/", auth_views.admin_delete, name="admin_delete"),
     
@@ -66,7 +65,4 @@ urlpatterns = [
     path('admin/users/delete/<int:user_id>/',admin_views.delete_user_view,name="delete_user"),
     
     path('blocked/',TemplateView.as_view(template_name="accounts/auth/blocked.html"),name="blocked")
-
 ]
-
-

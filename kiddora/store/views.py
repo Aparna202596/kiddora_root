@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
+from django.views.decorators.cache import never_cache
 from accounts.decorators import user_login_required
 from products.models import Category, Product
 
@@ -15,7 +16,7 @@ def anonymous_home(request):
         'categories': categories,
         'products': products
     })
-
+@never_cache
 @user_login_required
 def home(request):
     categories = Category.objects.filter(is_active=True)
