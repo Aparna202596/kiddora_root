@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Access Blocked</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #f44336, #b71c1c);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .blocked-card {
+            background: #ffffff;
+            padding: 40px 30px;
+            border-radius: 16px;
+            text-align: center;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            animation: slideUp 0.8s ease;
+        }
+
+        .blocked-icon {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: #f44336;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 42px;
+            margin: 0 auto 20px;
+            animation: pulse 1.6s infinite;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        p {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .blocked-btn {
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 8px;
+            background: #f44336;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .blocked-btn:hover {
+            background: #d32f2f;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(244,67,54,0.6);
+            }
+            70% {
+                box-shadow: 0 0 0 18px rgba(244,67,54,0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(244,67,54,0);
+            }
+        }
+    </style>
+</head>
+    <body>
+        <div class="blocked-card">
+            <div class="blocked-icon">⛔</div>
+            <h1>Access Blocked</h1>
+            <p>
+                Your account has been temporarily blocked by the administrator.
+                <br>
+                Please contact support or the admin team for further assistance.
+            </p>
+            {% if user.is_authenticated %}
+                {% if user.role == 'customer' %}
+                    <a href="{% url 'store:home' %}">Go to Home</a>
+                {% elif user.role == 'staff' %}
+                    <a href="{% url 'accounts:staff_dashboard' %}">Staff Dashboard</a>
+                {% elif user.role == 'admin' %}
+                    <a href="{% url 'accounts:admin_dashboard' %}">Admin Dashboard</a>
+                {% endif %}
+                {% else %}
+                    <a href="{% url 'accounts:login' %}">Login</a>
+            {% endif %}
+        </div>
+    </body>
+</html>

@@ -119,6 +119,12 @@
 
         <form method="get" class="filter-bar">
             <input type="text" name="q" value="{{ query }}" placeholder="Search customer">
+            <button type="submit">Search</button>
+            {% if query %}
+                <a href="{% url 'accounts:customer_list' %}" class="btn btn-secondary">
+                    Clear
+                </a>
+            {% endif %}
             <select name="status">
                 <option value="">All Status</option>
                 <option value="active">Active</option>

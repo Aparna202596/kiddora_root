@@ -1,12 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from accounts.models import UserAddress
 from accounts.decorators import user_login_required
+from django.views.decorators.cache import never_cache
 
+@never_cache
 @user_login_required
 def address_list(request):
     addresses = request.user.addresses.all()
     return render(request, "accounts/profile/addresses.html", {"addresses": addresses})
 
+@never_cache
 @user_login_required
 def address_add(request):
     if request.method == "POST":
@@ -26,7 +29,7 @@ def address_add(request):
         return redirect("accounts:address_list")
     return render(request, "accounts/profile/add_address.html")
 
-
+@never_cache
 @user_login_required
 def address_edit(request, address_id):
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
@@ -45,7 +48,7 @@ def address_edit(request, address_id):
         return redirect("accounts:address_list")
     return render(request, "accounts/profile/edit_address.html", {"address": address})
 
-
+@never_cache
 @user_login_required
 def address_delete(request, address_id):
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)

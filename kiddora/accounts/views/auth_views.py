@@ -13,7 +13,7 @@ import re
 from django.conf import settings
 
 User = get_user_model()
-
+OTP_EXPIRY_MINUTES=5
 #User_logout
 @never_cache
 def user_logout(request):
@@ -61,7 +61,8 @@ def signup_page(request):
     error=''
     success=''
     if request.method=='POST':
-        username=request.POST['username']
+        #username=request.POST['username']
+        username=request.POST.get('username','').strip()
         email=request.POST['email']
         password1=request.POST['password1']
         password2=request.POST['password2']
@@ -69,12 +70,12 @@ def signup_page(request):
             messages.error(request,"Username already exists!")
             return redirect("accounts:signup")
         elif len(username)<6:
-            messages.error='Username atleast contain 6 characters, Retry!'
+            messages.error(request,"Username atleast contain 6 characters, Retry!")
             return redirect("accounts:signup")
         elif re.search(r'\s',username):
             messages.error(request,"Username cannot contain spaces!")
             return redirect("accounts:signup")
-        elif User.objects.filter(email=email).exists():
+        elif User.objects.filter(email__iexact=email).exists():
             messages.error(request,"Email already exists, Try new!")
             return redirect("accounts:signup")
         elif len(password1) < 6:
@@ -95,17 +96,22 @@ def signup_page(request):
             is_active=False,
             email_verified=False,
         )
-        otp=generate_otp()
-        user.otp = otp
+        user.otp = generate_otp()
         user.otp_created_at = timezone.now()
         user.save()
 
-        send_mail(
-            subject="Verify your Kiddora account",
-            message=f"Your OTP is {otp}. It is valid for 2 minutes.",
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[user.email],
-        )
+        try:
+            send_mail(
+                subject="Verify your Kiddora account",
+                message=f"Your OTP is {user.otp}. It is valid for {OTP_EXPIRY_MINUTES} minutes.",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[user.email],
+                fail_silently=False
+            )
+        except Exception as e:
+            messages.error(request, "Failed to send OTP. Try again later.")
+            return redirect("accounts:signup")
+        
         request.session["verify_user_id"] = user.id
         return redirect("accounts:verify_otp")
         # else:
@@ -129,7 +135,7 @@ def admin_staff_login(request):
         user = authenticate(request, username=identifier, password=password)
         if not user:
             messages.error(request, "Invalid credentials")
-            return redirect("accounts:admin_staff_login")
+            return redirect("accounts:auth_login")
         # Block inactive accounts
         if not user.is_active:
             messages.error(request, "Your account is blocked")
@@ -137,14 +143,14 @@ def admin_staff_login(request):
         # ROLE CHECK
         if user.role not in [CustomUser.ROLE_ADMIN, CustomUser.ROLE_STAFF]:
             messages.error(request, "Access denied")
-            return redirect("accounts:admin_staff_login")
+            return redirect("accounts:auth_login")
         # Admin domain validation
         if user.role == CustomUser.ROLE_ADMIN and not user.email.endswith("@kiddora.com"):
             messages.error(
                 request,
                 "Admin email must be <admin_name>@kiddora.com",
             )
-            return redirect("accounts:admin_staff_login")
+            return redirect("accounts:auth_login")
         # LOGIN
         login(request, user)
         # Remember-me cookie
@@ -163,7 +169,7 @@ def admin_staff_logout(request):
     if role not in [CustomUser.ROLE_ADMIN, CustomUser.ROLE_STAFF]:
         return redirect("store:home")
     logout(request)
-    response = redirect("accounts:admin_staff_login")
+    response = redirect("accounts:auth_login")
     # Remove role-specific remember-me cookie
     if role == CustomUser.ROLE_ADMIN:
         response.delete_cookie("remember_admin")

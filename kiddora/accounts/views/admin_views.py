@@ -127,17 +127,17 @@ def admin_add(request):
     error = ""
     success = ""
     if request.method == "POST":
-        username = request.POST["staffname"]
-        email = request.POST["email"]
-        password = request.POST["password"]
-        c_password = request.POST["c_password"]
-        if User.objects.filter(username__iexact=username).exists():
+        username = request.POST.get("staffname", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password")
+        c_password = request.POST.get("c_password")
+        if re.search(r"\s", email):
+            error = "Email cannot contain spaces."
+        elif User.objects.filter(username__iexact=username).exists():
             error = "Staff already exists."
-        elif len(username) < 6:
-            error = "Username must be at least 6 characters."
-        elif re.search(r"\s", username):
-            error = "Username cannot contain spaces."
-        elif User.objects.filter(email=email).exists():
+        elif len(username) < 6 or re.search(r"\s", username):
+            error = "Username must be at least 6 characters and contain no spaces."
+        elif User.objects.filter(email__iexact=email).exists():
             error = "Email already exists."
         elif len(password) < 6:
             error = "Password must be at least 6 characters."
@@ -150,17 +150,18 @@ def admin_add(request):
                 password=password,
                 role=CustomUser.ROLE_STAFF,
                 is_staff=True,
-                is_active=True,)
+                is_active=True,
+            )
             success = "Staff user created successfully."
     return render(request,"accounts/auth/admin_add.html",{"error": error, "success": success},)
 
 # ADMIN EDIT
 @never_cache
 @admin_login_required
-def admin_edit(request, id):
+def admin_edit(request, user_id):
     if request.user.role != CustomUser.ROLE_ADMIN:
         return redirect("accounts:staff_dashboard")
-    user = get_object_or_404(User, id=id, role=CustomUser.ROLE_STAFF)
+    user = get_object_or_404(User, id=user_id, role=CustomUser.ROLE_STAFF)
     error = ""
     if request.method == "POST":
         username = request.POST["username"]
@@ -176,15 +177,15 @@ def admin_edit(request, id):
             user.email = email
             user.save()
             return redirect("accounts:staff_list")
-    return render(request,"staff_edit.html",{"user": user, "error": error},)
+    return render(request,"accounts/admin/staff_edit.html",{"user": user, "error": error},)
 
 # ADMIN  DELETE
 @never_cache
 @admin_login_required
-def admin_delete(request, id):
+def admin_delete(request, user_id):
     if request.user.role != CustomUser.ROLE_ADMIN:
         return redirect("store:home")
-    user = get_object_or_404(User, id=id, role=CustomUser.ROLE_STAFF)
+    user = get_object_or_404(User, id=user_id, role=CustomUser.ROLE_STAFF)
     if request.method == "POST":
         user.delete()
     return redirect("accounts:staff_list")
@@ -195,3 +196,7 @@ def staff_dashboard(request):
     if request.user.role != CustomUser.ROLE_STAFF:
         return redirect("accounts:admin_dashboard")
     return render(request,"accounts/admin/staff_dashboard.html",{"staff": request.user,},)
+
+@never_cache
+def blocked(request):
+    return render(request, "accounts/blocked.html")

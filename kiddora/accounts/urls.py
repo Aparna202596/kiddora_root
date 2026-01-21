@@ -24,9 +24,9 @@ urlpatterns = [
     path("admin/customers/", admin_views.customer_list, name="customer_list"),
     
     # ADMIN – USER MANAGEMENT
-    path("admin/customers/block/<int:id>/", admin_views.block_user, name="block_user"),
-    path("admin/customers/unblock/<int:id>/", admin_views.unblock_user, name="unblock_user"),
-    path('admin/customers/delete/<int:id>/',admin_views.delete_user_view,name="delete_user"),
+    path("admin/customers/block/<int:user_id>/", admin_views.block_user, name="block_user"),
+    path("admin/customers/unblock/<int:user_id>/", admin_views.unblock_user, name="unblock_user"),
+    path('admin/customers/delete/<int:user_id>/',admin_views.delete_user_view,name="delete_user"),
     
     # AUTHENTICATION – STAFF
     path("admin/staff_dashboard/", admin_views.staff_dashboard, name="staff_dashboard"),
@@ -34,8 +34,8 @@ urlpatterns = [
     # ADMIN – STAFF MANAGEMENT
     path("admin/staff_list/", admin_views.staff_list, name="staff_list"),
     path("admin/add/", admin_views.admin_add, name="admin_add"),
-    path("admin/edit/<int:id>/", admin_views.admin_edit, name="admin_edit"),
-    path("admin/delete/<int:id>/", admin_views.admin_delete, name="admin_delete"),
+    path("admin/edit/<int:user_id>/", admin_views.admin_edit, name="admin_edit"),
+    path("admin/delete/<int:usid>/", admin_views.admin_delete, name="admin_delete"),
     
     # OTP VERIFICATION
     path("verify-otp/", otp_views.verify_otp, name="verify_otp"),

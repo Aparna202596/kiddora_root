@@ -10,7 +10,11 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timedelta
 from accounts.models import CustomUser
+from django.views.decorators.cache import never_cache
 
+OTP_EXPIRY_MINUTES = 5
+
+@never_cache
 @user_login_required
 def profile_view(request):
     addresses = UserAddress.objects.filter(user=request.user)
@@ -19,6 +23,7 @@ def profile_view(request):
         "accounts/profile/profile.html",
         {"user": request.user, "addresses": addresses},)
 
+@never_cache
 @user_login_required
 def profile_edit(request):
     user = request.user
@@ -37,13 +42,34 @@ def profile_edit(request):
 def change_password(request):
     if request.method == "POST":
         user = request.user
-        if user.check_password(request.POST["current_password"]):
-            if request.POST["new_password"] == request.POST["confirm_password"]:
-                user.set_password(request.POST["new_password"])
-                user.save()
-                update_session_auth_hash(request, user)  # FIX
-                messages.success(request, "Password changed successfully")
-                return redirect("accounts:profile")
+        current_password = request.POST.get("current_password")
+        new_password = request.POST.get("new_password")
+        confirm_password = request.POST.get("confirm_password")
+
+        # CHECK CURRENT PASSWORD
+        if not user.check_password(current_password):
+            messages.error(request, "Current password is incorrect")
+            return redirect("accounts:change_password")
+
+        # CHECK PASSWORD MATCH
+        if new_password != confirm_password:
+            messages.error(request, "New passwords do not match")
+            return redirect("accounts:change_password")
+
+        # OPTIONAL: PASSWORD LENGTH CHECK
+        if len(new_password) < 6:
+            messages.error(request, "Password must be at least 6 characters")
+            return redirect("accounts:change_password")
+
+        # SUCCESS
+        user.set_password(new_password)
+        user.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "Password changed successfully")
+        return redirect("accounts:profile")
+
+    return render(request, "accounts/profile/change_password.html")
+
 
 @user_login_required
 def change_email(request):
@@ -59,15 +85,21 @@ def change_email(request):
         user.otp_created_at = timezone.now()
         user.save()
         # SEND OTP EMAIL (CRITICAL FIX)
-        send_mail(
-            subject="Email Change OTP",
-            message=f"Your OTP is {user.otp}. It is valid for 10 minutes.",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[new_email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject="Email Change OTP",
+                message=f"Your OTP is {user.otp}. It is valid for {OTP_EXPIRY_MINUTES} minutes.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[new_email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            messages.error(request, "Failed to send OTP. Try again later.")
+            return redirect("accounts:profile")
+        
         messages.success(request, "OTP sent to your new email address")
         return redirect("accounts:verify_email_otp")
+    
     return render(request, "accounts/profile/change_email.html")
 
 @user_login_required
@@ -80,7 +112,7 @@ def verify_email_otp(request):
             messages.error(request, "Invalid or expired session")
             return redirect("accounts:change_email")
         # OTP EXPIRY VALIDATION (CRITICAL FIX)
-        if timezone.now() > user.otp_created_at + timedelta(minutes=10):
+        if timezone.now() > user.otp_created_at + timedelta(minutes=OTP_EXPIRY_MINUTES):
             user.otp = None
             user.otp_created_at = None
             user.pending_email = None

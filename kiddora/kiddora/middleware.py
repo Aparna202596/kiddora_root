@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.http import HttpResponseForbidden
 from accounts.models import CustomUser
+from django.urls import reverse
 
 class AdminAccessMiddleware:
     """
@@ -14,10 +15,12 @@ class AdminAccessMiddleware:
 
     def __call__(self, request):
         if request.path.startswith("/accounts/admin/"):
+            if request.path == reverse("accounts:blocked"):
+                return self.get_response(request)
             if not request.user.is_authenticated:
-                return redirect("accounts:admin_login")
-            if request.user.role != "admin":
-                return redirect("accounts:admin_login")
+                return redirect("accounts:auth_login")
+            if request.user.role != CustomUser.ROLE_ADMIN:
+                return redirect("accounts:auth_login")
         return self.get_response(request)
     
     # def __init__(self, get_response):
@@ -27,11 +30,9 @@ class AdminAccessMiddleware:
     #     user = request.user
     #     if path.startswith(self.ADMIN_URL_PREFIXES):
     #         if not user.is_authenticated:
-    #             return redirect('accounts:admin_login')
+    #             return redirect('accounts:auth_login')
     #         if not user.is_active:
     #             return redirect('accounts:blocked')
     #         if user.role != CustomUser.ROLE_ADMIN:
     #             return HttpResponseForbidden("You are not authorized to access this page.")
     #     return self.get_response(request)
-
-    
