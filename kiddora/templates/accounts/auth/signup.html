@@ -1,7 +1,8 @@
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Signup | Kiddora</title>
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
 </head>
@@ -11,26 +12,40 @@
     <div class="auth-card">
         <div class="auth-left">
             <h2>Create Account</h2>
-            <form method="post">
-            {% csrf_token %}
 
-                <input type="text" name="full_name" placeholder="Full Name" required>
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <input type="text" name="username" placeholder="User Name" required>
                 <input type="email" name="email" placeholder="Email" required>
 
-                <input type="password" name="password" placeholder="Password" required>
-                <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+                <!-- MUST be password1 -->
+                <input type="password" name="password1" placeholder="Password" required>
+                <!-- MUST be password2 -->
+                <input type="password" name="password2" placeholder="Confirm Password" required>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <p class="error-text">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+
                 <button type="submit" class="primary-btn">Sign Up</button>
             </form>
+
             <p class="bottom-text">
                 Already have an account?
                 <a href="{% url 'accounts:login' %}">Login now!</a>
             </p>
         </div>
+
         <div class="auth-right">
-            <img src="{% static 'images/gcas_08.jpeg' %}">
+            <img src="{% static 'images/gcas_08.jpeg' %}" alt="Signup image">
         </div>
     </div>
 </div>
+
 </body>
 </html>
+
 

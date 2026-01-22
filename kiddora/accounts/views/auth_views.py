@@ -10,6 +10,7 @@ from datetime import timedelta
 from django.core.mail import send_mail
 from accounts.utils import generate_otp
 import re
+from django.db.models import Q
 from django.conf import settings
 
 User = get_user_model()
@@ -26,38 +27,46 @@ def user_logout(request):
 #User_login
 @never_cache
 def user_login(request):
-    if request.user.is_authenticated:
-        if request.user.role == CustomUser.ROLE_CUSTOMER:
-            return redirect("store:home")
+    if request.user.is_authenticated and request.user.role == CustomUser.ROLE_CUSTOMER:
+        return redirect("store:home")
     
     remembered_user = request.COOKIES.get("remember_user", "")
+
     if request.method == "POST":
-        username = request.POST.get("username")
+        identifier = request.POST.get("identifier")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-        user = authenticate(request, username=username, password=password)
+
+        try:
+            user_obj=User.objects.get(Q(email__iexact=identifier) | Q(username__iexact=identifier))
+            user = authenticate(request, email=user_obj.email, password=password)
+        except User.DoesNotExist:
+            user=None
+
         if user and user.role == CustomUser.ROLE_CUSTOMER:
             if not user.email_verified:
                 messages.error(request, "Please verify your email first")
                 return redirect("accounts:login")
+            
             elif not user.is_active:
                 messages.error(request, "Your account is blocked")
                 return redirect("accounts:blocked")
+            
             login(request, user)
             response = redirect("store:home")
+
             if remember_me:
-                response.set_cookie("remember_user",username,max_age=7 * 24 * 60 * 60,)
+                response.set_cookie("remember_user",identifier,max_age=7 * 24 * 60 * 60)
             else:
                 response.delete_cookie("remember_user")
             return response
+        
         messages.error(request, "Invalid username or password")
     return render(request,"accounts/auth/login.html",{"remembered_user": remembered_user},)
 
 #Signup
 @never_cache
 def signup_page(request):
-    if request.user.is_authenticated:
-        return redirect('store:home')
     error=''
     success=''
     if request.method=='POST':
@@ -89,7 +98,8 @@ def signup_page(request):
             return redirect("accounts:signup")
         
         user = User.objects.create_user(
-            username=username,
+            #username=username,
+            username=email.split("@")[0],
             email=email,
             password=password1,
             role=CustomUser.ROLE_CUSTOMER,
@@ -109,14 +119,12 @@ def signup_page(request):
                 fail_silently=False
             )
         except Exception as e:
+            print("EMAIL ERROR:", e)
             messages.error(request, "Failed to send OTP. Try again later.")
             return redirect("accounts:signup")
         
         request.session["verify_user_id"] = user.id
         return redirect("accounts:verify_otp")
-        # else:
-        #     #User.objects.create_user(username=username, email=email, password=password1)
-        #     success = 'Account created successfully. Please log in'
     return render(request,'accounts/auth/signup.html',{'error':error,'success':success})
 
 @never_cache

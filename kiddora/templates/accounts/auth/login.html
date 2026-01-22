@@ -1,8 +1,9 @@
 {% load static %}
 {% load socialaccount %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Login | Kiddora</title>
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
 </head>
@@ -13,32 +14,59 @@
         <div class="auth-left">
             <h2>Login</h2>
             <hr>
-                <a href="{% provider_login_url 'google' %}" class="btn btn-danger w-100">
-                    Login with Google
-                </a>
-                <a href="{% provider_login_url 'facebook' %}" class="btn btn-primary w-100 mt-2">
-                    Login with Facebook
-                </a>
+
+
+            {% comment %} <a href="{% provider_login_url 'google' %}" class="btn btn-danger w-100">
+                Login with Google
+            </a> {% endcomment %}
+            {% comment %} <a href="{% provider_login_url 'facebook' %}" class="btn btn-primary w-100 mt-2">
+                Login with Facebook
+            </a> {% endcomment %}
+
             <div class="divider">or</div>
-            <form method="post">
+
+            <form method="post" novalidate>
                 {% csrf_token %}
-                <input type="text" name="identifier" placeholder="Username or Email" required>
-                {% comment %} <input type="email" name="username" placeholder="Email" required> {% endcomment %}
-                <input type="password" name="password" placeholder="Password" required>
+
+                <input
+                    type="text"
+                    name="identifier"
+                    placeholder="Username or Email"
+                    value="{{ remembered_user }}"
+                    required
+                >
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    required
+                >
+
                 {% if messages %}
                     {% for message in messages %}
-                        <p>{{ message }}</p>
+                        <p class="error-text">{{ message }}</p>
                     {% endfor %}
                 {% endif %}
-                <a href="{% url 'accounts:forgot_password' %}">Forgot Password?</a><br>
+
+                <a href="{% url 'accounts:forgot_password' %}">
+                    Forgot Password?
+                </a><br>
+
                 <button type="submit" class="primary-btn">Login</button>
             </form>
+
             <p class="bottom-text">
-                New User? <a href="{% url 'accounts:signup' %}">Sign up now!</a>
+                New User?
+                <a href="{% url 'accounts:signup' %}">Sign up now!</a>
             </p>
         </div>
+
         <div class="auth-right">
-            <img src="{% static 'images/gcas_01.jpeg' %}">
+            <img src="{% static 'images/gcas_01.jpeg' %}" alt="Login image">
         </div>
     </div>
 </div>
+
+</body>
+</html>

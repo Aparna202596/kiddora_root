@@ -42,7 +42,8 @@ urlpatterns = [
     path("resend-otp/", otp_views.resend_otp, name="resend_otp"),
 
     # FORGOT PASSWORD (OTP FLOW)
-    path("forgot-password/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
+    path("forgot-password/",otp_views.forgot_password,name="forgot_password"),
+    path("verify-forgot-password/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
     path("reset-password/", otp_views.reset_password, name="reset_password"),
 
     #PROFILE

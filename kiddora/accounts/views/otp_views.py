@@ -98,6 +98,53 @@ def resend_otp(request):
 
     messages.success(request, "OTP resent successfully")
     return redirect("accounts:verify_otp")
+# FORGOT PASSWORD
+def forgot_password(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+
+        if not email:
+            messages.error(request, "Please enter your email address.")
+            return redirect("accounts:forgot_password")
+
+        try:
+            user = CustomUser.objects.get(email=email)
+
+            # Blocked user check
+            if not user.is_active:
+                messages.error(request, "Your account is blocked.")
+                return redirect("accounts:blocked")
+
+            # Generate OTP
+            user.otp = generate_otp()
+            otp_expiry = timezone.now() + timedelta(minutes=5)
+
+            # Store OTP data in session (used by verify_forgot_password_otp)
+            request.session["fp_user_id"] = user.id
+            request.session["fp_otp"] = user.otp
+            request.session["fp_otp_expiry"] = otp_expiry.isoformat()
+            request.session.pop("fp_otp_verified", None)  # reset if exists
+
+            # Send OTP email
+            try:
+                send_mail(
+                "Resend OTP - Kiddora",
+                message=f"Your Password reset OTP is {user.otp}. It is valid for {OTP_EXPIRY_MINUTES} minutes.",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[user.email],
+                fail_silently=False
+            )
+            except Exception as e:
+                messages.error(request, "Failed to send OTP. Try again later.")
+                return redirect("accounts:signup")
+
+            messages.success(request, "An OTP has been sent to your email.")
+            return redirect("accounts:verify_forgot_password_otp")
+
+        except CustomUser.DoesNotExist:
+            messages.error(request, "No account found with this email.")
+
+    return render(request, "accounts/auth/forgot_password.html")
 
 def verify_forgot_password_otp(request):
     if request.method == "POST":
