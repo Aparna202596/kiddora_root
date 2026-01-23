@@ -16,4 +16,5 @@ class Return(models.Model):
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    order_item = models.ForeignKey("orders.OrderItem", on_delete=models.CASCADE)
+    locked = models.BooleanField(default=False)

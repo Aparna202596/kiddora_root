@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'orders',
     'payments',
     'reviews',
+    'store',
     'returns',
     'wallet',
     # Third-party

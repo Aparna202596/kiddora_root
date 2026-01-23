@@ -1,4 +1,4 @@
-from accounts.decorators import user_login_required,admin_login_required,staff_login_required
+from accounts.decorators import user_login_required,admin_login_required
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.shortcuts import render, redirect, get_object_or_404
@@ -8,7 +8,7 @@ from accounts.models import CustomUser
 from django.utils import timezone
 from datetime import timedelta
 from django.core.mail import send_mail
-from accounts.utils import generate_otp
+from utils.generate_otp import generate_otp
 import re
 from django.db.models import Q
 from django.conf import settings
@@ -128,13 +128,12 @@ def signup_page(request):
     return render(request,'accounts/auth/signup.html',{'error':error,'success':success})
 
 @never_cache
-def admin_staff_login(request):
+def admin_login(request):
     # If already logged in, redirect based on role
     if request.user.is_authenticated:
         if request.user.role == CustomUser.ROLE_ADMIN:
             return redirect("accounts:admin_dashboard")
-        if request.user.role == CustomUser.ROLE_STAFF:
-            return redirect("accounts:staff_dashboard")
+
     if request.method == "POST":
         identifier = request.POST.get("username") or request.POST.get("email")
         password = request.POST.get("password")
@@ -149,7 +148,7 @@ def admin_staff_login(request):
             messages.error(request, "Your account is blocked")
             return redirect("accounts:blocked")
         # ROLE CHECK
-        if user.role not in [CustomUser.ROLE_ADMIN, CustomUser.ROLE_STAFF]:
+        if user.role not in [CustomUser.ROLE_ADMIN]:
             messages.error(request, "Access denied")
             return redirect("accounts:auth_login")
         # Admin domain validation
@@ -162,26 +161,22 @@ def admin_staff_login(request):
         # LOGIN
         login(request, user)
         # Remember-me cookie
-        response = (redirect("accounts:admin_dashboard") if user.role == CustomUser.ROLE_ADMIN else redirect("accounts:staff_dashboard"))
+        response = redirect("accounts:admin_dashboard")
         if remember_me:
-            cookie_name = ("remember_admin"if user.role == CustomUser.ROLE_ADMIN else "remember_staff")
-            response.set_cookie(cookie_name,identifier, max_age=7 * 24 * 60 * 60,)
+            response.set_cookie("remember_admin",identifier, max_age=7 * 24 * 60 * 60,httponly=True,secure=True,)
         return response
-    return render(request, "accounts/auth/admin_staff_login.html")
+    return render(request, "accounts/auth/admin_login.html")
 
 @never_cache
 @login_required
-def admin_staff_logout(request):
+def admin_logout(request):
     role = request.user.role
-    # Only admin or staff can access this logout
-    if role not in [CustomUser.ROLE_ADMIN, CustomUser.ROLE_STAFF]:
+    if role not in [CustomUser.ROLE_ADMIN]:
         return redirect("store:home")
     logout(request)
     response = redirect("accounts:auth_login")
     # Remove role-specific remember-me cookie
     if role == CustomUser.ROLE_ADMIN:
         response.delete_cookie("remember_admin")
-    elif role == CustomUser.ROLE_STAFF:
-        response.delete_cookie("remember_staff")
     return response
     

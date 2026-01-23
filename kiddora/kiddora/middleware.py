@@ -8,7 +8,7 @@ class AdminAccessMiddleware:
     Middleware to protect all admin URLs.
     Only allows authenticated, active, admin users to access URLs starting with /admin/ or /admin-panel/.
     """
-    ADMIN_URL_PREFIXES = ('/admin/',)
+    ADMIN_URL_PREFIXES = ("/admin/", "/accounts/admin/")
 
     def __init__(self, get_response):
             self.get_response = get_response

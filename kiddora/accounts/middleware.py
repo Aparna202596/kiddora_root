@@ -26,7 +26,7 @@ class BlockedUserMiddleware:
             "verify-otp/",
             "resend-otp/",
             "forgot-password/",
-            "verify-forgot-password/"
+            "verify-forgot-password/",
             "reset-password/",
             "blocked/",
         ]

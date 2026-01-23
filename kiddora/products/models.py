@@ -1,10 +1,10 @@
 from django.db import models
-
+from django.utils import timezone
 
 class Category(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
-
+    is_deleted = models.BooleanField(default=False)
     def __str__(self):
         return self.category_name
 
@@ -50,3 +50,45 @@ class Inventory(models.Model):
     quantity_available = models.PositiveIntegerField()
     quantity_reserved = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class Coupon(models.Model):
+    DISCOUNT_TYPE_CHOICES = (
+        ("PERCENT", "Percentage"),
+        ("FLAT", "Flat"),
+    )
+
+    code = models.CharField(max_length=20, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.PositiveIntegerField()
+    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    usage_limit = models.PositiveIntegerField()
+    used_by = models.ManyToManyField("accounts.CustomUser", blank=True)
+    is_active = models.BooleanField(default=True)
+    expiry_date = models.DateTimeField()
+    is_deleted = models.BooleanField(default=False)
+
+    def is_valid(self):
+        return self.is_active and not self.is_deleted and timezone.now() <= self.expiry_date
+
+    def __str__(self):
+        return self.code
+    
+class Offer(models.Model):
+    OFFER_TYPE_CHOICES = (
+        ("PRODUCT", "Product"),
+        ("CATEGORY", "Category"),
+    )
+
+    offer_type = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
+    discount_percent = models.PositiveIntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+    priority = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.offer_type} - {self.discount_percent}%"
+

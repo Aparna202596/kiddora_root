@@ -16,3 +16,5 @@ class Payment(models.Model):
     transaction_id = models.UUIDField(default=uuid.uuid4, unique=True)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES)
     paid_at = models.DateTimeField(null=True, blank=True)
+    failure_reason = models.TextField(null=True, blank=True)
+    retry_allowed = models.BooleanField(default=True)

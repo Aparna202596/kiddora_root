@@ -23,7 +23,6 @@ from django.shortcuts import redirect
 urlpatterns=[
     path('admin/', admin.site.urls),
 
-    
     path('accounts/', include('accounts.urls')),
     path('accounts/', include('allauth.urls')),
     path('store/',include('store.urls')),
@@ -43,4 +42,8 @@ urlpatterns=[
     
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler404 = "accounts.views.error_views.handler404"
+handler500 = "accounts.views.error_views.handler500"
+handler403 = "accounts.views.error_views.handler403"
 

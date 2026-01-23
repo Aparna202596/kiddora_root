@@ -107,8 +107,6 @@
             {% if user.is_authenticated %}
                 {% if user.role == 'customer' %}
                     <a href="{% url 'store:home' %}">Go to Home</a>
-                {% elif user.role == 'staff' %}
-                    <a href="{% url 'accounts:staff_dashboard' %}">Staff Dashboard</a>
                 {% elif user.role == 'admin' %}
                     <a href="{% url 'accounts:admin_dashboard' %}">Admin Dashboard</a>
                 {% endif %}

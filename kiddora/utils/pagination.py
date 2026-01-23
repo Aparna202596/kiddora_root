@@ -11,3 +11,4 @@ def paginate_queryset(queryset, page_number, per_page=10):
         page_obj = paginator.page(paginator.num_pages)
 
     return page_obj
+#from utils.pagination import paginate_queryset

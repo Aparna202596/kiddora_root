@@ -6,9 +6,8 @@ import uuid
 class CustomUser(AbstractUser):
     ROLE_ADMIN = "admin"
     ROLE_CUSTOMER = "customer"
-    ROLE_STAFF = "staff"
 
-    ROLE_CHOICES = ((ROLE_ADMIN, "Admin"),(ROLE_CUSTOMER, "Customer"),(ROLE_STAFF, "Staff"),)
+    ROLE_CHOICES = ((ROLE_ADMIN, "Admin"),(ROLE_CUSTOMER, "Customer"),)
 
     # Override fields
     username = models.CharField(max_length=150,unique=True,null=True,blank=True)
@@ -21,7 +20,6 @@ class CustomUser(AbstractUser):
     otp = models.CharField(max_length=6,null=True,blank=True)
     otp_created_at = models.DateTimeField(null=True,blank=True)
     is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     last_login = models.DateTimeField(null=True,blank=True,)
     date_joined = models.DateTimeField(default=timezone.now)

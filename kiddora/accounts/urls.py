@@ -4,8 +4,9 @@ from accounts.views import admin_views
 from accounts.views import otp_views
 from accounts.views import profile_views
 from accounts.views import address_views
-
+from accounts.views import error_views
 from django.views.generic import TemplateView
+
 
 app_name = "accounts"
 
@@ -15,9 +16,9 @@ urlpatterns = [
     path("logout/", auth_views.user_logout, name="logout"),
     path("signup/", auth_views.signup_page, name="signup"),
 
-    #AUTHENTICATION – ADMIN - STAFF
-    path("admin/auth_login/", auth_views.admin_staff_login, name="auth_login"),
-    path("admin/auth_logout/", auth_views.admin_staff_logout, name="auth_logout"),
+    #AUTHENTICATION – ADMIN
+    path("admin/auth_login/", auth_views.admin_login, name="auth_login"),
+    path("admin/auth_logout/", auth_views.admin_logout, name="auth_logout"),
 
     # AUTHENTICATION – ADMIN
     path("admin/admin_dashboard/", admin_views.admin_dashboard_view, name="admin_dashboard"),
@@ -27,15 +28,6 @@ urlpatterns = [
     path("admin/customers/block/<int:user_id>/", admin_views.block_user, name="block_user"),
     path("admin/customers/unblock/<int:user_id>/", admin_views.unblock_user, name="unblock_user"),
     path('admin/customers/delete/<int:user_id>/',admin_views.delete_user_view,name="delete_user"),
-    
-    # AUTHENTICATION – STAFF
-    path("admin/staff_dashboard/", admin_views.staff_dashboard, name="staff_dashboard"),
-    
-    # ADMIN – STAFF MANAGEMENT
-    path("admin/staff_list/", admin_views.staff_list, name="staff_list"),
-    path("admin/add/", admin_views.admin_add, name="admin_add"),
-    path("admin/edit/<int:user_id>/", admin_views.admin_edit, name="admin_edit"),
-    path("admin/delete/<int:usid>/", admin_views.admin_delete, name="admin_delete"),
     
     # OTP VERIFICATION
     path("verify-otp/", otp_views.verify_otp, name="verify_otp"),
@@ -59,5 +51,10 @@ urlpatterns = [
     path("addresses/<int:address_id>/edit/", address_views.address_edit, name="address_edit"),
     path("addresses/<int:address_id>/delete/", address_views.address_delete, name="address_delete"),
 
-    path('blocked/',TemplateView.as_view(template_name="accounts/auth/blocked.html"),name="blocked")
+    #ERROR
+    path('403/',error_views.handler403,name='403'),
+    path('404/',error_views.handler404,name='404'),
+    path('500/',error_views.handler500,name='500'),
+
+    path('blocked/',TemplateView.as_view(template_name="errors/blocked.html"),name="blocked")
 ]

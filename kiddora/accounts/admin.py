@@ -11,7 +11,6 @@ class CustomUserAdmin(UserAdmin):
         "username",
         "role",
         "is_active",
-        "is_staff",
         "email_verified",
         "created_at",
     )
@@ -19,7 +18,6 @@ class CustomUserAdmin(UserAdmin):
     list_filter = (
         "role",
         "is_active",
-        "is_staff",
         "email_verified",
     )
 
@@ -54,7 +52,6 @@ class CustomUserAdmin(UserAdmin):
                 "role",
                 "email_verified",
                 "is_active",
-                "is_staff",
                 "is_superuser",
             )
         }),
@@ -91,7 +88,6 @@ class CustomUserAdmin(UserAdmin):
                 "password2",
                 "role",
                 "is_active",
-                "is_staff",
             ),
         }),
     )

@@ -9,7 +9,6 @@ def refund_to_wallet(sender, instance, **kwargs):
     if instance.status == "REFUNDED":
         wallet = instance.order.user.wallet
         refund_amount = instance.order.final_amount
-
         wallet.balance += refund_amount
         wallet.save()
 
