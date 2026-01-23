@@ -31,7 +31,7 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS','127.0.0.1,localhost').split(',')
 # Application definition
 
 INSTALLED_APPS = [
-    # allauth
+    # django
     'django.contrib.sites',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -41,15 +41,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #local apps
     'accounts',
-    #'accounts.apps.AccountsConfig',
     'products',
     'cart',
     'wishlist',
-    #'orders.apps.OrdersConfig',
     'orders',
     'payments',
     'reviews',
-    #'returns.apps.ReturnsConfig',
     'returns',
     'wallet',
     # Third-party
@@ -59,10 +56,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.facebook',
-
 ]
 SITE_ID = 1
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
@@ -71,13 +67,8 @@ SOCIALACCOUNT_PROVIDERS = {
             'key': ''
         }
     }
-    # 'facebook': {
-    #     'METHOD': 'oauth2',
-    #     'SCOPE': ['email', 'public_profile'],
-    #     'FIELDS': ['id', 'email', 'name'],
-    #     'VERIFIED_EMAIL': False,
-    # },
-}   
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -155,26 +146,16 @@ AUTHENTICATION_BACKENDS = (
 )
 
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
-
-ACCOUNT_SIGNUP_FIELDS = [
-    'email*',
-    'username*',
-    'password1*',
-    'password2*',
-]
+ACCOUNT_SIGNUP_FIELDS = ['email*','username*','password1*','password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # can set 'mandatory'
-LOGIN_REDIRECT_URL = 'store:home'
-LOGOUT_REDIRECT_URL = 'store:anonymous_home'
-
-#ACCOUNT_EMAIL_REQUIRED = True
-#ACCOUNT_USERNAME_REQUIRED = True
-#ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_EMAIL_VERIFICATION = "optional"
-
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+LOGIN_REDIRECT_URL = 'store:home'
+LOGOUT_REDIRECT_URL = 'store:anonymous_home'
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

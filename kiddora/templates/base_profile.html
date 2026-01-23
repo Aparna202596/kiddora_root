@@ -172,15 +172,15 @@
                 <ul>
                     <li><a href="{% url 'store:home' %}">Home</a></li>
                     <li><a href="{% url 'store:about_us' %}">About Us</a></li>
-                    <li><a href="#">Category</a></li>
-                    <li><a href="#">Shop</a></li>
+                    <li><a href="{% url 'products:category_list' %}">Category</a></li>
+                    <li><a href="{% url 'products:product_list' %}">Shop</a></li>
                     <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
                 </ul>
             </nav>
 <!-- Actions -->
             <div class="header-actions">
 <!-- Search -->
-                <form method="get" action="#" class="search-form">
+                <form method="get" action="{% url 'products:product_list' %}" class="search-form">
                     <input 
                         type="text"
                         name="q"

@@ -1,0 +1,68 @@
+{% extends "base_profile.html" %}
+{% block content %}
+<h2>Products{% if subcategory %} - {{ subcategory.subcategory_name }}{% endif %}</h2>
+
+<form id="filterForm" method="get">
+    <div>
+        <h4>Colors</h4>
+        {% for color in filters.colors %}
+            <label>
+                <input type="checkbox" name="color" value="{{ color }}" {% if color in filters.selected_colors %}checked{% endif %}>
+                {{ color }}
+            </label>
+        {% endfor %}
+    </div>
+
+    <div>
+        <h4>Sizes</h4>
+        {% for size in filters.sizes %}
+            <label>
+                <input type="checkbox" name="size" value="{{ size }}" {% if size in filters.selected_sizes %}checked{% endif %}>
+                {{ size }}
+            </label>
+        {% endfor %}
+    </div>
+
+    <div>
+        <h4>Age Group</h4>
+        {% for age in filters.age_groups %}
+            <label>
+                <input type="checkbox" name="age_group" value="{{ age }}" {% if age in filters.selected_age_groups %}checked{% endif %}>
+                {{ age }}
+            </label>
+        {% endfor %}
+    </div>
+
+    <div>
+        <h4>Price Range</h4>
+        <input type="number" name="min_price" value="{{ filters.min_price|default:filters.price_range.min_price }}">
+        -
+        <input type="number" name="max_price" value="{{ filters.max_price|default:filters.price_range.max_price }}">
+    </div>
+
+    <div>
+        <h4>Sort By</h4>
+        <select name="sort_by">
+            <option value="">Latest</option>
+            <option value="price_asc" {% if filters.sort_by == "price_asc" %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_desc" {% if filters.sort_by == "price_desc" %}selected{% endif %}>Price: High to Low</option>
+            <option value="popularity" {% if filters.sort_by == "popularity" %}selected{% endif %}>Popularity</option>
+        </select>
+    </div>
+
+    <button type="submit">Apply Filters</button>
+</form>
+
+<div class="product-grid">
+    {% for product in products %}
+        <div class="product-card">
+            <a href="{% url 'product_detail' product.id %}">
+                <h3>{{ product.product_name }}</h3>
+                <p>Price: {{ product.final_price }}</p>
+            </a>
+        </div>
+    {% empty %}
+        <p>No products found matching filters.</p>
+    {% endfor %}
+</div>
+{% endblock %}

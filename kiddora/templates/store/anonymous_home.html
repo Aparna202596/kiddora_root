@@ -341,8 +341,8 @@ ul {
                 <ul>
                     <li><a href="{% url 'store:anonymous_home' %}">Home</a></li>
                     <li><a href="{% url 'store:about_us' %}">About Us</a></li>
-                    <li><a href="#">Categories</a></li>
-                    <li><a href="#">Shop</a></li>
+                    <li><a href="{% url 'products:category_list' %}">Categories</a></li>
+                    <li><a href="{% url 'products:product_list' %}">Shop</a></li>
                     <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
                 </ul>
             </nav>

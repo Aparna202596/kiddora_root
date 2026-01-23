@@ -101,14 +101,14 @@
             <ul>
                 <li><a href="{% url 'store:home' %}">Home</a></li>
                 <li><a href="{% url 'store:about_us' %}">About Us</a></li>
-                <li><a href="#">Categories</a></li>
-                <li><a href="#">Shop</a></li>
+                <li><a href="{% url 'products:category_list' %}">Categories</a></li>
+                <li><a href="{% url 'products:product_list' %}">Shop</a></li>
                 <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
             </ul>
         </nav>
 
         <div class="header-actions">
-            <form method="get" action="#" class="search-form">
+            <form method="get" action="{% url 'products:product_list' %}" class="search-form">
                 <input type="text" name="q" placeholder="Search products..."
                         value="{{ request.GET.q|default:'' }}">
                 <button type="submit" aria-label="Search">

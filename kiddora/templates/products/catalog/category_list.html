@@ -1,0 +1,12 @@
+{% extends "base_profile.html" %}
+{% block content %}
+<h2>Categories</h2>
+<ul>
+    {% for cat in categories %}
+        <li><a href="{% url 'products:subcategory_list' cat.id %}">{{ cat.category_name }}</a></li>
+    {% empty %}
+        <li>No categories found.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
+
