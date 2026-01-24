@@ -24,7 +24,7 @@
           <!-- RESEND LINK (FIXED) -->
           <p>
             Didn't receive OTP?
-            <a href="{% url 'accounts:resend_otp' %}" class="link">Resend OTP</a>
+            <a href="{% url 'accounts:resend_signup_otp' %}" class="link">Resend OTP</a>
           </p>
 
           {% if messages %}
@@ -46,7 +46,7 @@
 
     <!-- TIMER SCRIPT -->
 <p id="timer">Resend OTP in 60s</p>
-<a id="resendBtn" href="{% url 'accounts:resend_otp' %}" style="display:none;">Resend OTP</a>
+<a id="resendBtn" href="{% url 'accounts:resend_signup_otp' %}" style="display:none;">Resend OTP</a>
 
 <script>
 let timeLeft = 60;

@@ -121,7 +121,7 @@
             <input type="text" name="q" value="{{ query }}" placeholder="Search customer">
             <button type="submit">Search</button>
             {% if query %}
-                <a href="{% url 'accounts:customer_list' %}" class="btn btn-secondary">
+                <a href="{% url 'accounts:admin_user_list' %}" class="btn btn-secondary">
                     Clear
                 </a>
             {% endif %}
@@ -131,7 +131,7 @@
                 <option value="blocked">Blocked</option>
             </select>
             <button type="submit"><i class="fa fa-search"></i></button>
-            <a href="{% url 'accounts:customer_list' %}">Clear</a>
+            <a href="{% url 'accounts:admin_user_list' %}">Clear</a>
         </form>
     </div>
 
@@ -165,13 +165,13 @@
 
                 <td class="action-icons">
                     {% if u.is_active %}
-                        <a href="{% url 'accounts:block_user' u.id %}"
+                        <a href="{% url 'accounts:admin_block_user' u.id %}"
                             class="action-block"
                             title="Block User">
                             <i class="fa-solid fa-user-slash"></i>
                         </a>
                     {% else %}
-                        <a href="{% url 'accounts:unblock_user' u.id %}"
+                        <a href="{% url 'accounts:admin_unblock_user' u.id %}"
                             class="action-unblock"
                             title="Unblock User">
                             <i class="fa-solid fa-user-check"></i>

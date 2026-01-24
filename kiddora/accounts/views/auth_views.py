@@ -1,19 +1,21 @@
+from django.shortcuts import render, redirect, get_object_or_404
 from accounts.decorators import user_login_required,admin_login_required
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.cache import never_cache
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib import messages
-from accounts.models import CustomUser
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
+from django.views.decorators.cache import never_cache
+from accounts.models import CustomUser,UserAddress
+from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.core.mail import send_mail
 from utils.generate_otp import generate_otp
 import re
-from django.db.models import Q
 from django.conf import settings
 
 User = get_user_model()
+
 OTP_EXPIRY_MINUTES=5
 #User_logout
 @never_cache
@@ -29,20 +31,16 @@ def user_logout(request):
 def user_login(request):
     if request.user.is_authenticated and request.user.role == CustomUser.ROLE_CUSTOMER:
         return redirect("store:home")
-    
     remembered_user = request.COOKIES.get("remember_user", "")
-
     if request.method == "POST":
         identifier = request.POST.get("identifier")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-
         try:
             user_obj=User.objects.get(Q(email__iexact=identifier) | Q(username__iexact=identifier))
             user = authenticate(request, email=user_obj.email, password=password)
         except User.DoesNotExist:
             user=None
-
         if user and user.role == CustomUser.ROLE_CUSTOMER:
             if not user.email_verified:
                 messages.error(request, "Please verify your email first")
@@ -54,19 +52,17 @@ def user_login(request):
             
             login(request, user)
             response = redirect("store:home")
-
             if remember_me:
                 response.set_cookie("remember_user",identifier,max_age=7 * 24 * 60 * 60)
             else:
                 response.delete_cookie("remember_user")
             return response
-        
         messages.error(request, "Invalid username or password")
     return render(request,"accounts/auth/login.html",{"remembered_user": remembered_user},)
 
 #Signup
 @never_cache
-def signup_page(request):
+def user_signup(request):
     error=''
     success=''
     if request.method=='POST':
@@ -124,7 +120,7 @@ def signup_page(request):
             return redirect("accounts:signup")
         
         request.session["verify_user_id"] = user.id
-        return redirect("accounts:verify_otp")
+        return redirect("accounts:verify_signup_otp")
     return render(request,'accounts/auth/signup.html',{'error':error,'success':success})
 
 @never_cache
@@ -180,3 +176,8 @@ def admin_logout(request):
         response.delete_cookie("remember_admin")
     return response
     
+def google_login(request):
+    return redirect("/accounts/google/login/")
+
+def facebook_login(request):
+    return redirect("/accounts/facebook/login/")

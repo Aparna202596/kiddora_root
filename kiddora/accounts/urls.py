@@ -14,7 +14,7 @@ urlpatterns = [
     #AUTHENTICATION – USER
     path("login/", auth_views.user_login, name="login"),
     path("logout/", auth_views.user_logout, name="logout"),
-    path("signup/", auth_views.signup_page, name="signup"),
+    path("signup/", auth_views.user_signup, name="signup"),
 
     #AUTHENTICATION – ADMIN
     path("admin/auth_login/", auth_views.admin_login, name="auth_login"),
@@ -22,16 +22,16 @@ urlpatterns = [
 
     # AUTHENTICATION – ADMIN
     path("admin/admin_dashboard/", admin_views.admin_dashboard_view, name="admin_dashboard"),
-    path("admin/customers/", admin_views.customer_list, name="customer_list"),
+    path("admin/customers/", admin_views.admin_user_list, name="admin_user_list"),
     
     # ADMIN – USER MANAGEMENT
-    path("admin/customers/block/<int:user_id>/", admin_views.block_user, name="block_user"),
-    path("admin/customers/unblock/<int:user_id>/", admin_views.unblock_user, name="unblock_user"),
+    path("admin/customers/block/<int:user_id>/", admin_views.admin_block_user, name="admin_block_user"),
+    path("admin/customers/unblock/<int:user_id>/", admin_views.admin_unblock_user, name="admin_unblock_user"),
     path('admin/customers/delete/<int:user_id>/',admin_views.delete_user_view,name="delete_user"),
     
     # OTP VERIFICATION
-    path("verify-otp/", otp_views.verify_otp, name="verify_otp"),
-    path("resend-otp/", otp_views.resend_otp, name="resend_otp"),
+    path("verify-signup_otp/", otp_views.verify_signup_otp, name="verify_signup_otp"),
+    path("resend-otp/", otp_views.resend_signup_otp, name="resend_signup_otp"),
 
     # FORGOT PASSWORD (OTP FLOW)
     path("forgot-password/",otp_views.forgot_password,name="forgot_password"),
@@ -39,11 +39,11 @@ urlpatterns = [
     path("reset-password/", otp_views.reset_password, name="reset_password"),
 
     #PROFILE
-    path("profile/", profile_views.profile_view, name="profile"),
-    path("profile/edit/", profile_views.profile_edit, name="profile_edit"),
+    path("profile/", profile_views.user_profile, name="user_profile"),
+    path("profile/edit/", profile_views.edit_profile, name="edit_profile"),
     path("profile/change-password/", profile_views.change_password, name="change_password"),
     path("profile/change-email/", profile_views.change_email, name="change_email"),
-    path("profile/verify-email-otp/", profile_views.verify_email_otp, name="verify_email_otp"),
+    path("profile/verify-email-otp/", profile_views.verify_email_update, name="verify_email_update"),
 
     #ADDRESS
     path("addresses/", address_views.address_list, name="address_list"),

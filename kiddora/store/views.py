@@ -20,7 +20,11 @@ def anonymous_home(request):
 @user_login_required
 def home(request):
     categories = Category.objects.filter(is_active=True)
-    products = Product.objects.filter(is_active=True).order_by('-id')[:8]
+    products = Product.objects.filter(
+        is_active=True,
+        subcategory__category__is_active=True,
+        subcategory__category__is_deleted=False
+    ).order_by('-id')[:12]
     return render(request, 'store/home.html', {
         'categories': categories,
         'products': products

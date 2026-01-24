@@ -16,7 +16,7 @@ def generate_otp():
     return get_random_string(length=6, allowed_chars="0123456789")
 
 @never_cache
-def verify_otp(request):
+def verify_signup_otp(request):
     user_id = request.session.get("verify_user_id")
     if not user_id:
         return redirect("accounts:signup")
@@ -32,7 +32,7 @@ def verify_otp(request):
         # OTP MATCH CHECK
         if otp_entered != user.otp:
             messages.error(request, "Invalid OTP")
-            return redirect("accounts:verify_otp")
+            return redirect("accounts:verify_signup_otp")
         # SUCCESS
         user.is_active = True
         user.email_verified = True
@@ -43,12 +43,12 @@ def verify_otp(request):
         request.session.pop("verify_user_id", None)
         messages.success(request, "Account verified. Please login.")
         return redirect("accounts:login")
-    return render(request, "accounts/auth/verify_otp.html")
+    return render(request, "accounts/auth/verify_signup_otp.html")
 
 
 # Resend OTP View, for resending OTP if expired or lost
 # @never_cache
-# def resend_otp(request):
+# def resend_signup_otp(request):
 #     user_id = request.session.get("verify_user_id")
 #     if not user_id:
 #         return redirect("accounts:signup")
@@ -56,7 +56,7 @@ def verify_otp(request):
 #     # TIMER CHECK (60 seconds)
 #     if user.otp_created_at and timezone.now() - user.otp_created_at < timedelta(minutes=OTP_EXPIRY_MINUTES):
 #         messages.error(request, "Please wait 60 seconds before resending OTP")
-#         return redirect("accounts:verify_otp")
+#         return redirect("accounts:verify_signup_otp")
 #     otp = generate_otp()
 #     user.otp = otp
 #     user.otp_created_at = timezone.now()
@@ -68,9 +68,9 @@ def verify_otp(request):
 #         [user.email],
 #     )
 #     messages.success(request, "OTP resent successfully")
-#     return redirect("accounts:verify_otp")
+#     return redirect("accounts:verify_signup_otp")
 @never_cache
-def resend_otp(request):
+def resend_signup_otp(request):
     user_id = request.session.get("verify_user_id")
     if not user_id:
         return redirect("accounts:signup")
@@ -81,7 +81,7 @@ def resend_otp(request):
     # If update() returns 0 → cooldown not finished
     if updated == 0:
         messages.error(request, "Please wait 60 seconds before resending OTP")
-        return redirect("accounts:verify_otp")
+        return redirect("accounts:verify_signup_otp")
 
     user = CustomUser.objects.get(id=user_id)
     try:
@@ -97,7 +97,7 @@ def resend_otp(request):
         return redirect("accounts:signup")
 
     messages.success(request, "OTP resent successfully")
-    return redirect("accounts:verify_otp")
+    return redirect("accounts:verify_signup_otp")
 # FORGOT PASSWORD
 def forgot_password(request):
     if request.method == "POST":
@@ -109,7 +109,6 @@ def forgot_password(request):
 
         try:
             user = CustomUser.objects.get(email=email)
-
             # Blocked user check
             if not user.is_active:
                 messages.error(request, "Your account is blocked.")

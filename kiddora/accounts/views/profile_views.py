@@ -11,31 +11,35 @@ from django.conf import settings
 from datetime import timedelta
 from accounts.models import CustomUser
 from django.views.decorators.cache import never_cache
-
+from orders.models import Order
 OTP_EXPIRY_MINUTES = 5
 
 @never_cache
 @user_login_required
-def profile_view(request):
-    addresses = UserAddress.objects.filter(user=request.user)
+def user_profile(request):
+    user = request.user
+    addresses = UserAddress.objects.filter(user=user)
+    orders = Order.objects.filter(user=user).order_by("-created_at")
     return render(
         request,
         "accounts/profile/profile.html",
-        {"user": request.user, "addresses": addresses},)
+        {"user": user, "addresses": addresses,"orders": orders,},)
 
 @never_cache
 @user_login_required
-def profile_edit(request):
+def edit_profile(request):
     user = request.user
     if request.method == "POST":
         user.full_name = request.POST.get("full_name")
         user.phone = request.POST.get("phone")
         user.gender = request.POST.get("gender")
+
         if "profile_image" in request.FILES:
             user.profile_image = request.FILES["profile_image"]
+
         user.save()
-        messages.success(request, "Profile updated")
-        return redirect("accounts:profile")
+        messages.success(request, "Profile updated successfully")
+        return redirect("accounts:user_profile")
     return render(request, "accounts/profile/edit_profile.html", {"user": user})
 
 @user_login_required
@@ -62,14 +66,12 @@ def change_password(request):
             return redirect("accounts:change_password")
 
         # SUCCESS
-        user.set_password(new_password)
-        user.save()
-        update_session_auth_hash(request, user)
+        request.user.set_password(new_password)
+        request.user.save()
+        update_session_auth_hash(request, request.user)
         messages.success(request, "Password changed successfully")
-        return redirect("accounts:profile")
-
+        return redirect("accounts:user_profile")
     return render(request, "accounts/profile/change_password.html")
-
 
 @user_login_required
 def change_email(request):
@@ -95,15 +97,15 @@ def change_email(request):
             )
         except Exception as e:
             messages.error(request, "Failed to send OTP. Try again later.")
-            return redirect("accounts:profile")
+            return redirect("accounts:user_profile")
         
         messages.success(request, "OTP sent to your new email address")
-        return redirect("accounts:verify_email_otp")
+        return redirect("accounts:verify_email_update")
     
     return render(request, "accounts/profile/change_email.html")
 
 @user_login_required
-def verify_email_otp(request):
+def verify_email_update(request):
     user = request.user
     if request.method == "POST":
         entered_otp = request.POST.get("otp")
@@ -122,7 +124,7 @@ def verify_email_otp(request):
         # OTP MATCH VALIDATION
         if entered_otp != user.otp:
             messages.error(request, "Invalid OTP")
-            return redirect("accounts:verify_email_otp")
+            return redirect("accounts:verify_email_update")
         # SUCCESS: UPDATE EMAIL
         user.email = user.pending_email
         user.pending_email = None
@@ -130,5 +132,5 @@ def verify_email_otp(request):
         user.otp_created_at = None
         user.save()
         messages.success(request, "Email updated successfully")
-        return redirect("accounts:profile")
+        return redirect("accounts:user_profile")
     return render(request, "accounts/profile/verify_email_otp.html")
