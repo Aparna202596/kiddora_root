@@ -5,7 +5,7 @@ from .models import Order, OrderItem
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-
+    readonly_fields = ("unit_price", "total_price")
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):

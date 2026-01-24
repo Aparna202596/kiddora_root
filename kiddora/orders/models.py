@@ -37,9 +37,12 @@ class Order(models.Model):
 class OrderItem(models.Model):
 
     STATUS_CHOICES=(
-        ("ACTIVE","Active"),
-        ("CANCELLED","Cancelled"),
-        ("RETURNED","Returned"),
+        ("ACTIVE", "Active"),
+        ("CANCELLED", "Cancelled"),
+        ("RETURN_REQUESTED", "Return Requested"),
+        ("RETURN_APPROVED", "Return Approved"),
+        ("RETURN_REJECTED", "Return Rejected"),
+        ("REFUNDED", "Refunded"),
     )
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT)
@@ -47,3 +50,5 @@ class OrderItem(models.Model):
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="ACTIVE")
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    refunded_at = models.DateTimeField(null=True, blank=True)

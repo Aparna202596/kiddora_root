@@ -5,7 +5,6 @@ from django.contrib import messages
 from accounts.models import CustomUser
 
 User = get_user_model()
-
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
         """

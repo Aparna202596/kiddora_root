@@ -26,7 +26,8 @@ class CustomUser(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     pending_email = models.EmailField(null=True, blank=True)
-
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    
     # Authentication settings
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]

@@ -9,4 +9,4 @@ class WalletAdmin(admin.ModelAdmin):
 
 @admin.register(WalletTransaction)
 class WalletTransactionAdmin(admin.ModelAdmin):
-    list_display = ("wallet", "txn_type", "amount", "created_at")
+    list_display = ("wallet", "txn_type", "amount", "reference_type","reference_id","created_at")

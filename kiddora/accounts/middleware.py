@@ -1,7 +1,6 @@
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 from django.urls import reverse
-
 class BlockedUserMiddleware:
     """
     Logs out inactive users and redirects them to blocked page.

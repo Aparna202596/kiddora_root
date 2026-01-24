@@ -6,10 +6,12 @@ from wallet.models import WalletTransaction
 
 @receiver(post_save, sender=Return)
 def refund_to_wallet(sender, instance, **kwargs):
-    if instance.status == "REFUNDED":
+    if instance.status == "REFUNDED" and not instance.locked:
         wallet = instance.order.user.wallet
         refund_amount = instance.order.final_amount
+        #amount = instance.refund_amount
         wallet.balance += refund_amount
+        #wallet.balance += amount
         wallet.save()
 
         WalletTransaction.objects.create(
@@ -17,3 +19,5 @@ def refund_to_wallet(sender, instance, **kwargs):
             txn_type="REFUND",
             amount=refund_amount
         )
+        instance.locked = True
+        instance.save(update_fields=["locked"])

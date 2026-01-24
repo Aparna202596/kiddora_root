@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils import timezone
-
 class Category(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
@@ -8,17 +7,13 @@ class Category(models.Model):
     def __str__(self):
         return self.category_name
 
-
 class SubCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
     subcategory_name = models.CharField(max_length=100)
-
     class Meta:
         unique_together = ("category", "subcategory_name")
-
     def __str__(self):
         return self.subcategory_name
-
 
 class Product(models.Model):
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name="products")
@@ -29,11 +24,8 @@ class Product(models.Model):
     final_price = models.DecimalField(max_digits=10, decimal_places=2)
     sku = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
-
     def __str__(self):
         return self.product_name
-
-
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     color = models.CharField(max_length=50)
@@ -44,20 +36,18 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product.product_name} ({self.color}, {self.size})"
 
-
 class Inventory(models.Model):
     variant = models.OneToOneField(ProductVariant, on_delete=models.CASCADE, related_name="inventory")
     quantity_available = models.PositiveIntegerField()
     quantity_reserved = models.PositiveIntegerField(default=0)
+    quantity_sold = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
-
 
 class Coupon(models.Model):
     DISCOUNT_TYPE_CHOICES = (
         ("PERCENT", "Percentage"),
         ("FLAT", "Flat"),
     )
-
     code = models.CharField(max_length=20, unique=True)
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
     discount_value = models.PositiveIntegerField()
@@ -68,10 +58,20 @@ class Coupon(models.Model):
     is_active = models.BooleanField(default=True)
     expiry_date = models.DateTimeField()
     is_deleted = models.BooleanField(default=False)
+    used_count = models.PositiveIntegerField(default=0)
 
     def is_valid(self):
         return self.is_active and not self.is_deleted and timezone.now() <= self.expiry_date
 
+    def can_use(self, user):
+        if not self.is_valid():
+            return False
+        if self.used_count >= self.usage_limit:
+            return False
+        if self.used_by.filter(id=user.id).exists():
+            return False
+        return True
+    
     def __str__(self):
         return self.code
     
@@ -80,7 +80,6 @@ class Offer(models.Model):
         ("PRODUCT", "Product"),
         ("CATEGORY", "Category"),
     )
-
     offer_type = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
     discount_percent = models.PositiveIntegerField()
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
@@ -89,6 +88,14 @@ class Offer(models.Model):
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
 
+    def applies_to(self, product):
+        if not self.is_active or self.is_deleted:
+            return False
+        if self.offer_type == "PRODUCT":
+            return self.product == product
+        if self.offer_type == "CATEGORY":
+            return product.subcategory.category == self.category
+        return False
+
     def __str__(self):
         return f"{self.offer_type} - {self.discount_percent}%"
-

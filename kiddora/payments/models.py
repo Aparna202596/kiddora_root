@@ -18,3 +18,4 @@ class Payment(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True)
     failure_reason = models.TextField(null=True, blank=True)
     retry_allowed = models.BooleanField(default=True)
+    refund_reference = models.CharField(max_length=50, null=True, blank=True)

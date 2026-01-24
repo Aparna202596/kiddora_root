@@ -1,8 +1,6 @@
 from django.contrib.auth.backends import ModelBackend
 from accounts.models import CustomUser
 from django.db.models import Q
-
-
 class CustomBackend(ModelBackend):
     """
     Authenticate using username OR email
