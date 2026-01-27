@@ -1,0 +1,52 @@
+<h3>Order Summary</h3>
+
+<table>
+  <tr>
+    <th>Product</th>
+    <th>Qty</th>
+    <th>Total</th>
+  </tr>
+
+  {% for item in cart_items %}
+  <tr>
+    <td>
+      <img src="{{ item.variant.product.image.url }}" width="50">
+      {{ item.variant.product.product_name }}
+    </td>
+    <td>{{ item.quantity }}</td>
+    <td>₹{{ item.variant.product.final_price|floatformat:2 }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p>Subtotal: ₹{{ subtotal }}</p>
+<p>Discount: -₹{{ discount }}</p>
+<p>Delivery Charge: ₹{{ delivery_charge }}</p>
+<h4>Final Total: ₹{{ final_total }}</h4>
+{% if coupon %}
+  <p>Coupon Applied: {{ coupon.code }}</p>
+  <a href="{% url 'cart:remove_coupon' %}">Remove Coupon</a>
+{% else %}
+  <form method="post" action="{% url 'cart:apply_coupon' %}">
+    {% csrf_token %}
+    <input type="text" name="code" placeholder="Enter coupon">
+    <button type="submit">Apply</button>
+  </form>
+{% endif %}
+<h3>Payment Method</h3>
+
+<label>
+  <input type="radio" name="payment_method" value="ONLINE" required>
+  Online Payment
+</label><br>
+
+<label>
+  <input type="radio" name="payment_method" value="COD"
+    {% if not cod_allowed %}disabled{% endif %}>
+  Cash on Delivery
+  {% if not cod_allowed %}
+    <small>(COD not available above ₹1000)</small>
+  {% endif %}
+</label>
+<button type="submit">Place Order</button>
+</form>

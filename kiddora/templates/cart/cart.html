@@ -1,0 +1,106 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+</script>
+
+<button class="add-to-cart" data-url="{% url 'cart:add_to_cart' variant.id %}">Add</button>
+
+<button class="qty-plus" data-id="{{ item.id }}">+</button>
+<span id="qty-{{ item.id }}">{{ item.quantity }}</span>
+<button class="qty-minus" data-id="{{ item.id }}">-</button>
+
+<button class="remove-item" data-id="{{ item.id }}">Remove</button>
+
+<script>
+/* ADD TO CART */
+document.querySelectorAll(".add-to-cart").forEach(btn => {
+    btn.addEventListener("click", function () {
+        fetch(this.dataset.url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) location.reload();
+        });
+    });
+});
+
+/* INCREASE QTY */
+document.querySelectorAll(".qty-plus").forEach(btn => {
+    btn.addEventListener("click", function () {
+        fetch(`/cart/increase/${this.dataset.id}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById(`qty-${this.dataset.id}`).innerText = data.quantity;
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+});
+
+/* DECREASE QTY */
+document.querySelectorAll(".qty-minus").forEach(btn => {
+    btn.addEventListener("click", function () {
+        fetch(`/cart/decrease/${this.dataset.id}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.quantity === 0) {
+                location.reload();
+            } else {
+                document.getElementById(`qty-${this.dataset.id}`).innerText = data.quantity;
+            }
+        });
+    });
+});
+
+/* REMOVE ITEM */
+document.querySelectorAll(".remove-item").forEach(btn => {
+    btn.addEventListener("click", function () {
+        fetch(`/cart/remove/${this.dataset.id}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) location.reload();
+        });
+    });
+});
+</script>

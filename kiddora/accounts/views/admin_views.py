@@ -133,3 +133,39 @@ def admin_user_detail(request, user_id):
         CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER
     )
     return render(request,"accounts/admin/customer_detail.html",{"user": user})
+
+@admin_login_required
+def admin_sales_report(request):
+    orders = Order.objects.all().order_by("-order_date")
+
+    # Daily, Weekly, Yearly filters
+    report_type = request.GET.get("type")  # "daily", "weekly", "yearly"
+    if report_type == "daily":
+        start = now().date()
+        orders = orders.filter(order_date__date=start)
+    elif report_type == "weekly":
+        start = now() - timedelta(days=7)
+        orders = orders.filter(order_date__gte=start)
+    elif report_type == "yearly":
+        start = now() - timedelta(days=365)
+        orders = orders.filter(order_date__gte=start)
+
+    # Custom date range
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    if start_date and end_date:
+        orders = orders.filter(order_date__date__gte=start_date,
+                                order_date__date__lte=end_date)
+
+    # Aggregates
+    total_sales = orders.aggregate(total=Sum("final_amount"))["total"] or 0
+    total_orders = orders.count()
+
+    return render(request, "wallet/admin_sales_report.html", {
+        "orders": orders,
+        "total_sales": total_sales,
+        "total_orders": total_orders,
+        "report_type": report_type,
+        "start_date": start_date,
+        "end_date": end_date,
+    })

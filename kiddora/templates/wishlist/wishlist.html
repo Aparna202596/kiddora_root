@@ -1,0 +1,36 @@
+<button class="add-wishlist" data-url="{% url 'wishlist:add' product.id %}">❤</button>
+<button class="remove-wishlist" data-id="{{ item.id }}">Remove</button>
+<script>
+/* ADD TO WISHLIST */
+document.querySelectorAll(".add-wishlist").forEach(btn => {
+    btn.addEventListener("click", function () {
+        fetch(this.dataset.url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(data => alert(data.message));
+    });
+});
+
+/* REMOVE FROM WISHLIST */
+document.querySelectorAll(".remove-wishlist").forEach(btn => {
+    btn.addEventListener("click", function () {
+        fetch(`/wishlist/remove/${this.dataset.id}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) location.reload();
+        });
+    });
+});
+</script>

@@ -1,0 +1,6 @@
+<h2>Payment Failed</h2>
+<p>{{ payment.failure_reason }}</p>
+
+{% if payment.retry_allowed %}
+<a href="{% url 'payments:retry_payment' payment.id %}">Retry Payment</a>
+{% endif %}

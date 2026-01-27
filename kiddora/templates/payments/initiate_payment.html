@@ -1,0 +1,28 @@
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+var options = {
+    "key": "{{ razorpay_key }}",
+    "amount": "{{ amount }}",
+    "currency": "INR",
+    "order_id": "{{ razorpay_order_id }}",
+    "handler": function (response){
+        var form = document.createElement("form");
+        form.method = "POST";
+        form.action = "{% url 'payments:payment_success' %}";
+
+        ["razorpay_payment_id", "razorpay_order_id", "razorpay_signature"]
+        .forEach(function(field){
+            var input = document.createElement("input");
+            input.type = "hidden";
+            input.name = field;
+            input.value = response[field];
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+};
+new Razorpay(options).open();
+</script>

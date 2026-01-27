@@ -1,0 +1,58 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<tr id="cart-item-{{ item.id }}">
+    <td>{{ item.variant.product.product_name }}</td>
+    <td>{{ item.variant.color }} / {{ item.variant.size }}</td>
+    <td>
+        <button class="decrease-qty-btn" data-item-id="{{ item.id }}">-</button>
+        <span class="quantity">{{ item.quantity }}</span>
+        <button class="increase-qty-btn" data-item-id="{{ item.id }}">+</button>
+    </td>
+    <td>
+        <input type="number" class="cart-quantity-input" data-item-id="{{ item.id }}" value="{{ item.quantity }}">
+    </td>
+    <td>
+        <button class="remove-cart-btn" data-item-id="{{ item.id }}">Remove</button>
+    </td>
+    <button id="place-order">Place Order</button>
+</tr> 
+<script>
+document.getElementById("place-order").addEventListener("click", function () {
+    fetch("{% url 'cart:checkout' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.message);
+            if (data.invalid_items) {
+                data.invalid_items.forEach(id => {
+                    const el = document.getElementById(`item-${id}`);
+                    if (el) el.style.opacity = "0.5";
+                });
+            }
+        } else {
+            window.location.href = "/orders/confirm/";
+        }
+    });
+});
+</script>
+<form method="post" action="{% url 'cart:place_order' %}">
+  {% csrf_token %}
+
+  <h3>Select Delivery Address</h3>
+
+  {% for address in addresses %}
+    <label>
+      <input type="radio" name="address_id" value="{{ address.id }}" required>
+      {{ address.address_line1 }}, {{ address.city }} - {{ address.pincode }}
+      {% if address.is_default %}(Default){% endif %}
+    </label><br>
+  {% endfor %}
+
+  <a href="{% url 'accounts:address_add' %}?next=cart:checkout">+ Add New Address</a>
+
+  <hr>

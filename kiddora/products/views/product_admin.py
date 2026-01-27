@@ -151,22 +151,4 @@ def admin_update_stock(request, inventory_id):
         return redirect("products:admin_inventory_list")
 
 
-@admin_login_required
-def admin_product_offer(request):
-    if request.method == "POST":
-        Offer.objects.create(
-            offer_type="PRODUCT",
-            product_id=request.POST["product"],
-            discount_percent=request.POST["discount"],
-        )
-    return render(request, "products/admin/admin_offer_product.html")
 
-@admin_login_required
-def admin_category_offer(request):
-    if request.method == "POST":
-        Offer.objects.create(
-            offer_type="CATEGORY",
-            category_id=request.POST["category"],
-            discount_percent=request.POST["discount"],
-        )
-    return render(request, "products/admin/admin_offer_category.html")
