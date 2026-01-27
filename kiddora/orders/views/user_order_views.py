@@ -45,12 +45,12 @@ def place_order(request):
     delivery_charge = 0 if subtotal >= 500 else 50
     final_total = subtotal - discount + delivery_charge
 
-    # 🔒 COD restriction
+    # COD restriction
     if payment_method == "COD" and final_total > 1000:
         messages.error(request, "Cash on Delivery not allowed above ₹1000.")
         return redirect("cart:checkout")
 
-    # 🔹 Create order
+    # Create order
     order = Order.objects.create(
         user=request.user,
         address=address,
@@ -88,11 +88,11 @@ def user_orders(request):
     paginator = Paginator(orders, 10)
     page = request.GET.get("page")
     orders = paginator.get_page(page)
-    return render(request, "orders/order_list.html", {"orders": orders})
+    return render(request, "orders/user/order_list.html", {"orders": orders})
 
 def order_detail(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    return render(request, "orders/order_detail.html", {"order": order})
+    return render(request, "orders/user/order_detail.html", {"order": order})
 
 def cancel_order(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
@@ -104,7 +104,7 @@ def cancel_order(request, order_id):
         order.save()
         messages.success(request, "Order cancelled successfully")
         return redirect("orders:user_orders")
-    return render(request, "orders/order_cancel_confirm.html", {"order": order})
+    return render(request, "orders/user/order_cancel_confirm.html", {"order": order})
 
 @user_login_required
 def cancel_order_item_view(request, item_id):
@@ -124,12 +124,12 @@ def request_order_return(request, order_id):
             status="RETURN_REQUESTED"
         )
         return redirect("orders:order_detail", order_id=order.order_id)
-    return render(request, "orders/request_return.html", {"order": order})
+    return render(request, "orders/user/request_return.html", {"order": order})
 
 @user_login_required
 def download_invoice(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    template = get_template("orders/invoice.html")
+    template = get_template("orders/user/invoice.html")
     html = template.render({"order": order})
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="invoice_{order.order_id}.pdf"'

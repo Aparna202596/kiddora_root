@@ -16,11 +16,12 @@ def cart_detail(request):
         inventory = getattr(item.variant, "inventory", None)
         if not product.is_active or not item.variant.is_active or not inventory or inventory.quantity_available < item.quantity:
             invalid_items.append(item.id)
-    return render(request, "cart/cart.html", {
+        
+        context={
         "cart": cart,
         "invalid_items": invalid_items,
-    })
-
+        }
+    return render(request, "cart/cart.html", context)
 
 @user_login_required
 def add_to_cart(request, variant_id):
@@ -77,7 +78,7 @@ def update_cart_item(request, item_id):
     cart_item.save()
     return JsonResponse({"success": True, "message": "Cart updated.", "quantity": cart_item.quantity})
 
-
+#increase item quantity
 @user_login_required
 def increase_quantity(request, item_id):
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
@@ -92,7 +93,7 @@ def increase_quantity(request, item_id):
         return JsonResponse({"success": True, "quantity": item.quantity})
     return JsonResponse({"success": False, "message": "Max stock reached."})
 
-
+# Decrease item quantity
 @user_login_required
 def decrease_quantity(request, item_id):
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
@@ -103,7 +104,7 @@ def decrease_quantity(request, item_id):
     item.delete()
     return JsonResponse({"success": True, "quantity": 0, "message": "Item removed from cart."})
 
-
+# Remove item from cart
 @user_login_required
 def remove_from_cart(request, item_id):
     item = CartItem.objects.filter(id=item_id, cart__user=request.user)

@@ -20,8 +20,7 @@ def admin_order_list(request):
     if search:
         orders = orders.filter(
             Q(order_id__icontains=search) |
-            Q(user__email__icontains=search)
-        )
+            Q(user__email__icontains=search))
     if status:
         orders = orders.filter(order_status=status)
     paginator = Paginator(orders, 20)

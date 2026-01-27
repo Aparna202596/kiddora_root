@@ -11,7 +11,7 @@ from django.views.decorators.cache import never_cache
 from django.db.models import F
 
 OTP_EXPIRY_MINUTES = 5
-
+@never_cache
 def generate_otp():
     return get_random_string(length=6, allowed_chars="0123456789")
 
@@ -43,7 +43,7 @@ def verify_signup_otp(request):
         request.session.pop("verify_user_id", None)
         messages.success(request, "Account verified. Please login.")
         return redirect("accounts:login")
-    return render(request, "accounts/auth/verify_signup_otp.html")
+    return render(request, "accounts/otp/verify_signup_otp.html")
 
 
 # Resend OTP View, for resending OTP if expired or lost
@@ -143,7 +143,7 @@ def forgot_password(request):
         except CustomUser.DoesNotExist:
             messages.error(request, "No account found with this email.")
 
-    return render(request, "accounts/auth/forgot_password.html")
+    return render(request, "accounts/otp/forgot_password.html")
 
 def verify_forgot_password_otp(request):
     if request.method == "POST":
@@ -177,8 +177,7 @@ def verify_forgot_password_otp(request):
         request.session["fp_otp_verified"] = True
         return redirect("accounts:reset_password")
     
-    return render(request, "accounts/auth/verify_forgot_password_otp.html")
-
+    return render(request, "accounts/otp/verify_forgot_password_otp.html")
 
 def reset_password(request):
     if not request.session.get("fp_otp_verified"):
@@ -201,5 +200,5 @@ def reset_password(request):
             request.session.pop(key, None)
         messages.success(request, "Password reset successful. You can now login.")
         return redirect("accounts:login")
-    return render(request, "accounts/auth/reset_password.html")
+    return render(request, "accounts/otp/reset_password.html")
 

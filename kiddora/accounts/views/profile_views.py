@@ -133,4 +133,4 @@ def verify_email_update(request):
         user.save()
         messages.success(request, "Email updated successfully")
         return redirect("accounts:user_profile")
-    return render(request, "accounts/profile/verify_email_otp.html")
+    return render(request, "accounts/otp/verify_email_otp.html")

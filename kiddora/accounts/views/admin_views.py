@@ -161,7 +161,7 @@ def admin_sales_report(request):
     total_sales = orders.aggregate(total=Sum("final_amount"))["total"] or 0
     total_orders = orders.count()
 
-    return render(request, "wallet/admin_sales_report.html", {
+    return render(request, "accounts/admin/admin_sales_report.html", {
         "orders": orders,
         "total_sales": total_sales,
         "total_orders": total_orders,

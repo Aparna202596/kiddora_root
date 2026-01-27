@@ -57,7 +57,7 @@ def address_edit(request, address_id):
         address.is_default = is_default
         address.save()
         return redirect("accounts:address_list")
-    return render(request, "accounts/profile/edit_address.html", {"address": address})
+    return render(request, "accounts/address/edit_address.html", {"address": address})
 
 @never_cache
 @user_login_required
