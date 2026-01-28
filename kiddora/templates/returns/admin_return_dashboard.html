@@ -1,0 +1,49 @@
+<h2>Return Analytics Dashboard</h2>
+
+<hr>
+
+<h3>📊 Overview</h3>
+<p><strong>Total Returns:</strong> {{ total_returns }}</p>
+<p><strong>Total Refund Amount:</strong> ₹{{ refund_stats.total_refund|default:"0.00" }}</p>
+<p><strong>Average Refund:</strong> ₹{{ refund_stats.avg_refund|default:"0.00" }}</p>
+
+<hr>
+
+<h3>📌 Status Breakdown</h3>
+<ul>
+  {% for item in status_breakdown %}
+    <li>{{ item.status }} → {{ item.count }}</li>
+  {% endfor %}
+</ul>
+
+<hr>
+
+<h3>🔥 Top Returned Products</h3>
+<table border="1">
+  <tr>
+    <th>Product</th>
+    <th>Return Count</th>
+  </tr>
+  {% for product in top_products %}
+  <tr>
+    <td>{{ product.product__product_name }}</td>
+    <td>{{ product.return_count }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<hr>
+
+<h3>📈 Returns (Last 7 Days)</h3>
+<table border="1">
+  <tr>
+    <th>Date</th>
+    <th>Returns</th>
+  </tr>
+  {% for day in daily_returns %}
+  <tr>
+    <td>{{ day.day }}</td>
+    <td>{{ day.count }}</td>
+  </tr>
+  {% endfor %}
+</table>

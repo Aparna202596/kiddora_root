@@ -81,7 +81,7 @@ def product_list(request, category_id=None, subcategory_id=None):
         },
         "page_obj":page_obj,
     }
-    return render(request, "products/catalog/product_list.html", context)
+    return render(request, "products/products/product_list.html", context)
 
 # Product Detail View
 def product_detail_view(request, product_id):

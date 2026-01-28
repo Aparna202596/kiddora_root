@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Available Coupons</title>
+    <style>
+        .coupon {
+            border: 1px dashed #444;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Available Coupons</h2>
+
+{% for coupon in coupons %}
+<div class="coupon">
+    <h3>{{ coupon.code }}</h3>
+    <p>
+        Discount:
+        {{ coupon.discount_value }}
+        {% if coupon.discount_type == "PERCENT" %}%{% else %}₹{% endif %}
+    </p>
+    <p>Min Order: {{ coupon.min_order_amount }}</p>
+    <p>Expires on: {{ coupon.expiry_date }}</p>
+</div>
+{% empty %}
+<p>No coupons available.</p>
+{% endfor %}
+
+</body>
+</html>

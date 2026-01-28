@@ -1,0 +1,42 @@
+<h2>Return Requests</h2>
+
+<form method="get">
+  <input type="text" name="q" placeholder="Search order/product" value="{{ query }}">
+  <select name="status">
+    <option value="">All</option>
+    <option value="REQUESTED">Requested</option>
+    <option value="APPROVED">Approved</option>
+    <option value="REJECTED">Rejected</option>
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<table border="1">
+<tr>
+  <th>Order</th>
+  <th>Product</th>
+  <th>Status</th>
+  <th>Action</th>
+</tr>
+
+{% for r in returns %}
+<tr>
+  <td>{{ r.order.order_id }}</td>
+  <td>{{ r.product.product_name }}</td>
+  <td>{{ r.status }}</td>
+  <td>
+    <a href="{% url 'returns:admin_verify_return' r.id %}">Verify</a>
+  </td>
+</tr>
+{% endfor %}
+</table>
+
+<div>
+  {% if returns.has_previous %}
+    <a href="?page={{ returns.previous_page_number }}">Previous</a>
+  {% endif %}
+  Page {{ returns.number }} of {{ returns.paginator.num_pages }}
+  {% if returns.has_next %}
+    <a href="?page={{ returns.next_page_number }}">Next</a>
+  {% endif %}
+</div>

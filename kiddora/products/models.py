@@ -24,6 +24,8 @@ class Product(models.Model):
     final_price = models.DecimalField(max_digits=10, decimal_places=2)
     sku = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
+    stock = models.PositiveIntegerField(default=0)
+    
     def __str__(self):
         return self.product_name
 class ProductVariant(models.Model):

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Coupon List</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ccc; }
+        .expired { color: red; }
+        .active { color: green; }
+    </style>
+</head>
+<body>
+
+<h2>All Coupons</h2>
+
+<table>
+    <tr>
+        <th>Code</th>
+        <th>Discount</th>
+        <th>Usage</th>
+        <th>Expiry</th>
+        <th>Status</th>
+    </tr>
+
+    {% for coupon in coupons %}
+    <tr>
+        <td>{{ coupon.code }}</td>
+        <td>
+            {{ coupon.discount_value }}
+            {% if coupon.discount_type == "PERCENT" %}%{% else %}₹{% endif %}
+        </td>
+        <td>{{ coupon.used_count }} / {{ coupon.usage_limit }}</td>
+        <td>{{ coupon.expiry_date }}</td>
+        <td>
+            {% if coupon.expiry_date < now %}
+                <span class="expired">Expired</span>
+            {% elif coupon.is_active %}
+                <span class="active">Active</span>
+            {% else %}
+                Disabled
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No coupons found</td></tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

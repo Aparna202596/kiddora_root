@@ -1,0 +1,27 @@
+<h2>All Offers</h2>
+
+<table border="1">
+<tr>
+  <th>Type</th>
+  <th>Target</th>
+  <th>Discount</th>
+  <th>Status</th>
+  <th>Action</th>
+</tr>
+
+{% for offer in offers %}
+<tr>
+  <td>{{ offer.get_offer_type_display }}</td>
+  <td>
+    {% if offer.product %}{{ offer.product.name }}
+    {% elif offer.category %}{{ offer.category.name }}
+    {% else %}Referral{% endif %}
+  </td>
+  <td>{{ offer.discount_percent }}%</td>
+  <td>{{ offer.is_active|yesno:"Active,Inactive" }}</td>
+  <td>
+    <a href="{% url 'products:admin_remove_offer' offer.id %}">Remove</a>
+  </td>
+</tr>
+{% endfor %}
+</table>

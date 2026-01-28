@@ -1,0 +1,21 @@
+<h2>Verify Return</h2>
+
+<p><strong>Order:</strong> {{ return_obj.order.order_id }}</p>
+<p><strong>Product:</strong> {{ return_obj.product.product_name }}</p>
+<p><strong>Quantity:</strong> {{ return_obj.order_item.quantity }}</p>
+<p><strong>Reason:</strong> {{ return_obj.reason }}</p>
+<p><strong>Status:</strong> {{ return_obj.status }}</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    {% if return_obj.status == "REQUESTED" %}
+        <button name="action" value="approve">Approve</button>
+        <button name="action" value="reject">Reject</button>
+    {% endif %}
+
+    {% if return_obj.status == "APPROVED" %}
+        <button name="action" value="refund">Refund to Wallet</button>
+    {% endif %}
+
+</form>

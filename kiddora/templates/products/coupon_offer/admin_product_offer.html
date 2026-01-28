@@ -1,0 +1,14 @@
+<h2>Create Product Offer</h2>
+
+<form method="post">
+{% csrf_token %}
+<select name="product" required>
+  {% for product in products %}
+    <option value="{{ product.id }}">{{ product.name }}</option>
+  {% endfor %}
+</select>
+
+<input type="number" name="discount_percent" placeholder="Discount %" required>
+<input type="number" name="priority" value="1">
+<button type="submit">Create</button>
+</form>
