@@ -12,13 +12,12 @@ app_name = "accounts"
 
 urlpatterns = [
     #AUTHENTICATION – USER
-    path("login/", auth_views.user_login, name="login"),
-    path("logout/", auth_views.user_logout, name="logout"),
-    path("signup/", auth_views.user_signup, name="signup"),
+    path("user/login/", auth_views.user_login, name="login"),
+    path("user/logout/", auth_views.user_logout, name="logout"),
+    path("user/signup/", auth_views.user_signup, name="signup"),
 
     #AUTHENTICATION - SOCIAL LOGIN
-    path("login/google_login/", auth_views.google_login, name="google_login"),
-    path("login/facebook_login/", auth_views.facebook_login, name="facebook_login"),
+    path("accounts/google/login/", auth_views.google_login, name="google_login"),
 
     #AUTHENTICATION – ADMIN
     path("admin/auth_login/", auth_views.admin_login, name="auth_login"),
@@ -36,28 +35,27 @@ urlpatterns = [
     path('admin/customers/delete/<int:user_id>/',admin_views.delete_user_view,name="delete_user"),
     
     # OTP VERIFICATION
-    path("verify_signup_otp/", otp_views.verify_signup_otp, name="verify_signup_otp"),
-    path("resend_otp/", otp_views.resend_signup_otp, name="resend_signup_otp"),
+    path("user/verify_signup_otp/", otp_views.verify_signup_otp, name="verify_signup_otp"),
+    path("user/resend_otp/", otp_views.resend_signup_otp, name="resend_signup_otp"),
 
     # FORGOT PASSWORD (OTP FLOW)
-    path("forgot_password/",otp_views.forgot_password,name="forgot_password"),
-    path("verify_forgot_password/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
-    path("reset_password/", otp_views.reset_password, name="reset_password"),
+    path("user/forgot_password/",otp_views.forgot_password,name="forgot_password"),
+    path("user/verify_forgot_password/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
+    path("user/reset_password/", otp_views.reset_password, name="reset_password"),
 
     #PROFILE
-    path("profile/", profile_views.user_profile, name="user_profile"),
-    path("profile/edit/", profile_views.edit_profile, name="edit_profile"),
-    path("profile/change_password/", profile_views.change_password, name="change_password"),
-    path("profile/change_email/", profile_views.change_email, name="change_email"),
-    path("profile/verify_email_otp/", profile_views.verify_email_update, name="verify_email_update"),
+    path("user/profile/", profile_views.user_profile, name="user_profile"),
+    path("user/profile/edit/", profile_views.edit_profile, name="edit_profile"),
+    path("user/profile/change_password/", profile_views.change_password, name="change_password"),
+    path("user/profile/change_email/", profile_views.change_email, name="change_email"),
+    path("user/profile/verify_email_otp/", profile_views.verify_email_update, name="verify_email_update"),
 
     #ADDRESS
-    path("addresses/", address_views.address_list, name="address_list"),
-    path("addresses/set_default/<int:address_id>/", address_views.set_default_address, name="set_default_address"),
-    path("addresses/add/", address_views.address_add, name="address_add"),
-    path("addresses/edit/<int:address_id>/", address_views.address_edit, name="address_edit"),
-    path("addresses/delete/<int:address_id>", address_views.address_delete, name="address_delete"),
-
+    path("user/addresses/", address_views.address_list, name="address_list"),
+    path("user/addresses/set_default/", address_views.set_default_address, name="set_default_address"),
+    path("user/addresses/add/", address_views.address_add, name="address_add"),
+    path("user/addresses/edit/", address_views.address_edit, name="address_edit"),
+    path("user/addresses/delete/", address_views.address_delete, name="address_delete"),
     #ERROR
     path('error/403/',error_views.handler403,name='403'),
     path('error/404/',error_views.handler404,name='404'),

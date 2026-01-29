@@ -60,15 +60,15 @@ INSTALLED_APPS = [
 ]
 SITE_ID = 1
 
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
-            'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
-            'key': ''
-        }
-    }
-}
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'APP': {
+#             'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+#             'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
+#             'key': ''
+#         }
+#     }
+# }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -148,7 +148,8 @@ AUTHENTICATION_BACKENDS = (
 
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*','username*','password1*','password2*']
-ACCOUNT_EMAIL_VERIFICATION = 'optional'  # can set 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # can set 'mandatory'
+ACCOUNT_EMAIL_REQUIRED = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
@@ -194,7 +195,3 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
 RAZORPAY_KEY_ID = "rzp_test_xxxxx"
 RAZORPAY_KEY_SECRET = "xxxxxxxx"
-
-PAYPAL_CLIENT_ID = "YOUR_CLIENT_ID"
-PAYPAL_SECRET = "YOUR_SECRET"
-PAYPAL_MODE = "sandbox"  # or 'live'

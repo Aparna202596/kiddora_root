@@ -36,7 +36,7 @@ class Order(models.Model):
             self.order_id = f"KID{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items")
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -54,7 +54,7 @@ class OrderReturn(models.Model):
         ("RETURN_REJECTED", "Return Rejected"),
         ("REFUNDED", "Refunded"),
     )
-    order = models.OneToOneField(Order, on_delete=models.CASCADE,related_name="items")
+    order = models.OneToOneField(Order, on_delete=models.CASCADE,related_name="order_return")
     reason = models.TextField()
     status = models.CharField(max_length=20,choices=STATUS_CHOICES, default='PENDING')
     admin_remark = models.TextField(blank=True, null=True)

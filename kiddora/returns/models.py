@@ -11,7 +11,7 @@ class Return(models.Model):
         ("REFUNDED", "Refunded"),
     )
 
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE,related_name="item_returns")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)

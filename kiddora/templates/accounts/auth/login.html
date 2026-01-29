@@ -13,17 +13,7 @@
     <div class="auth-card">
         <div class="auth-left">
             <h2>Login</h2>
-            <hr>
-
-
-            <a href="{% provider_login_url 'google' %}" class="btn btn-danger w-100">
-                Login with Google
-            </a>
-            {% comment %} <a href="{% provider_login_url 'facebook' %}" class="btn btn-primary w-100 mt-2">
-                Login with Facebook
-            </a> {% endcomment %}
-
-            <div class="divider">or</div>
+            
 
             <form method="post" novalidate>
                 {% csrf_token %}

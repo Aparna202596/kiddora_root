@@ -3,7 +3,7 @@
 <h2>Subcategories in {{ category.category_name }}</h2>
 <ul>
     {% for sub in subcategories %}
-        <li><a href="{% url 'products:product_list' sub.id %}">{{ sub.subcategory_name }}</a></li>
+        <li><a href="{% url 'products:product_list' %}">{{ sub.subcategory_name }}</a></li>
     {% empty %}
         <li>No subcategories found.</li>
     {% endfor %}

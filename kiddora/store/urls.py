@@ -5,7 +5,7 @@ app_name = 'store'
 
 urlpatterns = [
     path('',views.anonymous_home,name='anonymous_home'),
-    path('home/',views.home,name='home'),
+    path('user/home/',views.home,name='home'),
 
     path('about_us/',views.aboutus_view,name='about_us'),
     path('contactus/',views.contactus_view,name='contact_us'),

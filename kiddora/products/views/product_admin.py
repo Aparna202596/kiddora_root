@@ -90,7 +90,6 @@ def admin_add_product(request):
             base_price=request.POST["base_price"],
             final_price=request.POST.get("final_price"),
             discount_percent=request.POST.get("discount", 0),
-            final_price=request.POST["final_price"],
             sku=request.POST["sku"],
             is_active=True
         )

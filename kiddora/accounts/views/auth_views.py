@@ -13,6 +13,7 @@ from django.core.mail import send_mail
 from utils.generate_otp import generate_otp
 import re
 from django.conf import settings
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -179,5 +180,5 @@ def admin_logout(request):
 def google_login(request):
     return redirect("/accounts/google/login/")
 
-def facebook_login(request):
-    return redirect("/accounts/facebook/login/")
+# def facebook_login(request):
+#     return redirect("/facebook/login/")
