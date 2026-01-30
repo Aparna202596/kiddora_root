@@ -9,6 +9,9 @@ from django.core .mail import send_mail
 from django.conf import settings
 from django.views.decorators.cache import never_cache
 from django.db.models import F
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 5
 @never_cache

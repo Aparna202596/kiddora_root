@@ -54,8 +54,8 @@ urlpatterns = [
     path("user/addresses/", address_views.address_list, name="address_list"),
     path("user/addresses/set_default/", address_views.set_default_address, name="set_default_address"),
     path("user/addresses/add/", address_views.address_add, name="address_add"),
-    path("user/addresses/edit/", address_views.address_edit, name="address_edit"),
-    path("user/addresses/delete/", address_views.address_delete, name="address_delete"),
+    path("user/addresses/edit/<int:address_id>", address_views.address_edit, name="address_edit"),
+    path("user/addresses/delete/<int:address_id>", address_views.address_delete, name="address_delete"),
     #ERROR
     path('error/403/',error_views.handler403,name='403'),
     path('error/404/',error_views.handler404,name='404'),

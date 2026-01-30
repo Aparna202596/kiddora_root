@@ -3,7 +3,6 @@ from products.views import catalog_views
 from products.views import coupon_views
 from products.views import offer_views
 from products.views import product_admin 
-from products.views import product_views
 from products.views import search_views
 app_name = "products"
 
@@ -11,6 +10,9 @@ urlpatterns = [
     #calatog views
     path("user/categories/", catalog_views.category_list_view, name="category_list"),
     path("user/categories/subcategories/", catalog_views.subcategory_list_view, name="subcategory_list"),
+    path("subcategory/products/", catalog_views.product_list, name="product_list"),
+    path("products/", catalog_views.product_detail_view, name="product_detail"),
+    path("products/variant-info/", catalog_views.ajax_variant_info, name="ajax_variant_info"),
 
     #Coupon_views
     path("admin/coupon/", coupon_views.admin_coupon_list, name="admin_coupon_list"),
@@ -33,11 +35,6 @@ urlpatterns = [
     path("products/offer/calculate_cart_total", offer_views.calculate_cart_total, name="calculate_cart_total"),
     path("products/offer/apply_coupon_to_total", offer_views.apply_coupon_to_total, name="apply_coupon_to_total"),
     path("products/offer/checkout_total", offer_views.calculate_checkout_total, name="calculate_checkout_total"),
-
-    #Product_views
-    path("subcategory/products/", product_views.product_list, name="product_list"),
-    path("products/", product_views.product_detail_view, name="product_detail"),
-    path("products/variant-info/", product_views.ajax_variant_info, name="ajax_variant_info"),
 
     #Product_admin
     path("admin/category/", product_admin.admin_category_list, name="admin_category_list"),

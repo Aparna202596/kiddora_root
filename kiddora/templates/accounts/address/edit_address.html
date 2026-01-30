@@ -49,6 +49,14 @@
         <input name="state" value="{{ address.state }}" placeholder="State">
         <input name="country" value="{{ address.country }}" placeholder="Country">
         <input name="pincode" value="{{ address.pincode }}" placeholder="Pincode">
+        
+        <label>Address Type</label>
+        <select name="address_type" required>
+            <option value="">-- Select --</option>
+            <option value="home" {% if address.address_type == "home" %}selected{% endif %}>Home</option>
+            <option value="work" {% if address.address_type == "work" %}selected{% endif %}>Work</option>
+            <option value="other" {% if address.address_type == "other" %}selected{% endif %}>Other</option>
+        </select>
         <button type="submit">Update</button>
     </form>
 </div>

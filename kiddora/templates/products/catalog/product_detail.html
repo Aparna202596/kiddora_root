@@ -1,0 +1,184 @@
+{% extends "base_profile.html" %}
+
+{% block content %}
+<style>
+    .product-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-top: 20px;
+    }
+    .product-image {
+        flex: 1 1 300px;
+        background: #f5f5f5;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+    }
+    .product-details {
+        flex: 2 1 400px;
+    }
+    .product-details h2 {
+        margin: 0 0 10px 0;
+    }
+    .product-details p {
+        margin: 5px 0;
+    }
+    .variant-selectors {
+        display: flex;
+        gap: 20px;
+        margin: 15px 0;
+        flex-wrap: wrap;
+    }
+    .variant-selectors label {
+        font-weight: bold;
+    }
+    select {
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    .stock-info {
+        margin-top: 10px;
+        font-weight: bold;
+        color: #00796b;
+    }
+    .add-to-cart-btn {
+        margin-top: 15px;
+        padding: 10px 20px;
+        background-color: #00bcd4;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .add-to-cart-btn:hover {
+        background-color: #0097a7;
+    }
+    .related-products {
+        margin-top: 50px;
+    }
+    .related-products h3 {
+        margin-bottom: 15px;
+    }
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+    }
+    .related-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .related-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+</style>
+
+<div class="product-container">
+    <!-- Image placeholder -->
+    <div class="product-image">
+        <img src="https://via.placeholder.com/300x300?text={{ product.product_name }}" alt="{{ product.product_name }}">
+    </div>
+
+    <!-- Product details -->
+    <div class="product-details">
+        <h2>{{ product.product_name }}</h2>
+        <p><strong>Brand:</strong> {{ product.brand }}</p>
+        <p><strong>Price:</strong> ₹<span id="product-price">{{ product.final_price }}</span></p>
+        
+        <div class="variant-selectors">
+            <div>
+                <label for="color-select">Color:</label>
+                <select id="color-select">
+                    <option value="">Select Color</option>
+                    {% for variant in variants %}
+                        <option value="{{ variant.id }}" data-size="{{ variant.size }}" data-quantity="{{ variant.inventory.quantity_available }}">{{ variant.color }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="size-select">Size:</label>
+                <select id="size-select">
+                    <option value="">Select Size</option>
+                    {% for variant in variants %}
+                        <option value="{{ variant.id }}" data-color="{{ variant.color }}" data-quantity="{{ variant.inventory.quantity_available }}">{{ variant.size }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="stock-info" id="stock-info">
+            {% if variants %}
+                Available: {{ variants.0.inventory.quantity_available }}
+            {% else %}
+                Out of Stock
+            {% endif %}
+        </div>
+
+        <button class="add-to-cart-btn">Add to Cart</button>
+    </div>
+</div>
+
+<!-- Related products -->
+<div class="related-products">
+    <h3>Related Products</h3>
+    <div class="related-grid">
+        {% for product in related_products %}
+            <div class="related-card">
+                <h4>{{ product.product_name }}</h4>
+                <p>Brand: {{ product.brand }}</p>
+                <p>Price: ₹{{ product.final_price }}</p>
+                <a href="{% url 'products:product_detail' product.id %}">View Details</a>
+            </div>
+        {% empty %}
+            <p>No related products available.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const colorSelect = document.getElementById('color-select');
+    const sizeSelect = document.getElementById('size-select');
+    const priceSpan = document.getElementById('product-price');
+    const stockInfo = document.getElementById('stock-info');
+
+    function updateStockAndPrice(variantId) {
+        if (!variantId) return;
+        fetch("{% url 'products:ajax_variant_info' %}?variant_id=" + variantId)
+        .then(response => response.json())
+        .then(data => {
+            if (!data.error) {
+                priceSpan.textContent = data.price;
+                stockInfo.textContent = "Available: " + data.quantity_available;
+            } else {
+                stockInfo.textContent = data.error;
+            }
+        });
+    }
+
+    colorSelect.addEventListener('change', () => {
+        const selectedId = colorSelect.value;
+        updateStockAndPrice(selectedId);
+        // Update size select to match color
+        for (let opt of sizeSelect.options) {
+            opt.disabled = opt.dataset.color && opt.dataset.color !== colorSelect.selectedOptions[0].text;
+        }
+    });
+
+    sizeSelect.addEventListener('change', () => {
+        const selectedId = sizeSelect.value;
+        updateStockAndPrice(selectedId);
+        // Update color select to match size
+        for (let opt of colorSelect.options) {
+            opt.disabled = opt.dataset.size && opt.dataset.size !== sizeSelect.selectedOptions[0].text;
+        }
+    });
+</script>
+{% endblock %}

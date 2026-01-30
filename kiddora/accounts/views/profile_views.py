@@ -12,6 +12,10 @@ from datetime import timedelta
 from accounts.models import CustomUser
 from django.views.decorators.cache import never_cache
 from orders.models import Order
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 OTP_EXPIRY_MINUTES = 5
 
 @never_cache

@@ -1,7 +1,11 @@
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from accounts.models import UserAddress
 from accounts.decorators import user_login_required
+from django.contrib.auth import get_user_model
 from django.views.decorators.cache import never_cache
+
+User = get_user_model()
 
 @never_cache
 @user_login_required
@@ -25,7 +29,7 @@ def address_add(request):
         is_default = request.POST.get("is_default") == "on"
         
         if is_default:
-            UserAddress.objects.filter(user=request.user).update(is_default=False)
+            UserAddress.objects.filter(user=request.user,is_default=True).update(is_default=False)
             UserAddress.objects.create(
                 user=request.user,
                 address_line1=request.POST.get("address_line1"),
@@ -54,6 +58,13 @@ def address_edit(request, address_id):
         address.country = request.POST.get("country")
         address.pincode = request.POST.get("pincode")
         address.address_type = request.POST.get("address_type")
+        address_type = request.POST.get("address_type")
+
+        if not address_type:
+            messages.error(request, "Address type is required")
+            return redirect("accounts:address_edit", address_id=address.id)
+
+        address.address_type = address_type
         address.is_default = is_default
         address.save()
         return redirect("accounts:address_list")

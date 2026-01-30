@@ -1,11 +1,41 @@
 {% extends "base_profile.html" %}
+
 {% block content %}
-<h2>Subcategories in {{ category.category_name }}</h2>
-<ul>
-    {% for sub in subcategories %}
-        <li><a href="{% url 'products:product_list' %}">{{ sub.subcategory_name }}</a></li>
+<style>
+    .subcategory-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    .subcategory-card {
+        background: #e0f7fa;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+        text-decoration: none;
+        color: #333;
+    }
+    .subcategory-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .subcategory-card h4 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+</style>
+
+<h2>{{ category.category_name }} - Subcategories</h2>
+<div class="subcategory-grid">
+    {% for subcategory in subcategories %}
+        <a href="{% url 'products:product_list' category.id subcategory.id %}" class="subcategory-card">
+            <h4>{{ subcategory.subcategory_name }}</h4>
+        </a>
     {% empty %}
-        <li>No subcategories found.</li>
+        <p>No subcategories available.</p>
     {% endfor %}
-</ul>
+</div>
 {% endblock %}
