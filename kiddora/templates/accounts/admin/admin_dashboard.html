@@ -1,233 +1,253 @@
 {% extends "base_admin.html" %}
-{% load static %}
 
 {% block title %}Admin Dashboard | Kiddora{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<style>
+.dashboard-wrapper {
+    padding: 24px;
+    background: linear-gradient(135deg,#f4f7fb,#eef2f7);
+    min-height: 100vh;
+}
+.dashboard-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; }
 
-    <!-- TODAY SALES -->
-    <h2 class="dashboard-title">Today's Sales</h2>
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 20px; }
+.stat-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+.stat-label { font-size: 13px; color: #777; }
+.stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+.stat-extra { font-size: 12px; margin-top: 6px; }
 
+.bg-blue { background: linear-gradient(135deg,#dbeafe,#eff6ff); }
+.bg-green { background: linear-gradient(135deg,#dcfce7,#f0fdf4); }
+.bg-yellow { background: linear-gradient(135deg,#fef3c7,#fffbeb); }
+.bg-red { background: linear-gradient(135deg,#fee2e2,#fff1f2); }
+
+.section { margin-top: 40px; }
+.section-title { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 24px; }
+.chart-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+
+.table-wrapper { overflow-x: auto; background: #fff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #eee; text-align: left; }
+th { background: #f8fafc; font-weight: 600; }
+
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: #fff; }
+.badge-green { background:#16a34a; }
+.badge-yellow { background:#f59e0b; }
+.badge-red { background:#dc2626; }
+
+@media(max-width:768px){ .dashboard-title { font-size: 20px; } }
+</style>
+
+<div class="dashboard-wrapper">
+
+    <h2 class="dashboard-title">Admin Dashboard</h2>
+
+    <!-- ===== KPI CARDS ===== -->
     <div class="stats-grid">
-        <div class="stat-card pink">
-            <i class="stat-icon fa-solid fa-indian-rupee-sign"></i>
-            <h3>30K</h3>
-            <p>Total Sales</p>
-            <small>-8% than yesterday</small>
+        <div class="stat-card bg-blue">
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-value">{{ total_orders }}</div>
         </div>
-
-        <div class="stat-card yellow">
-            <i class="stat-icon fa-solid fa-receipt"></i>
-            <h3>300</h3>
-            <p>Total Orders</p>
-            <small>-5% than yesterday</small>
+        <div class="stat-card bg-green">
+            <div class="stat-label">Completed Orders</div>
+            <div class="stat-value">{{ completed_orders }}</div>
         </div>
-
-        <div class="stat-card green">
-            <i class="stat-icon fa-solid fa-box"></i>
-            <h3>50</h3>
-            <p>Products Sold</p>
+        <div class="stat-card bg-yellow">
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-value">₹ {{ total_revenue }}</div>
         </div>
-
-        <div class="stat-card purple">
-            <i class="stat-icon fa-solid fa-user-plus"></i>
-            <h3>15</h3>
-            <p>New Customers</p>
-            <small>+3% than yesterday</small>
+        <div class="stat-card bg-red">
+            <div class="stat-label">Low Stock Products</div>
+            <div class="stat-value">{{ low_stock_count }}</div>
+        </div>
+        <div class="stat-card bg-green">
+            <div class="stat-label">Products Sold</div>
+            <div class="stat-value">{{ products_sold }}</div>
+        </div>
+        <div class="stat-card bg-blue">
+            <div class="stat-label">New Customers (30 Days)</div>
+            <div class="stat-value">{{ new_customers }}</div>
+            <div class="stat-extra">Growth: {{ customer_growth }}%</div>
         </div>
     </div>
 
-    <!-- MID SECTION -->
-    <div class="middle-section">
-
-        <!-- LEFT: DONUT CHARTS -->
-        <div class="donut-wrapper">
-            <div class="donut-card">
-                <canvas id="ordersChart"></canvas>
-                <span>Total Orders</span>
+    <!-- ===== CHARTS ===== -->
+    <div class="section">
+        <h3 class="section-title">Top Performance Analytics</h3>
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h4>Top Products Sold</h4>
+                <canvas id="productChart"></canvas>
             </div>
-
-            <div class="donut-card">
-                <canvas id="customersChart"></canvas>
-                <span>Customer Growth</span>
+            <div class="chart-card">
+                <h4>Top Categories</h4>
+                <canvas id="categoryChart"></canvas>
             </div>
-
-            <div class="donut-card">
-                <canvas id="revenueChart"></canvas>
-                <span>Total Revenue</span>
-            </div>
-        </div>
-
-        <!-- RIGHT: PRODUCT SOLD -->
-        <div class="chart-wide">
-            <div class="chart-header">
-                <h4>Product Sold (Last 7 Days)</h4>
-                <button class="btn-outline">Download Report</button>
-            </div>
-            <div class="chart-sm">
-                <canvas id="productSoldChart"></canvas>
+            <div class="chart-card">
+                <h4>Top Brands</h4>
+                <canvas id="brandChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- REVENUE COMPARISON -->
-    <div class="chart-large">
-        <h4>Total Revenue Comparison (2024 vs 2025)</h4>
-        <div class="chart-sm">
-            <canvas id="revenueCompareChart"></canvas>
+    <div class="section">
+        <h3 class="section-title">Advanced Analytics</h3>
+        <div class="chart-grid">
+            <div class="chart-card">
+                <h4>Total Orders / Customers / Revenue</h4>
+                <canvas id="donutChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Products Sold (Last 7 Days)</h4>
+                <canvas id="areaChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Total Revenue (Monthly)</h4>
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== RECENT ORDERS ===== -->
+    <div class="section">
+        <h3 class="section-title">Recent Orders</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>User</th>
+                        <th>Status</th>
+                        <th>Final Amount</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>{{ order.order_id }}</td>
+                        <td>{{ order.user.email }}</td>
+                        <td>
+                            {% if order.order_status == "DELIVERED" %}
+                                <span class="badge badge-green">Delivered</span>
+                            {% elif order.order_status == "CANCELLED" %}
+                                <span class="badge badge-red">Cancelled</span>
+                            {% else %}
+                                <span class="badge badge-yellow">{{ order.order_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>₹ {{ order.final_amount }}</td>
+                        <td>{{ order.created_at|date:"d M Y" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">No orders available</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-function donutChart(id, color, value) {
-    new Chart(document.getElementById(id), {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [value, 100 - value],
-                backgroundColor: [color, '#eee'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            cutout: '70%',
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false }
-            }
-        }
-    });
-}
-
-donutChart('ordersChart', '#ff4d4d', 81);
-donutChart('customersChart', '#2ecc71', 22);
-donutChart('revenueChart', '#3498db', 62);
-
-new Chart(document.getElementById('productSoldChart'), {
-    type: 'line',
+/* ===== TOP PRODUCTS ===== */
+new Chart(document.getElementById('productChart'), {
+    type: 'bar',
     data: {
-        labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        labels: [{% for p in top_products %}'{{ p.variant__product__product_name }}',{% endfor %}],
         datasets: [{
-            data: [8,12,10,18,14,20,16],
-            borderColor: '#3498db',
-            backgroundColor: 'rgba(52,152,219,0.15)',
-            tension: 0.45,
-            fill: true,
-            pointRadius: 4
+            label: 'Quantity Sold',
+            data: [{% for p in top_products %}{{ p.total }},{% endfor %}],
+            backgroundColor: 'rgba(79,70,229,0.7)',
+            borderRadius: 6
         }]
     },
-    options: {
-        plugins: { legend: { display: false } },
-        scales: {
-            y: { beginAtZero: true },
-            x: {}
-        }
-    }
+    options:{ responsive:true, plugins:{ legend:{ display:false } } }
 });
 
-new Chart(document.getElementById('revenueCompareChart'), {
+/* ===== TOP CATEGORIES ===== */
+new Chart(document.getElementById('categoryChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for c in top_categories %}'{{ c.variant__product__subcategory__category__category_name }}',{% endfor %}],
+        datasets: [{
+            label: 'Quantity Sold',
+            data: [{% for c in top_categories %}{{ c.total }},{% endfor %}],
+            backgroundColor: 'rgba(16,185,129,0.7)',
+            borderRadius: 6
+        }]
+    },
+    options:{ responsive:true, plugins:{ legend:{ display:false } } }
+});
+
+/* ===== TOP BRANDS ===== */
+new Chart(document.getElementById('brandChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for b in top_brands %}'{{ b.variant__product__brand }}',{% endfor %}],
+        datasets: [{
+            label: 'Quantity Sold',
+            data: [{% for b in top_brands %}{{ b.total }},{% endfor %}],
+            backgroundColor: 'rgba(234,179,8,0.7)',
+            borderRadius: 6
+        }]
+    },
+    options:{ responsive:true, plugins:{ legend:{ display:false } } }
+});
+
+/* ===== DONUT CHART ===== */
+new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Total Orders','Customer Growth (%)','Total Revenue'],
+        datasets: [{
+            data: [{{ total_orders }}, {{ customer_growth }}, {{ total_revenue|floatformat:0 }}],
+            backgroundColor: ['#4f46e5','#10b981','#ea580c'],
+            hoverOffset: 6
+        }]
+    },
+    options:{ responsive:true }
+});
+
+/* ===== AREA CHART (Products Sold Last 7 Days) ===== */
+new Chart(document.getElementById('areaChart'), {
     type: 'line',
     data: {
-        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-        datasets: [
-            {
-                label: '2025',
-                data: [120,150,180,200,240,260,300,320,350,380,420,450],
-                borderColor: '#e74c3c',
-                tension: 0.4
-            },
-            {
-                label: '2024',
-                data: [100,130,160,180,210,230,260,290,310,340,370,400],
-                borderColor: '#3498db',
-                tension: 0.4
-            }
-        ]
-    }
+        labels: [{% for day in last_7_days_labels %}'{{ day }}',{% endfor %}],
+        datasets: [{
+            label: 'Products Sold',
+            data: [{% for qty in products_sold_per_day %}{{ qty }},{% endfor %}],
+            fill:true,
+            backgroundColor:'rgba(59,130,246,0.2)',
+            borderColor:'rgba(59,130,246,1)',
+            tension:0.3
+        }]
+    },
+    options:{ responsive:true, plugins:{ legend:{ display:false } } }
+});
+
+/* ===== LINE CHART (Revenue Trend) ===== */
+new Chart(document.getElementById('lineChart'), {
+    type:'line',
+    data:{
+        labels:[ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ],
+        datasets:[{
+            label:'Total Revenue',
+            data:[ {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }} ],
+            borderColor:'rgba(220,38,38,1)',
+            backgroundColor:'rgba(220,38,38,0.1)',
+            fill:true,
+            tension:0.3
+        }]
+    },
+    options:{ responsive:true }
 });
 </script>
-
-<style>
-.dashboard-container { padding: 28px; }
-.dashboard-title { margin-bottom: 24px; font-size: 22px; }
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
-    gap: 20px;
-}
-
-.stat-card {
-    padding: 18px;
-    border-radius: 14px;
-}
-.stat-icon { font-size: 24px; margin-bottom: 6px; }
-
-.pink { background:#ffe6ee; }
-.yellow { background:#fff6d9; }
-.green { background:#e7f9ef; }
-.purple { background:#f1e9ff; }
-
-/* MID LAYOUT */
-.middle-section {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 24px;
-    margin-top: 40px;
-}
-
-/* DONUTS */
-.donut-wrapper {
-    background: #fff;
-    padding: 18px;
-    border-radius: 16px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.donut-card {
-    text-align: center;
-}
-.donut-card canvas {
-    width: 90px !important;
-    height: 90px !important;
-}
-.donut-card span {
-    font-size: 13px;
-    display: block;
-    margin-top: 6px;
-}
-
-/* CHARTS */
-.chart-wide, .chart-large {
-    background: #fff;
-    padding: 20px;
-    border-radius: 16px;
-}
-
-.chart-sm {
-    height: 220px;
-}
-
-.chart-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-.btn-outline {
-    border: 1px solid #3498db;
-    background: none;
-    color: #3498db;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-}
-</style>
-
 {% endblock %}

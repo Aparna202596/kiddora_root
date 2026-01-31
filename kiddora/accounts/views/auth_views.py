@@ -37,33 +37,42 @@ def google_login(request):
 def user_login(request):
     if request.user.is_authenticated and request.user.role == CustomUser.ROLE_CUSTOMER:
         return redirect("store:home")
+    
     remembered_user = request.COOKIES.get("remember_user", "")
+
     if request.method == "POST":
-        identifier = request.POST.get("identifier")
+        email = request.POST.get("identifier")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-        try:
-            user_obj=User.objects.get(Q(email__iexact=identifier) | Q(username__iexact=identifier))
-            user = authenticate(request, email=user_obj.email, password=password)
-        except User.DoesNotExist:
-            user=None
-        if user and user.role == CustomUser.ROLE_CUSTOMER:
-            if not user.email_verified:
-                messages.error(request, "Please verify your email first")
-                return redirect("accounts:login")
+        
+        user=authenticate(request,username=email,password=password)
+
+        if user is None:
+            messages.error(request, "Invalid username or password")
+            return redirect("accounts:login")
+
+        if user.role != CustomUser.ROLE_CUSTOMER:
+            messages.error(request, "Access denied")
+            return redirect("accounts:login")
             
-            elif not user.is_active:
-                messages.error(request, "Your account is blocked")
-                return redirect("accounts:blocked")
+        if not user.is_active:
+            return redirect("accounts:blocked")
+        
+        if not user.email_verified:
+            messages.error(request, "Please verify your email")
+            return redirect("accounts:login")
             
-            login(request, user)
-            response = redirect("store:home")
-            if remember_me:
-                response.set_cookie("remember_user",identifier,max_age=7 * 24 * 60 * 60)
-            else:
-                response.delete_cookie("remember_user")
-            return response
-        messages.error(request, "Invalid username or password")
+        login(request, user)
+        
+        response = redirect("store:home")
+        
+        if remember_me:
+            response.set_cookie("remember_user",email,max_age=7 * 24 * 60 * 60)
+        else:
+            response.delete_cookie("remember_user")
+
+        return response
+    
     return render(request,"accounts/auth/login.html",{"remembered_user": remembered_user},)
 
 #Signup
@@ -135,17 +144,21 @@ def admin_login(request):
     if request.user.is_authenticated:
         if request.user.role == CustomUser.ROLE_ADMIN:
             return redirect("accounts:admin_dashboard")
-        else:
-            logout(request)
-            return redirect("accounts:blocked")
+        logout(request)
+        return redirect("accounts:blocked")
 
     if request.method == "POST":
-        identifier = request.POST.get("username") or request.POST.get("email")
+        email= request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
+        print("Identifier:", email)
 
-        user = authenticate(request, email=identifier, password=password)
-
+        user = authenticate(request, username=email, password=password)
+        print("Authenticated User:", user)
+        print("User Role:", user.role if user else "No user")
+        print("Is Active:", user.is_active if user else "No user")
+        print("Email Check:", email.endswith("@kiddora.com") if user else "No user")
+        print("password:", password)
         if user is None:
             messages.error(request, "Invalid credentials")
             return redirect("accounts:admin_login")
@@ -165,17 +178,11 @@ def admin_login(request):
         login(request, user)
 
         response = redirect("accounts:admin_dashboard")
-        if remember_me:
-            response.set_cookie(
-                "remember_admin",
-                user.username,
-                max_age=7 * 24 * 60 * 60,
-                httponly=True,
-                secure=False,
-                samesite="Lax",
-            )
-        return response
 
+        if remember_me:
+            response.set_cookie("remember_admin",email,max_age=7 * 24 * 60 * 60)
+        
+        return response
     return render(request, "accounts/admin/admin_login.html")
 
 @never_cache

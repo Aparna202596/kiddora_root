@@ -141,7 +141,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # allauth settings
 AUTHENTICATION_BACKENDS = (
-    'accounts.backends.CustomBackend',
+    'accounts.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',  # default
     'allauth.account.auth_backends.AuthenticationBackend',  # allauth
 )

@@ -19,13 +19,10 @@ class BlockedUserMiddleware:
         user = request.user
 
         # Public URLs that must bypass blocking
-        allowed_prefixes = (
-            "/accounts/user/",
-            "/accounts/admin/admin_login/",
-            "/accounts/error/",
-        )
+        allowed_prefixes = ("/",)
 
         if user.is_authenticated and not user.is_active:
             if not request.path.startswith(allowed_prefixes):
                 logout(request)
-                return redirect("accounts:blocked") 
+                return redirect("accounts:blocked")
+        return self.get_response(request)

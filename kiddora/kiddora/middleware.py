@@ -12,17 +12,17 @@ class AdminAccessMiddleware:
 
     def __call__(self, request):
         admin_login_url = reverse("accounts:admin_login")
+        admin_logout_url = reverse("accounts:admin_logout")
         blocked_url = reverse("accounts:blocked")
 
-        # Allow admin login & blocked page
-        if request.path in [admin_login_url, blocked_url]:
+        # Allow auth-related admin URLs
+        if request.path in [admin_login_url, admin_logout_url, blocked_url]:
             return self.get_response(request)
 
         # Protect admin routes
         if request.path.startswith("/accounts/admin/"):
             if not request.user.is_authenticated:
                 return redirect("accounts:admin_login")
-
             if request.user.role != CustomUser.ROLE_ADMIN:
                 return redirect("accounts:blocked")
 

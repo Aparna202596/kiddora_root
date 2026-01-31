@@ -57,9 +57,9 @@ urlpatterns = [
     path("user/addresses/edit/<int:address_id>", address_views.address_edit, name="address_edit"),
     path("user/addresses/delete/<int:address_id>", address_views.address_delete, name="address_delete"),
     #ERROR
-    path('error/403/',error_views.handler403,name='403'),
-    path('error/404/',error_views.handler404,name='404'),
-    path('error/500/',error_views.handler500,name='500'),
+    path('errors/403/',error_views.handler403,name='403'),
+    path('errors/404/',error_views.handler404,name='404'),
+    path('errors/500/',error_views.handler500,name='500'),
 
-    path('error/blocked/',TemplateView.as_view(template_name="accounts/errors/blocked.html"),name="blocked")
+    path('blocked/',TemplateView.as_view(template_name="accounts/errors/blocked.html"),name="blocked")
 ]
