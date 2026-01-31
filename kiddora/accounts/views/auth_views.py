@@ -27,6 +27,11 @@ def user_logout(request):
     response.delete_cookie("remember_user")
     return response
 
+#Google_login
+@never_cache
+def google_login(request):
+    return redirect("/accounts/google/login/")
+
 #User_login
 @never_cache
 def user_login(request):
@@ -126,59 +131,62 @@ def user_signup(request):
 
 @never_cache
 def admin_login(request):
-    # If already logged in, redirect based on role
+    # Already logged in as ADMIN
     if request.user.is_authenticated:
         if request.user.role == CustomUser.ROLE_ADMIN:
             return redirect("accounts:admin_dashboard")
+        else:
+            logout(request)
+            return redirect("accounts:blocked")
 
     if request.method == "POST":
         identifier = request.POST.get("username") or request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-        # Authenticate user
-        user = authenticate(request, username=identifier, password=password)
-        if not user:
+
+        user = authenticate(request, email=identifier, password=password)
+
+        if user is None:
             messages.error(request, "Invalid credentials")
-            return redirect("accounts:auth_login")
-        # Block inactive accounts
+            return redirect("accounts:admin_login")
+
         if not user.is_active:
             messages.error(request, "Your account is blocked")
             return redirect("accounts:blocked")
-        # ROLE CHECK
-        if user.role not in [CustomUser.ROLE_ADMIN]:
+
+        if user.role != CustomUser.ROLE_ADMIN:
             messages.error(request, "Access denied")
-            return redirect("accounts:auth_login")
-        # Admin domain validation
-        if user.role == CustomUser.ROLE_ADMIN and not user.email.endswith("@kiddora.com"):
-            messages.error(
-                request,
-                "Admin email must be <admin_name>@kiddora.com",
-            )
-            return redirect("accounts:auth_login")
-        # LOGIN
+            return redirect("accounts:admin_login")
+
+        if not user.email.endswith("@kiddora.com"):
+            messages.error(request, "Admin email must be <name>@kiddora.com")
+            return redirect("accounts:admin_login")
+
         login(request, user)
-        # Remember-me cookie
+
         response = redirect("accounts:admin_dashboard")
         if remember_me:
-            response.set_cookie("remember_admin",identifier, max_age=7 * 24 * 60 * 60,httponly=True,secure=True,)
+            response.set_cookie(
+                "remember_admin",
+                user.username,
+                max_age=7 * 24 * 60 * 60,
+                httponly=True,
+                secure=False,
+                samesite="Lax",
+            )
         return response
-    return render(request, "accounts/auth/admin_login.html")
+
+    return render(request, "accounts/admin/admin_login.html")
 
 @never_cache
-@login_required
+@admin_login_required
 def admin_logout(request):
     role = request.user.role
     if role not in [CustomUser.ROLE_ADMIN]:
         return redirect("store:home")
     logout(request)
-    response = redirect("accounts:auth_login")
+    response = redirect("accounts:admin_login")
     # Remove role-specific remember-me cookie
     if role == CustomUser.ROLE_ADMIN:
         response.delete_cookie("remember_admin")
     return response
-    
-def google_login(request):
-    return redirect("/accounts/google/login/")
-
-# def facebook_login(request):
-#     return redirect("/facebook/login/")

@@ -1,23 +1,29 @@
 from django.shortcuts import redirect
-from django.http import HttpResponseForbidden
-from accounts.models import CustomUser
 from django.urls import reverse
+from accounts.models import CustomUser
+
 class AdminAccessMiddleware:
     """
-    Middleware to protect all admin URLs.
-    Only allows authenticated, active, admin users to access URLs starting with /admin/ or /admin-panel/.
+    Protect admin URLs but allow admin login page itself.
     """
-    ADMIN_URL_PREFIXES = ("/admin/", "/accounts/admin/")
 
     def __init__(self, get_response):
-            self.get_response = get_response
+        self.get_response = get_response
 
     def __call__(self, request):
+        admin_login_url = reverse("accounts:admin_login")
+        blocked_url = reverse("accounts:blocked")
+
+        # Allow admin login & blocked page
+        if request.path in [admin_login_url, blocked_url]:
+            return self.get_response(request)
+
+        # Protect admin routes
         if request.path.startswith("/accounts/admin/"):
-            if request.path == reverse("accounts:blocked"):
-                return self.get_response(request)
             if not request.user.is_authenticated:
-                return redirect("accounts:auth_login")
+                return redirect("accounts:admin_login")
+
             if request.user.role != CustomUser.ROLE_ADMIN:
-                return redirect("accounts:auth_login")
+                return redirect("accounts:blocked")
+
         return self.get_response(request)

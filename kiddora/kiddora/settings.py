@@ -77,9 +77,9 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     
-    'allauth.account.middleware.AccountMiddleware',
     'kiddora.middleware.AdminAccessMiddleware', #custom middleware to protect admin URLs
     'accounts.middleware.BlockedUserMiddleware', #custom middleware to block inactive users
+    'allauth.account.middleware.AccountMiddleware',
 
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

@@ -20,8 +20,8 @@ urlpatterns = [
     path("accounts/google/login/", auth_views.google_login, name="google_login"),
 
     #AUTHENTICATION – ADMIN
-    path("admin/auth_login/", auth_views.admin_login, name="auth_login"),
-    path("admin/auth_logout/", auth_views.admin_logout, name="auth_logout"),
+    path("admin/admin_login/", auth_views.admin_login, name="admin_login"),
+    path("admin/admin_logout/", auth_views.admin_logout, name="admin_logout"),
 
     # AUTHENTICATION – ADMIN
     path("admin/admin_dashboard/", admin_views.admin_dashboard_view, name="admin_dashboard"),

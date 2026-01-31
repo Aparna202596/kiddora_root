@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 from django.urls import reverse
+
 class BlockedUserMiddleware:
     """
     Logs out inactive users and redirects them to blocked page.
@@ -18,19 +19,13 @@ class BlockedUserMiddleware:
         user = request.user
 
         # Public URLs that must bypass blocking
-        allowed_paths = [
-            "login/",
-            "signup/",
-            "logout/",
-            "verify-otp/",
-            "resend-otp/",
-            "forgot-password/",
-            "verify-forgot-password/",
-            "reset-password/",
-            "blocked/",
-        ]
+        allowed_prefixes = (
+            "/accounts/user/",
+            "/accounts/admin/admin_login/",
+            "/accounts/error/",
+        )
+
         if user.is_authenticated and not user.is_active:
-            if request.path not in allowed_paths:
+            if not request.path.startswith(allowed_prefixes):
                 logout(request)
-                return redirect("accounts:blocked")
-        return self.get_response(request)
+                return redirect("accounts:blocked") 
