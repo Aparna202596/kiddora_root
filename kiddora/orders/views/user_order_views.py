@@ -114,19 +114,6 @@ def cancel_order_item_view(request, item_id):
     return redirect("orders:order_detail", order_id=item.order.order_id)
 
 @user_login_required
-def request_order_return(request, order_id):
-    order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    if request.method == "POST":
-        reason = request.POST.get("reason")
-        OrderReturn.objects.create(
-            order=order,
-            reason=reason,
-            status="RETURN_REQUESTED"
-        )
-        return redirect("orders:order_detail", order_id=order.order_id)
-    return render(request, "orders/user/request_return.html", {"order": order})
-
-@user_login_required
 def download_invoice(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     template = get_template("orders/user/invoice.html")

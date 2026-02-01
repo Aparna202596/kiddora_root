@@ -17,6 +17,5 @@ urlpatterns = [
     path('user/orders/details/', user_order_views.order_detail, name='order_detail'),
     path('user/orders/cancel_order/', user_order_views.cancel_order, name='cancel_order'),
     path('user/orders/cancel_order_item/', user_order_views.cancel_order_item_view, name='cancel_order_item'),
-    path('user/orders/order_return_request/', user_order_views.request_order_return, name='request_order_return'),
     path('user/orders/invoice/', user_order_views.download_invoice, name='download_invoice'),
 ]

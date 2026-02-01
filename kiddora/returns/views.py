@@ -54,7 +54,18 @@ def request_return(request, order_item_id):
     return render(request, "returns/return_request.html", {
         "order_item": order_item
     })
-
+# @user_login_required
+# def request_order_return(request, order_id):
+#     order = get_object_or_404(Order, order_id=order_id, user=request.user)
+#     if request.method == "POST":
+#         reason = request.POST.get("reason")
+#         OrderReturn.objects.create(
+#             order=order,
+#             reason=reason,
+#             status="RETURN_REQUESTED"
+#         )
+#         return redirect("orders:order_detail", order_id=order.order_id)
+#     return render(request, "returns/request_return.html", {"order": order})
 @user_login_required
 def return_status_view(request):
     returns = Return.objects.filter(

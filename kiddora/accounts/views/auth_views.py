@@ -37,16 +37,23 @@ def google_login(request):
 def user_login(request):
     if request.user.is_authenticated and request.user.role == CustomUser.ROLE_CUSTOMER:
         return redirect("store:home")
-    
+
+
     remembered_user = request.COOKIES.get("remember_user", "")
 
     if request.method == "POST":
-        email = request.POST.get("identifier")
+        email = request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
-        
-        user=authenticate(request,username=email,password=password)
 
+        print("Email:", email)
+        print("Passwords:", password)
+        print("Remember Me:", remember_me)
+
+        user=authenticate(request,email=email,password=password)
+
+        print("Authenticated User:", user)
+        print("Passwords:", password)
         if user is None:
             messages.error(request, "Invalid username or password")
             return redirect("accounts:login")
@@ -63,7 +70,15 @@ def user_login(request):
             return redirect("accounts:login")
             
         login(request, user)
-        
+
+        print("Logged in User:", user)
+        print("User Role:", user.role)
+        print("Is Active:", user.is_active)
+        print("Email Verified:", user.email_verified)
+        print("password:", password)
+        print("Remember Me:", remember_me)
+        print("Email after login:", email)
+
         response = redirect("store:home")
         
         if remember_me:
@@ -81,11 +96,14 @@ def user_signup(request):
     error=''
     success=''
     if request.method=='POST':
-        #username=request.POST['username']
+
         username=request.POST.get('username','').strip()
         email=request.POST['email']
         password1=request.POST['password1']
         password2=request.POST['password2']
+
+        # Validation checks
+
         if User.objects.filter(username__iexact=username).exists():
             messages.error(request,"Username already exists!")
             return redirect("accounts:signup")
@@ -117,6 +135,7 @@ def user_signup(request):
             is_active=False,
             email_verified=False,
         )
+
         user.otp = generate_otp()
         user.otp_created_at = timezone.now()
         user.save()
@@ -133,7 +152,7 @@ def user_signup(request):
             print("EMAIL ERROR:", e)
             messages.error(request, "Failed to send OTP. Try again later.")
             return redirect("accounts:signup")
-        
+
         request.session["verify_user_id"] = user.id
         return redirect("accounts:verify_signup_otp")
     return render(request,'accounts/auth/signup.html',{'error':error,'success':success})
@@ -154,11 +173,7 @@ def admin_login(request):
         print("Identifier:", email)
 
         user = authenticate(request, username=email, password=password)
-        print("Authenticated User:", user)
-        print("User Role:", user.role if user else "No user")
-        print("Is Active:", user.is_active if user else "No user")
-        print("Email Check:", email.endswith("@kiddora.com") if user else "No user")
-        print("password:", password)
+
         if user is None:
             messages.error(request, "Invalid credentials")
             return redirect("accounts:admin_login")
