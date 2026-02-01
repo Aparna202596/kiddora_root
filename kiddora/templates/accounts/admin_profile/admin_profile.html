@@ -1,0 +1,101 @@
+{% extends "base_admin.html" %}
+{% block title %}Admin Profile{% endblock %}
+
+{% block content %}
+<style>
+.admin-profile-wrapper {
+    display: flex;
+    gap: 24px;
+    padding: 24px;
+}
+
+.profile-card {
+    flex: 3;
+    background: #fff;
+    padding: 24px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+.profile-card h2 {
+    margin-bottom: 16px;
+}
+
+.profile-row {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.profile-row span {
+    font-weight: 600;
+    color: #374151;
+}
+
+.profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 16px;
+    border: 2px solid #e5e7eb;
+}
+
+.sidebar {
+    flex: 1;
+    background: #f9fafb;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+
+.sidebar h4 {
+    margin-bottom: 14px;
+}
+
+.sidebar a {
+    display: block;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #111827;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.sidebar a:hover {
+    background: #1f2933;
+}
+</style>
+
+<div class="admin-profile-wrapper">
+
+    <!-- PROFILE INFO -->
+    <div class="profile-card">
+        {% if admin.profile_image %}
+            <img src="{{ admin.profile_image.url }}" class="profile-image">
+        {% endif %}
+
+        <h2>Admin Profile</h2>
+
+        <div class="profile-row"><span>Email:</span> {{ admin.email }}</div>
+        <div class="profile-row"><span>Username:</span> {{ admin.username}}</div>
+        <div class="profile-row"><span>Full Name:</span> {{ admin.full_name|default:"—" }}</div>
+        <div class="profile-row"><span>Phone:</span> {{ admin.phone|default:"—" }}</div>
+        <div class="profile-row"><span>Date Joined:</span> {{ admin.date_joined }}</div>
+        <div class="profile-row"><span>Last Login:</span> {{ admin.last_login }}</div>
+
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <div class="sidebar">
+        <h4>Admin Actions</h4>
+
+        <a href="{% url 'accounts:admin_edit_profile' %}">Edit Profile</a>
+        <a href="{% url 'accounts:admin_activity_log' %}">Activity Log</a>
+        <a href="{% url 'accounts:admin_security_info' %}">Security Info</a>
+    </div>
+
+</div>
+{% endblock %}

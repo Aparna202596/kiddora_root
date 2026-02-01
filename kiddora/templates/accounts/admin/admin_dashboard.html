@@ -199,17 +199,49 @@ new Chart(document.getElementById('brandChart'), {
 });
 
 /* ===== DONUT CHART ===== */
+
+Chart.register({
+    id: 'centerText',
+    beforeDraw(chart) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+
+        const centerX = (chartArea.left + chartArea.right) / 2;
+        const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.font = '12px sans-serif';
+        ctx.fillStyle = '#374151';
+        ctx.fillText('Total Orders', centerX, centerY - 6);
+
+        ctx.font = '11px sans-serif';
+        ctx.fillStyle = '#6b7280';
+        ctx.fillText('{{ customer_growth }}%', centerX, centerY + 8);
+
+        ctx.restore();
+    }
+});
+
 new Chart(document.getElementById('donutChart'), {
     type: 'doughnut',
     data: {
         labels: ['Total Orders','Customer Growth (%)','Total Revenue'],
         datasets: [{
             data: [{{ total_orders }}, {{ customer_growth }}, {{ total_revenue|floatformat:0 }}],
-            backgroundColor: ['#4f46e5','#10b981','#ea580c'],
+            backgroundColor: ['#aaa7e7','#9ce4cc','#fcaa7f'],
             hoverOffset: 6
         }]
     },
-    options:{ responsive:true }
+    options:{
+        responsive:true,
+        cutout: '50%',   // ✅ reduces donut diameter
+        plugins:{
+            legend:{ display:true }
+        }
+    }
 });
 
 /* ===== AREA CHART (Products Sold Last 7 Days) ===== */

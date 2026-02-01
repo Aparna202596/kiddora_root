@@ -1,6 +1,7 @@
 from django.urls import path
 from accounts.views import auth_views
 from accounts.views import admin_views
+from accounts.views import admin_profile_views
 from accounts.views import otp_views
 from accounts.views import profile_views
 from accounts.views import address_views
@@ -26,6 +27,11 @@ urlpatterns = [
     # AUTHENTICATION – ADMIN
     path("admin/admin_dashboard/", admin_views.admin_dashboard_view, name="admin_dashboard"),
     path("admin/sales_report/",admin_views.admin_sales_report,name="sales_report"),
+    
+    path("admin/admin_profile/",admin_profile_views.admin_profile, name="admin_profile"),
+    path("admin/admin_profile/edit/",admin_profile_views.admin_edit_profile,name="admin_edit_profile"),
+    path("admin/admin_profile/activity/",admin_profile_views.admin_activity_log,name="admin_activity_log"),
+    path("admin/admin_profile/security/",admin_profile_views.admin_security_info,name="admin_security_info"),
     
     # ADMIN – USER MANAGEMENT
     path("admin/customers/", admin_views.admin_user_list, name="admin_user_list"),

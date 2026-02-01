@@ -1,0 +1,54 @@
+{% extends "base_admin.html" %}
+{% block title %}Admin Activity Log{% endblock %}
+
+{% block content %}
+<style>
+.table-wrapper {
+    padding: 24px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+th, td {
+    padding: 12px;
+    font-size: 13px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+    background: #f9fafb;
+}
+</style>
+
+<div class="table-wrapper">
+    <h2>Recent Activity</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>User</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for order in recent_orders %}
+            <tr>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.user.email }}</td>
+                <td>{{ order.order_status }}</td>
+                <td>{{ order.created_at }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">No activity found</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
