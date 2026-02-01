@@ -12,27 +12,22 @@
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-left">
+
             <h2>Login</h2>
-            
+                        <a href="{% url 'accounts:google_login' %}" class="btn btn-danger w-100">
+                Login with Google
+            </a>
+
+            <div class="divider">or</div>
 
             <form method="post" novalidate>
                 {% csrf_token %}
 
-                <input
-                    type="text"
-                    name="identifier"
-                    placeholder="Username or Email"
-                    value="{{ remembered_user }}"
-                    required
-                >
+                <input type="email" name="email" placeholder="Email" value="{{ remembered_user }}" required>
 
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    required
-                >
+                <input type="password" name="password" placeholder="Password" required >
 
+                <label><input type="checkbox" name="remember_me"> Remember Me</label>
                 {% if messages %}
                     {% for message in messages %}
                         <p class="error-text">{{ message }}</p>
@@ -51,6 +46,7 @@
                 <a href="{% url 'accounts:signup' %}">Sign up now!</a>
             </p>
         </div>
+
 
         <div class="auth-right">
             <img src="{% static 'images/gcas_01.jpeg' %}" alt="Login image">

@@ -10,7 +10,7 @@ from django.views.decorators.cache import never_cache
 from accounts.models import CustomUser,UserAddress
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.core.mail import send_mail
-from utils.generate_otp import generate_otp
+from django.utils.crypto import get_random_string
 import re
 from django.conf import settings
 from django.urls import reverse
@@ -18,6 +18,11 @@ from django.urls import reverse
 User = get_user_model()
 
 OTP_EXPIRY_MINUTES=5
+
+def generate_otp():
+    """Return a 6-digit numeric OTP."""
+    return get_random_string(length=6, allowed_chars="0123456789")
+
 #User_logout
 @never_cache
 def user_logout(request):
@@ -38,7 +43,6 @@ def user_login(request):
     if request.user.is_authenticated and request.user.role == CustomUser.ROLE_CUSTOMER:
         return redirect("store:home")
 
-
     remembered_user = request.COOKIES.get("remember_user", "")
 
     if request.method == "POST":
@@ -50,7 +54,7 @@ def user_login(request):
         print("Passwords:", password)
         print("Remember Me:", remember_me)
 
-        user=authenticate(request,email=email,password=password)
+        user=authenticate(request,username=email,password=password)
 
         print("Authenticated User:", user)
         print("Passwords:", password)

@@ -23,7 +23,7 @@ def home(request):
     products = Product.objects.filter(
         is_active=True,
         subcategory__category__is_active=True,
-        subcategory__category__is_deleted=False
+        # subcategory__category__is_deleted=False
     ).order_by('-id')[:12]
     return render(request, 'store/home.html', {
         'categories': categories,
