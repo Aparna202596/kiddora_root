@@ -105,4 +105,3 @@ def retry_payment(request, payment_id):
     payment.save()
 
     return redirect("payments:initiate_payment", order_id=payment.order.id)
-
