@@ -11,11 +11,7 @@ from products.models import Inventory
 from accounts.decorators import admin_login_required,user_login_required
 from django.contrib.auth import get_user_model
 from django.views.decorators.cache import never_cache
-from accounts.decorators import user_login_required,admin_login_required
 import re
-from django.db.models import Sum, Count
-from orders.models import Order
-from django.utils.timezone import now
 from datetime import timedelta, date
 
 User = get_user_model()
@@ -101,6 +97,7 @@ def admin_dashboard_view(request):
 @admin_login_required
 def admin_user_list(request):
     query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "")
     users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER).order_by('-date_joined')
     if query:
         users = users.filter(
@@ -108,11 +105,18 @@ def admin_user_list(request):
             Q(email__icontains=query) |
             Q(phone__icontains=query)
         )
+
+    if status == "active":
+        users = users.filter(is_active=True)
+    elif status == "blocked":
+        users = users.filter(is_active=False)
+
+    users = users.order_by("-date_joined") 
     users = users.order_by("-date_joined")
     paginator = Paginator(users, 10)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
-    context = {"users": page_obj,"query": query,}
+    context = {"users": page_obj,"query": query, "status": status}
     return render(request, "accounts/admin/customer_list.html",context)
 
 # BLOCK USER
@@ -159,7 +163,8 @@ def admin_user_detail(request, user_id):
     user = get_object_or_404(
         CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER
     )
-    return render(request,"accounts/admin/customer_detail.html",{"user": user})
+    orders = Order.objects.filter(user=user).order_by('-created_at')
+    return render(request,"accounts/admin/customer_detail.html",{"user": user, "orders": orders},)
 
 @admin_login_required
 def admin_sales_report(request):

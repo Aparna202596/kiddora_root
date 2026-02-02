@@ -12,7 +12,7 @@ from datetime import timedelta
 from accounts.models import CustomUser
 from django.views.decorators.cache import never_cache
 from orders.models import Order
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 
 User = get_user_model()
 
@@ -28,6 +28,35 @@ def user_profile(request):
         request,
         "accounts/profile/profile.html",
         {"user": user, "addresses": addresses,"orders": orders,},)
+
+@never_cache
+@user_login_required
+def delete_profile(request):
+    user = request.user
+
+    if request.method == "POST":
+        password = request.POST.get("password")
+
+        # Validate password input
+        if not password:
+            messages.error(request, "Password is required to delete your account.")
+            return redirect("accounts:delete_profile")
+
+        # Check password
+        if not user.check_password(password):
+            messages.error(request, "Incorrect password.")
+            return redirect("accounts:delete_profile")
+
+        # Delete user account
+        username = user.username or user.email
+        logout(request)
+        user.delete()
+
+        messages.success(request, f"Account {username} deleted successfully.")
+        return redirect("anonymous_home")
+
+    return render(request, "accounts/profile/delete_profile.html", {"user": user})
+
 
 @never_cache
 @user_login_required

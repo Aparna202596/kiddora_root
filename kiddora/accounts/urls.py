@@ -51,6 +51,7 @@ urlpatterns = [
 
     #PROFILE
     path("user/profile/", profile_views.user_profile, name="user_profile"),
+    path("user/profile/delete/", profile_views.delete_profile, name="delete_profile"),
     path("user/profile/edit/", profile_views.edit_profile, name="edit_profile"),
     path("user/profile/change_password/", profile_views.change_password, name="change_password"),
     path("user/profile/change_email/", profile_views.change_email, name="change_email"),

@@ -1,0 +1,152 @@
+{% extends "base_admin.html" %}
+{% block title %}Customer Detail | Kiddora{% endblock %}
+
+{% block content %}
+<style>
+.customer-wrapper {
+    padding: 24px;
+    min-height: 100vh;
+    background: #f4f6f8;
+}
+
+.detail-card {
+    background: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    margin-bottom: 24px;
+}
+
+.detail-card h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #111827;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #374151;
+}
+
+.orders-table-wrapper {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    padding: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+
+th {
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    color: #fff;
+}
+.badge-green { background:#16a34a; }
+.badge-red { background:#dc2626; }
+.badge-yellow { background:#f59e0b; }
+
+.profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 16px;
+    border: 2px solid #e5e7eb;
+}
+</style>
+
+<div class="customer-wrapper">
+    <div class="detail-card">
+        {% if user.profile_image %}
+            <img src="{{ user.profile_image.url }}" class="profile-image" alt="Profile Image">
+        {% endif %}
+        <h2>Customer Detail</h2>
+
+        <div class="detail-row"><span class="detail-label">Full Name:</span> {{ user.full_name|default:"—" }}</div>
+        <div class="detail-row"><span class="detail-label">Username:</span> {{ user.username|default:"—" }}</div>
+        <div class="detail-row"><span class="detail-label">Email:</span> {{ user.email }}</div>
+        <div class="detail-row"><span class="detail-label">Phone Number:</span> {{ user.phone|default:"—" }}</div>
+        <div class="detail-row">
+            <span class="detail-label">Email Verified:</span>
+            {% if user.email_verified %}
+                <span class="badge badge-green">Yes</span>
+            {% else %}
+                <span class="badge badge-red">No</span>
+            {% endif %}
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Active:</span>
+            {% if user.is_active %}
+                <span class="badge badge-green">Active</span>
+            {% else %}
+                <span class="badge badge-red">Inactive</span>
+            {% endif %}
+        </div>
+        <div class="detail-row"><span class="detail-label">Last Login:</span> {{ user.last_login|default:"—" }}</div>
+        <div class="detail-row"><span class="detail-label">Date Joined:</span> {{ user.date_joined|date:"d M Y H:i" }}</div>
+        <div class="detail-row"><span class="detail-label">Created At:</span> {{ user.created_at|date:"d M Y H:i" }}</div>
+        <div class="detail-row"><span class="detail-label">Updated At:</span> {{ user.updated_at|date:"d M Y H:i" }}</div>
+        <div class="detail-row"><span class="detail-label">Blocked At:</span> {{ user.blocked_at|default:"—" }}</div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="orders-table-wrapper">
+        <h2>Orders</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Status</th>
+                    <th>Final Amount</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>{{ order.order_id }}</td>
+                        <td>
+                            {% if order.order_status == "DELIVERED" %}
+                                <span class="badge badge-green">Delivered</span>
+                            {% elif order.order_status == "CANCELLED" %}
+                                <span class="badge badge-red">Cancelled</span>
+                            {% else %}
+                                <span class="badge badge-yellow">{{ order.order_status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>₹ {{ order.final_amount }}</td>
+                        <td>{{ order.created_at|date:"d M Y H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="4">No orders found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

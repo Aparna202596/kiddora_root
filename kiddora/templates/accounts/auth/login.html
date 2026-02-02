@@ -6,15 +6,53 @@
     <meta charset="UTF-8">
     <title>Login | Kiddora</title>
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <style>
+
+    /* Center the h2 */
+        .auth-left h2 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 24px;
+            color: #111827;
+        }
+    /* Google login button */
+    .google-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background-color: #fff;
+        color: #444;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 10px;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        font-size: 14px;
+    }
+
+    .google-btn:hover {
+        background-color: #f7f7f7;
+    }
+
+    .google-btn img {
+        width: 18px;
+        height: 18px;
+    }
+    </style>
 </head>
 <body>
 
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-left">
-
             <h2>Login</h2>
-                        <a href="{% url 'accounts:google_login' %}" class="btn btn-danger w-100">
+            <a href="{% url 'accounts:google_login' %}" class="google-btn">
+            <img src="{% static 'images/google_icon.png' %}" alt="Google Logo">
                 Login with Google
             </a>
 

@@ -49,6 +49,8 @@ class CustomUser(AbstractUser):
     
     blocked_at = models.DateTimeField(null=True, blank=True)
     
+    timezone = models.CharField(max_length=50,default="UTC",help_text="timezone Asia/Kolkata, Asia/Dubai")
+
     # Authentication settings
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]

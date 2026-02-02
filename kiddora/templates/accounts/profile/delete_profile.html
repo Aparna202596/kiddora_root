@@ -1,0 +1,91 @@
+{% extends "base_user.html" %}
+{% block title %}Delete Account | Kiddora{% endblock %}
+
+{% block content %}
+<style>
+.delete-wrapper {
+    max-width: 480px;
+    margin: 60px auto;
+    background: #fff;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.delete-wrapper h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #dc2626;
+}
+
+.delete-wrapper p {
+    margin-bottom: 20px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.delete-wrapper input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+}
+
+.delete-wrapper button {
+    background: #dc2626;
+    color: #fff;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+}
+
+.delete-wrapper button:hover {
+    background: #b91c1c;
+}
+
+.delete-wrapper a {
+    display: inline-block;
+    margin-top: 12px;
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.delete-wrapper a:hover {
+    text-decoration: underline;
+}
+
+.message {
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #dc2626;
+}
+</style>
+
+<div class="delete-wrapper">
+    <h2>Delete Account</h2>
+    <p>Deleting your account is permanent. All your data will be lost.</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <label>Confirm Password</label>
+        <input type="password" name="password" required>
+        <button type="submit">Delete Account</button>
+    </form>
+
+    
+    <a href="{% url 'accounts:user_profile' %}">Cancel</a>
+</div>
+{% endblock %}

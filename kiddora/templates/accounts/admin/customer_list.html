@@ -56,7 +56,7 @@
 }
 
 .customer-table {
-    width: 100%;
+    width: 100%; 
     border-collapse: collapse;
     margin-top: 20px;
 }
@@ -76,7 +76,13 @@
 .customer-table tr {
     border-bottom: 1px solid #eee;
 }
-
+td a {
+        color: #000206; /* blue link */
+        text-decoration: none;
+    }
+    td a:hover {
+        text-decoration: underline;
+    }
 .status-active {
     color: #2ecc71;
     font-weight: 600;
@@ -118,21 +124,21 @@
         <h2>Customer List</h2>
 
         <form method="get" class="filter-bar">
-            <input type="text" name="q" value="{{ query }}" placeholder="Search customer">
-            <button type="submit">Search</button>
-            {% if query %}
-                <a href="{% url 'accounts:admin_user_list' %}" class="btn btn-secondary">
-                    Clear
-                </a>
-            {% endif %}
-            <select name="status">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="blocked">Blocked</option>
-            </select>
-            <button type="submit"><i class="fa fa-search"></i></button>
-            <a href="{% url 'accounts:admin_user_list' %}">Clear</a>
-        </form>
+    <input type="text" name="q" value="{{ query }}" placeholder="Search customer">
+
+    <select name="status">
+        <option value="">All Status</option>
+        <option value="active" {% if status == "active" %}selected{% endif %}>Active</option>
+        <option value="blocked" {% if status == "blocked" %}selected{% endif %}>Blocked</option>
+    </select>
+
+    <button type="submit"><i class="fa fa-search"></i> Search</button>
+
+    {% if query or status %}
+        <a href="{% url 'accounts:admin_user_list' %}" class="btn btn-secondary">Clear</a>
+    {% endif %}
+</form>
+
     </div>
 
     <!-- TABLE -->
@@ -150,8 +156,8 @@
         <tbody>
         {% for u in users %}
             <tr>
-                <td>{{ u.full_name|default:u.email }}</td>
-                <td>#{{ u.id }}</td>
+                <td><a href="{% url 'accounts:admin_user_detail' u.id %}">{{ u.full_name|default:u.email }}</a></td>
+                <td>kid##{{ u.id }}</td>
                 <td>{{ u.total_orders|default:"0" }}</td>
                 <td>₹ {{ u.balance|default:"0" }}</td>
 
