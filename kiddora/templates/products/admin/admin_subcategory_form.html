@@ -1,0 +1,119 @@
+{% extends "base_admin.html" %}
+{% block content %}
+
+<style>
+/* Container / Card Style */
+.form-card {
+    max-width: 500px;
+    margin: 30px auto;
+    padding: 25px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+}
+
+/* Heading */
+.form-card h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 1.8rem;
+}
+
+/* Labels */
+.form-card label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+/* Inputs & Selects */
+.form-card input[type="text"],
+.form-card select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.form-card input[type="text"]:focus,
+.form-card select:focus {
+    border-color: #28a745;
+    outline: none;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+/* Buttons */
+.form-actions .btn {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.form-actions .btn-success {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+}
+
+.form-actions .btn-success:hover {
+    background-color: #218838;
+}
+
+.form-actions .btn-secondary {
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+}
+
+.form-actions .btn-secondary:hover {
+    background-color: #5a6268;
+}
+</style>
+
+<div class="form-card">
+    <h2>{{ subcategory|default:"Add SubCategory" }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <label>SubCategory Name</label>
+        <input type="text" name="subcategory_name"
+                value="{{ subcategory.subcategory_name|default:'' }}" required>
+
+        <label>Category</label>
+        <select name="category" required>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}"
+                {% if subcategory and subcategory.category.id == cat.id %}selected{% endif %}>
+                {{ cat.category_name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">Save</button>
+            <a href="{% url 'products:admin_subcategory_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+

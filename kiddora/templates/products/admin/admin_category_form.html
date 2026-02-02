@@ -1,0 +1,36 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+<style>
+.form-box { width: 50%; margin: auto; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+label { display: block; margin-top: 10px; }
+input[type="text"], select { width: 100%; padding: 8px; margin-top: 5px; }
+button { margin-top: 15px; padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+</style>
+
+<div class="form-box">
+    <h2>{% if category %}Edit Category{% else %}Add Category{% endif %}</h2>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+
+    <label>Category Name</label>
+    <input type="text"
+            name="category_name"
+            value="{{ category.category_name|default:'' }}"
+            required>
+
+    <label>
+        <input type="checkbox" name="is_active"
+                {% if category and category.is_active %}checked{% endif %}>
+        Active
+    </label>
+
+    <div class="form-actions">
+        <button class="btn btn-success">Save</button>
+        <a href="{% url 'products:admin_category_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}
+

@@ -16,43 +16,38 @@ th { background: #333; color: #fff; }
 
 <div class="container">
     <div class="header">
-        <h2>Product Management</h2>
+        <h2>SubCategory Management</h2>
         <div>
-            <a href="{% url 'products:admin_add_product' %}" class="btn btn-add">+ Add Product</a>
+            <a href="{% url 'products:admin_add_subcategory' %}" class="btn btn-add">+ Add SubCategory</a>
+            <a href="{% url 'products:admin_category_list' %}" class="btn btn-add">Category List</a>
         </div>
     </div>
 
     <form method="get" class="search-box">
-        <input type="text" name="search" placeholder="Search products..." value="{{ search }}">
+        <input type="text" name="search" placeholder="Search subcategories..." value="{{ search }}">
         <button type="submit">Search</button>
-        <a href="{% url 'products:admin_product_list' %}" class="btn">Clear</a>
+        <a href="{% url 'products:admin_subcategory_list' %}" class="btn">Clear</a>
     </form>
 
     <table>
         <tr>
             <th>ID</th>
-            <th>Name</th>
-            <th>Brand</th>
-            <th>SubCategory</th>
+            <th>SubCategory Name</th>
+            <th>Category</th>
             <th>Actions</th>
         </tr>
-        {% for prod in page_obj %}
+        {% for sub in page_obj %}
         <tr>
-            <td>{{ prod.id }}</td>
+            <td>{{ sub.id }}</td>
+            <td>{{ sub.subcategory_name }}</td>
+            <td>{{ sub.category.category_name }}</td>
             <td>
-                <a href="{% url 'products:admin_product_details' prod.id %}">
-                {{ prod.product_name }}
-                </a>
-            </td>
-            <td>{{ prod.brand }}</td>
-            <td>{{ prod.subcategory.subcategory_name }}</td>
-            <td>
-                <a class="btn btn-edit" href="{% url 'products:admin_edit_product' prod.id %}">Edit</a>
-                <a class="btn btn-delete" href="{% url 'products:admin_delete_product' prod.id %}">Delete</a>
+                <a class="btn btn-edit" href="{% url 'products:admin_edit_subcategory' sub.id %}">Edit</a>
+                <a class="btn btn-delete" href="{% url 'products:admin_delete_subcategory' sub.id %}">Delete</a>
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5">No products found</td></tr>
+        <tr><td colspan="4">No subcategories found</td></tr>
         {% endfor %}
     </table>
 
