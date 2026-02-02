@@ -94,6 +94,7 @@ ul {
     gap: 12px;
 }
 
+.admin-btn ,
 .login-btn,
 .signup-btn {
     padding: 7px 18px;
@@ -101,26 +102,20 @@ ul {
     font-size: 14px;
     font-weight: 500;
     transition: all 0.3s ease;
-}
-
-.login-btn {
+    background: #f06292;
+    color: #fff;
     border: 1px solid #f06292;
-    color: #f06292;
 }
 
-.login-btn:hover {
-    background: #f06292;
-    color: #fff;
-}
-
-.signup-btn {
-    background: #f06292;
-    color: #fff;
-}
-
-.signup-btn:hover {
+.admin-btn:hover {
     background: #e91e63;
 }
+.login-btn:hover {
+    background: #e91e63;
+}
+.signup-btn:hover {
+    background: #e91e63;
+} 
 
 /* ================= MAIN CONTENT ================= */
 .home-container {
@@ -347,6 +342,7 @@ ul {
                 </ul>
             </nav>
             <div class="auth-buttons">
+                <a href="{% url 'accounts:admin_login' %}" class="admin-btn">Admin Login</a>
                 <a href="{% url 'accounts:login' %}" class="login-btn">Login</a>
                 <a href="{% url 'accounts:signup' %}" class="signup-btn">Sign Up</a>
             </div>
