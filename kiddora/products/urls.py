@@ -54,7 +54,7 @@ urlpatterns = [
     path("admin/category/subcategories/products/<int:product_id>/",product_admin.admin_product_details,name="admin_product_details"),
 
     path("admin/inventory/",product_admin.admin_inventory_list, name="admin_inventory_list"),
-    path("admin/inventory/update/",product_admin.admin_update_stock, name="admin_update_stock"),
+    path('admin/inventory/update/', product_admin.admin_update_stock, name='admin_update_stock'),
 
     #search_views
     path("user/search/", search_views.search_products, name="product_search"),

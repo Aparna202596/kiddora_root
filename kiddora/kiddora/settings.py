@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
 ]
-SITE_ID = 1
+SITE_ID = 3
 
 # SOCIALACCOUNT_PROVIDERS = {
 #     'google': {

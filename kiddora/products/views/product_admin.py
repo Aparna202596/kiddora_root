@@ -1,3 +1,5 @@
+from itertools import product
+from urllib import request
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
@@ -138,132 +140,205 @@ def admin_delete_subcategory(request, subcategory_id):
     return redirect("products:admin_subcategory_list")
 
 # PRODUCT MANAGEMENT
-AGE_CHOICES = [
-    "0-6 months",
-    "6-12 months",
-    "1-2 years",
-    "2-3 years",
-    "3-5 years",
-    "5-7 years",
-    "7-10 years",
-    "10-15 years",
-]
-
-SIZE_CHOICES = ["XS", "S", "M", "L", "XL"]
-
+# ---------- PRODUCT LIST ----------
 @admin_login_required
 def admin_product_list(request):
     search = request.GET.get("search", "").strip()
-    products = Product.objects.filter(is_active=True)
+    products = Product.objects.filter(is_active=True).select_related("subcategory", "subcategory__category")
 
     if search:
-        products = products.filter(Q(product_name__icontains=search) | Q(brand__icontains=search))
+        products = products.filter(
+            Q(product_name__icontains=search) |
+            Q(brand__icontains=search) |
+            Q(sku__icontains=search)
+        )
+
 
     products = products.order_by("-id")
     paginator = Paginator(products, 10)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    return render(request, "products/admin/admin_product_list.html", {"page_obj": page_obj, "search": search})
+    return render(
+        request,
+        "products/admin/admin_product_list.html",
+        {"page_obj": page_obj, "search": search,},
+    )
 
+# ---------- ADD PRODUCT ----------
 @admin_login_required
 def admin_add_product(request):
     categories = Category.objects.filter(is_active=True)
     subcategories = SubCategory.objects.filter(category__is_active=True)
+    brands = Product.objects.values_list("brand", flat=True).distinct()
 
     if request.method == "POST":
+        subcategory_id = request.POST.get("subcategory")
         subcategory = get_object_or_404(SubCategory, id=request.POST.get("subcategory"))
+        base_price = request.POST.get("base_price")
+        discount_percent = request.POST.get("discount_percent", 0)
+
+        # Convert to float safely
+        try:
+            base_price = float(request.POST.get("base_price"))
+        except (TypeError, ValueError):
+            messages.error(request, "Invalid base price")
+            return redirect("products:admin_add_product")
+
+        try:
+            discount_percent = float(request.POST.get("discount_percent", 0))
+        except (TypeError, ValueError):
+            discount_percent = 0
+
+        final_price = base_price * (1 - discount_percent / 100)
+
         product = Product.objects.create(
             subcategory=subcategory,
             product_name=request.POST.get("product_name"),
             brand=request.POST.get("brand"),
-            base_price=request.POST.get("base_price"),
-            final_price=request.POST.get("final_price"),
-            discount_percent=request.POST.get("discount", 0),
+            gender=request.POST.get("gender", "unisex"),
+            age_group=request.POST.get("age_group", Product.AGE_CHOICES[0][0]),
+            base_price=base_price,
+            final_price=final_price,
+            discount_percent=discount_percent,
             sku=request.POST.get("sku"),
+            # stock=request.POST.get("stock", 0),
             is_active=True,
         )
 
         # Product Variants
-        colors = request.POST.getlist("colors")
-
+        colors = request.POST.get("colors", "").split(",")
+        colors = [c.strip() for c in colors if c.strip()]
         for color in colors:
-            for age in AGE_CHOICES:
-                for size in SIZE_CHOICES:
-                    ProductVariant.objects.create(
-                        product=product,
-                        color=f"{color} | {age}",
-                        size=size,
-                        barcode=f"{product.sku}-{color}-{age}-{size}".replace(" ", "").upper(),
-                    )
+            for size_code, _ in ProductVariant.SIZE_CHOICES:
+                ProductVariant.objects.create(
+                    product=product,
+                    color=color,
+                    size=size_code,
+                    barcode=f"{product.sku}-{color}-{size_code}"
+                    .replace(" ", "")
+                    .upper(),
+                )
 
         messages.success(request, "Product added successfully")
         return redirect("products:admin_product_list")
 
-    return render(request, "products/admin/admin_product_form.html", {"categories": categories, "subcategories": subcategories})
+    return render(
+        request,
+        "products/admin/admin_product_form.html",
+        {
+            "categories": categories,
+            "subcategories": subcategories,
+            "brands": brands,
+            "AGE_CHOICES": Product.AGE_CHOICES,
+            "GENDER_CHOICES": Product.GENDER_CHOICES,
+        },
+    )
 
+# ---------- EDIT PRODUCT ----------
 @admin_login_required
 def admin_edit_product(request, product_id):
+    categories = Category.objects.filter(is_active=True)
     product = get_object_or_404(Product, id=product_id)
     subcategories = SubCategory.objects.filter(category__is_active=True)
-
+    brands = Product.objects.values_list("brand", flat=True).distinct()
     if request.method == "POST":
+        # ---- PRICE HANDLING ----
+        try:
+            base_price = float(request.POST.get("base_price"))
+        except (TypeError, ValueError):
+            messages.error(request, "Invalid base price")
+            return redirect(
+                "products:admin_edit_product", product_id=product.id
+            )
+
+        try:
+            discount_percent = float(request.POST.get("discount_percent", 0))
+        except (TypeError, ValueError):
+            discount_percent = 0
+
+        final_price = base_price * (1 - discount_percent / 100)
+
+        # ---- UPDATE PRODUCT ----
         product.product_name = request.POST.get("product_name")
         product.brand = request.POST.get("brand")
-        product.base_price = request.POST.get("base_price")
-        product.final_price = request.POST.get("final_price")
-        product.discount_percent = request.POST.get("discount", 0)
+        product.gender = request.POST.get("gender", "unisex")
+        product.age_group = request.POST.get(
+            "age_group", Product.AGE_CHOICES[0][0]
+        )
+        product.base_price = base_price
+        product.discount_percent = discount_percent
+        product.final_price = final_price
         product.sku = request.POST.get("sku")
+        # product.stock = request.POST.get("stock", 0)
         product.is_active = bool(request.POST.get("is_active"))
         product.subcategory_id = request.POST.get("subcategory")
         product.save()
-
-        # Update variants (optional: delete old & create new or update)
+        
+        # ---- RECREATE VARIANTS ----
         ProductVariant.objects.filter(product=product).delete()
-        colors = request.POST.getlist("colors")
+
+        colors = request.POST.get("colors", "").split(",")
+        colors = [c.strip() for c in colors if c.strip()]
         for color in colors:
-            for age in AGE_CHOICES:
-                for size in SIZE_CHOICES:
-                    ProductVariant.objects.create(
-                        product=product,
-                        color=f"{color} | {age}",
-                        size=size,
-                        barcode=f"{product.sku}-{color}-{age}-{size}".replace(" ", "").upper(),
-                    )
+            for size_code, _ in ProductVariant.SIZE_CHOICES:
+                ProductVariant.objects.create(
+                    product=product,
+                    color=color,
+                    size=size_code,
+                    barcode=f"{product.sku}-{color}-{size_code}"
+                    .replace(" ", "")
+                    .upper(),
+                )
 
-        messages.success(request, "Product updated")
+        messages.success(request, "Product updated successfully")
         return redirect("products:admin_product_list")
+    selected_sizes = product.variants.values_list("size", flat=True).distinct()
+    return render(
+        request,
+        "products/admin/admin_product_form.html",
+        {   
+            "categories": categories,
+            "product": product,
+            "subcategories": subcategories,
+            "brands": brands,
+            "AGE_CHOICES": Product.AGE_CHOICES,
+            "GENDER_CHOICES": Product.GENDER_CHOICES,
+            "selected_sizes": selected_sizes,
+        },
+    )
 
-    return render(request, "products/admin/admin_product_form.html", {"product": product, "subcategories": subcategories})
-
+# ---------- DELETE PRODUCT (soft delete) ----------
 @admin_login_required
 def admin_delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    product.is_active = False  # soft delete
+    product.is_active = False
     product.save()
-    messages.success(request, "Product deleted safely")
+    ProductVariant.objects.filter(product=product).update(is_active=False)
+    messages.success(request, "Product deleted successfully")
     return redirect("products:admin_product_list")
 
+# ---------- PRODUCT DETAILS ----------
 @admin_login_required
 def admin_product_details(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+    product = Product.objects.select_related(
+        "subcategory", "subcategory__category"
+    ).prefetch_related("variants").get(id=product_id)
     variants = product.variants.filter(is_active=True)
 
     return render(
         request,
         "products/admin/admin_product_details.html",
-        {
-            "product": product,
-            "variants": variants,
-        },
+        {"product": product, "variants": variants},
     )
-
+# INVENTORY MANAGEMENT
 @admin_login_required
 def admin_inventory_list(request):
     inventory = Inventory.objects.select_related("variant", "variant__product")
     return render(request, "products/admin/admin_inventory.html", {
         "inventory": inventory
     })
-
+# Update stock quantity for a variant
+@admin_login_required
 def admin_update_stock(request, inventory_id):
     inventory = get_object_or_404(Inventory, id=inventory_id)
 

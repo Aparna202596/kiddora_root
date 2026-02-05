@@ -2,36 +2,243 @@
 
 {% block content %}
 <style>
-table { width: 90%; margin: auto; border-collapse: collapse; }
-th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
-th { background: #444; color: white; }
+/* ---------- Layout ---------- */
+.container {
+    padding: 25px;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* ---------- Top Links ---------- */
+.top-links {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.top-links a {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: #f062c0;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.top-links a:hover {
+    background: #e04faf;
+}
+
+/* ---------- Search ---------- */
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: 0.2s;
+}
+
+.search-box input:focus {
+    border-color: #333;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+.search-btn {
+    padding: 8px 18px;
+    border-radius: 25px;
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.search-btn:hover {
+    background: #000;
+}
+
+/* ---------- Table ---------- */
+.table-wrapper {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+th {
+    background: #020202;
+    color: #fff;
+    cursor: pointer;
+}
+
+tbody tr:hover {
+    background: #f1f0ff;
+}
+
+/* ---------- Stock Badges ---------- */
+.stock-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 0.85em;
+}
+
+.stock-high { background-color: #2dce89; }
+.stock-medium { background-color: #fd9644; }
+.stock-low { background-color: #fc5c65; }
+
+/* ---------- Inline Update Form ---------- */
+.update-form {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.update-form input[type=number] {
+    width: 70px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.update-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: #f062c0;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+.update-btn:hover {
+    background: #e04faf;
+}
+
+/* ---------- Variant Color ---------- */
+.variant-color {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 1px solid #ccc;
+    vertical-align: middle;
+}
 </style>
 
-<h2 style="text-align:center;">Inventory Management</h2>
+<div class="container">
 
-<table>
-    <tr>
-        <th>Product</th>
-        <th>Variant</th>
-        <th>Available</th>
-        <th>Reserved</th>
-        <th>Update Stock</th>
-    </tr>
+    <h2>Inventory Management</h2>
 
-    {% for item in inventory %}
-    <tr>
-        <td>{{ item.variant.product.product_name }}</td>
-        <td>{{ item.variant.color }} / {{ item.variant.size }}</td>
-        <td>{{ item.quantity_available }}</td>
-        <td>{{ item.quantity_reserved }}</td>
-        <td>
-            <form method="post" action="{% url 'products:admin_update_stock' item.id %}">
-                {% csrf_token %}
-                <input type="number" name="quantity" placeholder="+ / -" required>
-                <button type="submit">Update</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    <!-- Search -->
+    <form method="get" class="search-box">
+        <input type="text" name="search" placeholder="Search inventory..." value="{{ search }}">
+        <button type="submit" class="search-btn">Search</button>
+        <a href="{% url 'products:admin_inventory_list' %}" class="search-btn">Clear</a>
+    </form>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Product ⬍</th>
+                    <th onclick="sortTable(1)">Category ⬍</th>
+                    <th onclick="sortTable(2)">SubCategory ⬍</th>
+                    <th onclick="sortTable(3)">SKU ⬍</th>
+                    <th onclick="sortTable(4)">Variant ⬍</th>
+                    <th onclick="sortTable(5)">Available ⬍</th>
+                    <th onclick="sortTable(6)">Reserved ⬍</th>
+                    <th onclick="sortTable(7)">Update Stock ⬍</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in inventory %}
+                <tr>
+                    <td>{{ item.variant.product.product_name }}</td>
+                    <td>{{ item.variant.product.subcategory.category.category_name }}</td>
+                    <td>{{ item.variant.product.subcategory.subcategory_name }}</td>
+                    <td>{{ item.variant.product.sku }}</td>
+                    <td>
+                        <span class="variant-color" style="background-color: {{ item.variant.color|default:'#ccc' }}"></span>
+                        {{ item.variant.color }} / {{ item.variant.size }}
+                    </td>
+                    <td>
+                        {% if item.quantity_available <= 5 %}
+                            <span class="stock-badge stock-low">{{ item.quantity_available }}</span>
+                        {% elif item.quantity_available <= 20 %}
+                            <span class="stock-badge stock-medium">{{ item.quantity_available }}</span>
+                        {% else %}
+                            <span class="stock-badge stock-high">{{ item.quantity_available }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.quantity_reserved }}</td>
+                    <td>
+                        <form method="post" action="{% url 'products:admin_update_stock' item.id %}" class="update-form">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" placeholder="+ / -" required>
+                            <button type="submit" class="update-btn">Update</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8">No inventory found</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "products/admin/pagination.html" %}
+</div>
+
+<!-- ---------- Sorting Script ---------- -->
+<script>
+function sortTable(colIndex) {
+    const table = document.getElementById("inventoryTable");
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+    const asc = table.dataset.sort !== "asc";
+    table.dataset.sort = asc ? "asc" : "desc";
+
+    rows.sort((a, b) => {
+        let x = a.cells[colIndex].innerText.toLowerCase();
+        let y = b.cells[colIndex].innerText.toLowerCase();
+
+        if (!isNaN(x) && !isNaN(y)) {
+            return asc ? x - y : y - x;
+        }
+        return asc ? x.localeCompare(y) : y.localeCompare(x);
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+
 {% endblock %}

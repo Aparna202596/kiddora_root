@@ -1,36 +1,161 @@
 {% extends "base_admin.html" %}
+
 {% block content %}
+<style>
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 25px;
+    background: #fdfdfd;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    font-family: Arial, sans-serif;
+}
+
+.container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.product-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.product-image {
+    flex: 1 1 250px;
+    max-width: 250px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.product-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.product-info {
+    flex: 2 1 400px;
+}
+
+.product-info p {
+    font-size: 16px;
+    margin: 6px 0;
+}
+
+.product-info strong {
+    color: #555;
+}
+
+.variants-section {
+    margin-top: 30px;
+}
+
+.variants-section h3 {
+    margin-bottom: 15px;
+    color: #444;
+}
+
+.variants-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.variants-table th, .variants-table td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+.variants-table th {
+    background: #f7f7f7;
+    color: #333;
+}
+
+.variants-table tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.variants-table tr:hover {
+    background: #f1f1f1;
+}
+
+.btn-back {
+    display: inline-block;
+    padding: 10px 18px;
+    background: #f062c0;
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.btn-back:hover {
+    background: #e04faf;
+}
+</style>
 
 <div class="container">
     <h2>{{ product.product_name }}</h2>
 
-    <p><strong>Brand:</strong> {{ product.brand }}</p>
-    <p><strong>SKU:</strong> {{ product.sku }}</p>
-    <p><strong>Price:</strong> ₹{{ product.final_price }}</p>
+    <div class="product-details">
+        {% if product.image %}
+        <div class="product-image">
+            <img src="{{ product.image.url }}" alt="{{ product.product_name }}">
+        </div>
+        {% endif %}
 
-    <h3>Variants</h3>
+        <div class="product-info">
+            <p><strong>Brand:</strong> {{ product.brand }}</p>
+            <p><strong>SKU:</strong> {{ product.sku }}</p>
+            <p><strong>Category:</strong> {{ product.subcategory.category.category_name }}</p>
+            <p><strong>SubCategory:</strong> {{ product.subcategory.subcategory_name }}</p>
+            <p><strong>Gender:</strong> {{ product.get_gender_display }}</p>
+            <p><strong>Age Group:</strong> {{ product.age_group }}</p>
+            <p><strong>Price:</strong> ₹{{ product.final_price }} 
+                {% if product.discount_percent > 0 %} 
+                (<small>{{ product.discount_percent }}% off</small>) 
+                {% endif %}
+            </p>
+            <p><strong>Stock:</strong> {{ product.stock }}</p>
+            <p><strong>Status:</strong> {{ product.is_active|yesno:"Active,Inactive" }}</p>
+        </div>
+    </div>
 
-    <table>
-        <tr>
-            <th>Color / Age</th>
-            <th>Size</th>
-            <th>Barcode</th>
-            <th>Status</th>
-        </tr>
+    <div class="variants-section">
+        <h3>Variants</h3>
+        <table class="variants-table">
+            <thead>
+                <tr>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Barcode</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in variants %}
+                <tr>
+                    <td>{{ v.color }}</td>
+                    <td>{{ v.size }}</td>
+                    <td>{{ v.barcode }}</td>
+                    <td>{{ v.is_active|yesno:"Active,Inactive" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4">No variants available</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-        {% for v in variants %}
-        <tr>
-            <td>{{ v.color }}</td>
-            <td>{{ v.size }}</td>
-            <td>{{ v.barcode }}</td>
-            <td>{{ v.is_active|yesno:"Active,Inactive" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">No variants</td></tr>
-        {% endfor %}
-    </table>
-
-    <a href="{% url 'products:admin_product_list' %}" class="btn">← Back</a>
+    <a href="{% url 'products:admin_product_list' %}" class="btn-back">← Back</a>
 </div>
 
 {% endblock %}
+

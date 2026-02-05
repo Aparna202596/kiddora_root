@@ -3,99 +3,166 @@
 {% block content %}
 <style>
 .form-box {
-    width: 60%;
-    margin: auto;
-    padding: 20px;
+    width: 50%;
+    margin: 40px auto;
+    padding: 25px;
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
 label {
     display: block;
-    margin-top: 10px;
-    font-weight: 600;
+    margin-top: 12px;
+    font-weight: 500;
 }
-input[type="text"],
-input[type="number"],
-select,
-textarea {
+
+input, select, textarea {
     width: 100%;
     padding: 8px;
-    margin-top: 5px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
 }
-button {
-    margin-top: 20px;
-    padding: 10px 18px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-.variant-box {
-    margin-top: 20px;
-    border: 1px solid #ddd;
-    padding: 15px;
-    border-radius: 5px;
-    background: #ffffff;
-}
-.variant-box small {
-    color: #666;
-}
-.custom-multiselect {
-    width: 100%;
-    padding: 8px;
+
+textarea { resize: vertical; }
+
+select[multiple] {
     cursor: pointer;
 }
 
-/* Expand list only when clicked */
-.custom-multiselect:focus {
-    size: 6;
-}
 
-/* Optional: cleaner look */
-.custom-multiselect option[disabled] {
-    color: #888;
-}
 .form-actions {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    margin-top: 25px;
 }
+.btn-back {
+    display: inline-block;
+    padding: 10px 18px;
+    background: #f062c0;
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.btn-back:hover {
+    background: #e04faf;
+}
+.btn-custom {
+    padding: 8px 18px;
+    background: #f062c0;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-custom:hover {
+    background: #e04faf;
+}
+.dropdown-checkbox {
+    position: relative;
+}
+
+.dropdown-checkbox button {
+    width: 100%;
+    text-align: left;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.dropdown-content {
+    display: none;
+    position: absolute;
+    z-index: 10;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px;
+}
+
+.dropdown-content label {
+    display: flex;
+    gap: 6px;
+    font-weight: normal;
+}
+
+.dropdown-checkbox.open .dropdown-content {
+    display: block;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
 </style>
 
 <div class="form-box">
-    <h2>{{ product|default:"Add Product" }}</h2>
+    <h2>{% if product %}Edit Product{% else %}Add Product{% endif %}</h2>
 
-    <form method="post" enctype="multipart/form-data">
+    <form method="post">
         {% csrf_token %}
 
-        <!-- Product Info -->
+        <!-- PRODUCT NAME -->
         <label>Product Name</label>
         <input type="text" name="product_name"
                 value="{{ product.product_name|default:'' }}" required>
 
+        <!-- BRAND (Select or Add New) -->
         <label>Brand</label>
-        <input type="text" name="brand"
+        <input list="brandList" name="brand"
                 value="{{ product.brand|default:'' }}" required>
+        <datalist id="brandList">
+            {% for b in brands %}
+                <option value="{{ b }}">
+            {% endfor %}
+        </datalist>
 
+        <!-- PRICING -->
         <label>Base Price</label>
-        <input type="number" step="0.01" name="base_price"
+        <input type="number" step="0.01" name="base_price" id="base_price"
                 value="{{ product.base_price|default:'' }}" required>
 
         <label>Discount %</label>
-        <input type="number" name="discount"
+        <input type="number" name="discount_percent" id="discount"
                 value="{{ product.discount_percent|default:0 }}">
 
         <label>Final Price</label>
         <input type="number" step="0.01" name="final_price"
-                value="{{ product.final_price|default:'' }}" required>
-
+                id="final_price"
+                value="{{ product.final_price|default:'' }}"
+                readonly>
+                        <!-- SKU -->
         <label>SKU</label>
         <input type="text" name="sku"
                 value="{{ product.sku|default:'' }}" required>
 
-        <!-- Category -->
+        {% comment %} <label>Stock</label>
+        <input type="number" name="stock"
+                value="{{ product.stock|default:0 }}" required> {% endcomment %}
+
+        <!-- CATEGORY -->
         <label>Category</label>
-        <select name="category" id="category-select" required>
+        <select name="category" required>
+            <option disabled selected>Select Category</option>
             {% for cat in categories %}
             <option value="{{ cat.id }}"
                 {% if product and product.subcategory.category.id == cat.id %}selected{% endif %}>
@@ -104,9 +171,10 @@ button {
             {% endfor %}
         </select>
 
-        <!-- SubCategory -->
+        <!-- SUBCATEGORY -->
         <label>SubCategory</label>
-        <select name="subcategory" id="subcategory-select" required>
+        <select name="subcategory" required>
+            <option disabled selected>Select SubCategory</option>
             {% for sub in subcategories %}
             <option value="{{ sub.id }}"
                 {% if product and product.subcategory.id == sub.id %}selected{% endif %}>
@@ -115,54 +183,72 @@ button {
             {% endfor %}
         </select>
 
-        <!-- Images -->
-        <label>Upload Images (Min 3)</label>
-        <input type="file" name="images" accept="image/*" multiple required>
+        <!-- GENDER -->
+        <label>Gender</label>
+        <select name="gender" required>
+            <option disabled selected>Select Gender</option>
+            {% for code, name in GENDER_CHOICES %}
+            <option value="{{ code }}"
+                {% if product and product.gender == code %}selected{% endif %}>
+                {{ name }}
+            </option>
+            {% endfor %}
+        </select>
 
-        <!-- VARIANTS (UPDATED LOGIC) -->
-        <div class="variant-box">
-            <h4>Product Variants</h4>
+        <!-- AGE GROUP -->
+        <label>Age Group</label> 
+        <select name="age" multiple size="1" class="custom-multiselect" required> 
+            <option disabled selected>Select Age</option> 
+            <option value="0-6 months">0-6 months</option> 
+            <option value="6-12 months">6-12 months</option> 
+            <option value="1-2 years">1-2 years</option> 
+            <option value="2-3 years">2-3 years</option> 
+            <option value="3-5 years">3-5 years</option> 
+            <option value="5-7 years">5-7 years</option> 
+            <option value="7-10 years">7-10 years</option> 
+            <option value="10-15 years">10-15 years</option> 
+        </select> 
+    <!-- Color -->
+        <label>Colors</label>
+        <small><i>(Enter colors separated by commas)</i></small>
+        <input type="text"
+            name="colors"
+            placeholder="Red, Blue, Green"
+            value="{% if product %}{% for v in product.variants.all %}{{ v.color }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}">
 
-            <!-- COLORS -->
-            <label>Product Colors</label>
-            <small style="color:#666;"><i>(Enter one color per line)</i></small>
-            <textarea name="color" rows="3" placeholder="Red
-Blue
-Green"></textarea>
-
-            <!-- AGE GROUPS -->
-            <label>Age Group</label>
-            <select name="age" multiple size="1" class="custom-multiselect" required>
-                <option disabled selected>Select Age</option>
-                <option value="0-6 months">0–6 months</option>
-                <option value="6-12 months">6–12 months</option>
-                <option value="1-2 years">1–2 years</option>
-                <option value="2-3 years">2–3 years</option>
-                <option value="3-5 years">3–5 years</option>
-                <option value="5-7 years">5–7 years</option>
-                <option value="7-10 years">7–10 years</option>
-                <option value="10-15 years">10–15 years</option>
-            </select>
-
-            <!-- SIZE -->
-            <label>Size</label>
-            <select name="size" multiple size="1" class="custom-multiselect" required>
-                <option disabled selected>Select Size</option>
-                <option value="XS">XS</option>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-            </select>
-        </div>
+        <!-- SIZES -->
+        <label>Size</label> 
+            <select name="size" multiple size="1" class="custom-multiselect" required> 
+                <option disabled selected>Select Size</option> 
+                <option value="XS">XS</option> 
+                <option value="S">S</option> 
+                <option value="M">M</option> 
+                <option value="L">L</option> 
+                <option value="XL">XL</option> 
+            </select> 
+        
 
 
-        <!-- Actions -->
         <div class="form-actions">
-            <button type="submit">Save Product</button>
-            <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary"></a>
+            <a href="{% url 'products:admin_product_list' %}" class="btn-back">← Back</a>
+            <button type="submit" class="btn-custom">Save</button>
+            <a href="{% url 'products:admin_product_list' %}" class="btn-custom">Cancel</a>
         </div>
     </form>
-</div>
+
+<!-- AUTO FINAL PRICE -->
+<script>
+function calculateFinalPrice() {
+    const base = parseFloat(document.getElementById("base_price").value) || 0;
+    const discount = parseFloat(document.getElementById("discount").value) || 0;
+    const finalPrice = base - (base * discount / 100);
+    document.getElementById("final_price").value = finalPrice.toFixed(2);
+}
+
+document.getElementById("base_price").addEventListener("input", calculateFinalPrice);
+document.getElementById("discount").addEventListener("input", calculateFinalPrice);
+
+
+</script>
 
 {% endblock %}

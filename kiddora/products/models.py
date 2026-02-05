@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 class Category(models.Model):
+    
     category_name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
 
@@ -16,9 +17,29 @@ class SubCategory(models.Model):
         return self.subcategory_name
 
 class Product(models.Model):
+
+    AGE_CHOICES = [
+    ("0-6 months", "0-6 months"),
+    ("6-12 months", "6-12 months"),
+    ("1-2 years", "1-2 years"),
+    ("2-3 years", "2-3 years"),
+    ("3-5 years", "3-5 years"),
+    ("5-7 years", "5-7 years"),
+    ("7-10 years", "7-10 years"),
+    ("10-15 years", "10-15 years"),
+    ]
+
+    GENDER_CHOICES = [
+        ('boy', 'Boy'),
+        ('girl', 'Girl'),
+        ('newborn', 'Newborn'),
+        ('unisex', 'Unisex'),
+    ]
     subcategory = models.ForeignKey(SubCategory, on_delete=models.CASCADE, related_name="products")
     product_name = models.CharField(max_length=200)
     brand = models.CharField(max_length=100)
+    gender = models.CharField(max_length=10,choices=GENDER_CHOICES,default='unisex')
+    age_group = models.CharField(max_length=15, choices=AGE_CHOICES, default="0-6 months")
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_percent = models.PositiveIntegerField(default=0)
     final_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -29,9 +50,16 @@ class Product(models.Model):
     def __str__(self):
         return self.product_name
 class ProductVariant(models.Model):
+    SIZE_CHOICES = [
+    ("XS", "XS"),
+    ("S", "S"),
+    ("M", "M"),
+    ("L", "L"),
+    ("XL", "XL"),
+    ]
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     color = models.CharField(max_length=50)
-    size = models.CharField(max_length=50)
+    size = models.CharField(max_length=5, choices=SIZE_CHOICES,default="M")
     barcode = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
 

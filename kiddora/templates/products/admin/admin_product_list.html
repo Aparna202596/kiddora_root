@@ -2,60 +2,203 @@
 
 {% block content %}
 <style>
-.container { padding: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
-th { background: #333; color: #fff; }
-.btn { padding: 6px 12px; border-radius: 4px; text-decoration: none; }
-.btn-add { background: #28a745; color: white; }
-.btn-edit { background: #007bff; color: white; }
-.btn-delete { background: #dc3545; color: white; }
-.pagination a { margin: 0 5px; }
+/* ---------- Layout ---------- */
+.container {
+    padding: 25px;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+/* ---------- Top Links ---------- */
+.top-links {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.top-links a {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: #f062c0;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.top-links a:hover {
+    background: #e04faf;
+}
+
+/* ---------- Search ---------- */
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: 0.2s;
+}
+
+.search-box input:focus {
+    border-color: #333;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+.search-btn {
+    padding: 8px 18px;
+    border-radius: 25px;
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.search-btn:hover {
+    background: #000;
+}
+
+/* ---------- Table ---------- */
+.table-wrapper {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: center;
+}
+
+th {
+    background: #333;
+    color: #fff;
+    cursor: pointer;
+}
+
+tr {
+    transition: 0.2s;
+}
+
+tbody tr:hover {
+    background: #f9f0f6;
+}
+
+/* ---------- Action Icons ---------- */
+.action-icons a {
+    margin: 0 6px;
+    font-size: 16px;
+    text-decoration: none;
+}
+
+.icon-edit { color: #000; }
+.icon-delete { color: #dc3545; }
+
+.icon-edit:hover,
+.icon-delete:hover {
+    opacity: 0.7;
+}
 </style>
 
 <div class="container">
-    <div class="header">
-        <h2>Product Management</h2>
-        <div>
-            <a href="{% url 'products:admin_add_product' %}" class="btn btn-add">+ Add Product</a>
-        </div>
+
+    <h2>Product Management</h2>
+
+    <!-- Top Links -->
+    <div class="top-links">
+        <a href="{% url 'products:admin_add_product' %}">+ Add Product</a>
     </div>
 
+    <!-- Search -->
     <form method="get" class="search-box">
         <input type="text" name="search" placeholder="Search products..." value="{{ search }}">
-        <button type="submit">Search</button>
-        <a href="{% url 'products:admin_product_list' %}" class="btn">Clear</a>
+        <button type="submit" class="search-btn">Search</button>
+        <a href="{% url 'products:admin_product_list' %}" class="search-btn">Clear</a>
     </form>
 
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Brand</th>
-            <th>SubCategory</th>
-            <th>Actions</th>
-        </tr>
-        {% for prod in page_obj %}
-        <tr>
-            <td>{{ prod.id }}</td>
-            <td>
-                <a href="{% url 'products:admin_product_details' prod.id %}">
-                {{ prod.product_name }}
-                </a>
-            </td>
-            <td>{{ prod.brand }}</td>
-            <td>{{ prod.subcategory.subcategory_name }}</td>
-            <td>
-                <a class="btn btn-edit" href="{% url 'products:admin_edit_product' prod.id %}">Edit</a>
-                <a class="btn btn-delete" href="{% url 'products:admin_delete_product' prod.id %}">Delete</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5">No products found</td></tr>
-        {% endfor %}
-    </table>
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">ID ⬍</th>
+                    <th onclick="sortTable(1)">Name ⬍</th>
+                    <th onclick="sortTable(2)">Brand ⬍</th>
+                    <th onclick="sortTable(3)">SubCategory ⬍</th>
+                    <th onclick="sortTable(4)">Category ⬍</th>
+                    <th onclick="sortTable(5)">Gender ⬍</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for prod in page_obj %}
+                <tr>
+                    <td>{{ prod.id }}</td>
+                    <td>
+                        <a href="{% url 'products:admin_product_details' prod.id %}">
+                            {{ prod.product_name }}
+                        </a>
+                    </td>
+                    <td>{{ prod.brand }}</td>
+                    <td>{{ prod.subcategory.subcategory_name }}</td>
+                    <td>{{ prod.subcategory.category.category_name }}</td>
+                    <td>{{ prod.get_gender_display }}</td>
+                    <td class="action-icons">
+                        <a class="icon-edit" href="{% url 'products:admin_edit_product' prod.id %}" title="Edit">✏️</a>
+                        <a class="icon-delete" href="{% url 'products:admin_delete_product' prod.id %}" title="Delete">🗑️</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">No products found</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 
     {% include "products/admin/pagination.html" %}
 </div>
+
+<!-- ---------- Sorting Script ---------- -->
+<script>
+function sortTable(colIndex) {
+    const table = document.getElementById("productTable");
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+    const asc = table.dataset.sort !== "asc";
+    table.dataset.sort = asc ? "asc" : "desc";
+
+    rows.sort((a, b) => {
+        let x = a.cells[colIndex].innerText.toLowerCase();
+        let y = b.cells[colIndex].innerText.toLowerCase();
+
+        if (!isNaN(x) && !isNaN(y)) {
+            return asc ? x - y : y - x;
+        }
+        return asc ? x.localeCompare(y) : y.localeCompare(x);
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+
 {% endblock %}
+
