@@ -1,62 +1,127 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from products.models import Category, SubCategory, Product, ProductVariant
-from django.db.models import Q, Min, Max
+from django.db.models import Q, Min, Max, Count
 from django.core.paginator import Paginator
 
 # Category listing page
 def category_list_view(request):
-    categories = Category.objects.filter(is_active=True).order_by("category_name")
-    return render(request, 
-        "products/catalog/category_list.html", 
-        {"categories": categories})
+    categories = Category.objects.all()
+    min_price = request.GET.get('min_price', 0)  
+    max_price = request.GET.get('max_price', 1000)
+    context = {
+        'categories': categories,
+        'min_price': min_price,
+        'max_price': max_price,
+    }
+    return render(request, 'products/catalog/category_list.html', context)
 
 # SubCategory listing page
 def subcategory_list_view(request, category_id):
     category = get_object_or_404(Category, id=category_id, is_active=True)
-    subcategories = category.subcategories.all() ## optionally filter active only
+    subcategories = category.subcategories.all() 
     return render(request,
         "products/catalog/subcategory_list.html",
         {"category": category, "subcategories": subcategories})
 
-# Product List View with Filters
+
+
+def get_filter_options(products_queryset):
+    """Fetch dynamic filter options for sidebar with faceted counts."""
+    
+    # Unique colors & sizes
+    colors = ProductVariant.objects.filter(product__in=products_queryset)\
+        .values('color')\
+        .annotate(count=Count('id'))\
+        .order_by('color')
+    
+    sizes = ProductVariant.objects.filter(product__in=products_queryset)\
+        .values('size')\
+        .annotate(count=Count('id'))\
+        .order_by('size')
+    
+    # Age groups from Product
+    age_groups = Product.objects.filter(id__in=products_queryset)\
+        .values('age_group')\
+        .annotate(count=Count('id'))\
+        .order_by('age_group')
+    
+    # Genders from Product
+    genders = Product.objects.filter(id__in=products_queryset)\
+        .values('gender')\
+        .annotate(count=Count('id'))\
+        .order_by('gender')
+    
+    # Price range
+    price_range = products_queryset.aggregate(min_price=Min('final_price'),
+                                                max_price=Max('final_price'))
+    
+    return {
+        "colors": colors,
+        "sizes": sizes,
+        "age_groups": age_groups,
+        "genders": genders,
+        "min_price": price_range["min_price"] or 0,
+        "max_price": price_range["max_price"] or 0
+    }
+
+# ---------------------------
+# Product List View with Filters & Facets
+# ---------------------------
 def product_list(request, category_id=None, subcategory_id=None):
-    products = Product.objects.filter(is_active=True,subcategory__category__is_active=True)
-    category = None
-    subcategory = None
-
+    """Filtered product listing with AJAX support and faceted counts."""
+    
+    products = Product.objects.filter(is_active=True, subcategory__category__is_active=True)
+    
+    # Optional category/subcategory filters
     if category_id:
-        category = get_object_or_404(Category, id=category_id)
-        products = products.filter(subcategorycategory=category)
-    # Filter by subcategory if provided
+        products = products.filter(subcategory__category_id=category_id)
     if subcategory_id:
-        subcategory = get_object_or_404(SubCategory, id=subcategory_id)
-        products = products.filter(subcategory=subcategory)
-
-    # Extract filter values
-    query = request.GET.get("q")
-    category = request.GET.get("category")
+        products = products.filter(subcategory_id=subcategory_id)
+    
+    # GET filter parameters
+    query = request.GET.get("q", "")
+    selected_categories = request.GET.getlist("category")
+    selected_subcategories = request.GET.getlist("subcategory")
+    selected_products = request.GET.getlist("product")
+    selected_variants = request.GET.getlist("variant")
     selected_colors = request.GET.getlist("color")
     selected_sizes = request.GET.getlist("size")
-    selected_age_groups = request.GET.getlist("age_group")
+    selected_age_groups = request.GET.getlist("age")
+    selected_genders = request.GET.getlist("gender")
     min_price = request.GET.get("min_price")
     max_price = request.GET.get("max_price")
-    sort_by = request.GET.get("sort_by")
-
-    # Filter by variant attributes
+    sort_by_list = request.GET.getlist("sort_by")
+    sort_by = sort_by_list[0] if sort_by_list else None
+    
+    # ---------------------------
+    # Filtering logic
+    # ---------------------------
     if query:
         products = products.filter(Q(product_name__icontains=query) | Q(brand__icontains=query))
-    if category:
-        products = products.filter(subcategory__category_id=category)
+    
+    if selected_categories:
+        products = products.filter(subcategory__category_id__in=selected_categories)
+    if selected_subcategories:
+        products = products.filter(subcategory_id__in=selected_subcategories)
+    if selected_products:
+        products = products.filter(id__in=selected_products)
+    if selected_variants:
+        products = products.filter(variants__id__in=selected_variants)
     if selected_colors:
-        products = products.filter(variants__color__in=selected_colors).distinct()
+        products = products.filter(variants__color__in=selected_colors)
     if selected_sizes:
-        products = products.filter(variants__size__in=selected_sizes).distinct()
+        products = products.filter(variants__size__in=selected_sizes)
     if selected_age_groups:
-        products = products.filter(subcategory__subcategory_name__in=selected_age_groups).distinct()  # assuming age_group stored in subcategory
+        products = products.filter(age_group__in=selected_age_groups)
+    if selected_genders:
+        products = products.filter(gender__in=selected_genders)
     if min_price and max_price:
         products = products.filter(final_price__gte=min_price, final_price__lte=max_price)
-    # Sort
+    
+    # ---------------------------
+    # Sorting
+    # ---------------------------
     if sort_by == "price_low":
         products = products.order_by("final_price")
     elif sort_by == "price_high":
@@ -66,53 +131,77 @@ def product_list(request, category_id=None, subcategory_id=None):
     elif sort_by == "za":
         products = products.order_by("-product_name")
     elif sort_by == "popularity":
-        products = products.order_by("-variants__inventory__quantity_reserved")  # simple popularity logic
+        products = products.annotate(popularity=Count("variants__inventory__quantity_sold")).order_by("-popularity")
+    elif sort_by == "discount":
+        products = products.order_by("-discount_percent")
     else:
-        products = products.order_by("-id")  
-
-    # Fetch unique filter options for frontend
-    all_colors = ProductVariant.objects.filter(product__in=products).values_list("color", flat=True).distinct()
-    all_sizes = ProductVariant.objects.filter(product__in=products).values_list("size", flat=True).distinct()
-    all_age_groups = SubCategory.objects.filter(products__in=products).values_list("subcategory_name", flat=True).distinct()
-    price_range = products.aggregate(min_price=Min("final_price"), max_price=Max("final_price"))
-
-    paginator = Paginator(products, 12)
-    page_obj = paginator.get_page(request.GET.get("page"))
-
+        products = products.order_by("-id")
+    
+    # ---------------------------
+    # Pagination
+    # ---------------------------
+    paginator = Paginator(products.distinct(), 15)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+    
+    # ---------------------------
+    # Sidebar dynamic options (faceted counts)
+    # ---------------------------
+    filter_options = get_filter_options(products)
+    
+    # Prefetch categories/subcategories/products/variants for sidebar hierarchy
+    categories = Category.objects.filter(is_active=True)\
+        .prefetch_related("subcategories__products__variants")
+    
     context = {
-        "products": products,
-        "category":category,
-        "subcategory": subcategory,
-        "filters": {
-            "colors": all_colors,
-            "sizes": all_sizes,
-            "age_groups": all_age_groups,
-            "price_range": price_range,
-            "selected_colors": selected_colors,
-            "selected_sizes": selected_sizes,
-            "selected_age_groups": selected_age_groups,
-            "min_price": min_price,
-            "max_price": max_price,
-            "sort_by": sort_by,
-        },
-        "page_obj":page_obj,
+        "products": page_obj.object_list,
+        "page_obj": page_obj,
+        "categories": categories,
+        "colors": filter_options["colors"],
+        "sizes": filter_options["sizes"],
+        "age_groups": filter_options["age_groups"],
+        "genders": [
+            {"code": k, "label": v} for k, v in Product.GENDER_CHOICES
+        ],
+        "min_price": filter_options["min_price"],
+        "max_price": filter_options["max_price"],
+        "selected_categories": selected_categories,
+        "selected_subcategories": selected_subcategories,
+        "selected_products": selected_products,
+        "selected_variants": selected_variants,
+        "selected_colors": selected_colors,
+        "selected_sizes": selected_sizes,
+        "selected_age_groups": selected_age_groups,
+        "selected_genders": selected_genders,
+        "sort_by": sort_by,
     }
+    
+    # ---------------------------
+    # AJAX Filtering
+    # ---------------------------
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return render(request, "products/catalog/ajax_product_list.html", context)
+    
     return render(request, "products/catalog/product_list.html", context)
 
+
+# ---------------------------
 # Product Detail View
+# ---------------------------
 def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_active=True, subcategory__category__is_active=True)
     variants = ProductVariant.objects.filter(product=product, is_active=True).select_related("inventory")
     related_products = Product.objects.filter(subcategory=product.subcategory, is_active=True).exclude(id=product.id)[:4]
-    context = {
+    return render(request, "products/catalog/product_detail.html", {
         "product": product,
         "variants": variants,
         "related_products": related_products,
-    }
-    return render(request, "products/catalog/product_detail.html", context)
+    })
 
+
+# ---------------------------
 # AJAX Endpoint: Variant Info
-
+# ---------------------------
 def ajax_variant_info(request):
     variant_id = request.GET.get("variant_id")
     try:
@@ -127,5 +216,4 @@ def ajax_variant_info(request):
         }
     except ProductVariant.DoesNotExist:
         data = {"error": "Variant not found"}
-
     return JsonResponse(data)

@@ -58,58 +58,94 @@
     gap: 30px;
 }
 
-/* SIDEBAR */
-.account-sidebar {
+/* ========== FILTER SIDEBAR ========== */
+.filter {
     width: 260px;
     background: #fff;
     border-radius: 10px;
-    padding: 20px;
+    padding: 18px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
 
-.sidebar-header {
-    background: #f06292;
-    color: #fff;
-    text-align: center;
-    padding: 20px 10px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.sidebar-profile-icon {
-    font-size: 34px;
-    margin-bottom: 8px;
-}
-
-/* MENU */
-.sidebar-menu {
+.filter-header {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.sidebar-menu li a {
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 15px;
-    color: #333;
-    transition: background 0.2s;
+    margin-bottom: 18px;
 }
 
-.sidebar-menu li a:hover {
-    background: #f8f8f8;
+.filter-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.clear-btn {
+    font-size: 12px;
     color: #f06292;
 }
 
-.sidebar-menu li.danger a {
-    color: #d32f2f;
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.sidebar-menu li.danger a:hover {
-    background: #fdecea;
+.sidebar-menu details {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.sidebar-menu summary {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.filter-options {
+    margin-top: 10px;
+    padding-left: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.filter-options label {
+    display: flex;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.hierarchy {
+    margin-left: 12px;
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.apply-filter-btn {
+    margin-top: 18px;
+    width: 100%;
+    padding: 9px;
+    border: none;
+    background: #f06292;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.apply-filter-btn:hover {
+    background: #e91e63;
 }
 
 /* CONTENT AREA */
@@ -205,52 +241,181 @@
     <div class="account-layout">
 
 <!-- SIDEBAR -->
-        <aside class="account-sidebar">
-            <div class="sidebar-header">
-                <i class="fa-regular fa-user sidebar-profile-icon"></i>
-                <p>Hello, <strong>{{ request.user.full_name }}</strong></p>
-            </div>
+<aside class="filter">
 
-            <ul class="sidebar-menu">
-                <li>
-                    <a href="{% url 'accounts:user_profile' %}">
-                        <i class="fa-regular fa-id-card"></i> Profile
-                    </a>
-                </li>
-                <li>
-                    <a href="#">   
-                        <i class="fa-solid fa-box"></i> My Orders
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class="fa-solid fa-wallet"></i> Wallet
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'accounts:address_list' %}">
-                        <i class="fa-solid fa-location-dot"></i> Address
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class="fa-solid fa-gift"></i> Refer & Earn
-                    </a>
-                </li>
+    <!-- HEADER -->
+    <div class="filter-header">
+        <h3><i class="fa-solid fa-sliders"></i> FILTER & SORT</h3>
+        <a href="{{ request.path }}" class="clear-btn">Clear All</a>
+    </div>
 
-                <li class="danger">
-                    <a href="{% url 'accounts:delete_profile' %}">
-                        <i class="fa-solid fa-trash"></i> Delete Account
-                    </a>
-                </li>
+    <form method="get">
+        <ul class="sidebar-menu">
+            <!-- SORT BY -->
+            <li>
+                <details>
+                    <summary><i class="fa-solid fa-arrow-up-wide-short"></i> Sort By</summary>
+                    <div class="filter-options">
+                        {% for option in sort_options %}
+                            <label>
+                                <input type="checkbox" name="sort_by" value="{{ option.key }}">
+                                {{ option.label }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </details>
+            </li>
 
-                <li>
-                    <a href="{% url 'accounts:logout' %}">
-                        <i class="fa-solid fa-right-from-bracket"></i> Logout
-                    </a>
-                </li>
-            </ul>
-        </aside>
+            <!-- SIZE -->
+            <li>
+                <details>
+                    <summary><i class="fa-solid fa-ruler"></i> Size</summary>
+                    <div class="filter-options">
+                        {% for size in sizes %}
+                            <label>
+                                <input type="checkbox" name="size" value="{{ size }}">
+                                {{ size }}
+                            </label>
+                        {% empty %}
+                            <span class="empty">No sizes available</span>
+                        {% endfor %}
+                    </div>
+                </details>
+            </li>
+
+            <!-- AGE GROUP -->
+            <li>
+                <details>
+                    <summary><i class="fa-solid fa-child"></i> Age Group</summary>
+                    <div class="filter-options">
+                        {% for age in age_groups %}
+                            <label>
+                                <input type="checkbox" name="age" value="{{ age.id }}">
+                                {{ age.name }}
+                            </label>
+                        {% empty %}
+                            <span class="empty">No age groups</span>
+                        {% endfor %}
+                    </div>
+                </details>
+            </li>
+
+
+            <!-- PRODUCT TYPES (DYNAMIC HIERARCHY) -->
+            <li>
+                <details>
+                    <summary>
+                        <i class="fa-solid fa-layer-group"></i> Product Types
+                    </summary>
+
+                    <div class="filter-options">
+
+                        {% for category in categories %}
+                            <!-- CATEGORY -->
+                            <label>
+                                <input type="checkbox" name="category" value="{{ category.id }}">
+                                {{ category.category_name }}
+                            </label>
+
+                            <div class="hierarchy">
+                                {% for sub in category.subcategories.all %}
+                                    <!-- SUBCATEGORY -->
+                                    <label>
+                                        <input type="checkbox" name="subcategory" value="{{ sub.id }}">
+                                        {{ sub.subcategory_name }}
+                                    </label>
+
+                                    <div class="hierarchy">
+                                        {% for product in sub.products.all %}
+                                            <!-- PRODUCT -->
+                                            <label>
+                                                <input type="checkbox" name="product" value="{{ product.id }}">
+                                                {{ product.product_name }}
+                                            </label>
+
+                                            <div class="hierarchy">
+                                                {% for variant in product.variants.all %}
+                                                    <!-- PRODUCT VARIANT -->
+                                                    <label>
+                                                        <input type="checkbox" name="variant" value="{{ variant.id }}">
+                                                        {{ variant.color }} / {{ variant.size }}
+                                                    </label>
+                                                {% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+                </details>
+            </li>
+
+            <!-- GENDER -->
+            <li>
+                <details>
+                    <summary><i class="fa-solid fa-children"></i> Gender</summary>
+                    <div class="filter-options">
+                        {% for gender in genders %}
+                            <label>
+                                <input type="checkbox" name="gender" value="{{ gender.code }}">
+                                {{ gender.label }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </details>
+            </li>
+
+            <!-- COLOR -->
+            <li>
+                <details>
+                    <summary>
+                        <i class="fa-solid fa-palette"></i> Color
+                    </summary>
+
+                    <div class="filter-options">
+                        {% for color in colors %}
+                            <label>
+                                <input type="checkbox" name="color" value="{{ color }}">
+                                {{ color|title }}
+                            </label>
+                        {% empty %}
+                            <span style="font-size:12px;color:#999;">No colors available</span>
+                        {% endfor %}
+                    </div>
+                </details>
+            </li>
+
+            <!-- PRICE -->
+            <li>
+                <details>
+                    <summary><i class="fa-solid fa-indian-rupee-sign"></i> Price</summary>
+                    <div class="filter-options">
+                        <input type="number"
+                                name="min_price"
+                                placeholder="Min"
+                                value="{{ request.GET.min_price|default:min_price }}">
+
+                        <input type="number"
+                                name="max_price"
+                                placeholder="Max"
+                                value="{{ request.GET.max_price|default:max_price }}">
+                    </div>
+                </details>
+            </li>
+
+
+        </ul>
+
+        <button type="submit" class="apply-filter-btn">
+            Apply Filters
+        </button>
+
+    </form>
+</aside>
+
 
 <!-- PAGE CONTENT -->
         <section class="account-content">

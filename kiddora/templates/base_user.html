@@ -108,7 +108,7 @@
         </nav>
 
         <div class="header-actions">
-            <form method="get" action="{% url 'products:product_list' %}" class="search-form">
+            <form method="get" action="{% url 'products:product_search' %}" class="search-form">
                 <input type="text" name="q" placeholder="Search products..."
                         value="{{ request.GET.q|default:'' }}">
                 <button type="submit" aria-label="Search">

@@ -39,7 +39,7 @@ select {
 
 .btn-custom {
     padding: 8px 18px;
-    background: #f062c0;
+    background: #f06292;
     color: white;
     border: none;
     border-radius: 6px;
@@ -49,7 +49,7 @@ select {
 }
 
 .btn-custom:hover {
-    background: #e04faf;
+    background: #e15b88;
 }
 </style>
 
@@ -58,12 +58,6 @@ select {
 
     <form method="post">
         {% csrf_token %}
-
-        <label>SubCategory Name</label>
-        <input type="text"
-                name="subcategory_name"
-                value="{{ subcategory.subcategory_name|default:'' }}"
-                required>
 
         <label>Category</label>
         <select name="category" required>
@@ -75,10 +69,18 @@ select {
             {% endfor %}
         </select>
 
+        <label>SubCategory Name</label>
+        <input type="text"
+                name="subcategory_name"
+                value="{{ subcategory.subcategory_name|default:'' }}"
+                required>
+
+        
+
         <div class="form-actions">
 
             <button type="submit" class="btn-custom">Save</button>
-\
+
             <a href="{% url 'products:admin_subcategory_list' %}" class="btn-custom">Cancel</a>
         </div>
     </form>

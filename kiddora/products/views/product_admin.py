@@ -56,6 +56,9 @@ def admin_edit_category(request, category_id):
     if request.method == "POST":
         category_name = request.POST.get("category_name").strip()
         category.is_active = bool(request.POST.get("is_active"))
+        if Category.objects.filter(category_name__iexact=category_name).exclude(id=category.id).exists():
+            messages.error(request, "Category with this name already exists.")
+            return redirect("products:admin_edit_category", category_id=category.id)
         category.category_name = category_name
         category.save()
         messages.success(request, "Category updated")

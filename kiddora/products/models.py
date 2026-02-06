@@ -26,7 +26,8 @@ class Product(models.Model):
     ("3-5 years", "3-5 years"),
     ("5-7 years", "5-7 years"),
     ("7-10 years", "7-10 years"),
-    ("10-15 years", "10-15 years"),
+    ("10-12 years", "10-12 years"),
+    ("12-15 years", "12-15 years"),
     ]
 
     GENDER_CHOICES = [

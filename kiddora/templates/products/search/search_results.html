@@ -1,14 +1,146 @@
 {% extends "base_profile.html" %}
+{% load static %}
+
 {% block content %}
-<h2>Search Results for "{{ query }}"</h2>
-<ul>
-    {% for prod in products %}
-        <li>
-            <a href="{% url 'products:product_detail' prod.id %}">{{ prod.product_name }}</a>
-            - {{ prod.final_price }}
-        </li>
-    {% empty %}
-        <li>No products found.</li>
-    {% endfor %}
-</ul>
+
+<style>
+/* ---------- Page Layout ---------- */
+.search-container {
+    padding: 40px 60px;
+}
+
+.search-header {
+    margin-bottom: 25px;
+}
+
+.search-header h2 {
+    font-size: 26px;
+    margin-bottom: 6px;
+}
+
+.search-header span {
+    color: #777;
+}
+
+/* ---------- Grid ---------- */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 25px;
+}
+
+/* ---------- Product Card ---------- */
+.product-card {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.12);
+}
+
+.product-image {
+    height: 220px;
+    background: #f7f7f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-image img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/* ---------- Product Info ---------- */
+.product-info {
+    padding: 14px;
+}
+
+.product-info h4 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.product-brand {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 6px;
+}
+
+.product-category {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 8px;
+}
+
+.product-price {
+    font-size: 16px;
+    font-weight: bold;
+    color: #f062c0;
+}
+
+/* ---------- Empty State ---------- */
+.no-results {
+    text-align: center;
+    padding: 60px;
+    color: #777;
+}
+</style>
+
+<div class="search-container">
+
+    <!-- Search Header -->
+    <div class="search-header">
+        {% if query %}
+            <h2>Search results for “{{ query }}”</h2>
+            <span>{{ products|length }} product{{ products|length|pluralize }} found</span>
+        {% else %}
+            <h2>All Products</h2>
+        {% endif %}
+    </div>
+
+    <!-- Products -->
+    {% if products %}
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card">
+
+                <!-- Image -->
+                <div class="product-image">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.product_name }}">
+                    {% else %}
+                        <img src="{% static 'images/no-image.png' %}" alt="No image">
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="product-info">
+                    <h4>{{ product.product_name }}</h4>
+                    <div class="product-brand">{{ product.brand }}</div>
+                    <div class="product-category">
+                        {{ product.subcategory.category.category_name }} /
+                        {{ product.subcategory.subcategory_name }}
+                    </div>
+                    <div class="product-price">₹{{ product.final_price }}</div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-results">
+            <h3>No products found</h3>
+            <p>Try searching with a different keyword.</p>
+        </div>
+    {% endif %}
+
+</div>
+
 {% endblock %}
