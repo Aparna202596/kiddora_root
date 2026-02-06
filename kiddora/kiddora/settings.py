@@ -58,17 +58,8 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
 ]
-SITE_ID = 3
+SITE_ID = 4
 
-# SOCIALACCOUNT_PROVIDERS = {
-#     'google': {
-#         'APP': {
-#             'client_id': os.getenv("GOOGLE_CLIENT_ID"),
-#             'secret': os.getenv("GOOGLE_CLIENT_SECRET"),
-#             'key': ''
-#         }
-#     }
-# }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
