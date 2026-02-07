@@ -300,6 +300,27 @@
                 </details>
             </li>
 
+            <!-- FABRIC TYPE -->
+            <li>
+                <details>
+                    <summary>
+                        <i class="fa-solid fa-shirt"></i> Fabric Type
+                    </summary>
+
+                    <div class="filter-options">
+                        {% for fabric in fabric_types %}
+                            <label>
+                                <input type="checkbox" name="fabric" value="{{ fabric }}">
+                                {{ fabric|title }}
+                            </label>
+                        {% empty %}
+                            <span style="font-size:12px;color:#999;">
+                                No fabric types available
+                            </span>
+                        {% endfor %}
+                    </div>
+                </details>
+            </li>
 
             <!-- PRODUCT TYPES (DYNAMIC HIERARCHY) -->
             <li>

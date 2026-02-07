@@ -23,7 +23,7 @@ def admin_order_list(request):
             Q(user__email__icontains=search))
     if status:
         orders = orders.filter(order_status=status)
-    paginator = Paginator(orders, 20)
+    paginator = Paginator(orders, 15)
     page = request.GET.get("page")
     orders = paginator.get_page(page)
     return render(request, "orders/admin/admin_order_list.html", {

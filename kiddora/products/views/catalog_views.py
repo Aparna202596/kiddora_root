@@ -1,14 +1,14 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from products.models import Category, SubCategory, Product, ProductVariant
-from django.db.models import Q, Min, Max, Count
+from django.db.models import Q, Min, Max, Count, Sum
 from django.core.paginator import Paginator
 
 # Category listing page
 def category_list_view(request):
     categories = Category.objects.all()
     min_price = request.GET.get('min_price', 0)  
-    max_price = request.GET.get('max_price', 1000)
+    max_price = request.GET.get('max_price', 10000)
     context = {
         'categories': categories,
         'min_price': min_price,
@@ -24,34 +24,32 @@ def subcategory_list_view(request, category_id):
         "products/catalog/subcategory_list.html",
         {"category": category, "subcategories": subcategories})
 
-
-
 def get_filter_options(products_queryset):
     """Fetch dynamic filter options for sidebar with faceted counts."""
-    
-    # Unique colors & sizes
     colors = ProductVariant.objects.filter(product__in=products_queryset)\
         .values('color')\
         .annotate(count=Count('id'))\
         .order_by('color')
-    
+
     sizes = ProductVariant.objects.filter(product__in=products_queryset)\
         .values('size')\
         .annotate(count=Count('id'))\
         .order_by('size')
     
-    # Age groups from Product
     age_groups = Product.objects.filter(id__in=products_queryset)\
         .values('age_group')\
         .annotate(count=Count('id'))\
         .order_by('age_group')
     
-    # Genders from Product
     genders = Product.objects.filter(id__in=products_queryset)\
         .values('gender')\
         .annotate(count=Count('id'))\
         .order_by('gender')
     
+    fabrics = Product.objects.filter(id__in=products_queryset)\
+        .values('fabric')\
+        .annotate(count=Count('id'))\
+        .order_by('fabric')
     # Price range
     price_range = products_queryset.aggregate(min_price=Min('final_price'),
                                                 max_price=Max('final_price'))
@@ -61,6 +59,7 @@ def get_filter_options(products_queryset):
         "sizes": sizes,
         "age_groups": age_groups,
         "genders": genders,
+        "fabrics": fabrics,  
         "min_price": price_range["min_price"] or 0,
         "max_price": price_range["max_price"] or 0
     }
@@ -89,6 +88,7 @@ def product_list(request, category_id=None, subcategory_id=None):
     selected_sizes = request.GET.getlist("size")
     selected_age_groups = request.GET.getlist("age")
     selected_genders = request.GET.getlist("gender")
+    selected_fabrics = request.GET.getlist("fabric")
     min_price = request.GET.get("min_price")
     max_price = request.GET.get("max_price")
     sort_by_list = request.GET.getlist("sort_by")
@@ -98,7 +98,9 @@ def product_list(request, category_id=None, subcategory_id=None):
     # Filtering logic
     # ---------------------------
     if query:
-        products = products.filter(Q(product_name__icontains=query) | Q(brand__icontains=query))
+        products = products.filter(Q(product_name__icontains=query) | 
+                                    Q(brand__icontains=query) |
+                                    Q(about_product__icontains=query))
     
     if selected_categories:
         products = products.filter(subcategory__category_id__in=selected_categories)
@@ -116,12 +118,16 @@ def product_list(request, category_id=None, subcategory_id=None):
         products = products.filter(age_group__in=selected_age_groups)
     if selected_genders:
         products = products.filter(gender__in=selected_genders)
+    if selected_fabrics:                
+        products = products.filter(fabric__in=selected_fabrics)
     if min_price and max_price:
         products = products.filter(final_price__gte=min_price, final_price__lte=max_price)
     
     # ---------------------------
     # Sorting
     # ---------------------------
+    products=products.distinct()
+
     if sort_by == "price_low":
         products = products.order_by("final_price")
     elif sort_by == "price_high":
@@ -131,9 +137,15 @@ def product_list(request, category_id=None, subcategory_id=None):
     elif sort_by == "za":
         products = products.order_by("-product_name")
     elif sort_by == "popularity":
-        products = products.annotate(popularity=Count("variants__inventory__quantity_sold")).order_by("-popularity")
-    elif sort_by == "discount":
+        products = products.annotate(popularity=Sum("variants__inventory__quantity_sold")).order_by("-popularity")
+    elif sort_by == "higest_discount":
         products = products.order_by("-discount_percent")
+    elif sort_by == "lowest_discount":
+        products = products.order_by("discount_percent")
+    elif sort_by == "newest":
+        products = products.order_by("-created_at")
+    elif sort_by == "oldest":
+        products = products.order_by("created_at")
     else:
         products = products.order_by("-id")
     
@@ -161,10 +173,11 @@ def product_list(request, category_id=None, subcategory_id=None):
         "sizes": filter_options["sizes"],
         "age_groups": filter_options["age_groups"],
         "genders": [
-            {"code": k, "label": v} for k, v in Product.GENDER_CHOICES
-        ],
+            {"code": k, "label": v} for k, v in Product.GENDER_CHOICES],
+        "fabrics": filter_options["fabrics"],  
         "min_price": filter_options["min_price"],
         "max_price": filter_options["max_price"],
+
         "selected_categories": selected_categories,
         "selected_subcategories": selected_subcategories,
         "selected_products": selected_products,
@@ -173,6 +186,7 @@ def product_list(request, category_id=None, subcategory_id=None):
         "selected_sizes": selected_sizes,
         "selected_age_groups": selected_age_groups,
         "selected_genders": selected_genders,
+        "selected_fabrics": selected_fabrics, 
         "sort_by": sort_by,
     }
     
@@ -183,7 +197,6 @@ def product_list(request, category_id=None, subcategory_id=None):
         return render(request, "products/catalog/ajax_product_list.html", context)
     
     return render(request, "products/catalog/product_list.html", context)
-
 
 # ---------------------------
 # Product Detail View
@@ -196,8 +209,9 @@ def product_detail_view(request, product_id):
         "product": product,
         "variants": variants,
         "related_products": related_products,
+        "fabric": product.fabric,     
+        "about_product": product.about_product,
     })
-
 
 # ---------------------------
 # AJAX Endpoint: Variant Info

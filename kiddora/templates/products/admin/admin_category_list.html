@@ -95,7 +95,26 @@ th {
 tr {
     transition: 0.2s;
 }
+/* ---------- Table Heading Links ---------- */
+th {
+    background: #000;      /* black background */
+    color: #fff;
+}
 
+th a {
+    color: #fff;           /* white text */
+    text-decoration: none; /* remove underline */
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+}
+
+th a:hover,
+th a:focus,
+th a:visited {
+    color: #fff;           /* keep white always */
+    text-decoration: none;
+}
 tbody tr:hover {
     background: #f9f0f6;
 }
@@ -140,8 +159,8 @@ tbody tr:hover {
         <table id="categoryTable">
             <thead>
                 <tr>
-                    <th onclick="sortTable(0)">ID ⬍</th>
-                    <th onclick="sortTable(1)">Category Name ⬍</th>
+                    <th><a href="?sort=id&dir={% if sort == 'id' and dir == 'asc' %}desc{% else %}asc{% endif %}">ID ⬍</a></th>
+                    <th><a href="?sort=category_name&dir={% if sort == 'category_name' and dir == 'asc' %}desc{% else %}asc{% endif %}">Category Name ⬍</a></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -167,27 +186,5 @@ tbody tr:hover {
 
     {% include "products/admin/pagination.html" %}
 </div>
-
-<!-- ---------- Sorting Script ---------- -->
-<script>
-function sortTable(colIndex) {
-    const table = document.getElementById("categoryTable");
-    const tbody = table.tBodies[0];
-    const rows = Array.from(tbody.rows);
-    const asc = table.dataset.sort !== "asc";
-    table.dataset.sort = asc ? "asc" : "desc";
-
-    rows.sort((a, b) => {
-        let x = a.cells[colIndex].innerText.toLowerCase();
-        let y = b.cells[colIndex].innerText.toLowerCase();
-        if (!isNaN(x) && !isNaN(y)) {
-            return asc ? x - y : y - x;
-        }
-        return asc ? x.localeCompare(y) : y.localeCompare(x);
-    });
-
-    rows.forEach(row => tbody.appendChild(row));
-}
-</script>
 
 {% endblock %}

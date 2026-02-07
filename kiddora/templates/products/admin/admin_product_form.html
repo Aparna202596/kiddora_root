@@ -21,7 +21,56 @@ label {
     margin-top: 12px;
     font-weight: 500;
 }
+/* ===== PRODUCT IMAGE CROP SECTION ===== */
+.image-preview-wrapper {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
 
+.image-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #ddd;
+    background: #fff;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.crop-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.crop-box {
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    width: 420px;
+}
+
+.crop-box img {
+    max-width: 100%;
+}
+
+.crop-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
 input, select, textarea {
     width: 100%;
     padding: 8px;
@@ -118,13 +167,24 @@ select[multiple] {
 <div class="form-box">
     <h2>{% if product %}Edit Product{% else %}Add Product{% endif %}</h2>
 
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
+
         {% csrf_token %}
 
         <!-- PRODUCT NAME -->
         <label>Product Name</label>
         <input type="text" name="product_name"
                 value="{{ product.product_name|default:'' }}" required>
+
+        <!-- PRODUCT IMAGES -->
+        <label>Product Images <small>(Minimum 2 images required)</small></label>
+
+        <input type="file" id="product_images" name="product_images" accept="image/*" multiple>
+        <small id="imageHelp" style="color:#555;">
+        Images will be cropped & resized automatically.
+        </small>
+
+        <div class="image-preview-wrapper" id="previewWrapper"></div>
 
         <!-- BRAND (Select or Add New) -->
         <label>Brand</label>
@@ -150,14 +210,6 @@ select[multiple] {
                 id="final_price"
                 value="{{ product.final_price|default:'' }}"
                 readonly>
-                        <!-- SKU -->
-        <label>SKU</label>
-        <input type="text" name="sku"
-                value="{{ product.sku|default:'' }}" required>
-
-        {% comment %} <label>Stock</label>
-        <input type="number" name="stock"
-                value="{{ product.stock|default:0 }}" required> {% endcomment %}
 
         <!-- CATEGORY -->
         <label>Category</label>
@@ -197,18 +249,24 @@ select[multiple] {
 
         <!-- AGE GROUP -->
         <label>Age Group</label> 
-        <select name="age" multiple size="1" class="custom-multiselect" required> 
+        <select name="age_group" multiple size="1" class="custom-multiselect" required> 
             <option disabled selected>Select Age</option> 
-            <option value="0-6 months">0-6 months</option> 
-            <option value="6-12 months">6-12 months</option> 
-            <option value="1-2 years">1-2 years</option> 
-            <option value="2-3 years">2-3 years</option> 
-            <option value="3-5 years">3-5 years</option> 
-            <option value="5-7 years">5-7 years</option> 
-            <option value="7-10 years">7-10 years</option> 
-            <option value="10-15 years">10-12 years</option>
-            <option value="12-15 years">12-15 years</option> 
-        </select> 
+            <option value="{{ age.id }}">0-6 months</option> 
+            <option value="{{ age.id }}">6-12 months</option> 
+            <option value="{{ age.id }}">1-2 years</option> 
+            <option value="{{ age.id }}">2-3 years</option> 
+            <option value="{{ age.id }}">3-5 years</option> 
+            <option value="{{ age.id }}">5-7 years</option> 
+            <option value="{{ age.id }}">7-10 years</option> 
+            <option value="{{ age.id }}">10-12 years</option>
+            <option value="{{ age.id }}">12-15 years</option> 
+        </select>
+        {% comment %} <label>Age Groups</label>
+        <select name="age_groups" multiple required>
+            {% for age in AGE_GROUPS %}
+                <option value="{{ age.id }}">{{ age.label }}</option>
+            {% endfor %}
+        </select> {% endcomment %}
     <!-- Color -->
         <label>Colors</label>
         <small><i>(Enter colors separated by commas)</i></small>
@@ -221,20 +279,53 @@ select[multiple] {
         <label>Size</label> 
             <select name="size" multiple size="1" class="custom-multiselect" required> 
                 <option disabled selected>Select Size</option> 
+                <option value="NB">Newborn</option>
                 <option value="XS">XS</option> 
                 <option value="S">S</option> 
                 <option value="M">M</option> 
                 <option value="L">L</option> 
                 <option value="XL">XL</option> 
-            </select> 
-        
+            </select>
+        {% comment %} <label>Sizes</label>
+        <select name="sizes" multiple required>
+            {% for code, name in SIZE_CHOICES %}
+                <option value="{{ code }}">{{ name }}</option>
+            {% endfor %}
+        </select> {% endcomment %}
+        <!-- FABRIC -->
+        <label>Fabric</label>
+        <select name="fabric">
+            {% for code, name in FABRIC_CHOICES %}
+            <option value="{{ code }}"
+                {% if product and product.fabric == code %}selected{% endif %}>
+                {{ name }}
+            </option>
+            {% endfor %}
+        </select>
 
+        <!-- ABOUT PRODUCT -->
+        <label>About Product</label>
+        <textarea name="about_product" rows="4"
+            placeholder="Enter detailed product description">{{ product.about_product|default:'' }}</textarea>
 
         <div class="form-actions">
             <a href="{% url 'products:admin_product_list' %}" class="btn-back">← Back</a>
             <button type="submit" class="btn-custom">Save</button>
             <a href="{% url 'products:admin_product_list' %}" class="btn-custom">Cancel</a>
         </div>
+
+        <div class="crop-modal" id="cropModal">
+            <div class="crop-box">
+                <img id="cropImage">
+                <div class="crop-actions">
+                    <button type="button" class="btn-custom" id="cropSave">Crop</button>
+                    <button type="button" class="btn-back" id="cropCancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+
+
     </form>
 
 <!-- AUTO FINAL PRICE -->
@@ -248,8 +339,92 @@ function calculateFinalPrice() {
 
 document.getElementById("base_price").addEventListener("input", calculateFinalPrice);
 document.getElementById("discount").addEventListener("input", calculateFinalPrice);
+document.querySelector('form').addEventListener('submit', function(e) { 
+    const files = document.getElementById('product_images').files; 
+    if (files.length < 3) { 
+        alert('Please upload at least 3 product images.'); 
+        e.preventDefault(); // stop form submission 
+        } });
+let selectedFiles = [];
+let cropper;
+let activeFileIndex = null;
 
+const input = document.getElementById("product_images");
+const previewWrapper = document.getElementById("previewWrapper");
+const cropModal = document.getElementById("cropModal");
+const cropImage = document.getElementById("cropImage");
 
+input.addEventListener("change", function () {
+    [...this.files].forEach(file => {
+        selectedFiles.push(file);
+        openCropper(file, selectedFiles.length - 1);
+    });
+});
+
+function openCropper(file, index) {
+    activeFileIndex = index;
+    const reader = new FileReader();
+    reader.onload = e => {
+        cropImage.src = e.target.result;
+        cropModal.style.display = "flex";
+
+        if (cropper) cropper.destroy();
+
+        cropper = new Cropper(cropImage, {
+            aspectRatio: 1,
+            viewMode: 2
+        });
+    };
+    reader.readAsDataURL(file);
+}
+
+document.getElementById("cropSave").onclick = () => {
+    const canvas = cropper.getCroppedCanvas({
+        width: 800,
+        height: 800
+    });
+
+    canvas.toBlob(blob => {
+        const croppedFile = new File([blob], "product.jpg", { type: "image/jpeg" });
+        selectedFiles[activeFileIndex] = croppedFile;
+        renderPreviews();
+        cropModal.style.display = "none";
+    });
+};
+
+document.getElementById("cropCancel").onclick = () => {
+    cropModal.style.display = "none";
+};
+
+function renderPreviews() {
+    previewWrapper.innerHTML = "";
+    selectedFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const div = document.createElement("div");
+            div.className = "image-preview";
+            div.innerHTML = `<img src="${e.target.result}">`;
+            previewWrapper.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+document.querySelector("form").addEventListener("submit", function (e) {
+    if (selectedFiles.length < 3) {
+        alert("Minimum 3 images required");
+        e.preventDefault();
+        return;
+    }
+
+    const dt = new DataTransfer();
+    selectedFiles.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+});
 </script>
+<link rel="stylesheet"
+        href="https://unpkg.com/cropperjs/dist/cropper.css">
+<script src="https://unpkg.com/cropperjs/dist/cropper.js"></script>
+
 
 {% endblock %}

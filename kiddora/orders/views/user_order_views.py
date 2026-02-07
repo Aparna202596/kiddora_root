@@ -85,7 +85,7 @@ def user_orders(request):
     search = request.GET.get("search")
     if search:
         orders = orders.filter(order_id__icontains=search)
-    paginator = Paginator(orders, 10)
+    paginator = Paginator(orders, 15)
     page = request.GET.get("page")
     orders = paginator.get_page(page)
     return render(request, "orders/user/order_list.html", {"orders": orders})

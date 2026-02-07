@@ -95,6 +95,26 @@ th {
 tr {
     transition: 0.2s;
 }
+/* ---------- Table Heading Links ---------- */
+th {
+    background: #000;      /* black background */
+    color: #fff;
+}
+
+th a {
+    color: #fff;           /* white text */
+    text-decoration: none; /* remove underline */
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+}
+
+th a:hover,
+th a:focus,
+th a:visited {
+    color: #fff;           /* keep white always */
+    text-decoration: none;
+}
 
 tbody tr:hover {
     background: #f9f0f6;
@@ -137,12 +157,14 @@ tbody tr:hover {
         <table id="productTable">
             <thead>
                 <tr>
-                    <th onclick="sortTable(0)">ID ⬍</th>
-                    <th onclick="sortTable(1)">Name ⬍</th>
-                    <th onclick="sortTable(2)">Brand ⬍</th>
-                    <th onclick="sortTable(3)">SubCategory ⬍</th>
-                    <th onclick="sortTable(4)">Category ⬍</th>
-                    <th onclick="sortTable(5)">Gender ⬍</th>
+                    <th><a href="?sort=id&dir={% if sort == 'id' and dir == 'asc' %}desc{% else %}asc{% endif %}"> ID ⬍ </a></th>
+                    <th><a href="?sort=product_name&dir={% if sort == 'product_name' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Product Name ⬍ </a></th>
+                    <th><a href="?sort=brand&dir={% if sort == 'brand' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Brand ⬍ </a></th>
+                    <th><a href="?sort=final_price&dir={% if sort == 'final_price' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Price ⬍ </a></th>
+                    <th><a href="?sort=subcategory__subcategory_name&dir={% if sort == 'subcategory__subcategory_name' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Sub-Category ⬍ </a></th>
+                    <th><a href="?sort=subcategory__category__category_name&dir={% if sort == 'subcategory__category__category_name' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Category ⬍</a></th>
+                    <th><a href="?sort=gender&dir={% if sort == 'gender' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Gender ⬍</a></th>
+                    
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -156,6 +178,7 @@ tbody tr:hover {
                         </a>
                     </td>
                     <td>{{ prod.brand }}</td>
+                    <td>{{ prod.final_price }}</td>
                     <td>{{ prod.subcategory.subcategory_name }}</td>
                     <td>{{ prod.subcategory.category.category_name }}</td>
                     <td>{{ prod.get_gender_display }}</td>

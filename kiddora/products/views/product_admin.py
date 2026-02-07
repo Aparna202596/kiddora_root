@@ -6,7 +6,7 @@ from django.db.models import Q, Sum
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
-from products.models import Category, Product, ProductVariant, Inventory, SubCategory, Offer
+from products.models import Category, Product, ProductImage, AgeGroup, ProductVariant, Inventory, SubCategory, Offer
 from accounts.decorators import admin_login_required
 from products.services.inventory import reserve_stock, release_stock
 
@@ -15,18 +15,34 @@ from products.services.inventory import reserve_stock, release_stock
 @admin_login_required
 def admin_category_list(request):
     search = request.GET.get("search", "").strip()
+    sort = request.GET.get("sort", "id")
+    direction = request.GET.get("dir", "desc")
+
     categories = Category.objects.filter(is_active=True)
 
     if search:
         categories = categories.filter(category_name__icontains=search)
 
-    categories = categories.order_by("-id")
-    paginator = Paginator(categories, 10)
+    allowed_sorts = ["id", "category_name"]
+    if sort not in allowed_sorts:
+        sort = "id"
+
+    order_by = sort if direction == "asc" else f"-{sort}"
+    categories = categories.order_by(order_by)
+
+    paginator = Paginator(categories, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    context = {"page_obj": page_obj, "search": search}
-    return render(request, "products/admin/admin_category_list.html", context)
+    return render(
+        request,
+        "products/admin/admin_category_list.html",
+        {
+            "page_obj": page_obj,
+            "search": search,
+            "sort": sort,
+            "dir": direction,
+        },)
 
 @admin_login_required
 def admin_add_category(request):
@@ -81,18 +97,34 @@ def admin_delete_category(request, category_id):
 @admin_login_required
 def admin_subcategory_list(request):
     search = request.GET.get("search", "").strip()
-    subcategories = SubCategory.objects.filter(category__is_active=True)
+    sort = request.GET.get("sort", "id")
+    direction = request.GET.get("dir", "desc")
+
+    subcategories = SubCategory.objects.filter(category__is_active=True).select_related("category")
 
     if search:
         subcategories = subcategories.filter(subcategory_name__icontains=search)
 
-    subcategories = subcategories.order_by("-id")
-    paginator = Paginator(subcategories, 10)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    allowed_sorts = ["id", "subcategory_name", "category__category_name"]
+    if sort not in allowed_sorts:
+        sort = "id"
 
-    context = {"page_obj": page_obj, "search": search}
-    return render(request, "products/admin/admin_subcategory_list.html", context)
+    order_by = sort if direction == "asc" else f"-{sort}"
+    subcategories = subcategories.order_by(order_by)
+
+    paginator = Paginator(subcategories, 15)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "products/admin/admin_subcategory_list.html",
+        {
+            "page_obj": page_obj,
+            "search": search,
+            "sort": sort,
+            "dir": direction,
+        },
+    )
 
 @admin_login_required
 def admin_add_subcategory(request):
@@ -147,24 +179,48 @@ def admin_delete_subcategory(request, subcategory_id):
 @admin_login_required
 def admin_product_list(request):
     search = request.GET.get("search", "").strip()
-    products = Product.objects.filter(is_active=True).select_related("subcategory", "subcategory__category")
+    sort = request.GET.get("sort", "id")
+    direction = request.GET.get("dir", "desc")
+
+    products = Product.objects.filter(is_active=True).select_related(
+        "subcategory", "subcategory__category"
+    )
 
     if search:
         products = products.filter(
-            Q(product_name__icontains=search) |
-            Q(brand__icontains=search) |
-            Q(sku__icontains=search)
+            Q(product_name__icontains=search)
+            | Q(brand__icontains=search)
+            | Q(sku__icontains=search)
         )
 
+    allowed_sorts = [
+        "id",
+        "product_name",
+        "brand",
+        "final_price",
+        "subcategory__subcategory_name",
+        "subcategory__category__category_name",
+        "gender",
+    ]
 
-    products = products.order_by("-id")
-    paginator = Paginator(products, 10)
+    if sort not in allowed_sorts:
+        sort = "id"
+
+    order_by = sort if direction == "asc" else f"-{sort}"
+    products = products.order_by(order_by)
+
+    paginator = Paginator(products, 15)
     page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(
         request,
         "products/admin/admin_product_list.html",
-        {"page_obj": page_obj, "search": search,},
+        {
+            "page_obj": page_obj,
+            "search": search,
+            "sort": sort,
+            "dir": direction,
+        },
     )
 
 # ---------- ADD PRODUCT ----------
@@ -173,9 +229,9 @@ def admin_add_product(request):
     categories = Category.objects.filter(is_active=True)
     subcategories = SubCategory.objects.filter(category__is_active=True)
     brands = Product.objects.values_list("brand", flat=True).distinct()
+    age_group = AgeGroup.objects.all()
 
     if request.method == "POST":
-        subcategory_id = request.POST.get("subcategory")
         subcategory = get_object_or_404(SubCategory, id=request.POST.get("subcategory"))
         base_price = request.POST.get("base_price")
         discount_percent = request.POST.get("discount_percent", 0)
@@ -194,32 +250,52 @@ def admin_add_product(request):
 
         final_price = base_price * (1 - discount_percent / 100)
 
+        sku_from_form = request.POST.get("sku")
+        if sku_from_form:
+            # Optional: check uniqueness
+            if Product.objects.filter(sku=sku_from_form).exists():
+                messages.error(request, f"SKU {sku_from_form} already exists.")
+                return redirect("products:admin_add_product")
+            sku_value = sku_from_form
+        else:
+            sku_value = None  # triggers auto-generation in save()
+
         product = Product.objects.create(
             subcategory=subcategory,
             product_name=request.POST.get("product_name"),
             brand=request.POST.get("brand"),
             gender=request.POST.get("gender", "unisex"),
-            age_group=request.POST.get("age_group", Product.AGE_CHOICES[0][0]),
             base_price=base_price,
-            final_price=final_price,
             discount_percent=discount_percent,
-            sku=request.POST.get("sku"),
-            # stock=request.POST.get("stock", 0),
+            final_price=final_price,
+            sku=sku_value,
+            fabric=request.POST.get("fabric", "Other"),               
+            about_product=request.POST.get("about_product", ""),     
             is_active=True,
         )
+        age_ids = request.POST.getlist("age_group")
+        product.age_group.set(age_ids)
 
+        images = request.FILES.getlist('product_images')
+        if len(images) < 2:
+            product.delete() # delete the product we just created to avoid incomplete entry
+            messages.error(request, "At least 2 product images are required.")
+            return redirect("products:admin_add_product")
+
+        for i, img in enumerate(images):
+            ProductImage.objects.create(product=product,image=img,is_default=(i == 0))
+        
         # Product Variants
-        colors = request.POST.get("colors", "").split(",")
-        colors = [c.strip() for c in colors if c.strip()]
+        colors = [c.strip() for c in request.POST.get("colors", "").split(",") if c.strip()]
+        sizes = request.POST.getlist("sizes")
+
         for color in colors:
-            for size_code, _ in ProductVariant.SIZE_CHOICES:
+            for size in sizes:
                 ProductVariant.objects.create(
                     product=product,
                     color=color,
-                    size=size_code,
-                    barcode=f"{product.sku}-{color}-{size_code}"
-                    .replace(" ", "")
-                    .upper(),
+                    size=size,
+                    barcode=f"{product.sku}-{color}-{size}".upper(),
                 )
 
         messages.success(request, "Product added successfully")
@@ -232,8 +308,10 @@ def admin_add_product(request):
             "categories": categories,
             "subcategories": subcategories,
             "brands": brands,
-            "AGE_CHOICES": Product.AGE_CHOICES,
+            "AGE_GROUPS": age_group,
+            "SIZE_CHOICES": ProductVariant.SIZE_CHOICES,
             "GENDER_CHOICES": Product.GENDER_CHOICES,
+            "FABRIC_CHOICES": Product.FABRIC_CHOICES,
         },
     )
 
@@ -261,21 +339,40 @@ def admin_edit_product(request, product_id):
 
         final_price = base_price * (1 - discount_percent / 100)
 
+        sku_from_form = request.POST.get("sku")
+        if sku_from_form and sku_from_form != product.sku:
+            if Product.objects.filter(sku=sku_from_form).exists():
+                messages.error(request, f"SKU {sku_from_form} already exists.")
+                return redirect(request.path)
+            product.sku = sku_from_form
         # ---- UPDATE PRODUCT ----
         product.product_name = request.POST.get("product_name")
         product.brand = request.POST.get("brand")
         product.gender = request.POST.get("gender", "unisex")
-        product.age_group = request.POST.get(
-            "age_group", Product.AGE_CHOICES[0][0]
-        )
+        product.age_group = request.POST.get("age_group", Product.AGE_CHOICES[0][0])
         product.base_price = base_price
         product.discount_percent = discount_percent
         product.final_price = final_price
         product.sku = request.POST.get("sku")
+        product.fabric = request.POST.get("fabric", "Other")           
+        product.about_product = request.POST.get("about_product", "")
+        product.stock = request.POST.get("stock", product.stock) 
         # product.stock = request.POST.get("stock", 0)
         product.is_active = bool(request.POST.get("is_active"))
         product.subcategory_id = request.POST.get("subcategory")
         product.save()
+
+        # ---- HANDLE PRODUCT IMAGES ----
+        images = request.FILES.getlist('product_images')
+        if images:
+            if len(images) < 3:
+                messages.error(request, "At least 3 product images are required.")
+                return redirect(request.path)
+
+            # Delete old images only if new images are uploaded
+            ProductImage.objects.filter(product=product).delete()
+            for img in images:
+                ProductImage.objects.create(product=product, image=img)
         
         # ---- RECREATE VARIANTS ----
         ProductVariant.objects.filter(product=product).delete()
@@ -306,6 +403,7 @@ def admin_edit_product(request, product_id):
             "brands": brands,
             "AGE_CHOICES": Product.AGE_CHOICES,
             "GENDER_CHOICES": Product.GENDER_CHOICES,
+            "FABRIC_CHOICES": Product.FABRIC_CHOICES,
             "selected_sizes": selected_sizes,
         },
     )

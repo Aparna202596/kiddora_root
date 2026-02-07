@@ -113,7 +113,7 @@ def admin_user_list(request):
 
     users = users.order_by("-date_joined") 
     users = users.order_by("-date_joined")
-    paginator = Paginator(users, 10)
+    paginator = Paginator(users, 15)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
     context = {"users": page_obj,"query": query, "status": status}
