@@ -152,15 +152,6 @@ select {
                     {% endfor %}
                 </select>
             </div>
-            <div>
-                <label for="size-select">Size:</label>
-                <select id="size-select">
-                    <option value="">Select Size</option>
-                    {% for variant in variants %}
-                        <option value="{{ variant.id }}" data-color="{{ variant.color }}" data-quantity="{{ variant.inventory.quantity_available }}">{{ variant.size }}</option>
-                    {% endfor %}
-                </select>
-            </div>
         </div>
 
         <div class="stock-info" id="stock-info">
@@ -194,7 +185,6 @@ select {
 
 <script>
     const colorSelect = document.getElementById('color-select');
-    const sizeSelect = document.getElementById('size-select');
     const priceSpan = document.getElementById('product-price');
     const stockInfo = document.getElementById('stock-info');
 

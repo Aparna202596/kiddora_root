@@ -1,59 +1,56 @@
 from django.contrib import admin
-from .models import Category, SubCategory, Product, ProductVariant, Inventory, ProductImage
+from .models import *
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("category_name", "is_active")
-    search_fields = ("category_name",)
-    list_filter = ("is_active",)
 
-@admin.register(SubCategory)
-class SubCategoryAdmin(admin.ModelAdmin):
-    list_display = ("subcategory_name", "category")
-    search_fields = ("subcategory_name",)
-    list_filter = ("category",)
+# @admin.register(Category)
+# class CategoryAdmin(admin.ModelAdmin):
+#     list_display = ("category_name", "is_active")
+#     search_fields = ("category_name",)
+#     list_filter = ("is_active",)
 
+
+# @admin.register(SubCategory)
+# class SubCategoryAdmin(admin.ModelAdmin):
+#     list_display = ("subcategory_name", "category")
+#     search_fields = ("subcategory_name",)
+#     list_filter = ("category",)
+
+# ---------- INLINE ----------
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1
+
+
+class InventoryInline(admin.StackedInline):
+    model = Inventory
+    extra = 0
+
+
+# ---------- PRODUCT ----------
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("product_name", "brand", "fabric", "gender", "final_price", "sku", "is_active")
-    search_fields = ("product_name", "sku", "brand", "about_product")
-    list_filter = ("brand", "fabric", "gender", "is_active")
-    ordering = ("product_name",)
-    readonly_fields = ("sku", "final_price")
-    fieldsets = (
-        ("Basic Information", {
-            "fields": ("subcategory", "product_name", "brand")
-        }),
-        ("Target Group", {
-            "fields": ("gender", "fabric")
-        }),
-        ("Pricing", {
-            "fields": ("base_price", "discount_percent", "final_price")
-        }),
-        ("Inventory & Status", {
-            "fields": ("stock", "is_active")
-        }),
-        ("Description", {
-            "fields": ("about_product",)
-        }),
-        ("System", {
-            "fields": ("sku",)
-        }),
-    )
-    inlines = [
-        admin.TabularInline(model=ProductImage, extra=1),
-    ]
+    list_display = ("product_name", "brand", "final_price", "stock", "is_active")
+    list_filter = ("is_active", "gender", "fabric", "subcategory")
+    search_fields = ("product_name", "brand", "sku")
+    inlines = [ProductImageInline]
 
+
+# ---------- PRODUCT VARIANT ----------
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ("product", "color", "size", "barcode", "is_active")
+    list_display = ("product", "barcode", "is_active")
+    list_filter = ("is_active",)
     search_fields = ("barcode", "product__product_name")
-    list_filter = ("size", "is_active")
+    filter_horizontal = ("ages", "colors")
+    inlines = [InventoryInline]
 
-@admin.register(Inventory)
-class InventoryAdmin(admin.ModelAdmin):
-    list_display = ("variant", "quantity_available", "quantity_reserved", "quantity_sold", "updated_at")
-    search_fields = ("variant__barcode", "variant__product__product_name")
-    list_filter = ("updated_at",)
-    readonly_fields = ("updated_at",)
-    autocomplete_fields = ("variant",)
+
+# ---------- BASIC MODELS ----------
+admin.site.register(Category)
+admin.site.register(SubCategory)
+admin.site.register(AgeGroup)
+admin.site.register(Color)
+admin.site.register(ProductImage)
+admin.site.register(Inventory)
+admin.site.register(Coupon)
+admin.site.register(Offer)

@@ -30,11 +30,6 @@ def get_filter_options(products_queryset):
         .values('color')\
         .annotate(count=Count('id'))\
         .order_by('color')
-
-    sizes = ProductVariant.objects.filter(product__in=products_queryset)\
-        .values('size')\
-        .annotate(count=Count('id'))\
-        .order_by('size')
     
     age_groups = Product.objects.filter(id__in=products_queryset)\
         .values('age_group')\
@@ -56,7 +51,6 @@ def get_filter_options(products_queryset):
     
     return {
         "colors": colors,
-        "sizes": sizes,
         "age_groups": age_groups,
         "genders": genders,
         "fabrics": fabrics,  
@@ -85,7 +79,6 @@ def product_list(request, category_id=None, subcategory_id=None):
     selected_products = request.GET.getlist("product")
     selected_variants = request.GET.getlist("variant")
     selected_colors = request.GET.getlist("color")
-    selected_sizes = request.GET.getlist("size")
     selected_age_groups = request.GET.getlist("age")
     selected_genders = request.GET.getlist("gender")
     selected_fabrics = request.GET.getlist("fabric")
@@ -112,8 +105,6 @@ def product_list(request, category_id=None, subcategory_id=None):
         products = products.filter(variants__id__in=selected_variants)
     if selected_colors:
         products = products.filter(variants__color__in=selected_colors)
-    if selected_sizes:
-        products = products.filter(variants__size__in=selected_sizes)
     if selected_age_groups:
         products = products.filter(age_group__in=selected_age_groups)
     if selected_genders:
@@ -170,7 +161,6 @@ def product_list(request, category_id=None, subcategory_id=None):
         "page_obj": page_obj,
         "categories": categories,
         "colors": filter_options["colors"],
-        "sizes": filter_options["sizes"],
         "age_groups": filter_options["age_groups"],
         "genders": [
             {"code": k, "label": v} for k, v in Product.GENDER_CHOICES],
@@ -183,7 +173,6 @@ def product_list(request, category_id=None, subcategory_id=None):
         "selected_products": selected_products,
         "selected_variants": selected_variants,
         "selected_colors": selected_colors,
-        "selected_sizes": selected_sizes,
         "selected_age_groups": selected_age_groups,
         "selected_genders": selected_genders,
         "selected_fabrics": selected_fabrics, 
@@ -225,7 +214,6 @@ def ajax_variant_info(request):
         data = {
             "price": str(variant.product.final_price),
             "color": variant.color,
-            "size": variant.size,
             "quantity_available": quantity_available,
         }
     except ProductVariant.DoesNotExist:

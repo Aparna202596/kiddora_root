@@ -1,430 +1,381 @@
 {% extends "base_admin.html" %}
-
 {% block content %}
+
 <style>
-.form-box {
-    width: 50%;
-    margin: 40px auto;
-    padding: 25px;
-    background: #f8f9fa;
-    border-radius: 16px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+/* ================= LAYOUT ================= */
+.form-box{
+    width:54%;
+    margin:40px auto;
+    padding:28px;
+    background:#f8f9fa;
+    border-radius:16px;
+    box-shadow:0 6px 14px rgba(0,0,0,.08)
+}
+h2{text-align:center;margin-bottom:24px}
+label{display:block;margin-top:16px;font-weight:600}
+input,textarea{
+    width:100%;
+    padding:9px;
+    margin-top:6px;
+    border-radius:8px;
+    border:1px solid #cfcfcf
+}
+textarea{resize:vertical}
+small{color:#666}
+
+/* ================= DROPDOWN CHECKBOX ================= */
+.dropdown{position:relative}
+.dropdown-btn{
+    width:100%;
+    background:#fff;
+    border:1px solid #cfcfcf;
+    padding:9px;
+    border-radius:8px;
+    text-align:left;
+    cursor:pointer
+}
+.dropdown-content{
+    display:none;
+    position:absolute;
+    z-index:20;
+    width:100%;
+    background:#fff;
+    border:1px solid #cfcfcf;
+    border-radius:8px;
+    padding:10px;
+    max-height:200px;
+    overflow-y:auto
+}
+.dropdown.open .dropdown-content{display:block}
+.option{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-bottom:6px
 }
 
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
+/* ================= IMAGE ================= */
+.image-preview-wrapper{
+    display:flex;
+    gap:12px;
+    margin-top:12px;
+    flex-wrap:wrap
+}
+.image-preview{
+    width:120px;
+    height:120px;
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid #ddd
+}
+.image-preview img{
+    width:100%;
+    height:100%;
+    object-fit:cover
 }
 
-label {
-    display: block;
-    margin-top: 12px;
-    font-weight: 500;
+/* ================= CROP MODAL ================= */
+.crop-modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    z-index:1000;
+    align-items:center;
+    justify-content:center
 }
-/* ===== PRODUCT IMAGE CROP SECTION ===== */
-.image-preview-wrapper {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-    flex-wrap: wrap;
+.crop-box{
+    background:#fff;
+    padding:16px;
+    border-radius:14px;
+    width:420px
 }
-
-.image-preview {
-    width: 120px;
-    height: 120px;
-    border-radius: 10px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid #ddd;
-    background: #fff;
-}
-
-.image-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.crop-box img{max-width:100%}
+.crop-actions{
+    display:flex;
+    justify-content:space-between;
+    margin-top:12px
 }
 
-.crop-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
+/* ================= BUTTONS ================= */
+.btn-primary,.btn-secondary{
+    padding:9px 18px;
+    border-radius:8px;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+    text-decoration:none
+}
+.btn-primary{background:#f062c0}
+.btn-secondary{background:#777}
+.btn-primary:hover{background:#e04faf}
+.btn-secondary:hover{background:#666}
+
+.form-actions{
+    display:flex;
+    justify-content:space-between;
+    margin-top:28px
 }
 
-.crop-box {
-    background: #fff;
-    padding: 16px;
-    border-radius: 12px;
-    width: 420px;
-}
-
-.crop-box img {
-    max-width: 100%;
-}
-
-.crop-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-}
-input, select, textarea {
-    width: 100%;
-    padding: 8px;
-    margin-top: 6px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-}
-
-textarea { resize: vertical; }
-
-select[multiple] {
-    cursor: pointer;
-}
-
-
-.form-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 25px;
-}
-.btn-back {
-    display: inline-block;
-    padding: 10px 18px;
-    background: #f062c0;
-    color: #fff;
-    border-radius: 6px;
-    text-decoration: none;
-    transition: 0.3s;
-}
-
-.btn-back:hover {
-    background: #e04faf;
-}
-.btn-custom {
-    padding: 8px 18px;
-    background: #f062c0;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.btn-custom:hover {
-    background: #e04faf;
-}
-.dropdown-checkbox {
-    position: relative;
-}
-
-.dropdown-checkbox button {
-    width: 100%;
-    text-align: left;
-    background: #fff;
-    border: 1px solid #ccc;
-    padding: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-.dropdown-content {
-    display: none;
-    position: absolute;
-    z-index: 10;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    max-height: 180px;
-    overflow-y: auto;
-    width: 100%;
-    margin-top: 4px;
-    padding: 8px;
-}
-
-.dropdown-content label {
-    display: flex;
-    gap: 6px;
-    font-weight: normal;
-}
-
-.dropdown-checkbox.open .dropdown-content {
-    display: block;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
-}
-
+.readonly{background:#eee}
 </style>
 
 <div class="form-box">
-    <h2>{% if product %}Edit Product{% else %}Add Product{% endif %}</h2>
+<h2>{% if product %}Edit Product{% else %}Add Product{% endif %}</h2>
 
-    <form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data">
+{% csrf_token %}
 
-        {% csrf_token %}
+<!-- PRODUCT NAME -->
+<label>Product Name</label>
+<input type="text" name="product_name" value="{{ product.product_name|default:'' }}" required>
 
-        <!-- PRODUCT NAME -->
-        <label>Product Name</label>
-        <input type="text" name="product_name"
-                value="{{ product.product_name|default:'' }}" required>
+<!-- PRODUCT IMAGES -->
+<label>Product Images <small>(Minimum 3 images, each must be cropped)</small></label>
+<input type="file" id="product_images" accept="image/*" multiple>
+<div class="image-preview-wrapper" id="previewWrapper"></div>
 
-        <!-- PRODUCT IMAGES -->
-        <label>Product Images <small>(Minimum 2 images required)</small></label>
+<!-- BRAND -->
+<label>Brand</label>
+<input type="text" name="brand" value="{{ product.brand|default:'' }}" required>
 
-        <input type="file" id="product_images" name="product_images" accept="image/*" multiple>
-        <small id="imageHelp" style="color:#555;">
-        Images will be cropped & resized automatically.
-        </small>
+<!-- PRICING -->
+<label>Base Price</label>
+<input type="number" step="0.01" name="base_price" id="base_price"
+        value="{{ product.base_price|default:'' }}" required>
 
-        <div class="image-preview-wrapper" id="previewWrapper"></div>
+<label>Discount %</label>
+<input type="number" step="0.01" name="discount_percent" id="discount_percent"
+        value="{{ product.discount_percent|default:0 }}">
 
-        <!-- BRAND (Select or Add New) -->
-        <label>Brand</label>
-        <input list="brandList" name="brand"
-                value="{{ product.brand|default:'' }}" required>
-        <datalist id="brandList">
-            {% for b in brands %}
-                <option value="{{ b }}">
-            {% endfor %}
-        </datalist>
+<label>Final Price</label>
+<input type="number" id="final_price" class="readonly" readonly>
 
-        <!-- PRICING -->
-        <label>Base Price</label>
-        <input type="number" step="0.01" name="base_price" id="base_price"
-                value="{{ product.base_price|default:'' }}" required>
+<!-- CATEGORY (UI ONLY) -->
+<label>Category</label>
+<div class="dropdown" id="catDrop">
+<button type="button" class="dropdown-btn" onclick="toggle('catDrop')">
+Select Category
+</button>
+<div class="dropdown-content">
+{% for cat in categories %}
+<label class="option">
+<input type="radio" name="cat_ui" data-cat="{{ cat.id }}">
+{{ cat.category_name }}
+</label>
+{% endfor %}
+</div>
+</div>
 
-        <label>Discount %</label>
-        <input type="number" name="discount_percent" id="discount"
-                value="{{ product.discount_percent|default:0 }}">
+<!-- SUBCATEGORY (ACTUAL POST FIELD) -->
+<label>Subcategory</label>
+<select name="subcategory" id="subcategorySelect" required>
+<option value="">Select Subcategory</option>
+{% for sub in subcategories %}
+<option value="{{ sub.id }}"
+        data-cat="{{ sub.category.id }}"
+        {% if product and product.subcategory.id == sub.id %}selected{% endif %}>
+{{ sub.subcategory_name }}
+</option>
+{% endfor %}
+</select>
 
-        <label>Final Price</label>
-        <input type="number" step="0.01" name="final_price"
-                id="final_price"
-                value="{{ product.final_price|default:'' }}"
-                readonly>
+<!-- FABRIC -->
+<label>Fabric</label>
+<div class="dropdown" id="fabricDrop">
+<button type="button" class="dropdown-btn" id="fabricBtn"
+onclick="toggle('fabricDrop')">
+{% if product %}{{ product.get_fabric_display }}{% else %}Select Fabric{% endif %}
+</button>
+<div class="dropdown-content">
+{% for code,name in FABRIC_CHOICES %}
+<label class="option">
+<input type="radio" name="fabric" value="{{ code }}"
+{% if product and product.fabric == code %}checked{% endif %} required>
+{{ name }}
+</label>
+{% endfor %}
+</div>
+</div>
 
-        <!-- CATEGORY -->
-        <label>Category</label>
-        <select name="category" required>
-            <option disabled selected>Select Category</option>
-            {% for cat in categories %}
-            <option value="{{ cat.id }}"
-                {% if product and product.subcategory.category.id == cat.id %}selected{% endif %}>
-                {{ cat.category_name }}
-            </option>
-            {% endfor %}
-        </select>
+<!-- GENDER -->
+<label>Gender</label>
+<div class="dropdown" id="genderDrop">
+<button type="button" class="dropdown-btn" id="genderBtn"
+onclick="toggle('genderDrop')">
+{% if product %}{{ product.get_gender_display }}{% else %}Select Gender{% endif %}
+</button>
+<div class="dropdown-content">
+{% for code,name in GENDER_CHOICES %}
+<label class="option">
+<input type="radio" name="gender" value="{{ code }}"
+{% if product and product.gender == code %}checked{% endif %} required>
+{{ name }}
+</label>
+{% endfor %}
+</div>
+</div>
 
-        <!-- SUBCATEGORY -->
-        <label>SubCategory</label>
-        <select name="subcategory" required>
-            <option disabled selected>Select SubCategory</option>
-            {% for sub in subcategories %}
-            <option value="{{ sub.id }}"
-                {% if product and product.subcategory.id == sub.id %}selected{% endif %}>
-                {{ sub.subcategory_name }}
-            </option>
-            {% endfor %}
-        </select>
+<!-- AGE GROUP -->
+<label>Age Groups</label>
+<div class="dropdown" id="ageDrop">
+<button type="button" class="dropdown-btn" id="ageBtn"
+onclick="toggle('ageDrop')">
+Select Age Groups
+</button>
+<div class="dropdown-content">
+{% for age in age_groups %}
+<label class="option">
+<input type="checkbox" name="ages" value="{{ age.id }}"
+{% if age.id in selected_ages %}checked{% endif %}>
+{{ age.age }}
+</label>
+{% endfor %}
+</div>
+</div>
 
-        <!-- GENDER -->
-        <label>Gender</label>
-        <select name="gender" required>
-            <option disabled selected>Select Gender</option>
-            {% for code, name in GENDER_CHOICES %}
-            <option value="{{ code }}"
-                {% if product and product.gender == code %}selected{% endif %}>
-                {{ name }}
-            </option>
-            {% endfor %}
-        </select>
+<!-- COLORS -->
+<label>Colors</label>
+<div class="dropdown" id="colorDrop">
+<button type="button" class="dropdown-btn" id="colorBtn"
+onclick="toggle('colorDrop')">
+Select Colors
+</button>
+<div class="dropdown-content">
+{% for color in colors %}
+<label class="option">
+<input type="checkbox" name="colors" value="{{ color.id }}"
+{% if color.id in selected_colors %}checked{% endif %}>
+{{ color.name }}
+</label>
+{% endfor %}
+</div>
+</div>
 
-        <!-- AGE GROUP -->
-        <label>Age Group</label> 
-        <select name="age_group" multiple size="1" class="custom-multiselect" required> 
-            <option disabled selected>Select Age</option> 
-            <option value="{{ age.id }}">0-6 months</option> 
-            <option value="{{ age.id }}">6-12 months</option> 
-            <option value="{{ age.id }}">1-2 years</option> 
-            <option value="{{ age.id }}">2-3 years</option> 
-            <option value="{{ age.id }}">3-5 years</option> 
-            <option value="{{ age.id }}">5-7 years</option> 
-            <option value="{{ age.id }}">7-10 years</option> 
-            <option value="{{ age.id }}">10-12 years</option>
-            <option value="{{ age.id }}">12-15 years</option> 
-        </select>
-        {% comment %} <label>Age Groups</label>
-        <select name="age_groups" multiple required>
-            {% for age in AGE_GROUPS %}
-                <option value="{{ age.id }}">{{ age.label }}</option>
-            {% endfor %}
-        </select> {% endcomment %}
-    <!-- Color -->
-        <label>Colors</label>
-        <small><i>(Enter colors separated by commas)</i></small>
-        <input type="text"
-            name="colors"
-            placeholder="Red, Blue, Green"
-            value="{% if product %}{% for v in product.variants.all %}{{ v.color }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}">
+<!-- ABOUT PRODUCT -->
+<label>About Product</label>
+<textarea name="about_product" rows="4">{{ product.about_product|default:'' }}</textarea>
 
-        <!-- SIZES -->
-        <label>Size</label> 
-            <select name="size" multiple size="1" class="custom-multiselect" required> 
-                <option disabled selected>Select Size</option> 
-                <option value="NB">Newborn</option>
-                <option value="XS">XS</option> 
-                <option value="S">S</option> 
-                <option value="M">M</option> 
-                <option value="L">L</option> 
-                <option value="XL">XL</option> 
-            </select>
-        {% comment %} <label>Sizes</label>
-        <select name="sizes" multiple required>
-            {% for code, name in SIZE_CHOICES %}
-                <option value="{{ code }}">{{ name }}</option>
-            {% endfor %}
-        </select> {% endcomment %}
-        <!-- FABRIC -->
-        <label>Fabric</label>
-        <select name="fabric">
-            {% for code, name in FABRIC_CHOICES %}
-            <option value="{{ code }}"
-                {% if product and product.fabric == code %}selected{% endif %}>
-                {{ name }}
-            </option>
-            {% endfor %}
-        </select>
+<!-- ACTIONS -->
+<div class="form-actions">
+<a href="{% url 'products:admin_product_list' %}" class="btn-secondary">Back</a>
+<button type="submit" class="btn-primary">Save Product</button>
+</div>
 
-        <!-- ABOUT PRODUCT -->
-        <label>About Product</label>
-        <textarea name="about_product" rows="4"
-            placeholder="Enter detailed product description">{{ product.about_product|default:'' }}</textarea>
+<!-- CROP MODAL -->
+<div class="crop-modal" id="cropModal">
+<div class="crop-box">
+<img id="cropImage">
+<div class="crop-actions">
+<button type="button" class="btn-primary" id="cropSave">Crop</button>
+<button type="button" class="btn-secondary" id="cropCancel">Cancel</button>
+</div>
+</div>
+</div>
 
-        <div class="form-actions">
-            <a href="{% url 'products:admin_product_list' %}" class="btn-back">← Back</a>
-            <button type="submit" class="btn-custom">Save</button>
-            <a href="{% url 'products:admin_product_list' %}" class="btn-custom">Cancel</a>
-        </div>
+</form>
+</div>
 
-        <div class="crop-modal" id="cropModal">
-            <div class="crop-box">
-                <img id="cropImage">
-                <div class="crop-actions">
-                    <button type="button" class="btn-custom" id="cropSave">Crop</button>
-                    <button type="button" class="btn-back" id="cropCancel">Cancel</button>
-                </div>
-            </div>
-        </div>
+<link rel="stylesheet" href="https://unpkg.com/cropperjs/dist/cropper.css">
+<script src="https://unpkg.com/cropperjs/dist/cropper.js"></script>
 
-
-
-    </form>
-
-<!-- AUTO FINAL PRICE -->
 <script>
-function calculateFinalPrice() {
-    const base = parseFloat(document.getElementById("base_price").value) || 0;
-    const discount = parseFloat(document.getElementById("discount").value) || 0;
-    const finalPrice = base - (base * discount / 100);
-    document.getElementById("final_price").value = finalPrice.toFixed(2);
+/* ========= DROPDOWN ========= */
+function toggle(id){
+    document.getElementById(id).classList.toggle('open');
 }
 
-document.getElementById("base_price").addEventListener("input", calculateFinalPrice);
-document.getElementById("discount").addEventListener("input", calculateFinalPrice);
-document.querySelector('form').addEventListener('submit', function(e) { 
-    const files = document.getElementById('product_images').files; 
-    if (files.length < 3) { 
-        alert('Please upload at least 3 product images.'); 
-        e.preventDefault(); // stop form submission 
-        } });
-let selectedFiles = [];
-let cropper;
-let activeFileIndex = null;
+/* ========= FINAL PRICE ========= */
+const bp=document.getElementById('base_price');
+const dp=document.getElementById('discount_percent');
+const fp=document.getElementById('final_price');
 
-const input = document.getElementById("product_images");
-const previewWrapper = document.getElementById("previewWrapper");
-const cropModal = document.getElementById("cropModal");
-const cropImage = document.getElementById("cropImage");
+function calc(){
+    const b=parseFloat(bp.value)||0;
+    const d=parseFloat(dp.value)||0;
+    fp.value=(b-(b*d/100)).toFixed(2);
+}
+bp.oninput=calc;
+dp.oninput=calc;
+calc();
 
-input.addEventListener("change", function () {
-    [...this.files].forEach(file => {
-        selectedFiles.push(file);
-        openCropper(file, selectedFiles.length - 1);
-    });
+/* ========= CATEGORY → SUBCATEGORY ========= */
+document.querySelectorAll('input[name="cat_ui"]').forEach(r=>{
+    r.onchange=()=>{
+        document.getElementById('catDrop').classList.remove('open');
+        const cid=r.dataset.cat;
+        document.querySelectorAll('#subcategorySelect option').forEach(o=>{
+            o.hidden=o.dataset.cat!==cid;
+        });
+        document.getElementById('subcategorySelect').value='';
+    }
 });
 
-function openCropper(file, index) {
-    activeFileIndex = index;
-    const reader = new FileReader();
-    reader.onload = e => {
-        cropImage.src = e.target.result;
-        cropModal.style.display = "flex";
+/* ========= IMAGE CROP ========= */
+let files=[],cropper=null,activeIndex=null;
+const input=document.getElementById('product_images');
+const modal=document.getElementById('cropModal');
+const img=document.getElementById('cropImage');
+const preview=document.getElementById('previewWrapper');
 
-        if (cropper) cropper.destroy();
+input.onchange=()=>{
+    [...input.files].forEach(f=>{
+        files.push(f);
+        openCrop(f,files.length-1);
+    });
+};
 
-        cropper = new Cropper(cropImage, {
-            aspectRatio: 1,
-            viewMode: 2
-        });
+function openCrop(file,i){
+    activeIndex=i;
+    const r=new FileReader();
+    r.onload=e=>{
+        img.src=e.target.result;
+        modal.style.display='flex';
+        cropper?.destroy();
+        cropper=new Cropper(img,{aspectRatio:1,viewMode:1});
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
 }
 
-document.getElementById("cropSave").onclick = () => {
-    const canvas = cropper.getCroppedCanvas({
-        width: 800,
-        height: 800
-    });
-
-    canvas.toBlob(blob => {
-        const croppedFile = new File([blob], "product.jpg", { type: "image/jpeg" });
-        selectedFiles[activeFileIndex] = croppedFile;
-        renderPreviews();
-        cropModal.style.display = "none";
+document.getElementById('cropSave').onclick=()=>{
+    const canvas=cropper.getCroppedCanvas({width:800,height:800});
+    canvas.toBlob(blob=>{
+        files[activeIndex]=new File([blob],`img_${Date.now()}.jpg`,{type:'image/jpeg'});
+        render();
+        cropper.destroy();
+        modal.style.display='none';
     });
 };
 
-document.getElementById("cropCancel").onclick = () => {
-    cropModal.style.display = "none";
+document.getElementById('cropCancel').onclick=()=>{
+    cropper.destroy();
+    modal.style.display='none';
 };
 
-function renderPreviews() {
-    previewWrapper.innerHTML = "";
-    selectedFiles.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const div = document.createElement("div");
-            div.className = "image-preview";
-            div.innerHTML = `<img src="${e.target.result}">`;
-            previewWrapper.appendChild(div);
+function render(){
+    preview.innerHTML='';
+    files.forEach(f=>{
+        const r=new FileReader();
+        r.onload=e=>{
+            preview.innerHTML+=`<div class="image-preview">
+            <img src="${e.target.result}"></div>`;
         };
-        reader.readAsDataURL(file);
+        r.readAsDataURL(f);
     });
 }
 
-document.querySelector("form").addEventListener("submit", function (e) {
-    if (selectedFiles.length < 3) {
-        alert("Minimum 3 images required");
+/* ========= FORM SUBMIT ========= */
+document.querySelector('form').onsubmit=e=>{
+    if(files.length<3){
+        alert('Minimum 3 cropped images required');
         e.preventDefault();
         return;
     }
-
-    const dt = new DataTransfer();
-    selectedFiles.forEach(f => dt.items.add(f));
-    input.files = dt.files;
-});
+    const dt=new DataTransfer();
+    files.forEach(f=>dt.items.add(f));
+    input.files=dt.files;
+};
 </script>
-<link rel="stylesheet"
-        href="https://unpkg.com/cropperjs/dist/cropper.css">
-<script src="https://unpkg.com/cropperjs/dist/cropper.js"></script>
-
 
 {% endblock %}
+

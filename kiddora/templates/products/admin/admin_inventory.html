@@ -186,7 +186,7 @@ tbody tr:hover {
                     <td>{{ item.variant.product.sku }}</td>
                     <td>
                         <span class="variant-color" style="background-color: {{ item.variant.color|default:'#ccc' }}"></span>
-                        {{ item.variant.color }} / {{ item.variant.size }}
+                        {{ item.variant.color }}
                     </td>
                     <td>
                         {% if item.quantity_available <= 5 %}

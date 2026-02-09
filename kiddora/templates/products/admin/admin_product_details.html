@@ -158,7 +158,6 @@
             <thead>
                 <tr>
                     <th>Color</th>
-                    <th>Size</th>
                     <th>Barcode</th>
                     <th>Status</th>
                 </tr>
@@ -167,7 +166,6 @@
                 {% for v in variants %}
                 <tr>
                     <td>{{ v.color }}</td>
-                    <td>{{ v.size }}</td>
                     <td>{{ v.barcode }}</td>
                     <td>{{ v.is_active|yesno:"Active,Inactive" }}</td>
                 </tr>

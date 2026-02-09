@@ -110,14 +110,7 @@
             {% endfor %}
         </select>
     </div>
-    <div class="filter-group">
-        <label>Size</label>
-        <select name="size" multiple>
-            {% for size in filters.sizes %}
-                <option value="{{ size }}" {% if size in filters.selected_sizes %}selected{% endif %}>{{ size }}</option>
-            {% endfor %}
-        </select>
-    </div>
+    
     <div class="filter-group">
         <label>Age Group</label>
         <select name="age_group" multiple>

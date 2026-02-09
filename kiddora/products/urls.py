@@ -2,7 +2,9 @@ from django.urls import path
 from products.views import catalog_views 
 from products.views import coupon_views
 from products.views import offer_views
-from products.views import product_admin 
+from products.views import category_admin_views 
+from products.views import product_admin_views 
+from products.views import inventory_stock_views 
 from products.views import search_views
 app_name = "products"
 
@@ -38,27 +40,27 @@ urlpatterns = [
 
     #Product_admin
     # Category
-    path("admin/category/", product_admin.admin_category_list, name="admin_category_list"),
-    path("admin/category/add/", product_admin.admin_add_category, name="admin_add_category"),
-    path("admin/category/edit/<int:category_id>/", product_admin.admin_edit_category, name="admin_edit_category"),
-    path("admin/category/delete/<int:category_id>/", product_admin.admin_delete_category, name="admin_delete_category"),
+    path("admin/category/", category_admin_views.admin_category_list, name="admin_category_list"),
+    path("admin/category/add/", category_admin_views.admin_add_category, name="admin_add_category"),
+    path("admin/category/edit/<int:category_id>/", category_admin_views.admin_edit_category, name="admin_edit_category"),
+    path("admin/category/delete/<int:category_id>/", category_admin_views.admin_delete_category, name="admin_delete_category"),
 
     # SubCategory
-    path("admin/category/subcategories/", product_admin.admin_subcategory_list, name="admin_subcategory_list"),
-    path("admin/category/subcategories/add/", product_admin.admin_add_subcategory, name="admin_add_subcategory"),
-    path("admin/category/subcategories/edit/<int:subcategory_id>/", product_admin.admin_edit_subcategory, name="admin_edit_subcategory"),
-    path("admin/category/subcategories/delete/<int:subcategory_id>/", product_admin.admin_delete_subcategory, name="admin_delete_subcategory"),
+    path("admin/category/subcategories/", category_admin_views.admin_subcategory_list, name="admin_subcategory_list"),
+    path("admin/category/subcategories/add/", category_admin_views.admin_add_subcategory, name="admin_add_subcategory"),
+    path("admin/category/subcategories/edit/<int:subcategory_id>/", category_admin_views.admin_edit_subcategory, name="admin_edit_subcategory"),
+    path("admin/category/subcategories/delete/<int:subcategory_id>/", category_admin_views.admin_delete_subcategory, name="admin_delete_subcategory"),
     
     # Product
-    path("admin/category/subcategories/products/", product_admin.admin_product_list, name="admin_product_list"),
-    path("admin/category/subcategories/products/add/", product_admin.admin_add_product, name="admin_add_product"),
-    path("admin/category/subcategories/products/edit/<int:product_id>/", product_admin.admin_edit_product, name="admin_edit_product"),
-    path("admin/category/subcategories/products/delete/<int:product_id>/", product_admin.admin_delete_product, name="admin_delete_product"),
-    path("admin/category/subcategories/products/<int:product_id>/",product_admin.admin_product_details,name="admin_product_details"),
+    path("admin/category/subcategories/products/", product_admin_views.admin_product_list, name="admin_product_list"),
+    path("admin/category/subcategories/products/add/", product_admin_views.admin_add_product, name="admin_add_product"),
+    path("admin/category/subcategories/products/edit/<int:product_id>/", product_admin_views.admin_edit_product, name="admin_edit_product"),
+    path("admin/category/subcategories/products/delete/<int:product_id>/", product_admin_views.admin_delete_product, name="admin_delete_product"),
+    path("admin/category/subcategories/products/<int:product_id>/",product_admin_views.admin_product_details,name="admin_product_details"),
 
     # Inventory
-    path("admin/inventory/",product_admin.admin_inventory_list, name="admin_inventory_list"),
-    path('admin/inventory/update/', product_admin.admin_update_stock, name='admin_update_stock'),
+    path("admin/inventory/",inventory_stock_views.admin_inventory_list, name="admin_inventory_list"),
+    path('admin/inventory/update/', inventory_stock_views.admin_update_stock, name='admin_update_stock'),
 
     #search_views
     path("user/search/", search_views.search_products, name="product_search"),

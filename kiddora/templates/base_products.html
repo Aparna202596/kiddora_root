@@ -266,22 +266,6 @@
                 </details>
             </li>
 
-            <!-- SIZE -->
-            <li>
-                <details>
-                    <summary><i class="fa-solid fa-ruler"></i> Size</summary>
-                    <div class="filter-options">
-                        {% for size in sizes %}
-                            <label>
-                                <input type="checkbox" name="size" value="{{ size }}">
-                                {{ size }}
-                            </label>
-                        {% empty %}
-                            <span class="empty">No sizes available</span>
-                        {% endfor %}
-                    </div>
-                </details>
-            </li>
 
             <!-- AGE GROUP -->
             <li>

@@ -23,7 +23,6 @@ class Product(models.Model):
     GENDER_CHOICES = [
         ('boy', 'Boy'),
         ('girl', 'Girl'),
-        ('newborn', 'Newborn'),
         ('unisex', 'Unisex'),
     ]
 
@@ -69,23 +68,6 @@ class Product(models.Model):
     def __str__(self):
         return self.product_name
 
-class AgeGroup(models.Model):
-    AGE_CHOICES = [
-        ("0-6 months", "0-6 months"),
-        ("6-12 months", "6-12 months"),
-        ("1-2 years", "1-2 years"),
-        ("2-3 years", "2-3 years"),
-        ("3-5 years", "3-5 years"),
-        ("5-7 years", "5-7 years"),
-        ("7-10 years", "7-10 years"),
-        ("10-12 years", "10-12 years"),
-        ("12-15 years", "12-15 years"),
-    ]
-    age = models.CharField(max_length=20, choices=AGE_CHOICES, unique=True, default="0-6 months")
-
-    def __str__(self):
-        return self.age
-
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to="product_images/")
@@ -94,32 +76,111 @@ class ProductImage(models.Model):
     def save(self, *args, **kwargs):
         if self.is_default:
             ProductImage.objects.filter(product=self.product, is_default=True).update(is_default=False)
-        elif not self.product.images.filter(is_default=True).exists():
-            self.is_default = True
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product.product_name} Image"
 
-class ProductVariant(models.Model):
-    SIZE_CHOICES = [
-        ("NB", "NB"),
-        ("XS", "XS"),
-        ("S", "S"),
-        ("M", "M"),
-        ("L", "L"),
-        ("XL", "XL"),
+class AgeGroup(models.Model):
+    AGE_CHOICES = [
+        ("Newborn", "Newborn"),
+        ("0-3 months", "0-3 months"),
+        ("3-6 months", "3-6 months"),
+        ("6-9 months", "6-9 months"),
+        ("9-12 months", "9-12 months"),
+        ("12-18 months", "12-18 months"),
+        ("18-24 months", "18-24 months"),
+        ("2-3 years", "2-3 years"),
+        ("3-4 years", "3-4 years"),
+        ("4-5 years", "4-5 years"),
+        ("5-6 years", "5-6 years"),
+        ("6-7 years", "6-7 years"),
+        ("7-8 years", "7-8 years"),
+        ("8-9 years", "8-9 years"),
+        ("9-10 years", "9-10 years"),
+        ("10-11 years", "10-11 years"),
+        ("11-12 years", "11-12 years"),
+        ("12-13 years", "12-13 years"),
+        ("13-14 years", "13-14 years"),
+        ("14-15 years", "14-15 years"),
     ]
+    age = models.CharField(max_length=20, choices=AGE_CHOICES, unique=True)
 
+    def __str__(self):
+        return self.age
+
+class Color(models.Model):
+
+    COLOR_CHOICES = [
+        ("White", "White"),
+        ("Black", "Black"),
+        ("Gray", "Gray"),
+        ("Light Gray", "Light Gray"),
+        ("Charcoal", "Charcoal"),
+
+        ("Red", "Red"),
+        ("Maroon", "Maroon"),
+        ("Crimson", "Crimson"),
+        ("Burgundy", "Burgundy"),
+        ("Coral", "Coral"),
+
+        ("Pink", "Pink"),
+        ("Baby Pink", "Baby Pink"),
+        ("Hot Pink", "Hot Pink"),
+        ("Rose", "Rose"),
+        ("Blush", "Blush"),
+
+        ("Orange", "Orange"),
+        ("Peach", "Peach"),
+        ("Rust", "Rust"),
+        ("Burnt Orange", "Burnt Orange"),
+        ("Amber", "Amber"),
+
+        ("Yellow", "Yellow"),
+        ("Mustard", "Mustard"),
+        ("Gold", "Gold"),
+        ("Lemon", "Lemon"),
+        ("Ivory", "Ivory"),
+
+        ("Green", "Green"),
+        ("Olive", "Olive"),
+        ("Mint", "Mint"),
+        ("Lime", "Lime"),
+        ("Forest Green", "Forest Green"),
+
+        ("Blue", "Blue"),
+        ("Sky Blue", "Sky Blue"),
+        ("Navy Blue", "Navy Blue"),
+        ("Royal Blue", "Royal Blue"),
+        ("Teal", "Teal"),
+
+        ("Purple", "Purple"),
+        ("Lavender", "Lavender"),
+        ("Violet", "Violet"),
+        ("Plum", "Plum"),
+        ("Lilac", "Lilac"),
+
+        ("Brown", "Brown"),
+        ("Beige", "Beige"),
+        ("Tan", "Tan"),
+        ("Khaki", "Khaki"),
+        ("Chocolate", "Chocolate"),
+    ]
+    color = models.CharField(max_length=30, choices=COLOR_CHOICES, unique=True)
+
+    def __str__(self):
+        return self.color
+
+class ProductVariant(models.Model):
+    
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
-    age_group = models.ManyToManyField(AgeGroup, related_name="variants")
-    color = models.CharField(max_length=50)
-    size = models.CharField(max_length=10, choices=SIZE_CHOICES, default="M")
+    ages = models.ManyToManyField(AgeGroup, related_name="variants")
+    colors = models.ManyToManyField(Color, related_name="variants")
     barcode = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.product.product_name} ({self.color}, {self.size})"
+        return f"{self.product.product_name} Variant"
 
 class Inventory(models.Model):
     variant = models.OneToOneField(ProductVariant, on_delete=models.CASCADE, related_name="inventory")
@@ -130,3 +191,61 @@ class Inventory(models.Model):
 
     def __str__(self):
         return f"{self.variant} Inventory"
+
+
+class Coupon(models.Model):
+    DISCOUNT_TYPE_CHOICES = (
+        ("PERCENT", "Percentage"),
+        ("FLAT", "Flat"),
+    )
+    code = models.CharField(max_length=20, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+    discount_value = models.PositiveIntegerField()
+    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    usage_limit = models.PositiveIntegerField()
+    used_by = models.ManyToManyField("accounts.CustomUser", blank=True)
+    is_active = models.BooleanField(default=True)
+    expiry_date = models.DateTimeField()
+    is_deleted = models.BooleanField(default=False)
+    used_count = models.PositiveIntegerField(default=0)
+
+    def is_valid(self):
+        return self.is_active and not self.is_deleted and timezone.now() <= self.expiry_date
+
+    # def can_use(self, user):
+    #     if not self.is_valid():
+    #         return False
+    #     if self.used_count >= self.usage_limit:
+    #         return False
+    #     if self.used_by.filter(id=user.id).exists():
+    #         return False
+    #     return True
+    
+    def __str__(self):
+        return self.code
+    
+class Offer(models.Model):
+    OFFER_TYPE_CHOICES = (
+        ("PRODUCT", "Product"),
+        ("CATEGORY", "Category"),
+    )
+    offer_type = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
+    discount_percent = models.PositiveIntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+    priority = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
+    # def applies_to(self, product):
+    #     if not self.is_active or self.is_deleted:
+    #         return False
+    #     if self.offer_type == "PRODUCT":
+    #         return self.product == product
+    #     if self.offer_type == "CATEGORY":
+    #         return product.subcategory.category == self.category
+    #     return False
+
+    def __str__(self):
+        return f"{self.offer_type} - {self.discount_percent}%"
