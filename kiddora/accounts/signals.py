@@ -2,9 +2,8 @@ from allauth.socialaccount.signals import social_account_added
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from accounts.models import CustomUser
-from cart.models import Cart
-from wishlist.models import Wishlist
-from wallet.models import Wallet
+from appkiddora.models import *
+
 
 @receiver(post_save, sender=CustomUser)
 def create_user_dependencies(sender, instance, created, **kwargs):

@@ -2,10 +2,9 @@ from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import get_user_model
 from accounts.decorators import admin_login_required
-from orders.models import Order
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from orders.models import Order
+from appkiddora.models import Order
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 

@@ -1,5 +1,5 @@
 from django.db import models
-from orders.models import Order
+from appkiddora.models import Order
 import uuid
 
 

@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from django.utils.timezone import now
 from accounts.models import CustomUser
-from orders.models import Order, OrderItem
+from appkiddora.models import Order, OrderItem
 from payments.models import Payment
 from products.models import Inventory
 from accounts.decorators import admin_login_required,user_login_required

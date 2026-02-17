@@ -6,9 +6,8 @@ from django.utils.timezone import now
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from accounts.decorators import admin_login_required, user_login_required
-from wallet.models import WalletTransaction
+from appkiddora.models import *
 from django.db import transaction
-from orders.models import Order
 from ..models import Payment
 
 @user_login_required

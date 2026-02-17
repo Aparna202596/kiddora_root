@@ -1,5 +1,5 @@
 from django.db.models import Avg, Count
-from reviews.models import Review
+from appkiddora.models import Review
 
 def get_product_review_stats(product):
     data = Review.objects.filter(product=product).aggregate(

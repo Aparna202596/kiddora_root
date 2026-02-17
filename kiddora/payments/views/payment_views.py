@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from accounts.decorators import admin_login_required, user_login_required
 
-from orders.models import Order
+from appkiddora.models import *
 from ..models import Payment
 
 razorpay_client = razorpay.Client(

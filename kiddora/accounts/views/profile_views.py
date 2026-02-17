@@ -11,7 +11,7 @@ from django.conf import settings
 from datetime import timedelta
 from accounts.models import CustomUser
 from django.views.decorators.cache import never_cache
-from orders.models import Order
+from appkiddora.models import Order
 from django.contrib.auth import get_user_model, logout
 
 User = get_user_model()

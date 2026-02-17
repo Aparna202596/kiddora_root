@@ -41,15 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #local apps
     'accounts',
+    'appkiddora',
     'products',
-    'cart',
-    'wishlist',
-    'orders',
     'payments',
-    'reviews',
     'store',
-    'returns',
-    'wallet',
+
     # Third-party
     'rest_framework',
     'django_filters',

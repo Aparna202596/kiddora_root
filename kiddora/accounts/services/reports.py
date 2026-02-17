@@ -1,4 +1,4 @@
-from orders.models import Order
+from appkiddora.models import Order
 from django.db.models import Sum
 
 def sales_report(start, end):

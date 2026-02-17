@@ -2,8 +2,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 
-from payments.models import Payment
-from wallet.models import Wallet, WalletTransaction
+from payments.models import *
+from appkiddora.models import *
 
 @receiver(post_save, sender=Payment)
 def auto_wallet_refund_on_failure(sender, instance, created, **kwargs):
