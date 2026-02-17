@@ -1,0 +1,36 @@
+<div class="dropzone" id="dropzone">
+    <p>Drag & Drop image here or click to upload</p>
+    <input type="file" name="image" id="imageInput" accept="image/*" hidden>
+</div>
+
+<img id="preview" style="max-width:100%; display:none;">
+<input type="hidden" name="crop_data" id="cropData">
+
+<style>
+.dropzone {
+    border: 2px dashed #ccc;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+}
+.dropzone.dragover {
+    border-color: #e968af;
+    background: #fff5fa;
+}
+</style>
+
+<script type="module">
+import ImageUploader from "{% static 'js/image_uploader.js' %}";
+
+new ImageUploader({
+    input: "#imageInput",
+    preview: "#preview",
+    dropzone: "#dropzone",
+    form: "form",
+    cropInput: "#cropData"
+});
+
+document.getElementById("dropzone").onclick = () => {
+    document.getElementById("imageInput").click();
+};
+</script>

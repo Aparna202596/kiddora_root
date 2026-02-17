@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
-import uuid
 
 class CustomUser(AbstractUser):
     ROLE_ADMIN = "ADMIN"
@@ -12,6 +11,13 @@ class CustomUser(AbstractUser):
         (ROLE_CUSTOMER, "Customer"),
     )
 
+    GENDER_MALE = "male"
+    GENDER_FEMALE = "female"
+
+    GENDER_CHOICES = (
+        (GENDER_MALE, "Male"),
+        (GENDER_FEMALE, "Female"),
+    )
     # Override fields
     username = models.CharField(max_length=150,unique=True,null=True,blank=True)
     
@@ -20,6 +26,8 @@ class CustomUser(AbstractUser):
     phone = models.CharField(max_length=20,unique=True,null=True,blank=True)
     
     full_name = models.CharField(max_length=100,null=True,blank=True)
+    
+    gender = models.CharField(max_length=10,choices=GENDER_CHOICES,null=True,blank=True)
     
     role = models.CharField(max_length=20,choices=ROLE_CHOICES,default=ROLE_CUSTOMER,db_index=True)
     
@@ -56,8 +64,19 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ["username"]
 
     def save(self, *args, **kwargs):
+        # Ensure superusers always have admin role
         if self.is_superuser:
             self.role = self.ROLE_ADMIN
+
+        # Delete old profile image if replaced
+        if self.pk:
+            try:
+                old = CustomUser.objects.get(pk=self.pk)
+                if old.profile_image and old.profile_image != self.profile_image:
+                    old.profile_image.delete(save=False)
+            except CustomUser.DoesNotExist:
+                pass
+
         super().save(*args, **kwargs)
 
 

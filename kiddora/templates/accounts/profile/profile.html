@@ -156,8 +156,7 @@
             <div class="profile-field">
                 <label>Name</label>
                 <div class="input-wrapper">
-                    <input type="text" name="full_name" value="{{ request.user.full_name }}">
-                    <i class="fa fa-pen edit-icon"></i>
+                    <input type="text" name="full_name" value="{{ request.user.full_name }}" disabled>
                 </div>
             </div>
 
@@ -165,15 +164,13 @@
                 <label>Email</label>
                 <div class="input-wrapper">
                     <input type="email" value="{{ request.user.email }}" disabled>
-                    <i class="fa fa-pen edit-icon"></i>
                 </div>
             </div>
 
             <div class="profile-field">
                 <label>Phone</label>
                 <div class="input-wrapper">
-                    <input type="text" name="phone" value="{{ request.user.phone }}">
-                    <i class="fa fa-pen edit-icon"></i>
+                    <input type="text" name="phone" value="{{ request.user.phone }}" disabled>
                 </div>
             </div>
 

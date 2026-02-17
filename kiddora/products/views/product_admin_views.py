@@ -9,12 +9,14 @@ from products.models import (
 from accounts.decorators import admin_login_required
 
 # ---------- MANDATORY UTILITIES (do not modify) ----------
-from products.utils.image_utils import process_image
+from utils.image_utils import validate_image, resize_image, crop_image, process_profile_image,validate_product_image,process_image
 from products.utils.pagination import paginate_queryset
 from products.utils.queryset_utils import apply_product_filters, apply_sorting
 from products.utils.search_utils import apply_search
 
-
+from django.http import JsonResponse
+from utils.image_utils import process_product_image
+import json
 # ======================================================
 # 1) PRODUCT LISTING — Search + Filter + Sort + Pagination
 # ======================================================
@@ -261,3 +263,10 @@ def admin_delete_product(request, product_id):
 
     messages.success(request, "Product blocked successfully.")
     return redirect("products:admin_product_list")
+
+def ajax_product_image_upload(request):
+    image = request.FILES.get("image")
+    crop_data = json.loads(request.POST.get("crop_data", "{}"))
+
+    processed = process_product_image(image, crop_data)
+    return JsonResponse({"status": "success"})

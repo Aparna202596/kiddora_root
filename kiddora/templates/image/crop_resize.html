@@ -1,0 +1,191 @@
+{% extends "base_profile.html" %}
+{% block content %}
+
+<style>
+.crop-container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    font-family: 'Arial', sans-serif;
+}
+
+.crop-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 26px;
+    color: #333;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 400px;
+    display: block;
+    margin: 0 auto 20px auto;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+}
+
+.crop-instructions {
+    text-align: center;
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.crop-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.crop-form input[type="hidden"] {
+    display: none;
+}
+
+.crop-form button {
+    padding: 12px 0;
+    border: none;
+    border-radius: 8px;
+    background-color: #e968afff;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.crop-form button:hover {
+    background-color: #bd35a2ff;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+}
+
+.button-group .btn-cancel {
+    background-color: #6c757d;
+}
+
+.button-group .btn-cancel:hover {
+    background-color: #5a6268;
+}
+</style>
+
+<div class="crop-container">
+    <h2>Crop Your Profile Image</h2>
+    <p class="crop-instructions">Drag to select the area you want to use for your profile picture</p>
+    <img src="{{ image_url }}" id="image">
+    <img id="image-preview" src="{{ image.url }}" alt="Image to crop" class="image-preview">
+    
+    <form method="post" action="{% url 'accounts:crop_resize_profile_image' %}" class="crop-form" id="crop-form">
+        {% csrf_token %}
+        <input type="hidden" name="image" value="{{ image }}">
+        <input type="hidden" name="crop_data" id="crop_data">
+        
+        <div class="button-group">
+            <button type="submit">Save Profile Image</button>
+            <a href="{% url 'accounts:edit_profile' %}" class="btn-cancel" style="flex:1; text-align:center; padding: 12px 0; border-radius: 8px; background-color: #6c757d; color: #fff; text-decoration: none; font-size: 16px; font-weight: 600; transition: background 0.3s ease;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imagePreview = document.getElementById('image-preview');
+    const cropForm = document.getElementById('crop-form');
+    const cropDataInput = document.getElementById('crop_data');
+    
+    let cropper = null;
+    
+    // Initialize cropper when image loads
+    imagePreview.onload = function() {
+        cropper = new Cropper(imagePreview, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.8,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            ready: function() {
+                console.log('Cropper is ready');
+            }
+        });
+    };
+    
+    // Handle form submission
+    cropForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (cropper) {
+            // Get crop data
+            const cropData = cropper.getData();
+            const cropCanvas = cropper.getCroppedCanvas({
+                width: 300,
+                height: 300
+            });
+            
+            // Set crop data as JSON
+            cropDataInput.value = JSON.stringify({
+                x: Math.round(cropData.x),
+                y: Math.round(cropData.y),
+                width: Math.round(cropData.width),
+                height: Math.round(cropData.height)
+            });
+            
+            // Create new form with image blob
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            // Convert canvas to blob and append
+            cropCanvas.toBlob(function(blob) {
+                formData.append('image', blob, 'profile_image.jpg');
+                formData.append('crop_data', cropDataInput.value);
+                
+                // Submit via fetch
+                fetch('{% url "accounts:crop_resize_profile_image" %}', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    if (data && data.status === 'success') {
+                        window.location.href = '{% url "accounts:user_profile" %}';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Fallback to regular form submission
+                    cropForm.submit();
+                });
+            }, 'image/jpeg', 0.9);
+        } else {
+            // Fallback if cropper not initialized
+            cropForm.submit();
+        }
+    });
+});
+</script>
+
+<!-- Cropper.js CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+
+<!-- Cropper.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+{% endblock %}
