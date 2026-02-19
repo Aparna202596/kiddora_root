@@ -1,18 +1,18 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from accounts.models import CustomUser
-from django.core.paginator import Paginator
-from django.db.models import Q, Sum
-from django.utils.timezone import now
-from accounts.models import CustomUser
-from appkiddora.models import Order, OrderItem
-from payments.models import Payment
-from products.models import Inventory
-from accounts.decorators import admin_login_required,user_login_required
-from django.contrib.auth import get_user_model
 from django.views.decorators.cache import never_cache
-import re
-from datetime import timedelta, date
+from django.utils.timezone import now
+from django.core.paginator import Paginator
+from accounts.decorators import admin_login_required
+from django.contrib.auth import get_user_model
+from django.shortcuts import render, redirect, get_object_or_404
+from appkiddora.models import *
+from accounts.models import *
+from payments.models import *
+from products.models import *
+from django.db.models import Q, Sum
+from django.contrib import messages
+from datetime import timedelta,timezone
+
+
 
 User = get_user_model()
 
@@ -20,7 +20,7 @@ User = get_user_model()
 @admin_login_required
 def admin_dashboard_view(request):
 
-    today = now().date()
+    today =timezone.now().date()
     
     last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
     
@@ -171,7 +171,7 @@ def admin_sales_report(request):
     orders = Order.objects.all().order_by("-order_date")
 
     # Daily, Weekly, Yearly filters
-    report_type = request.GET.get("type")  # "daily", "weekly", "yearly"
+    report_type = request.GET.get("type") 
     if report_type == "daily":
         start = now().date()
         orders = orders.filter(order_date__date=start)

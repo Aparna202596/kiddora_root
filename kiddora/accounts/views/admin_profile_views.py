@@ -1,13 +1,12 @@
-from django.shortcuts import render
+from django.contrib.sessions.models import Session
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import get_user_model
 from accounts.decorators import admin_login_required
+from appkiddora.models import *
+from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from appkiddora.models import Order
-from django.contrib.sessions.models import Session
 from django.utils import timezone
-
 
 User = get_user_model()
 
@@ -15,18 +14,9 @@ User = get_user_model()
 @never_cache
 @admin_login_required
 def admin_profile(request):
-
     admin = request.user  # Superuser / Admin
-
-    context = {
-        "admin": admin,
-    }
-
-    return render(
-        request,
-        "accounts/admin_profile/admin_profile.html",
-        context,
-    )
+    context = {"admin": admin,}
+    return render(request,"accounts/admin_profile/admin_profile.html",context,)
 
 @never_cache
 @admin_login_required

@@ -215,7 +215,7 @@ Chart.register({
 
         ctx.font = '12px sans-serif';
         ctx.fillStyle = '#374151';
-        ctx.fillText('Total Orders', centerX, centerY - 6);
+        ctx.fillText('Customer Growth', centerX, centerY - 6);
 
         ctx.font = '11px sans-serif';
         ctx.fillStyle = '#6b7280';
@@ -237,7 +237,7 @@ new Chart(document.getElementById('donutChart'), {
     },
     options:{
         responsive:true,
-        cutout: '50%',   // ✅ reduces donut diameter
+        cutout: '50%', 
         plugins:{
             legend:{ display:true }
         }

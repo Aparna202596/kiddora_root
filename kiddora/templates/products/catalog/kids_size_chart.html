@@ -1,0 +1,136 @@
+{% extends "base_products.html" %}
+
+{% block content %}
+<style>
+    .size-chart-container {
+        padding: 30px;
+        background: #f9fafb;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .size-chart-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .chart-section {
+        margin-bottom: 40px;
+    }
+
+    .chart-section h3 {
+        margin-bottom: 10px;
+        color: #444;
+        border-left: 5px solid #ef61d3;
+        padding-left: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+    }
+
+    th {
+        background-color: #bb31a6;
+        color: white;
+        font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f3f4f6;
+    }
+</style>
+
+<div class="size-chart-container">
+    <h2>👶🧒 Kids Clothing Size Chart (0–15 Years)</h2>
+
+    <!-- Infants -->
+    <div class="chart-section">
+        <h3>Infants (0–24 Months)</h3>
+        <table>
+            <tr>
+                <th>Age</th>
+                <th>Size Label</th>
+                <th>Height (cm)</th>
+                <th>Chest (cm)</th>
+                <th>Waist (cm)</th>
+                <th>Hip (cm)</th>
+            </tr>
+            <tr><td>0–3 months</td><td>NB / 0–3M</td><td>50–56</td><td>38–40</td><td>38–40</td><td>38–40</td></tr>
+            <tr><td>3–6 months</td><td>3–6M</td><td>57–62</td><td>42–44</td><td>42–44</td><td>42–44</td></tr>
+            <tr><td>6–9 months</td><td>6–9M</td><td>63–68</td><td>44–46</td><td>44–46</td><td>44–46</td></tr>
+            <tr><td>9–12 months</td><td>9–12M</td><td>69–74</td><td>46–48</td><td>46–48</td><td>46–48</td></tr>
+            <tr><td>12–18 months</td><td>12–18M</td><td>75–80</td><td>48–50</td><td>48–50</td><td>48–50</td></tr>
+            <tr><td>18–24 months</td><td>18–24M</td><td>81–86</td><td>50–52</td><td>50–52</td><td>50–52</td></tr>
+        </table>
+    </div>
+
+    <!-- Toddlers -->
+    <div class="chart-section">
+        <h3>Toddlers & Little Kids (2–5 Years)</h3>
+        <table>
+            <tr>
+                <th>Age</th>
+                <th>Size</th>
+                <th>Height (cm)</th>
+                <th>Chest (cm)</th>
+                <th>Waist (cm)</th>
+                <th>Hip (cm)</th>
+            </tr>
+            <tr><td>2–3 yrs</td><td>2T / 3T</td><td>87–92</td><td>52–54</td><td>50–52</td><td>54–56</td></tr>
+            <tr><td>3–4 yrs</td><td>4</td><td>93–98</td><td>54–56</td><td>52–54</td><td>56–58</td></tr>
+            <tr><td>4–5 yrs</td><td>5</td><td>99–104</td><td>56–58</td><td>54–56</td><td>58–60</td></tr>
+        </table>
+    </div>
+
+    <!-- Kids -->
+    <div class="chart-section">
+        <h3>Kids (6–10 Years)</h3>
+        <table>
+            <tr>
+                <th>Age</th>
+                <th>Size</th>
+                <th>Height (cm)</th>
+                <th>Chest (cm)</th>
+                <th>Waist (cm)</th>
+                <th>Hip (cm)</th>
+            </tr>
+            <tr><td>6 yrs</td><td>6</td><td>105–110</td><td>58–60</td><td>56–58</td><td>60–62</td></tr>
+            <tr><td>7 yrs</td><td>7</td><td>111–116</td><td>60–62</td><td>58–60</td><td>62–64</td></tr>
+            <tr><td>8 yrs</td><td>8</td><td>117–122</td><td>62–64</td><td>60–62</td><td>64–66</td></tr>
+            <tr><td>9 yrs</td><td>9</td><td>123–128</td><td>64–66</td><td>62–64</td><td>66–68</td></tr>
+            <tr><td>10 yrs</td><td>10</td><td>129–134</td><td>66–68</td><td>64–66</td><td>68–70</td></tr>
+        </table>
+    </div>
+
+    <!-- Teens -->
+    <div class="chart-section">
+        <h3>Pre-Teens & Teens (11–15 Years)</h3>
+        <table>
+            <tr>
+                <th>Age</th>
+                <th>Size</th>
+                <th>Height (cm)</th>
+                <th>Chest (cm)</th>
+                <th>Waist (cm)</th>
+                <th>Hip (cm)</th>
+            </tr>
+            <tr><td>11 yrs</td><td>11</td><td>135–140</td><td>68–70</td><td>66–68</td><td>70–72</td></tr>
+            <tr><td>12 yrs</td><td>12</td><td>141–146</td><td>70–72</td><td>68–70</td><td>72–74</td></tr>
+            <tr><td>13 yrs</td><td>13</td><td>147–152</td><td>72–74</td><td>70–72</td><td>74–76</td></tr>
+            <tr><td>14 yrs</td><td>14</td><td>153–158</td><td>74–76</td><td>72–74</td><td>76–78</td></tr>
+            <tr><td>15 yrs</td><td>15 / XS</td><td>159–164</td><td>76–78</td><td>74–76</td><td>78–80</td></tr>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
+

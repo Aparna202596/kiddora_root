@@ -168,7 +168,8 @@ tbody tr:hover {
             <tbody>
             {% for sub in page_obj %}
                 <tr>
-                    <td>{{ sub.id }}</td>
+                    {% comment %} <td>{{ sub.id }}</td> {% endcomment %}
+                    <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
                     <td>{{ sub.category.category_name }}</td>
                     <td>{{ sub.subcategory_name }}</td>
                     <td class="action-icons">

@@ -15,7 +15,6 @@ User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 5
 
-
 def generate_otp():
     """Return a 6-digit numeric OTP."""
     return get_random_string(length=6, allowed_chars="0123456789")

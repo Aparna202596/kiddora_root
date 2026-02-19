@@ -1,7 +1,8 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-from accounts.models import CustomUser, UserAddress
-from products.models import Product, ProductVariant
+from accounts.models import *
+from products.models import *
+from django.utils import timezone
 import uuid
 
 #CART
@@ -49,6 +50,7 @@ class Order(models.Model):
     order_date = models.DateTimeField(auto_now_add=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.order_id:

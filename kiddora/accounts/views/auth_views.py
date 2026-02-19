@@ -1,19 +1,14 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from accounts.decorators import user_login_required,admin_login_required
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db.models import Q
-from django.utils import timezone
-from datetime import timedelta
 from django.views.decorators.cache import never_cache
-from accounts.models import CustomUser,UserAddress
 from django.contrib.auth import login, logout, authenticate, get_user_model
-from django.core.mail import send_mail
+from accounts.decorators import user_login_required,admin_login_required
 from django.utils.crypto import get_random_string
-import re
+from django.shortcuts import render, redirect
+from django.core.mail import send_mail
+from accounts.models import *
+from django.contrib import messages
+from django.utils import timezone
 from django.conf import settings
-from django.urls import reverse
+import re
 
 User = get_user_model()
 
@@ -25,6 +20,7 @@ def generate_otp():
 
 #User_logout
 @never_cache
+@user_login_required
 def user_logout(request):
     logout(request)
     request.session.flush()
@@ -50,14 +46,8 @@ def user_login(request):
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
 
-        print("Email:", email)
-        print("Passwords:", password)
-        print("Remember Me:", remember_me)
-
         user=authenticate(request,username=email,password=password)
 
-        print("Authenticated User:", user)
-        print("Passwords:", password)
         if user is None:
             messages.error(request, "Invalid username or password")
             return redirect("accounts:login")
@@ -74,14 +64,6 @@ def user_login(request):
             return redirect("accounts:login")
             
         login(request, user)
-
-        print("Logged in User:", user)
-        print("User Role:", user.role)
-        print("Is Active:", user.is_active)
-        print("Email Verified:", user.email_verified)
-        print("password:", password)
-        print("Remember Me:", remember_me)
-        print("Email after login:", email)
 
         response = redirect("store:home")
         
@@ -131,7 +113,6 @@ def user_signup(request):
             return redirect("accounts:signup")
         
         user = User.objects.create_user(
-            #username=username,
             username=email.split("@")[0],
             email=email,
             password=password1,
