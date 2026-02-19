@@ -8,7 +8,6 @@ class BlockedUserMiddleware:
     Prevents redirect conflicts with admin/user decorators.
     """
     """
-    IMPORTANT:
     BlockedUserMiddleware must NEVER block auth/OTP routes.
     Inactive users must be allowed to verify OTP.
     """
@@ -20,7 +19,6 @@ class BlockedUserMiddleware:
 
         # Public URLs that must bypass blocking
         allowed_prefixes = ("/",)
-
         if user.is_authenticated and not user.is_active:
             if not request.path.startswith(allowed_prefixes):
                 logout(request)

@@ -1,15 +1,13 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
-from datetime import timedelta
-from django.utils.dateparse import parse_datetime
-from django.contrib import messages
-from django.core .mail import send_mail
-from django.conf import settings
 from django.views.decorators.cache import never_cache
-from django.db.models import F
-from django.contrib.auth import get_user_model
-from accounts.models import CustomUser
 from django.utils.crypto import get_random_string
+from django.contrib.auth import get_user_model
+from django.core .mail import send_mail
+from django.shortcuts import render, redirect, get_object_or_404
+from accounts.models import *
+from django.contrib import messages
+from django.utils import timezone
+from django.conf import settings
+from datetime import timedelta
 
 User = get_user_model()
 

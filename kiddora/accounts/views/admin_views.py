@@ -12,8 +12,6 @@ from django.db.models import Q, Sum
 from django.contrib import messages
 from datetime import timedelta,timezone
 
-
-
 User = get_user_model()
 
 @never_cache

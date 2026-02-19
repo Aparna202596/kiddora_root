@@ -8,7 +8,6 @@ from accounts.views import address_views
 from accounts.views import error_views
 from django.views.generic import TemplateView
 
-
 app_name = "accounts"
 
 urlpatterns = [

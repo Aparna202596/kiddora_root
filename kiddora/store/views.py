@@ -1,8 +1,6 @@
-from datetime import timedelta
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
+
+from django.shortcuts import render
 from django.contrib.auth import get_user_model
-from django.core.paginator import Paginator
 from django.views.decorators.cache import never_cache
 from accounts.decorators import user_login_required
 from products.models import Category, Product
@@ -22,9 +20,7 @@ def home(request):
     categories = Category.objects.filter(is_active=True)
     products = Product.objects.filter(
         is_active=True,
-        subcategory__category__is_active=True,
-        # subcategory__category__is_deleted=False
-    ).order_by('-id')[:12]
+        subcategory__category__is_active=True,).order_by('-id')[:12]
     return render(request, 'store/home.html', {
         'categories': categories,
         'products': products

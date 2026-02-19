@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
 from django.utils import timezone
+from django.db import models
 
 class CustomUser(AbstractUser):
     ROLE_ADMIN = "ADMIN"
@@ -79,7 +79,6 @@ class CustomUser(AbstractUser):
 
         super().save(*args, **kwargs)
 
-
     def __str__(self):
         return self.email
 
@@ -90,11 +89,7 @@ class UserAddress(models.Model):
 
     ADDRESS_TYPE_CHOICES = ((ADDRESS_HOME, "Home"),(ADDRESS_WORK, "Work"),(ADDRESS_OTHER, "Other"),)
 
-    user = models.ForeignKey(
-        CustomUser,
-        on_delete=models.CASCADE,
-        related_name="addresses"
-    )
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="addresses")
     id = models.BigAutoField(primary_key=True)
     
     address_line1 = models.CharField(max_length=200)

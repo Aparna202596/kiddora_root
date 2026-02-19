@@ -1,18 +1,16 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from accounts.decorators import user_login_required
-from django.utils import timezone
+from django.views.decorators.cache import never_cache
 from accounts.views.otp_views import generate_otp
-from django.contrib.auth.forms import PasswordChangeForm
-from accounts.models import UserAddress
+from accounts.decorators import user_login_required
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import get_user_model, logout
+from appkiddora.models import *
+from django.shortcuts import render, redirect
 from django.core.mail import send_mail
+from accounts.models import *
+from django.contrib import messages
+from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
-from accounts.models import CustomUser
-from django.views.decorators.cache import never_cache
-from appkiddora.models import Order
-from django.contrib.auth import get_user_model, logout
 
 User = get_user_model()
 

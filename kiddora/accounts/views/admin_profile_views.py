@@ -10,11 +10,10 @@ from django.utils import timezone
 
 User = get_user_model()
 
-
 @never_cache
 @admin_login_required
 def admin_profile(request):
-    admin = request.user  # Superuser / Admin
+    admin = request.user  
     context = {"admin": admin,}
     return render(request,"accounts/admin_profile/admin_profile.html",context,)
 
