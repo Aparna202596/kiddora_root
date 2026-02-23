@@ -18,25 +18,25 @@ urlpatterns = [
 
     #Admin coupon management views
     path("admin/coupon/", coupon_views.admin_coupon_list, name="admin_coupon_list"),
-    path("admin/coupon/create_coupon/", coupon_views.admin_create_coupon, name="admin_create_coupon"),
-    path("admin/coupon/delete_coupon/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
+    path("admin/coupon/create-coupon/", coupon_views.admin_create_coupon, name="admin_create_coupon"),
+    path("admin/coupon/delete-coupon/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
     # User-facing coupon endpoints
     path("coupon/apply/", coupon_views.apply_coupon, name="apply_coupon"),
     path("coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"),
-    path("coupon/coupon_list/",coupon_views.available_coupons, name="available_coupons"),
+    path("coupon/coupon-list/",coupon_views.available_coupons, name="available_coupons"),
 
     #Admin offer management views
-    path("admin/offer_list/", offer_views.admin_offer_list, name="admin_offer_list"),
-    path("admin/product_offer/", offer_views.admin_product_offer, name="admin_product_offer"),
-    path("admin/category_offer/", offer_views.admin_category_offer, name="admin_category_offer"),
-    path("admin/referral_offer/", offer_views.admin_referral_offer, name="admin_referral_offer"),
-    path("admin/remove_offer/<int:offer_id>/", offer_views.admin_remove_offer, name="admin_remove_offer"),
+    path("admin/offer-list/", offer_views.admin_offer_list, name="admin_offer_list"),
+    path("admin/product-offer/", offer_views.admin_product_offer, name="admin_product_offer"),
+    path("admin/category-offer/", offer_views.admin_category_offer, name="admin_category_offer"),
+    path("admin/referral-offer/", offer_views.admin_referral_offer, name="admin_referral_offer"),
+    path("admin/remove-offer/<int:offer_id>/", offer_views.admin_remove_offer, name="admin_remove_offer"),
     # User-facing offer endpoints 
-    path("products/offer/best_offer", offer_views.get_best_offer_for_product, name="get_best_offer_for_product"),
-    path("products/offer/calculate_offer_price", offer_views.calculate_offer_price, name="calculate_offer_price"),
-    path("products/offer/calculate_cart_total", offer_views.calculate_cart_total, name="calculate_cart_total"),
-    path("products/offer/apply_coupon_to_total", offer_views.apply_coupon_to_total, name="apply_coupon_to_total"),
-    path("products/offer/checkout_total", offer_views.calculate_checkout_total, name="calculate_checkout_total"),
+    path("products/offer/best-offer", offer_views.get_best_offer_for_product, name="get_best_offer_for_product"),
+    path("products/offer/calculate-offer-price", offer_views.calculate_offer_price, name="calculate_offer_price"),
+    path("products/offer/calculate-cart-total", offer_views.calculate_cart_total, name="calculate_cart_total"),
+    path("products/offer/apply-coupon-to-total", offer_views.apply_coupon_to_total, name="apply_coupon_to_total"),
+    path("products/offer/checkout-total", offer_views.calculate_checkout_total, name="calculate_checkout_total"),
 
     #Product_admin
     # Category

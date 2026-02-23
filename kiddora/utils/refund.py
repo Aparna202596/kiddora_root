@@ -1,4 +1,4 @@
-from appkiddora.models import WalletTransaction
+from shopcore.models import WalletTransaction
 def partial_refund(return_obj, amount):
     wallet = return_obj.order.user.wallet
 

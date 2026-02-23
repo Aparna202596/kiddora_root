@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Change Email | Kiddora</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .auth-card {
+            display: flex;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .auth-left {
+            flex: 1;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-left img {
+            max-width: 80%;
+            max-height: 300px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .auth-center {
+            flex: 1;
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-center h2 {
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .auth-center form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .auth-center input {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .auth-center input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .auth-center button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #eb5ed6ff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .auth-center button:hover {
+            background-color: #b83583ff;
+        }
+
+        .messages {
+            margin-bottom: 15px;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .message.error {
+            background-color: #ffe5e5;
+            color: #d60000;
+        }
+
+        .message.success {
+            background-color: #e6ffed;
+            color: #1a7f37;
+        }
+
+        @media (max-width: 768px) {
+            .auth-card {
+                flex-direction: column;
+            }
+            .auth-left img {
+                max-width: 60%;
+                max-height: 200px;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+{% load static %}
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-left">
+            <img src="{% static 'images/gethnic_02.jpeg' %}" alt="Illustration">
+        </div>
+
+        <div class="auth-center">
+            <h2>Change Email</h2>
+
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <input name="email" type="email" placeholder="Enter New Email Address" required>
+                <button type="submit">Send OTP</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

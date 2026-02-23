@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from django.utils.timezone import now
-from appkiddora.models import Order
+from shopcore.models import Order
 
 def generate_invoice_pdf(order):
     buffer = BytesIO()

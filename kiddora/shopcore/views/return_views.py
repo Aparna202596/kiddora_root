@@ -6,7 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Q
 from accounts.decorators import user_login_required, admin_login_required
-from appkiddora.models import *
+from shopcore.models import *
 
 
 RETURN_WINDOW_DAYS = 10

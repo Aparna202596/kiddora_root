@@ -1,4 +1,4 @@
-from appkiddora.services.order_life_cycle import *
+from shopcore.services.order_life_cycle import *
 from products.services.inventory import *
 from django.shortcuts import render, get_object_or_404, redirect
 from accounts.decorators import user_login_required, admin_login_required
@@ -7,13 +7,10 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 from accounts.models import *
-
-
-
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.contrib import messages
-from appkiddora.models import *
+from shopcore.models import *
 from products.models import *
 
 from django.db import transaction

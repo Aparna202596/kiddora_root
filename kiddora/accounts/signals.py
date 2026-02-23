@@ -1,6 +1,6 @@
 from allauth.socialaccount.signals import social_account_added
 from django.db.models.signals import post_save
-from appkiddora.models import *
+from shopcore.models import *
 from django.dispatch import receiver
 from accounts.models import *
 

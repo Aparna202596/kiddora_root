@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from appkiddora.models import OrderItem
+from shopcore.models import OrderItem
 from products.models import Inventory
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -11,7 +11,7 @@ from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
 from datetime import timedelta
-from appkiddora.models import *
+from shopcore.models import *
 from products.models import Inventory
 from django.db import transaction
 

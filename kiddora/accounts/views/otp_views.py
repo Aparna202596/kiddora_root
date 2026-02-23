@@ -65,7 +65,15 @@ def resend_signup_otp(request):
     try:
         send_mail(
             "Resend OTP - Kiddora",
-            message=f"Your OTP is {user.otp}. It is valid for {OTP_EXPIRY_MINUTES} minutes.",
+            message=(
+                "Hi,\n\n"
+                "Welcome to Kiddora.\n\n"
+                f"Your One-Time Password (OTP) is {user.otp}.\n"
+                f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
+                "If you did not request this, please ignore this email.\n\n"
+                "Best regards,\n"
+                "Kiddora Team"
+            ),
             from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user.email],
             fail_silently=False
@@ -107,7 +115,15 @@ def forgot_password(request):
             try:
                 send_mail(
                     subject="Password Reset OTP - Kiddora",
-                    message=f"Your password reset OTP is {otp}. It is valid for {OTP_EXPIRY_MINUTES} minutes.",
+                    message = (
+                        "Hi,\n\n"
+                        "We received a request to reset your Kiddora account password.\n\n"
+                        f"Your One-Time Password (OTP) is {user.otp}.\n"
+                        f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
+                        "If you did not request a password reset, please ignore this email or contact support.\n\n"
+                        "Best regards,\n"
+                        "Kiddora Team"
+                    ),
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[user.email],
                     fail_silently=False

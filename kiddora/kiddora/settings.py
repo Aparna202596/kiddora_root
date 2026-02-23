@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     #local apps
     'accounts',
-    'appkiddora',
+    'shopcore',
     'products',
     'payments',
     'store',

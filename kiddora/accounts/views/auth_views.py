@@ -128,7 +128,15 @@ def user_signup(request):
         try:
             send_mail(
                 subject="Verify your Kiddora account",
-                message=f"Your OTP is {user.otp}. It is valid for {OTP_EXPIRY_MINUTES} minutes.",
+                message=(
+                    "Hi,\n\n"
+                    "Welcome to Kiddora.\n\n"
+                    f"Your One-Time Password (OTP) is {user.otp}.\n"
+                    f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
+                    "If you did not request this, please ignore this email.\n\n"
+                    "Best regards,\n"
+                    "Kiddora Team"
+                ),
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[user.email],
                 fail_silently=False

@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.db import transaction
 from accounts.decorators import user_login_required
-from appkiddora.models import *
+from shopcore.models import *
 from products.models import ProductVariant,Coupon
 
 @user_login_required

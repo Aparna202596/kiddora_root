@@ -27,8 +27,8 @@ urlpatterns=[
     path('accounts/', include('allauth.urls')),
     path('store/',include('store.urls')),
     path('products/', include('products.urls')),
-    path('kiddora/', include('appkiddora.urls')),
-    path('payments/',include('payments.urls')),
+    path('payments/', include('payments.urls')),
+    path('shop/', include('shopcore.urls')),
     
     # Root URL → anonymous home page
     path('', lambda request: redirect('store:anonymous_home'), name='root_redirect'),

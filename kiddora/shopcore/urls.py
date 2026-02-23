@@ -1,11 +1,11 @@
 from django.urls import path
-from appkiddora.views import cart_views
-from appkiddora.views import order_views
-from appkiddora.views import return_views
-from appkiddora.views import review_views
-from appkiddora.views import wallet_views
-from appkiddora.views import wishlist_views
-app_name = 'appkiddora'
+from shopcore.views import cart_views
+from shopcore.views import order_views
+from shopcore.views import return_views
+from shopcore.views import review_views
+from shopcore.views import wallet_views
+from shopcore.views import wishlist_views
+app_name = 'shopcore'
 
 urlpatterns = [
     #CART
@@ -19,16 +19,16 @@ urlpatterns = [
 
     #Admin order URLs
     path('admin/orders/', order_views.admin_order_list, name='admin_order_list'),
-    path('admin/orders/order_details/<int:order_id>/',order_views.admin_order_detail,name='admin_order_detail'),
-    path('admin/orders/update_order_status/<int:order_id>/',order_views.admin_update_order_status,name='admin_update_order_status'),
-    path('admin/handle_return',order_views.admin_handle_return,name='admin_handle_return'),
+    path('admin/orders/order-details/<int:order_id>/',order_views.admin_order_detail,name='admin_order_detail'),
+    path('admin/orders/update-order-status/<int:order_id>/',order_views.admin_update_order_status,name='admin_update_order_status'),
+    path('admin/handle-return',order_views.admin_handle_return,name='admin_handle_return'),
 
     #User order URLs
     path('user/orders/', order_views.user_orders, name='user_orders'),
-    path('user/orders/place_orders/', order_views.place_order, name='place_order'),
+    path('user/orders/place-orders/', order_views.place_order, name='place_order'),
     path('user/orders/details/', order_views.order_detail, name='order_detail'),
-    path('user/orders/cancel_order/', order_views.cancel_order, name='cancel_order'),
-    path('user/orders/cancel_order_item/', order_views.cancel_order_item_view, name='cancel_order_item'),
+    path('user/orders/cancel-order/', order_views.cancel_order, name='cancel_order'),
+    path('user/orders/cancel-order-item/', order_views.cancel_order_item_view, name='cancel_order_item'),
     path('user/orders/invoice/', order_views.download_invoice, name='download_invoice'),
 
     #RETURN
@@ -36,7 +36,7 @@ urlpatterns = [
     path("user/return/status/", return_views.return_status_view, name="return_status_view"),
     path("user/return/detail/", return_views.return_detail_view, name="return_detail_view"),
 
-    path("admin/return_list/", return_views.admin_return_list, name="admin_return_list"),
+    path("admin/return-list/", return_views.admin_return_list, name="admin_return_list"),
     path("admin/return/verify/<int:return_id>/", return_views.admin_verify_return, name="admin_verify_return"),
     path("admin/return/analytics/", return_views.return_analytics_dashboard, name="return_analytics_dashboard"),
 

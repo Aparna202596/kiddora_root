@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from accounts.decorators import admin_login_required, user_login_required
-from appkiddora.models import *
+from shopcore.models import *
 
 def has_purchased_and_delivered(user, product):
     return OrderItem.objects.filter(

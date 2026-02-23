@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 class OrdersConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'appkiddora'
+    name = 'shopcore'
 
     def ready(self):
-        import appkiddora.signals
+        import shopcore.signals

@@ -3,7 +3,7 @@ from accounts.views.otp_views import generate_otp
 from accounts.decorators import user_login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth import get_user_model, logout
-from appkiddora.models import *
+from shopcore.models import *
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from accounts.models import *
@@ -121,7 +121,15 @@ def change_email(request):
         try:
             send_mail(
                 subject="Email Change OTP",
-                message=f"Your OTP is {user.otp}. It is valid for {OTP_EXPIRY_MINUTES} minutes.",
+                message=(
+                    "Hi,\n\n"
+                    "You requested to change the email address linked to your Kiddora account.\n\n"
+                    f"Your verification OTP is {user.otp}.\n"
+                    f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
+                    "If you did not request this change, please secure your account immediately or contact support.\n\n"
+                    "Best regards,\n"
+                    "Kiddora Team"
+                ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[new_email],
                 fail_silently=False,

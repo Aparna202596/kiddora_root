@@ -2,7 +2,7 @@ from django.contrib.sessions.models import Session
 from django.views.decorators.cache import never_cache
 from django.contrib.auth import get_user_model
 from accounts.decorators import admin_login_required
-from appkiddora.models import *
+from shopcore.models import *
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib import messages

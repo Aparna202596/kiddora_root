@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from accounts.decorators import user_login_required
-from appkiddora.models import Wishlist, WishlistItem
+from shopcore.models import Wishlist, WishlistItem
 from products.models import Product
 
 @user_login_required

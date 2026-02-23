@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 
-from appkiddora.models import *
+from shopcore.models import *
 from products.models import Coupon
 from accounts.decorators import admin_login_required, user_login_required
 

@@ -3,7 +3,7 @@ from django.db.models import Sum
 from django.utils.timezone import now
 from datetime import timedelta, datetime
 from accounts.decorators import admin_login_required
-from appkiddora.models import *
+from shopcore.models import *
 
 # Admin Wallet Transaction List
 # -----------------------

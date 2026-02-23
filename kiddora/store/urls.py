@@ -7,11 +7,11 @@ urlpatterns = [
     path('',views.anonymous_home,name='anonymous_home'),
     path('user/home/',views.home,name='home'),
 
-    path('about_us/',views.aboutus_view,name='about_us'),
+    path('aboutus/',views.aboutus_view,name='about_us'),
     path('contactus/',views.contactus_view,name='contact_us'),
-    path('privacy_policy/',views.privacy_policy_view,name='privacy_policy'),
-    path('return_policy/',views.return_policy_view,name='return_policy'),
-    path('cookie_policy/',views.cookie_policy_view,name='cookie_policy'),
+    path('privacy-policy/',views.privacy_policy_view,name='privacy_policy'),
+    path('return-policy/',views.return_policy_view,name='return_policy'),
+    path('cookie-policy/',views.cookie_policy_view,name='cookie_policy'),
     path('blog/',views.blog_view,name='blog'),
-    path('terms_conditions/',views.terms_conditions_view,name='terms_conditions'),
+    path('terms-conditions/',views.terms_conditions_view,name='terms_conditions'),
 ]

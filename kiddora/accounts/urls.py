@@ -20,17 +20,17 @@ urlpatterns = [
     path("accounts/google/login/", auth_views.google_login, name="google_login"),
 
     #AUTHENTICATION – ADMIN
-    path("admin/admin_login/", auth_views.admin_login, name="admin_login"),
-    path("admin/admin_logout/", auth_views.admin_logout, name="admin_logout"),
+    path("admin/admin-login/", auth_views.admin_login, name="admin_login"),
+    path("admin/admin-logout/", auth_views.admin_logout, name="admin_logout"),
 
     # AUTHENTICATION – ADMIN
-    path("admin/admin_dashboard/", admin_views.admin_dashboard_view, name="admin_dashboard"),
-    path("admin/sales_report/",admin_views.admin_sales_report,name="sales_report"),
+    path("admin/admin-dashboard/", admin_views.admin_dashboard_view, name="admin_dashboard"),
+    path("admin/sales-report/",admin_views.admin_sales_report,name="sales_report"),
     
-    path("admin/admin_profile/",admin_profile_views.admin_profile, name="admin_profile"),
-    path("admin/admin_profile/edit/",admin_profile_views.admin_edit_profile,name="admin_edit_profile"),
-    path("admin/admin_profile/activity/",admin_profile_views.admin_activity_log,name="admin_activity_log"),
-    path("admin/admin_profile/security/",admin_profile_views.admin_security_info,name="admin_security_info"),
+    path("admin/admin-profile/",admin_profile_views.admin_profile, name="admin_profile"),
+    path("admin/admin-profile/edit/",admin_profile_views.admin_edit_profile,name="admin_edit_profile"),
+    path("admin/admin-profile/activity/",admin_profile_views.admin_activity_log,name="admin_activity_log"),
+    path("admin/admin-profile/security/",admin_profile_views.admin_security_info,name="admin_security_info"),
     
     # ADMIN – USER MANAGEMENT
     path("admin/customers/", admin_views.admin_user_list, name="admin_user_list"),
@@ -40,25 +40,25 @@ urlpatterns = [
     path('admin/customers/delete/<int:user_id>/',admin_views.delete_user_view,name="delete_user"),
     
     # OTP VERIFICATION
-    path("user/verify_signup_otp/", otp_views.verify_signup_otp, name="verify_signup_otp"),
-    path("user/resend_otp/", otp_views.resend_signup_otp, name="resend_signup_otp"),
+    path("user/verify-signup/", otp_views.verify_signup_otp, name="verify_signup_otp"),
+    path("user/resend/", otp_views.resend_signup_otp, name="resend_signup_otp"),
 
     # FORGOT PASSWORD (OTP FLOW)
-    path("user/forgot_password/",otp_views.forgot_password,name="forgot_password"),
-    path("user/verify_forgot_password/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
-    path("user/reset_password/", otp_views.reset_password, name="reset_password"),
+    path("user/forgot-password/",otp_views.forgot_password,name="forgot_password"),
+    path("user/verify-forgot-password/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
+    path("user/reset-password/", otp_views.reset_password, name="reset_password"),
 
     #PROFILE
     path("user/profile/", profile_views.user_profile, name="user_profile"),
     path("user/profile/delete/", profile_views.delete_profile, name="delete_profile"),
     path("user/profile/edit/", profile_views.edit_profile, name="edit_profile"),
-    path("user/profile/change_password/", profile_views.change_password, name="change_password"),
-    path("user/profile/change_email/", profile_views.change_email, name="change_email"),
-    path("user/profile/verify_email_otp/", profile_views.verify_email_update, name="verify_email_update"),
+    path("user/profile/change-password/", profile_views.change_password, name="change_password"),
+    path("user/profile/change-email/", profile_views.change_email, name="change_email"),
+    path("user/profile/verify-email-otp/", profile_views.verify_email_update, name="verify_email_update"),
 
     #ADDRESS
     path("user/addresses/", address_views.address_list, name="address_list"),
-    path("user/addresses/set_default/", address_views.set_default_address, name="set_default_address"),
+    path("user/addresses/set-default/", address_views.set_default_address, name="set_default_address"),
     path("user/addresses/add/", address_views.address_add, name="address_add"),
     path("user/addresses/edit/<int:address_id>", address_views.address_edit, name="address_edit"),
     path("user/addresses/delete/<int:address_id>", address_views.address_delete, name="address_delete"),

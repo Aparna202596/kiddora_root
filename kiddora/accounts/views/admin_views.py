@@ -1,16 +1,17 @@
 from django.views.decorators.cache import never_cache
-from django.utils.timezone import now
+
 from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
-from appkiddora.models import *
+from shopcore.models import *
 from accounts.models import *
 from payments.models import *
 from products.models import *
 from django.db.models import Q, Sum
 from django.contrib import messages
-from datetime import timedelta,timezone
+from datetime import timedelta
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -54,9 +55,9 @@ def admin_dashboard_view(request):
     filter_type = request.GET.get("filter", "monthly")
 
     if filter_type == "yearly":
-        start_date = now() - timedelta(days=365)
+        start_date = timezone.now() - timedelta(days=365)
     else:
-        start_date = now() - timedelta(days=30)
+        start_date = timezone.now() - timedelta(days=30)
 
     orders = Order.objects.filter(created_at__gte=start_date).order_by("-created_at")
     
@@ -171,13 +172,13 @@ def admin_sales_report(request):
     # Daily, Weekly, Yearly filters
     report_type = request.GET.get("type") 
     if report_type == "daily":
-        start = now().date()
+        start = timezone.now().date()
         orders = orders.filter(order_date__date=start)
     elif report_type == "weekly":
-        start = now() - timedelta(days=7)
+        start = timezone.now() - timedelta(days=7)
         orders = orders.filter(order_date__gte=start)
     elif report_type == "yearly":
-        start = now() - timedelta(days=365)
+        start = timezone.now() - timedelta(days=365)
         orders = orders.filter(order_date__gte=start)
 
     # Custom date range

@@ -6,7 +6,7 @@ from django.utils.timezone import now
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from accounts.decorators import admin_login_required, user_login_required
-from appkiddora.models import *
+from shopcore.models import *
 from django.db import transaction
 from ..models import Payment
 
