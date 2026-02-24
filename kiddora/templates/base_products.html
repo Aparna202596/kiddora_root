@@ -1,4 +1,6 @@
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +8,7 @@
     <title>{% block title %}Kiddora{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Icons (Font Awesome) -->
+    
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         integrity="sha512-..."
@@ -467,5 +470,6 @@
         </div>
         <div class="footer-bottom">© 2025 | Kiddora | All Rights Reserved</div>
     </footer>
+    {% include "confirm_modal.html" %}
 </body>
 </html>

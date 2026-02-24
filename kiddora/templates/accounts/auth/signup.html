@@ -14,6 +14,49 @@
             margin-bottom: 24px;
             color: #111827;
         }
+        .password-field {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 10px;
+            cursor: pointer;
+        }
+
+        .strength-container {
+            width: 100%;
+            height: 6px;
+            background: #eee;
+            border-radius: 4px;
+            margin-top: 6px;
+        }
+
+        #strengthBar {
+            height: 6px;
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .password-rules {
+            list-style: none;
+            padding: 0;
+            font-size: 13px;
+        }
+
+        .password-rules li {
+            color: #9ca3af;
+        }
+
+        .password-rules li.valid {
+            color: #16a34a;
+        }
+
+        #matchText {
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -26,20 +69,34 @@
             <form method="post" novalidate>
                 {% csrf_token %}
 
-                <input type="text" name="username" placeholder="User Name" required>
+                <input type="text" name="username" placeholder="User Name" value="{{ form_data.username }}" required>
                 <input type="email" name="email" placeholder="Email" required>
 
-                <!-- MUST be password1 -->
-                <input type="password" name="password1" placeholder="Password" required>
-                <!-- MUST be password2 -->
-                <input type="password" name="password2" placeholder="Confirm Password" required>
+                <div class="password-field">
+                    <input type="password" id="password1" name="password1" placeholder="Password" required>
+                    <span class="toggle-password" onclick="togglePassword('password1', this)">👁</span>
+                </div>
 
-                {% if messages %}
-                    {% for message in messages %}
-                        <p class="error-text">{{ message }}</p>
-                    {% endfor %}
-                {% endif %}
+                <!-- Strength bar -->
+                <div class="strength-container">
+                    <div id="strengthBar"></div>
+                </div>
+                <p id="strengthText"></p>
 
+                <!-- Requirements -->
+                <ul class="password-rules">
+                    <li id="rule-length">✔ At least 6 characters</li>
+                    <li id="rule-uppercase">✔ One uppercase letter</li>
+                    <li id="rule-number">✔ One number</li>
+                    <li id="rule-special">✔ One special character</li>
+                </ul>
+
+                <div class="password-field">
+                    <input type="password" id="password2" name="password2" placeholder="Confirm Password" required>
+                    <span class="toggle-password" onclick="togglePassword('password2', this)">👁</span>
+                </div>
+
+                <p id="matchText"></p>
                 <button type="submit" class="primary-btn">Sign Up</button>
             </form>
 
@@ -54,7 +111,75 @@
         </div>
     </div>
 </div>
+<script>
+    const passwordInput = document.getElementById("password1");
+    const confirmInput = document.getElementById("password2");
 
+    const strengthBar = document.getElementById("strengthBar");
+    const strengthText = document.getElementById("strengthText");
+
+    const ruleLength = document.getElementById("rule-length");
+    const ruleUpper = document.getElementById("rule-uppercase");
+    const ruleNumber = document.getElementById("rule-number");
+    const ruleSpecial = document.getElementById("rule-special");
+
+    passwordInput.addEventListener("input", () => {
+        const val = passwordInput.value;
+
+        let strength = 0;
+
+        if (val.length >= 6) {
+            ruleLength.classList.add("valid");
+            strength++;
+        } else ruleLength.classList.remove("valid");
+
+        if (/[A-Z]/.test(val)) {
+            ruleUpper.classList.add("valid");
+            strength++;
+        } else ruleUpper.classList.remove("valid");
+
+        if (/[0-9]/.test(val)) {
+            ruleNumber.classList.add("valid");
+            strength++;
+        } else ruleNumber.classList.remove("valid");
+
+        if (/[^A-Za-z0-9]/.test(val)) {
+            ruleSpecial.classList.add("valid");
+            strength++;
+        } else ruleSpecial.classList.remove("valid");
+
+        // Strength indicator
+        const width = strength * 25;
+        strengthBar.style.width = width + "%";
+
+        if (strength <= 1) {
+            strengthBar.style.background = "#ef4444";
+            strengthText.textContent = "Weak password";
+        } else if (strength === 2 || strength === 3) {
+            strengthBar.style.background = "#f59e0b";
+            strengthText.textContent = "Medium password";
+        } else {
+            strengthBar.style.background = "#16a34a";
+            strengthText.textContent = "Strong password";
+        }
+    });
+
+    confirmInput.addEventListener("input", () => {
+        const matchText = document.getElementById("matchText");
+        if (confirmInput.value === passwordInput.value) {
+            matchText.textContent = "Passwords match ✔";
+            matchText.style.color = "#16a34a";
+        } else {
+            matchText.textContent = "Passwords do not match";
+            matchText.style.color = "#ef4444";
+        }
+    });
+
+    function togglePassword(fieldId, icon) {
+        const field = document.getElementById(fieldId);
+        field.type = field.type === "password" ? "text" : "password";
+    }
+    </script>
 </body>
 </html>
 

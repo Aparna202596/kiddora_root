@@ -171,7 +171,7 @@ tbody tr:hover {
                     <td>{{ cat.category_name }}</td>
                     <td class="action-icons">
                         <a class="icon-edit" href="{% url 'products:admin_edit_category' cat.id %}" title="Edit">✏️</a>
-                        <a class="icon-delete" href="{% url 'products:admin_delete_category' cat.id %}" title="Delete">🗑️</a>
+                        <a class="icon-delete" href="{% url 'products:admin_delete_category' cat.id %}" onclick="confirmDelete(event, this.href)" title="Delete">🗑️</a>
                         <a class="icon-add" href="{% url 'products:admin_add_subcategory' %}?category={{ cat.id }}" title="Add SubCategory">➕</a>
                     </td>
                 </tr>

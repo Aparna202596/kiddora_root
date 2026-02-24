@@ -1,4 +1,6 @@
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -239,7 +241,7 @@
                 </li>
 
                 <li class="danger">
-                    <a href="{% url 'accounts:delete_profile' %}">
+                    <a href="{% url 'accounts:delete_profile' %}" onclick="confirmDelete(event, this.href)">
                         <i class="fa-solid fa-trash"></i> Delete Account
                     </a>
                 </li>
@@ -297,5 +299,6 @@
         </div>
         <div class="footer-bottom">© 2025 | Kiddora | All Rights Reserved</div>
     </footer>
+    {% include "confirm_modal.html" %}
 </body>
 </html>

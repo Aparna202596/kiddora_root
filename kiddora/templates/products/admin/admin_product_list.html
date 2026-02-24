@@ -184,7 +184,7 @@ tbody tr:hover {
                     <td>{{ prod.get_gender_display }}</td>
                     <td class="action-icons">
                         <a class="icon-edit" href="{% url 'products:admin_edit_product' prod.id %}" title="Edit">✏️</a>
-                        <a class="icon-delete" href="{% url 'products:admin_delete_product' prod.id %}" title="Delete">🗑️</a>
+                        <a class="icon-delete" href="{% url 'products:admin_delete_product' prod.id %}" onclick="confirmDelete(event, this.href)" title="Delete">🗑️</a>
                     </td>
                 </tr>
             {% empty %}

@@ -74,8 +74,8 @@
     {% endif %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="text" name="full_name" placeholder="Full Name" value="{{ user.full_name }}">
-        <input type="tel" name="phone" placeholder="Phone Number" value="{{ user.phone }}">
+        <input type="text" name="full_name" placeholder="Full Name" value="{{ form_data.full_name|default:user.full_name }}">
+        <input type="tel" name="phone" placeholder="Phone Number" value="{{ form_data.phone|default:user.phone }}">
         <input type="file" name="profile_image" accept="image/*">
         
         <div class="profile-field">
@@ -93,7 +93,7 @@
                     </label>
                 </div>
             </div>
-        <button type="submit">Save</button>
+        <button type="submit" onclick="confirmSave('profileForm')">Save</button>
     </form>
 </div>
 {% endblock %}

@@ -1,4 +1,6 @@
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -172,7 +174,7 @@
         © 2025 Kiddora. All Rights Reserved.
     </div>
 </footer>
-
 {% block extra_js %}{% endblock %}
+{% include "confirm_modal.html" %}
 </body>
 </html>

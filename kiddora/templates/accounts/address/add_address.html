@@ -53,18 +53,18 @@
     <h2>Add Address</h2>
     <form method="post">
         {% csrf_token %}
-        <input name="address_line1" placeholder="Address Line 1" required>
-        <input name="city" placeholder="City" required>
-        <input name="state" placeholder="State" required>
-        <input name="country" placeholder="Country" required>
-        <input name="pincode" placeholder="Pincode" required>
+        <input name="address_line1" placeholder="Address Line 1" value="{{ form_data.address_line1 }}"required>
+        <input name="city" placeholder="City" value="{{ form_data.city }}" required>
+        <input name="state" placeholder="State" value="{{ form_data.state }}"required>
+        <input name="country" placeholder="Country" value="{{ form_data.country }}"required>
+        <input name="pincode" placeholder="Pincode" value="{{ form_data.pincode }}"required>
         <select name="address_type">
             <option value="home">Home</option>
             <option value="office">Office</option>
             <option value="Other">Other</option>
         </select>
         <label><input type="checkbox" name="is_default"> Default</label>
-        <button type="submit">Add</button>
+        <button type="submit" onclick="confirmSave('addAddressForm')">Add</button>
     </form>
 </div>
 {% endblock %}

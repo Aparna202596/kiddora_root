@@ -8,7 +8,9 @@ from accounts.models import *
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction 
 import re
+
 
 User = get_user_model()
 
@@ -41,27 +43,31 @@ def user_login(request):
 
     remembered_user = request.COOKIES.get("remember_user", "")
 
+    context = {"remembered_user": remembered_user}
+
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
 
+        context["form_data"] = {"email": email, "remember_me": remember_me}
+
         user=authenticate(request,username=email,password=password)
 
         if user is None:
             messages.error(request, "Invalid username or password")
-            return redirect("accounts:login")
+            return render(request, "accounts/auth/login.html", context)
 
         if user.role != CustomUser.ROLE_CUSTOMER:
             messages.error(request, "Access denied")
-            return redirect("accounts:login")
+            return render(request, "accounts/auth/login.html", context)
             
         if not user.is_active:
             return redirect("accounts:blocked")
         
         if not user.email_verified:
             messages.error(request, "Please verify your email")
-            return redirect("accounts:login")
+            return render(request, "accounts/auth/login.html", context)
             
         login(request, user)
 
@@ -74,14 +80,18 @@ def user_login(request):
 
         return response
     
-    return render(request,"accounts/auth/login.html",{"remembered_user": remembered_user},)
+    return render(request,"accounts/auth/login.html",context)
 
 #Signup
 @never_cache
 def user_signup(request):
     error=''
     success=''
+    context = {}
+
     if request.method=='POST':
+        form_data = request.POST.dict()     #preserve field
+        context["form_data"] = form_data
 
         username=request.POST.get('username','').strip()
         email=request.POST['email']
@@ -92,34 +102,35 @@ def user_signup(request):
 
         if User.objects.filter(username__iexact=username).exists():
             messages.error(request,"Username already exists!")
-            return redirect("accounts:signup")
+            return render(request,'accounts/auth/signup.html',context)
         elif len(username)<6:
             messages.error(request,"Username atleast contain 6 characters, Retry!")
-            return redirect("accounts:signup")
+            return render(request,'accounts/auth/signup.html',context)
         elif re.search(r'\s',username):
             messages.error(request,"Username cannot contain spaces!")
-            return redirect("accounts:signup")
+            return render(request,'accounts/auth/signup.html',context)
         elif User.objects.filter(email__iexact=email).exists():
             messages.error(request,"Email already exists, Try new!")
-            return redirect("accounts:signup")
+            return render(request,'accounts/auth/signup.html',context)
         elif len(password1) < 6:
             messages.error(request,"Password must be at least 6 characters, Retry!")
-            return redirect("accounts:signup")
+            return render(request,'accounts/auth/signup.html',context)
         elif re.search(r'\s', password1):
             messages.error(request,"Password cannot contain spaces!")
-            return redirect("accounts:signup")
+            return render(request,'accounts/auth/signup.html',context)
         elif password1 != password2:
             messages.error(request,"Passwords do not match!")
-            return redirect("accounts:signup")
+            return render(request,'accounts/auth/signup.html',context)
         
-        user = User.objects.create_user(
-            username=email.split("@")[0],
-            email=email,
-            password=password1,
-            role=CustomUser.ROLE_CUSTOMER,
-            is_active=False,
-            email_verified=False,
-        )
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=email.split("@")[0],
+                email=email,
+                password=password1,
+                role=CustomUser.ROLE_CUSTOMER,
+                is_active=False,
+                email_verified=False,
+            )
 
         user.otp = generate_otp()
         user.otp_created_at = timezone.now()
@@ -169,7 +180,7 @@ def admin_login(request):
 
         if user is None:
             messages.error(request, "Invalid credentials")
-            return redirect("accounts:admin_login")
+            return render(request,"accounts/admin/admin_login.html",{"form_data":{"email":email}})
 
         if not user.is_active:
             messages.error(request, "Your account is blocked")

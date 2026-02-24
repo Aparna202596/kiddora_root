@@ -61,6 +61,16 @@ def delete_profile(request):
 def edit_profile(request):
     user = request.user
     if request.method == "POST":
+
+        form_data = request.POST.dict()
+
+        full_name = request.POST.get("full_name")
+        phone = request.POST.get("phone")
+
+        if not full_name or not phone:
+            messages.error(request,"Name & phone required")
+            return render(request,"accounts/profile/edit_profile.html",{"user":user,"form_data":form_data})
+        
         user.full_name = request.POST.get("full_name")
         user.phone = request.POST.get("phone")
         user.gender = request.POST.get("gender")

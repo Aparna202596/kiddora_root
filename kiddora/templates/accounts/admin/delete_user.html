@@ -62,6 +62,7 @@
         <p>Are you sure you want to delete <strong>{{ user.username }}</strong>?</p>
         <form method="post">
             {% csrf_token %}
+            
             <button type="submit">Delete</button>
             <a href="{% url 'accounts:admin_user_list' %}" class="cancel-btn" style="padding: 10px 25px; border-radius: 6px; color:#fff; text-decoration:none;">Cancel</a>
         </form>

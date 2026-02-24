@@ -44,7 +44,7 @@
     <h2>Edit Address</h2>
     <form method="post">
         {% csrf_token %}
-        <input name="address_line1" value="{{ address.address_line1 }}" placeholder="Address Line 1">
+        <input name="address_line1" value="{{ form_data.full_name|default: address.address_line1 }}" placeholder="Address Line 1">
         <input name="city" value="{{ address.city }}" placeholder="City">
         <input name="state" value="{{ address.state }}" placeholder="State">
         <input name="country" value="{{ address.country }}" placeholder="Country">
@@ -57,7 +57,9 @@
             <option value="work" {% if address.address_type == "work" %}selected{% endif %}>Work</option>
             <option value="other" {% if address.address_type == "other" %}selected{% endif %}>Other</option>
         </select>
-        <button type="submit">Update</button>
+        
+        <button type="submit"onclick="confirmUpdate('editForm')" >Update</button>
+    </form>
     </form>
 </div>
 {% endblock %}

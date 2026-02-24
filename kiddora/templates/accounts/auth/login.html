@@ -43,6 +43,28 @@
         width: 18px;
         height: 18px;
     }
+     /* Password toggle */
+    .password-field {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 12px;
+        top: 10px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    /* Error messages */
+    .error-box {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        font-size: 14px;
+    }
     </style>
 </head>
 <body>
@@ -51,6 +73,14 @@
     <div class="auth-card">
         <div class="auth-left">
             <h2>Login</h2>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="error-box">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
             <a href="{% url 'accounts:google_login' %}" class="google-btn">
             <img src="{% static 'images/google_icon.png' %}" alt="Google Logo">
                 Login with Google
@@ -61,17 +91,23 @@
             <form method="post" novalidate>
                 {% csrf_token %}
 
-                <input type="email" name="email" placeholder="Email" value="{{ remembered_user }}" required>
+                <input type="email" name="email" placeholder="Email" value="{{ form_data.email|default:remembered_user }}" required>
 
-                <input type="password" name="password" placeholder="Password" required >
+                <div class="password-field">
+                    <input type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Password"
+                            required>
+                    <span class="toggle-password" onclick="togglePassword()">👁</span>
+                </div>
 
-                <label><input type="checkbox" name="remember_me"> Remember Me</label>
-                {% comment %} {% if messages %}
-                    {% for message in messages %}
-                        <p class="error-text">{{ message }}</p>
-                    {% endfor %}
-                {% endif %} {% endcomment %}
-
+                <label>
+                    <input type="checkbox" name="remember_me"
+                    {% if form_data.remember_me %}checked{% endif %}>
+                    Remember Me
+                </label>
+                
                 <a href="{% url 'accounts:forgot_password' %}">
                     Forgot Password?
                 </a><br>
@@ -91,6 +127,13 @@
         </div>
     </div>
 </div>
+<script>
+function togglePassword() {
+    const passwordField = document.getElementById("password");
+    passwordField.type =
+        passwordField.type === "password" ? "text" : "password";
+}
+</script>
 
 </body>
 </html>

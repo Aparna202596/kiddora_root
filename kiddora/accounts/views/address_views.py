@@ -26,10 +26,24 @@ def set_default_address(request, address_id):
 @user_login_required
 def address_add(request):
     if request.method == "POST":
+        
+        form_data = request.POST.dict() 
+
+        address_line1 = request.POST.get("address_line1")
+        city = request.POST.get("city")
+        state=request.POST.get("state"),
+        country=request.POST.get("country"),
+        pincode = request.POST.get("pincode")
+
+        if not address_line1 or not city or not state or not country or not pincode:  
+            messages.error(request,"Required fields missing")
+            return render(request,"accounts/address/add_address.html",{"form_data":form_data})
+        
         is_default = request.POST.get("is_default") == "on"
         
         if is_default:
             UserAddress.objects.filter(user=request.user,is_default=True).update(is_default=False)
+            
             UserAddress.objects.create(
                 user=request.user,
                 address_line1=request.POST.get("address_line1"),
@@ -49,6 +63,18 @@ def address_edit(request, address_id):
     address = get_object_or_404(UserAddress, id=address_id, user=request.user)
     
     if request.method == "POST":
+        form_data = request.POST.dict() 
+
+        address_line1 = request.POST.get("address_line1")
+        city = request.POST.get("city")
+        state=request.POST.get("state"),
+        country=request.POST.get("country"),
+        pincode = request.POST.get("pincode")
+
+        if not address_line1 or not city or not state or not country or not pincode:  
+            messages.error(request,"Required fields missing")
+            return render(request,"accounts/address/add_address.html",{"form_data":form_data})
+
         is_default = request.POST.get("is_default") == "on"
         if is_default:
             UserAddress.objects.filter(user=request.user).update(is_default=False)
@@ -62,7 +88,8 @@ def address_edit(request, address_id):
 
         if not address_type:
             messages.error(request, "Address type is required")
-            return redirect("accounts:address_edit", address_id=address.id)
+            return render(request,"accounts/address/edit_address.html",
+                    {"address":address,"form_data":request.POST})
 
         address.address_type = address_type
         address.is_default = is_default

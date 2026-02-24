@@ -27,26 +27,37 @@ body {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
-/* LEFT SECTION*/
+/* LEFT SECTION */
 .auth-left {
     flex: 1;
     padding-right: 30px;
 }
 
-.auth-center h2 {
-    font-size: 26px;
-    margin-bottom: 8px;
-    color: #333;
-    font-family: "Segoe Script", cursive;
+/* FORM LAYOUT */
+.auth-left form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.auth-center p {
+/* STANDARD INPUT SIZE */
+.auth-left input:not([type="checkbox"]),
+.password-field input {
+    width: 100%;
+    height: 45px;
+    padding: 0 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
     font-size: 14px;
-    color: #777;
-    margin-bottom: 18px;
 }
 
-/* GOOGLE BUTTON */
+/* INPUT FOCUS */
+.auth-left input:focus {
+    outline: none;
+    border-color: #e8a1c6;
+}
+
+/* GOOGLE BUTTON (UNCHANGED) */
 .google-btn {
     display: flex;
     align-items: center;
@@ -64,37 +75,10 @@ body {
     height: 18px;
 }
 
-/* DIVIDER */
-.divider {
-    text-align: center;
-    font-size: 13px;
-    color: #aaa;
-    margin: 12px 0 18px;
-}
-
-/* FORM ELEMENTS */
-.auth-left form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.auth-left input {
-    padding: 10px 12px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-}
-
-.auth-left input:focus {
-    outline: none;
-    border-color: #e8a1c6;
-}
-
 /* PRIMARY BUTTON */
 .primary-btn {
     margin-top: 10px;
-    padding: 11px;
+    height: 45px;
     background-color: #e8a1c6;
     border: none;
     border-radius: 8px;
@@ -107,7 +91,21 @@ body {
     background-color: #d98ab2;
 }
 
-/* LINKS & TEXT */
+/* PASSWORD FIELD */
+.password-field {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* LINKS */
 .link {
     display: inline-block;
     margin-top: 12px;
@@ -129,37 +127,7 @@ body {
     color: #e8a1c6;
 }
 
-/* OTP */
-.otp-inputs {
-    display: flex;
-    gap: 10px;
-    margin: 15px 0;
-}
-
-.otp-inputs input {
-    width: 45px;
-    height: 45px;
-    text-align: center;
-    font-size: 18px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-
-.timer {
-    font-size: 13px;
-    color: #666;
-}
-
-.resend {
-    font-size: 13px;
-    margin-bottom: 10px;
-}
-
-.resend a {
-    color: #e8a1c6;
-}
-
-/* RIGHT IMAGE SECTION */
+/* RIGHT IMAGE */
 .auth-right {
     flex: 1;
     display: flex;

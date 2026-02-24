@@ -178,6 +178,7 @@ tbody tr:hover {
                             title="Edit">✏️</a>
                         <a class="icon-delete"
                             href="{% url 'products:admin_delete_subcategory' sub.id %}"
+                            onclick="confirmDelete(event, this.href)"
                             title="Delete">🗑️</a>
                     </td>
                 </tr>
