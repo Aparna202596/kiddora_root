@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify OTP | Kiddora</title>
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+
+    <style>
+        /* Extra spacing for better readability */
+        .auth-left h2 {
+            margin-bottom: 10px;
+        }
+
+        .auth-left p {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .otp-form input {
+            margin-bottom: 15px;
+        }
+
+        .otp-form button {
+            margin-top: 5px;
+        }
+
+        #timer {
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="auth-container">
+    <div class="auth-card">
+
+        <!-- LEFT SECTION -->
+        <div class="auth-left">
+
+            <!-- Dynamic Heading -->
+            <h2>
+                {% if request.resolver_match.url_name == "verify_signup_otp" %}
+                    Verify Account
+                {% elif request.resolver_match.url_name == "verify_forgot_password_otp" %}
+                    Verify Password Reset
+                {% else %}
+                    Verify Email Change
+                {% endif %}
+            </h2>
+
+            <!-- Dynamic Description -->
+            <p>
+                {% if request.resolver_match.url_name == "verify_signup_otp" %}
+                    Enter the OTP sent to your email to activate your account
+                {% elif request.resolver_match.url_name == "verify_forgot_password_otp" %}
+                    Enter the OTP sent to your email to reset your password
+                {% else %}
+                    Enter the OTP sent to your new email address
+                {% endif %}
+            </p>
+
+            <!-- OTP FORM -->
+            <form method="post" class="otp-form">
+                {% csrf_token %}
+                <input type="text" name="otp" placeholder="Enter OTP" maxlength="6" required>
+
+                <button type="submit" class="primary-btn" id="verifyBtn">
+                    Verify OTP
+                </button>
+            </form>
+
+            <!-- TIMER -->
+            <p id="timer" class="bottom-text"></p>
+
+            <!-- RESEND LINKS -->
+            <div id="resendWrapper" style="display:none">
+
+                {% if request.resolver_match.url_name == "verify_signup_otp" %}
+                    <a href="{% url 'accounts:resend_signup_otp' %}" class="link">Resend OTP</a>
+
+                {% elif request.resolver_match.url_name == "verify_forgot_password_otp" %}
+                    <a href="{% url 'accounts:forgot_password' %}" class="link">Request New OTP</a>
+
+                {% else %}
+                    <a href="{% url 'accounts:change_email' %}" class="link">Request New OTP</a>
+                {% endif %}
+
+            </div>
+
+            {% if request.resolver_match.url_name == "verify_signup_otp" %}
+                <a href="{% url 'accounts:login' %}" class="link">Go back to Login</a>
+            {% endif %}
+
+        </div>
+
+        <!-- RIGHT IMAGE -->
+        <div class="auth-right">
+            <img src="{% static 'images/verification.PNG' %}" alt="Verify OTP">
+        </div>
+
+    </div>
+</div>
+
+<!-- TIMER SCRIPT -->
+<script>
+let timeLeft = 60;
+
+const timerEl = document.getElementById("timer");
+const resendWrapper = document.getElementById("resendWrapper");
+const verifyBtn = document.getElementById("verifyBtn");
+
+timerEl.innerText = "Resend OTP in " + timeLeft + "s";
+
+const countdown = setInterval(function(){
+    timeLeft--;
+    timerEl.innerText = "Resend OTP in " + timeLeft + "s";
+
+    if(timeLeft <= 0){
+        clearInterval(countdown);
+
+        // Hide timer & show resend
+        timerEl.style.display = "none";
+        resendWrapper.style.display = "block";
+
+        // Disable submit button
+        verifyBtn.disabled = true;
+        verifyBtn.innerText = "OTP Expired";
+        verifyBtn.style.opacity = "0.6";
+        verifyBtn.style.cursor = "not-allowed";
+    }
+}, 1000);
+</script>
+
+</body>
+</html>

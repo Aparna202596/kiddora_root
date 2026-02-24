@@ -113,6 +113,12 @@
     font-weight: 600;
     text-decoration: none;
 }
+
+.change-email {
+    color: #3f51ff;
+    font-weight: 600;
+    text-decoration: none;
+}
 .edit_profile {
     color: #3f51ff;
     font-weight: 600;
@@ -191,7 +197,7 @@
             </div>
 
             <div class="profile-actions">
-                <a href="{% url 'accounts:change_email' %}" class="change-email">Change password</a>
+                <a href="{% url 'accounts:change_email' %}" class="change-email">Change Email</a>
                 <a href="{% url 'accounts:change_password' %}" class="change-password">Change password</a>
                 <a href="{% url 'accounts:edit_profile' %}" class="edit_profile">Edit Profile</a>
             </div>

@@ -27,7 +27,7 @@ def verify_signup_otp(request):
         otp_entered = request.POST.get("otp")
         # EXPIRY CHECK
         if timezone.now() - user.otp_created_at > timedelta(minutes=OTP_EXPIRY_MINUTES):
-            user.delete()  # CLEANUP inactive account
+            user.delete()  
             request.session.pop("verify_user_id", None)
             messages.error(request, "OTP expired. Please register again.")
             return redirect("accounts:signup")
@@ -45,7 +45,7 @@ def verify_signup_otp(request):
         request.session.pop("verify_user_id", None)
         messages.success(request, "Account verified. Please login.")
         return redirect("accounts:login")
-    return render(request, "accounts/otp/verify_signup_otp.html")
+    return render(request, "accounts/otp/verification.html")
 
 @never_cache
 def resend_signup_otp(request):
@@ -165,7 +165,7 @@ def verify_forgot_password_otp(request):
         request.session["fp_otp_verified"] = True
         return redirect("accounts:reset_password")
 
-    return render(request, "accounts/otp/verify_forgot_password_otp.html")
+    return render(request, "accounts/otp/verification.html")
 
 @never_cache
 def reset_password(request):
