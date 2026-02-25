@@ -5,6 +5,56 @@ from products.models import *
 from django.utils import timezone
 import uuid
 
+#COUPON
+class Coupon(models.Model):
+    DISCOUNT_TYPE_CHOICES = (
+            ("PERCENT", "Percentage"),
+            ("FLAT", "Flat"),
+        )
+    code = models.CharField(max_length=20, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+    offer_type = models.CharField(max_length=20, choices=(("PRODUCT", "Product"), ("CATEGORY", "Category")))
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+
+    discount_percent = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(100)])
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    discount_value = models.PositiveIntegerField()
+    
+    is_active = models.BooleanField(default=True)
+    expiry_date = models.DateTimeField()
+    is_deleted = models.BooleanField(default=False)
+    used_by = models.ManyToManyField("accounts.CustomUser", blank=True)
+    usage_limit = models.PositiveIntegerField(default=1)
+    used_count = models.PositiveIntegerField(default=0)
+
+    def is_valid(self):
+        return self.is_active and not self.is_deleted and timezone.now() <= self.expiry_date
+    
+    def __str__(self):
+        return self.code
+    
+class Offer(models.Model):
+    OFFER_TYPE_CHOICES = (
+        ("PRODUCT", "Product"),
+        ("CATEGORY", "Category"),
+    )
+    offer_type = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
+    discount_percent = models.PositiveIntegerField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+    priority = models.PositiveIntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.offer_type} - {self.discount_percent}%"
+
+
+
 #CART
 class Cart(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)

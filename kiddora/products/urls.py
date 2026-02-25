@@ -1,7 +1,5 @@
 from django.urls import path
 from products.views import catalog_views 
-from products.views import coupon_views
-from products.views import offer_views
 from products.views import category_admin_views 
 from products.views import product_admin_views 
 from products.views import inventory_stock_views 
@@ -16,28 +14,6 @@ urlpatterns = [
     path("user/categories/<int:category_id>/subcategory/<int:subcategory_id>/products/<int:product_id>/",catalog_views.product_detail_view,name="product_detail"),
     path("user/categories/<int:category_id>/subcategory/<int:subcategory_id>/products/<int:product_id>/variant-info/",catalog_views.ajax_variant_info,name="ajax_variant_info"),
 
-    #Admin coupon management views
-    path("admin/coupon/", coupon_views.admin_coupon_list, name="admin_coupon_list"),
-    path("admin/coupon/create-coupon/", coupon_views.admin_create_coupon, name="admin_create_coupon"),
-    path("admin/coupon/delete-coupon/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
-    # User-facing coupon endpoints
-    path("coupon/apply/", coupon_views.apply_coupon, name="apply_coupon"),
-    path("coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"),
-    path("coupon/coupon-list/",coupon_views.available_coupons, name="available_coupons"),
-
-    #Admin offer management views
-    path("admin/offer-list/", offer_views.admin_offer_list, name="admin_offer_list"),
-    path("admin/product-offer/", offer_views.admin_product_offer, name="admin_product_offer"),
-    path("admin/category-offer/", offer_views.admin_category_offer, name="admin_category_offer"),
-    path("admin/referral-offer/", offer_views.admin_referral_offer, name="admin_referral_offer"),
-    path("admin/remove-offer/<int:offer_id>/", offer_views.admin_remove_offer, name="admin_remove_offer"),
-    # User-facing offer endpoints 
-    path("products/offer/best-offer", offer_views.get_best_offer_for_product, name="get_best_offer_for_product"),
-    path("products/offer/calculate-offer-price", offer_views.calculate_offer_price, name="calculate_offer_price"),
-    path("products/offer/calculate-cart-total", offer_views.calculate_cart_total, name="calculate_cart_total"),
-    path("products/offer/apply-coupon-to-total", offer_views.apply_coupon_to_total, name="apply_coupon_to_total"),
-    path("products/offer/checkout-total", offer_views.calculate_checkout_total, name="calculate_checkout_total"),
-
     #Product_admin
     # Category
     path("admin/category/", category_admin_views.admin_category_list, name="admin_category_list"),
@@ -51,16 +27,20 @@ urlpatterns = [
     path("admin/category/subcategories/edit/<int:subcategory_id>/", category_admin_views.admin_edit_subcategory, name="admin_edit_subcategory"),
     path("admin/category/subcategories/delete/<int:subcategory_id>/", category_admin_views.admin_delete_subcategory, name="admin_delete_subcategory"),
     
-    # Product
-    path("admin/category/subcategories/products/", product_admin_views.admin_product_list, name="admin_product_list"),
-    path("admin/category/subcategories/products/add/", product_admin_views.admin_add_product, name="admin_add_product"),
-    path("admin/category/subcategories/products/edit/<int:product_id>/", product_admin_views.admin_edit_product, name="admin_edit_product"),
-    path("admin/category/subcategories/products/delete/<int:product_id>/", product_admin_views.admin_delete_product, name="admin_delete_product"),
-    path("admin/category/subcategories/products/<int:product_id>/",product_admin_views.admin_product_details,name="admin_product_details"),
+    # PRODUCT MANAGEMENT
+    path("admin/products/", product_admin_views.admin_product_list, name="admin_product_list"),
+    path("admin/products/add/", product_admin_views.admin_add_product, name="admin_add_product"),
+    path("admin/products/<int:product_id>/edit/", product_admin_views.admin_edit_product, name="admin_edit_product"),
+    path("admin/products/<int:product_id>/delete/", product_admin_views.admin_delete_product, name="admin_delete_product"),
 
-    # Inventory
-    path("admin/inventory/",inventory_stock_views.admin_inventory_list, name="admin_inventory_list"),
-    path('admin/inventory/update/', inventory_stock_views.admin_update_stock, name='admin_update_stock'),
+    # VARIANTS
+    path("admin/products/<int:product_id>/variant/add/", product_admin_views.admin_add_variant, name="admin_add_variant"),
+    path("admin/products/<int:product_id>/variant/<int:variant_id>/edit/", product_admin_views.admin_edit_variant, name="admin_edit_variant"),
+    path("admin/products/<int:product_id>/variant/<int:variant_id>/delete/", product_admin_views.admin_delete_variant, name="admin_delete_variant"),
+
+    # INVENTORY
+    path("admin/inventory/", inventory_stock_views.admin_inventory_list, name="admin_inventory_list"),
+    path("admin/inventory/<int:variant_id>/update/", inventory_stock_views.update_stock, name="update_stock"),
 
     #search_views
     path("user/search/", search_views.search_products, name="product_search"),

@@ -26,7 +26,7 @@ def generate_otp():
 def user_logout(request):
     logout(request)
     request.session.flush()
-    response = redirect("store:anonymous_home")
+    response = redirect("shopcore:anonymous_home")
     response.delete_cookie("remember_user")
     return response
 
@@ -39,7 +39,7 @@ def google_login(request):
 @never_cache
 def user_login(request):
     if request.user.is_authenticated and request.user.role == CustomUser.ROLE_CUSTOMER:
-        return redirect("store:home")
+        return redirect("shopcore:home")
 
     remembered_user = request.COOKIES.get("remember_user", "")
 
@@ -71,7 +71,7 @@ def user_login(request):
             
         login(request, user)
 
-        response = redirect("store:home")
+        response = redirect("shopcore:home")
         
         if remember_me:
             response.set_cookie("remember_user",email,max_age=7 * 24 * 60 * 60)
@@ -209,7 +209,7 @@ def admin_login(request):
 def admin_logout(request):
     role = request.user.role
     if role not in [CustomUser.ROLE_ADMIN]:
-        return redirect("store:home")
+        return redirect("shopcore:home")
     logout(request)
     response = redirect("accounts:admin_login")
     # Remove role-specific remember-me cookie

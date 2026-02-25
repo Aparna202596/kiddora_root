@@ -1,0 +1,31 @@
+{% extends "base_admin.html" %}
+{% block content %}
+
+<div class="form-container">
+    <h2>{% if variant %}Edit{% else %}Add{% endif %} Variant</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <select name="color">
+            {% for c in colors %}
+            <option value="{{ c.id }}" {% if variant.color.id == c.id %}selected{% endif %}>
+                {{ c.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <select name="age_group">
+            {% for a in ages %}
+            <option value="{{ a.id }}" {% if variant.age_group.id == a.id %}selected{% endif %}>
+                {{ a.name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <input type="text" name="barcode" placeholder="Barcode" value="{{ variant.barcode }}">
+        <button type="submit">Save</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'shopcore',
     'products',
     'payments',
-    'store',
 
     # Third-party
     'rest_framework',
@@ -143,8 +142,8 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-LOGIN_REDIRECT_URL = 'store:home'
-LOGOUT_REDIRECT_URL = 'store:anonymous_home'
+LOGIN_REDIRECT_URL = 'shopcore:home'
+LOGOUT_REDIRECT_URL = 'shopcore:anonymous_home'
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/

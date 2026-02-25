@@ -330,15 +330,15 @@ ul {
     <header class="site-header">
         <div class="header-container">
             <div class="logo">
-                <a href="{% url 'store:anonymous_home' %}"><img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo"></a>
+                <a href="{% url 'shopcore:anonymous_home' %}"><img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo"></a>
             </div>
             <nav class="main-nav">
                 <ul>
-                    <li><a href="{% url 'store:anonymous_home' %}">Home</a></li>
-                    <li><a href="{% url 'store:about_us' %}">About Us</a></li>
+                    <li><a href="{% url 'shopcore:anonymous_home' %}">Home</a></li>
+                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
                     <li><a href="{% url 'products:category_list' %}">Categories</a></li>
                     <li><a href="{% url 'products:product_list' %}">Shop</a></li>
-                    <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
+                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
                 </ul>
             </nav>
             <div class="auth-buttons">
@@ -499,18 +499,18 @@ ul {
         <div class="footer-column">
             <h4>Info</h4>
             <ul>
-                <li><a href="{% url 'store:about_us' %}">About Us</a></li>
-                <li><a href="{% url 'store:contact_us' %}">Contact</a></li>
-                <li><a href="{% url 'store:blog' %}">Blog</a></li>
+                <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
+                <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
+                <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
             </ul>
         </div>
 
         <div class="footer-column">
             <h4>Policies</h4>
             <ul>
-                <li><a href="{% url 'store:privacy_policy' %}">Privacy</a></li>
-                <li><a href="{% url 'store:return_policy' %}">Returns</a></li>
-                <li><a href="{% url 'store:terms_conditions' %}">Terms</a></li>
+                <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
+                <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
+                <li><a href="{% url 'shopcore:terms_conditions' %}">Terms</a></li>
             </ul>
         </div>
 

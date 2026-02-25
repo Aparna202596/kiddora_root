@@ -5,9 +5,35 @@ from shopcore.views import return_views
 from shopcore.views import review_views
 from shopcore.views import wallet_views
 from shopcore.views import wishlist_views
+from shopcore.views import coupon_views
+from shopcore.views import offer_views
+from shopcore.views import store_views
 app_name = 'shopcore'
 
 urlpatterns = [
+
+        #Admin coupon management views
+    path("admin/coupon/", coupon_views.admin_coupon_list, name="admin_coupon_list"),
+    path("admin/coupon/create-coupon/", coupon_views.admin_create_coupon, name="admin_create_coupon"),
+    path("admin/coupon/delete-coupon/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
+    # User-facing coupon endpoints
+    path("coupon/apply/", coupon_views.apply_coupon, name="apply_coupon"),
+    path("coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"),
+    path("coupon/coupon-list/",coupon_views.available_coupons, name="available_coupons"),
+
+    #Admin offer management views
+    path("admin/offer-list/", offer_views.admin_offer_list, name="admin_offer_list"),
+    path("admin/product-offer/", offer_views.admin_product_offer, name="admin_product_offer"),
+    path("admin/category-offer/", offer_views.admin_category_offer, name="admin_category_offer"),
+    path("admin/referral-offer/", offer_views.admin_referral_offer, name="admin_referral_offer"),
+    path("admin/remove-offer/<int:offer_id>/", offer_views.admin_remove_offer, name="admin_remove_offer"),
+    # User-facing offer endpoints 
+    path("products/offer/best-offer", offer_views.get_best_offer_for_product, name="get_best_offer_for_product"),
+    path("products/offer/calculate-offer-price", offer_views.calculate_offer_price, name="calculate_offer_price"),
+    path("products/offer/calculate-cart-total", offer_views.calculate_cart_total, name="calculate_cart_total"),
+    path("products/offer/apply-coupon-to-total", offer_views.apply_coupon_to_total, name="apply_coupon_to_total"),
+    path("products/offer/checkout-total", offer_views.calculate_checkout_total, name="calculate_checkout_total"),
+
     #CART
     path("user/cart/",cart_views.cart_detail,name="cart_detail"),
     path("user/cart/add/",cart_views.add_to_cart,name="add_to_cart"),
@@ -57,4 +83,17 @@ urlpatterns = [
     path("user/wishlist/", wishlist_views.wishlist_view, name="wishlist_view"),
     path("user/wishlist/add/", wishlist_views.add_to_wishlist, name="add_to_wishlist"),
     path("user/wishlist/remove/", wishlist_views.remove_from_wishlist, name="remove_from_wishlist"),
+
+    path('',store_views.anonymous_home,name='anonymous_home'),
+    path('user/home/',store_views.home,name='home'),
+
+    path('aboutus/',store_views.aboutus_view,name='about_us'),
+    path('contactus/',store_views.contactus_view,name='contact_us'),
+    path('privacy-policy/',store_views.privacy_policy_view,name='privacy_policy'),
+    path('return-policy/',store_views.return_policy_view,name='return_policy'),
+    path('cookie-policy/',store_views.cookie_policy_view,name='cookie_policy'),
+    path('blog/',store_views.blog_view,name='blog'),
+    path('terms-conditions/',store_views.terms_conditions_view,name='terms_conditions'),
+
+
 ]
