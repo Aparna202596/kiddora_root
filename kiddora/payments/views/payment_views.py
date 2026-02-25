@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from accounts.decorators import admin_login_required, user_login_required
 
 from shopcore.models import *
-from ..models import Payment
+from ..models import *
 
 razorpay_client = razorpay.Client(
     auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)

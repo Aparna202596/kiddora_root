@@ -4,7 +4,8 @@ from django.utils import timezone
 from django.db import transaction
 
 from shopcore.models import *
-from products.models import Coupon
+from products.models import *
+
 from accounts.decorators import admin_login_required, user_login_required
 
 @admin_login_required

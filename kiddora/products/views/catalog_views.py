@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from products.models import Category, SubCategory, Product, ProductVariant
+from products.models import *
 from django.db.models import Q, Min, Max, Count, Sum
 from django.core.paginator import Paginator
 

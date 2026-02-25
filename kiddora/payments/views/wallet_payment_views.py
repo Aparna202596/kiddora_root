@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from accounts.decorators import admin_login_required, user_login_required
 from shopcore.models import *
 from django.db import transaction
-from ..models import Payment
+from ..models import *
 
 @user_login_required
 @transaction.atomic

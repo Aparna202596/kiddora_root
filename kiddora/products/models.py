@@ -178,9 +178,9 @@ class ProductImage(models.Model):
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
 
-    image1 = models.ImageField(upload_to="product_images/")
-    image2 = models.ImageField(upload_to="product_images/")
-    image3 = models.ImageField(upload_to="product_images/")
+    image1 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+    image2 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+    image3 = models.ImageField(upload_to="product_images/",blank=True, null=True)
     image4 = models.ImageField(upload_to="product_images/", blank=True, null=True)
     image5 = models.ImageField(upload_to="product_images/", blank=True, null=True)
 

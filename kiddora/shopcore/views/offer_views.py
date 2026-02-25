@@ -3,9 +3,11 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 
-from products.models import Product, Category, Offer, Coupon
-from accounts.models import CustomUser
-from accounts.decorators import admin_login_required
+from products.models import *
+from accounts.models import *
+from shopcore.models import *
+
+from accounts.decorators import admin_login_required,user_login_required
 @admin_login_required
 def admin_offer_list(request):
     offers = Offer.objects.filter(is_deleted=False).select_related(

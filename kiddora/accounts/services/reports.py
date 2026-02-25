@@ -1,4 +1,4 @@
-from shopcore.models import Order
+from shopcore.models import *
 from django.db.models import Sum
 
 def sales_report(start, end):

@@ -1,5 +1,5 @@
 from django.db import models
-from shopcore.models import Order
+from shopcore.models import *
 import uuid
 
 

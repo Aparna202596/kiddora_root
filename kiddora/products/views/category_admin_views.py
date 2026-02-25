@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
-from products.models import Category, Product, SubCategory
+from products.models import *
 from accounts.decorators import admin_login_required
 
 # CATEGORY MANAGEMENT

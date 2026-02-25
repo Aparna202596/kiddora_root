@@ -2,7 +2,7 @@ from django.views.decorators.cache import never_cache
 from accounts.decorators import user_login_required
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
-from accounts.models import UserAddress
+from accounts.models import *
 from django.contrib import messages
 
 User = get_user_model()

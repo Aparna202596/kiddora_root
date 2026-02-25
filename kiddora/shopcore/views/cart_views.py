@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db import transaction
 from accounts.decorators import user_login_required
 from shopcore.models import *
-from products.models import ProductVariant,Coupon
+from products.models import *
 
 @user_login_required
 def cart_detail(request):
