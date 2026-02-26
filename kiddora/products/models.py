@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
-from django.db import models
 from django.utils import timezone
+from django.db import models
+from decimal import Decimal
 import uuid
 
 class Category(models.Model):
@@ -54,7 +55,9 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
-        self.final_price = self.base_price * (1 - self.discount_percent / 100)
+        base = Decimal(self.base_price or 0)
+        discount = Decimal(self.discount_percent or 0)
+        self.final_price = base - (base * discount / Decimal("100"))
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -159,16 +162,34 @@ class ProductVariant(models.Model):
     color = models.ForeignKey(Color,on_delete=models.PROTECT, related_name="variants")
     age_group = models.ForeignKey(AgeGroup,on_delete=models.PROTECT,related_name="variants")
     sku = models.CharField(max_length=100, unique=True, blank=True)
-    barcode = models.CharField(max_length=100, unique=True)
+    barcode = models.CharField(max_length=100, unique=True, blank=True)
 
     is_active = models.BooleanField(default=True)
 
     class Meta:
         unique_together = ("product", "color", "age_group")
 
+    def generate_unique_sku(self):
+        while True:
+            sku = f"KID-{uuid.uuid4().hex[:8].upper()}"
+            if not ProductVariant.objects.filter(sku=sku).exists():
+                return sku
+
+    def generate_unique_barcode(self):
+        while True:
+            barcode = uuid.uuid4().int % 10**12
+            barcode = str(barcode).zfill(12)
+            if not ProductVariant.objects.filter(barcode=barcode).exists():
+                return barcode
+
     def save(self, *args, **kwargs):
+
         if not self.sku:
-            self.sku = f"VAR-{uuid.uuid4().hex[:8].upper()}"
+            self.sku = self.generate_unique_sku()
+
+        if not self.barcode:
+            self.barcode = self.generate_unique_barcode()
+
         super().save(*args, **kwargs)
 
     def __str__(self):

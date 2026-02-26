@@ -53,8 +53,6 @@ class Offer(models.Model):
     def __str__(self):
         return f"{self.offer_type} - {self.discount_percent}%"
 
-
-
 #CART
 class Cart(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)

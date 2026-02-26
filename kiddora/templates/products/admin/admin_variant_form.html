@@ -1,31 +1,102 @@
 {% extends "base_admin.html" %}
 {% block content %}
+<style>
+.form-box{
+    width:46%;
+    margin:40px auto;
+    padding:26px;
+    background:#f7f7f9;
+    border-radius:14px;
+    box-shadow:0 6px 16px rgba(0,0,0,.08)
+}
+h2{text-align:center;margin-bottom:22px}
+label{display:block;margin-top:14px;font-weight:600}
+select,input{
+    width:100%;
+    padding:10px;
+    margin-top:6px;
+    border-radius:8px;
+    border:1px solid #cfcfcf
+}
+.actions{
+    display:flex;
+    justify-content:space-between;
+    margin-top:24px
+}
+.btn{
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    color:#fff;
+    text-decoration:none
+}
+.btn-primary{background:#f062c0}
+.btn-secondary{background:#777}
+.note{
+    margin-top:14px;
+    font-size:13px;
+    color:#666
+}
+</style>
 
-<div class="form-container">
-    <h2>{% if variant %}Edit{% else %}Add{% endif %} Variant</h2>
+<div class="form-box">
 
-    <form method="post">
-        {% csrf_token %}
+<h2>
+{% if variant %}Edit Variant{% else %}Add Variant{% endif %}
+</h2>
 
-        <select name="color">
-            {% for c in colors %}
-            <option value="{{ c.id }}" {% if variant.color.id == c.id %}selected{% endif %}>
-                {{ c.name }}
-            </option>
-            {% endfor %}
-        </select>
+<form method="post">
+{% csrf_token %}
 
-        <select name="age_group">
-            {% for a in ages %}
-            <option value="{{ a.id }}" {% if variant.age_group.id == a.id %}selected{% endif %}>
-                {{ a.name }}
-            </option>
-            {% endfor %}
-        </select>
+{% if product %}
+<p><strong>Product:</strong> {{ product.product_name }}</p>
+{% endif %}
 
-        <input type="text" name="barcode" placeholder="Barcode" value="{{ variant.barcode }}">
-        <button type="submit">Save</button>
-    </form>
+<label>Color</label>
+<select name="color" required>
+    <option value="">Select Color</option>
+    {% for c in colors %}
+        <option value="{{ c.id }}"
+        {% if variant and variant.color.id == c.id %}selected{% endif %}>
+        {{ c.color }}
+        </option>
+    {% endfor %}
+</select>
+
+<label>Age Group</label>
+<select name="age_group" required>
+    <option value="">Select Age</option>
+    {% for a in ages %}
+        <option value="{{ a.id }}"
+        {% if variant and variant.age_group.id == a.id %}selected{% endif %}>
+        {{ a.age }}
+        </option>
+    {% endfor %}
+</select>
+
+{% if not variant %}
+<label>Initial Stock</label>
+<input type="number" name="stock" min="0" required>
+{% endif %}
+
+{% if variant %}
+<label>
+    <input type="checkbox" name="is_active"
+    {% if variant.is_active %}checked{% endif %}>
+    Active
+</label>
+{% endif %}
+
+<div class="note">
+Create multiple variants by repeating combinations (e.g., 4 colors × 3 ages ≈ 12 variants).
 </div>
 
+<div class="actions">
+    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">Back</a>
+    <button type="submit" class="btn btn-primary">Save Variant</button>
+</div>
+
+</form>
+</div>
 {% endblock %}

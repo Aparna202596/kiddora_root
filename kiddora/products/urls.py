@@ -29,9 +29,13 @@ urlpatterns = [
     
     # PRODUCT MANAGEMENT
     path("admin/products/", product_admin_views.admin_product_list, name="admin_product_list"),
+    path("admin/products/<int:product_id>/details/",product_admin_views.admin_product_details,name="admin_product_details"),
+    
     path("admin/products/add/", product_admin_views.admin_add_product, name="admin_add_product"),
     path("admin/products/<int:product_id>/edit/", product_admin_views.admin_edit_product, name="admin_edit_product"),
     path("admin/products/<int:product_id>/delete/", product_admin_views.admin_delete_product, name="admin_delete_product"),
+
+    path("admin/products/<int:product_id>/variants/add",product_admin_views.admin_add_variant,name="admin_add_variants"),
 
     # VARIANTS
     path("admin/products/<int:product_id>/variant/add/", product_admin_views.admin_add_variant, name="admin_add_variant"),
