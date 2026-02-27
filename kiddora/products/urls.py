@@ -44,7 +44,7 @@ urlpatterns = [
 
     # INVENTORY
     path("admin/inventory/", inventory_stock_views.admin_inventory_list, name="admin_inventory_list"),
-    path("admin/inventory/<int:variant_id>/update/", inventory_stock_views.update_stock, name="update_stock"),
+    path("admin/inventory/<int:inventory_id>/update/", inventory_stock_views.update_stock, name="update_stock"),
 
     #search_views
     path("user/search/", search_views.search_products, name="product_search"),

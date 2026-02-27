@@ -1,0 +1,123 @@
+{% extends "base_admin.html" %}
+{% block content %}
+<style>
+.container { padding: 25px; }
+h2 { text-align: center; margin-bottom: 20px; color: #333; }
+.search-box { display: flex; gap: 10px; margin-bottom: 25px; }
+.search-box input {
+    flex: 1; padding: 10px; border-radius: 25px;
+    border: 1px solid #ccc; outline: none;
+}
+.search-box input:focus { border-color: #333; box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
+.search-btn {
+    padding: 8px 18px; border-radius: 25px; background: #333;
+    color: #fff; border: none; cursor: pointer; text-decoration: none;
+}
+.search-btn:hover { background: #000; }
+.table-wrapper { border-radius: 14px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px; text-align: center; vertical-align: middle; }
+th { background: #020202; color: #fff; cursor: pointer; }
+tbody tr:hover { background: #f1f0ff; }
+.stock-badge { padding: 4px 10px; border-radius: 12px; color: #fff; font-size: 0.85em; }
+.stock-high  { background-color: #2dce89; }
+.stock-medium{ background-color: #fd9644; }
+.stock-low   { background-color: #fc5c65; }
+.update-form { display: flex; justify-content: center; gap: 6px; }
+.update-form input[type=number] { width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid #ccc; }
+.update-btn {
+    padding: 6px 14px; border-radius: 20px; background: #f062c0;
+    color: #fff; border: none; cursor: pointer; font-size: 14px;
+}
+.update-btn:hover { background: #e04faf; }
+</style>
+
+<div class="container">
+    <h2>Inventory Management</h2>
+
+    <form method="get" class="search-box">
+        <input type="text" name="search" placeholder="Search by product, SKU, brand..." value="{{ search }}">
+        <button type="submit" class="search-btn">Search</button>
+        <a href="{% url 'products:admin_inventory_list' %}" class="search-btn">Clear</a>
+    </form>
+
+    <div class="table-wrapper">
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>SubCategory</th>
+                    <th>SKU</th>
+                    <th>Color</th>
+                    <th>Age Group</th>
+                    <th>Available</th>
+                    <th>Reserved</th>
+                    <th>Sold</th>
+                    <th>Update Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in inventories %}   {# matches context key "inventories" #}
+                <tr>
+                    <td>{{ item.variant.product.product_name }}</td>
+                    <td>{{ item.variant.product.subcategory.category.category_name }}</td>
+                    <td>{{ item.variant.product.subcategory.subcategory_name }}</td>
+                    <td>{{ item.variant.sku }}</td>   {# sku is on variant, not product #}
+                    <td>{{ item.variant.color }}</td>
+                    <td>{{ item.variant.age_group }}</td>
+                    <td>
+                        {% if item.quantity_available <= 5 %}
+                            <span class="stock-badge stock-low">{{ item.quantity_available }}</span>
+                        {% elif item.quantity_available <= 20 %}
+                            <span class="stock-badge stock-medium">{{ item.quantity_available }}</span>
+                        {% else %}
+                            <span class="stock-badge stock-high">{{ item.quantity_available }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.quantity_reserved }}</td>
+                    <td>{{ item.quantity_sold }}</td>
+                    <td>
+                        <form method="post"
+                                action="{% url 'products:update_stock' item.id %}"
+                                class="update-form">
+                            {% csrf_token %}
+                            <input type="number" name="quantity" placeholder="qty" min="1" required>
+                            <select name="action" style="padding:4px;border-radius:6px;border:1px solid #ccc;">
+                                <option value="add">➕ Add</option>
+                                <option value="remove">➖ Remove</option>
+                            </select>
+                            <button type="submit" class="update-btn">Update</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="10">No inventory records found.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "products/admin/pagination.html" %}
+</div>
+
+<script>
+function sortTable(colIndex) {
+    const table = document.getElementById("inventoryTable");
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+    const asc = table.dataset.sort !== "asc";
+    table.dataset.sort = asc ? "asc" : "desc";
+    rows.sort((a, b) => {
+        let x = a.cells[colIndex].innerText.toLowerCase();
+        let y = b.cells[colIndex].innerText.toLowerCase();
+        return !isNaN(x) && !isNaN(y)
+            ? (asc ? x - y : y - x)
+            : (asc ? x.localeCompare(y) : y.localeCompare(x));
+    });
+    rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+{% endblock %}

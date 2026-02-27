@@ -299,7 +299,7 @@ def admin_add_variant(request, product_id):
         )
 
         messages.success(request, "Variant added")
-        return redirect("products:admin_edit_product", product_id=product.id)
+        return redirect("products:admin_product_details", product_id=product.id)
 
     return render(
         request,
@@ -313,9 +313,9 @@ def admin_add_variant(request, product_id):
 
 @admin_login_required
 @never_cache
-def admin_edit_variant(request, variant_id):
+def admin_edit_variant(request, variant_id, product_id):
 
-    variant = get_object_or_404(ProductVariant, id=variant_id)
+    variant = get_object_or_404(ProductVariant, id=variant_id,product_id=product_id)
 
     if request.method == "POST":
         variant.color_id = request.POST.get("color")
@@ -325,8 +325,7 @@ def admin_edit_variant(request, variant_id):
 
         messages.success(request, "Variant updated")
         return redirect(
-            "products:admin_edit_product", product_id=variant.product.id
-        )
+            "products:admin_product_details", product_id=product_id)
 
     return render(
         request,
@@ -341,10 +340,10 @@ def admin_edit_variant(request, variant_id):
 
 @admin_login_required
 @never_cache
-def admin_delete_variant(request, variant_id):
-    variant = get_object_or_404(ProductVariant, id=variant_id)
+def admin_delete_variant(request, product_id, variant_id):
+    variant = get_object_or_404(ProductVariant, id=variant_id, product_id=product_id)
     variant.delete()
     messages.success(request, "Variant removed")
     return redirect(
-        "products:admin_edit_product", product_id=variant.product.id
+        "products:admin_product_details", product_id=product_id
     )

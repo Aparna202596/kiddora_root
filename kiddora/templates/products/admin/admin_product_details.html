@@ -17,7 +17,27 @@
     margin-bottom: 20px;
     color: #333;
 }
+/* ---------- Top Links ---------- */
+.top-links {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 20px;
+}
 
+.top-links a {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: #f06292;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.top-links a:hover {
+    background: #f42f71;
+}
 .product-details {
     display: flex;
     flex-wrap: wrap;
@@ -120,6 +140,11 @@
 <div class="container">
     <h2>{{ product.product_name }}</h2>
 
+    <div class="top-links">
+        <a href="{% url 'products:admin_add_variant' product.id %}" title="Add Variants" >+ Add Variant</a>
+
+    </div>
+
     <div class="product-details">
         <!-- IMAGES — iterate over image fields on the ProductImage object -->
         <div class="product-images">
@@ -165,10 +190,6 @@
                 <td>{{ product.brand }}</td>
             </tr>
             <tr>
-                <th>SKU</th>
-                <td>{{ product.sku }}</td>
-            </tr>
-            <tr>
                 <th>Category</th>
                 <td>{{ product.subcategory.category.category_name }}</td>
             </tr>
@@ -201,10 +222,6 @@
                 </td>
             </tr>
             <tr>
-                <th>Stock</th>
-                <td>{{ product.stock }}</td>
-            </tr>
-            <tr>
                 <th>Status</th>
                 <td>{{ product.is_active|yesno:"Active,Inactive" }}</td>
             </tr>
@@ -227,6 +244,7 @@
                     <th>Sold</th>
                     <th>Reserved</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -240,6 +258,11 @@
                     <td>{{ v.sold }}</td>
                     <td>{{ v.reserved }}</td>
                     <td>{{ v.is_active|yesno:"Active,Inactive" }}</td>
+                    <td class="action-icons">
+                        <a class="icon-edit" href="{% url 'products:admin_edit_variant' product.id v.id %}" title="Edit">✏️</a>
+                        <a class="icon-delete" href="{% url 'products:admin_delete_variant' product.id v.id %}" onclick="confirmDelete(event, this.href)" title="Delete">🗑️</a>
+                        
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="10">No variants available</td></tr>
