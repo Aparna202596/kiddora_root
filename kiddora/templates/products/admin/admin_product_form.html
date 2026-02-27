@@ -307,9 +307,10 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
     </div>
     {% endfor %}
 </div>
+    
 
 <label>About Product</label>
-<textarea name="about_product" rows="4">{{ product.about_product|default:'' }}</textarea>
+<textarea name="about_product" rows="3">{{ product.about_product|default:'' }}</textarea>
 
 {% if product %}
 <label>
@@ -319,61 +320,42 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
 {% endif %}
 
 <div class="actions">
-    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">Back</a>
+    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
     <button type="submit" class="btn btn-primary">Save</button>
 </div>
 
 </form>
 </div>
 
-<!-- Cropper Modal -->
-<div id="cropperModal"
-    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 99999;">
+<!-- Cropper Container -->
+<div id="cropper-container"
+    style="flex: 1; padding: 20px; position: relative; overflow: hidden;">
+    <img id="cropperImage"
+        style="max-width: 100%; max-height: 100%; display: block; margin: 0 auto;">
+</div>
 
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                background: white; border-radius: 10px; width: 90%; max-width: 800px;
-                height: 90%; max-height: 600px; display: flex; flex-direction: column;">
-
-        <!-- Header -->
-        <div style="padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex;
-                    justify-content: space-between; align-items: center;
-                    background: #f8f9fa; border-radius: 10px 10px 0 0;">
-            <h3 style="margin: 0; color: #333;">Crop Your Image</h3>
-            <button onclick="closeCropPopup()"
-                    style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">
-                &times;
-            </button>
-        </div>
-
-        <!-- Cropper Container -->
-        <div id="cropper-container"
-            style="flex: 1; padding: 20px; position: relative; overflow: hidden;">
-            <img id="cropperImage"
-                style="max-width: 100%; max-height: 100%; display: block; margin: 0 auto;">
-        </div>
-
-        <!-- Footer -->
-        <div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex;
-                    justify-content: flex-end; gap: 10px;
-                    background: #f8f9fa; border-radius: 0 0 10px 10px;">
-            <button onclick="closeCropPopup()"
-                    style="padding: 8px 16px; background: #6c757d; color: white;
-                        border: none; border-radius: 4px; cursor: pointer;">
-                Cancel
-            </button>
-
-            <button id="cropSaveBtn"
-                    onclick="cropImage()"
-                    disabled
-                    style="padding: 8px 16px; background: #007bff; color: white;
-                        border: none; border-radius: 4px; cursor: pointer;">
-                Loading...
-            </button>
-        </div>
+<!-- Footer -->
+<div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex;
+            justify-content: flex-end; gap: 10px;
+            background: #f8f9fa; border-radius: 0 0 10px 10px;">
+    <button onclick="closeCropPopup()"
+            style="padding: 8px 16px; background: #6c757d; color: white;
+                   border: none; border-radius: 4px; cursor: pointer;">
+        Cancel
+    </button>
+    <button id="cropSaveBtn"
+            onclick="cropImage()"
+            disabled
+            style="padding: 8px 16px; background: #007bff; color: white;
+                   border: none; border-radius: 4px; cursor: pointer;">
+        Loading...
+    </button>
+</div>
 
     </div>
 </div>
 
+<!-- ✅ LOAD CROPPER.JS FIRST — before any function that uses it -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
@@ -391,21 +373,15 @@ document.addEventListener('DOMContentLoaded', function () {
 function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
-
     if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
         alert('Please select a valid image file (JPEG, JPG, or PNG)');
         e.target.value = '';
         return;
     }
-
-    // Store context
     currentInput = e.target;
     originalFile = file;
-
     const imageNumber = e.target.id.replace('productImage', '');
     currentPreview = document.getElementById('preview' + imageNumber);
-
-    // Read and show modal
     const reader = new FileReader();
     reader.onload = function (event) {
         showCropModal(event.target.result);
@@ -418,32 +394,33 @@ function showCropModal(imageSrc) {
     const cropperImage = document.getElementById('cropperImage');
     const cropBtn = document.getElementById('cropSaveBtn');
 
-    // Destroy existing cropper
     if (cropper) {
         cropper.destroy();
         cropper = null;
     }
 
-    // Show modal
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
-
-    // Reset button
     cropBtn.disabled = true;
     cropBtn.textContent = 'Loading...';
+    cropBtn.style.background = '#007bff';
 
-    // Load image
     cropperImage.src = imageSrc;
     cropperImage.onload = function () {
-        setTimeout(() => {
-            initCropper();
-        }, 200);
+        setTimeout(initCropper, 200);
     };
 }
 
 function initCropper() {
     const cropperImage = document.getElementById('cropperImage');
     const cropBtn = document.getElementById('cropSaveBtn');
+
+    /* Safety check — if Cropper library failed to load */
+    if (typeof Cropper === 'undefined') {
+        cropBtn.textContent = 'Error: library missing';
+        console.error('Cropper.js not loaded');
+        return;
+    }
 
     try {
         cropper = new Cropper(cropperImage, {
@@ -463,11 +440,10 @@ function initCropper() {
                 cropBtn.style.background = '#28a745';
             }
         });
-
     } catch (error) {
-        console.error('Cropper error:', error);
+        console.error('Cropper init error:', error);
         cropBtn.textContent = 'Error';
-        alert('Failed to initialize cropper');
+        alert('Failed to initialize cropper: ' + error.message);
     }
 }
 
@@ -481,7 +457,6 @@ function closeCropPopup() {
         cropper = null;
     }
 
-    // Reset
     currentInput = null;
     currentPreview = null;
     originalFile = null;
@@ -513,31 +488,23 @@ function cropImage() {
                 return;
             }
 
-            // Create new file
             const fileName = originalFile.name.replace(/\.[^/.]+$/, '') + '_cropped.jpg';
             const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
 
-            // Update input
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(croppedFile);
             currentInput.files = dataTransfer.files;
 
-            // Show preview
             if (currentPreview) {
                 currentPreview.innerHTML = '';
 
                 const img = document.createElement('img');
                 img.src = canvas.toDataURL('image/jpeg', 0.8);
-                img.style.maxWidth = '200px';
-                img.style.border = '2px solid #28a745';
-                img.style.borderRadius = '4px';
-                img.style.marginTop = '10px';
+                img.style.cssText = 'max-width:200px; border:2px solid #28a745; border-radius:4px; margin-top:10px;';
 
                 const successText = document.createElement('p');
                 successText.textContent = '✓ Image cropped successfully!';
-                successText.style.color = '#28a745';
-                successText.style.fontSize = '14px';
-                successText.style.marginTop = '5px';
+                successText.style.cssText = 'color:#28a745; font-size:14px; margin-top:5px;';
 
                 currentPreview.appendChild(img);
                 currentPreview.appendChild(successText);
