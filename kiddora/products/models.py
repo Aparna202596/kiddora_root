@@ -171,7 +171,7 @@ class ProductVariant(models.Model):
 
     def generate_unique_sku(self):
         while True:
-            sku = f"KID-{uuid.uuid4().hex[:8].upper()}"
+            sku = f"KIDDORA-{uuid.uuid4().hex[:8].upper()}"
             if not ProductVariant.objects.filter(sku=sku).exists():
                 return sku
 
@@ -202,19 +202,15 @@ class ProductImage(models.Model):
     image1 = models.ImageField(upload_to="product_images/",blank=True, null=True)
     image2 = models.ImageField(upload_to="product_images/",blank=True, null=True)
     image3 = models.ImageField(upload_to="product_images/",blank=True, null=True)
-    image4 = models.ImageField(upload_to="product_images/", blank=True, null=True)
-    image5 = models.ImageField(upload_to="product_images/", blank=True, null=True)
+    image4 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+    image5 = models.ImageField(upload_to="product_images/",blank=True, null=True)
 
     is_default = models.BooleanField(default=False)
 
-    def clean(self):
-        if not (self.image1 and self.image2 and self.image3):
-            raise ValidationError("Minimum 3 images are required.")
-
     def save(self, *args, **kwargs):
-        self.full_clean()
         if self.is_default:
-            ProductImage.objects.filter(product=self.product, is_default=True).update(is_default=False)
+            ProductImage.objects.filter(product=self.product, is_default=True
+                ).update(is_default=False)
         super().save(*args, **kwargs)
 
     def __str__(self):

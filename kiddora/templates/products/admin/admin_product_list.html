@@ -160,7 +160,9 @@ tbody tr:hover {
                     <th><a href="?sort=id&dir={% if sort == 'id' and dir == 'asc' %}desc{% else %}asc{% endif %}"> ID ⬍ </a></th>
                     <th><a href="?sort=product_name&dir={% if sort == 'product_name' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Product Name ⬍ </a></th>
                     <th><a href="?sort=brand&dir={% if sort == 'brand' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Brand ⬍ </a></th>
-                    <th><a href="?sort=final_price&dir={% if sort == 'final_price' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Price ⬍ </a></th>
+                    <th><a href="?sort=base_price&dir={% if sort == 'base_price' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Base Price ⬍ </a></th>
+                    <th><a href="?sort=final_price&dir={% if sort == 'final_price' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Final Price ⬍ </a></th>
+                    <th><a href="?sort=discount_percent&dir={% if sort == 'discount_percent' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Discount ⬍ </a></th>
                     <th><a href="?sort=subcategory__subcategory_name&dir={% if sort == 'subcategory__subcategory_name' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Sub-Category ⬍ </a></th>
                     <th><a href="?sort=subcategory__category__category_name&dir={% if sort == 'subcategory__category__category_name' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Category ⬍</a></th>
                     <th><a href="?sort=gender&dir={% if sort == 'gender' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Gender ⬍</a></th>
@@ -178,6 +180,8 @@ tbody tr:hover {
                         </a>
                     </td>
                     <td>{{ prod.brand }}</td>
+                    <td>{{ prod.base_price }}</td>
+                    <td>{{ prod.discount_percent }}%</td>
                     <td>{{ prod.final_price }}</td>
                     <td>{{ prod.subcategory.subcategory_name }}</td>
                     <td>{{ prod.subcategory.category.category_name }}</td>
@@ -185,7 +189,7 @@ tbody tr:hover {
                     <td class="action-icons">
                         <a class="icon-edit" href="{% url 'products:admin_edit_product' prod.id %}" title="Edit">✏️</a>
                         <a class="icon-delete" href="{% url 'products:admin_delete_product' prod.id %}" onclick="confirmDelete(event, this.href)" title="Delete">🗑️</a>
-                        <a class="icon-add" href="{% url 'products:admin_add_variant' %}?product={{ prod.id }}" title="Add Variants">➕</a>
+                        <a class="icon-add" href="{% url 'products:admin_add_variant' prod.id %}" title="Add Variants">➕</a>
                         
                     </td>
                 </tr>

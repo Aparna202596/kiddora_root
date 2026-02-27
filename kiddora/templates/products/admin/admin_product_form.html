@@ -34,6 +34,24 @@ input, select, textarea {
 
 textarea { resize: vertical; }
 
+/* Search box inside dropdown */
+.dropdown-search {
+    padding: 6px 8px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.dropdown-search-input {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+}
+
 .radio-group {
     display: flex;
     flex-direction: column; /* Stack items vertically */
@@ -83,37 +101,61 @@ textarea { resize: vertical; }
     color: #666;
 }
 
+/* Dropdown panel */
 .options-container {
     display: none;
     position: absolute;
     width: 100%;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    background: #ffffff;            
+    border: 1px solid #d6d6db;
+    border-radius: 10px;
     margin-top: 6px;
-    max-height: 220px;
+    max-height: 240px;
     overflow-y: auto;
     z-index: 10;
-    padding: 6px;
+    padding: 8px 0;
 }
 
+/* Each option row */
 .options-container label {
     display: flex;
-    align-items: center;       
-    gap: 8px;                  
-    padding: 6px 12px;        
-    border-radius: 6px;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px;
+    font-size: 16px;                /* large text */
+    font-weight: 500;
+    color: #222;
     cursor: pointer;
+    transition: background .0s ease;
 }
+/* Hover state */
 .options-container label:hover {
-    background: #f3f3f6;
+    background: #f2ddf6;
 }
 
+/* Radio button */
 .options-container input[type="radio"] {
-    margin: 0;                
-    vertical-align: middle;  
+    appearance: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid #111;
+    position: relative;
+    flex-shrink: 0;
+}
+/* Filled dot when selected */
+.options-container input[type="radio"]:checked::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    background: #111;
+    border-radius: 50%;
 }
 
+/* Selected row subtle highlight */
+.options-container label:has(input[type="radio"]:checked) {
+    background: #ffffff;
+}
 .custom-select.active .options-container { display: block; }
 
 .actions {
@@ -158,6 +200,9 @@ textarea { resize: vertical; }
     </div>
 
     <div class="options-container">
+        <div class="dropdown-search">
+            <input type="text" class="dropdown-search-input" placeholder="Search...">
+        </div>
         {% regroup subcategories by category as category_list %}
         {% for group in category_list %}
             <label>
@@ -180,6 +225,9 @@ textarea { resize: vertical; }
     </div>
 
     <div class="options-container" id="subcategoryOptions">
+        <div class="dropdown-search">
+            <input type="text" class="dropdown-search-input" placeholder="Search...">
+        </div>
         {% regroup subcategories by category as category_list %}
         {% for group in category_list %}
             {% for sub in group.list %}
@@ -215,6 +263,9 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
     </div>
 
     <div class="options-container">
+        <div class="dropdown-search">
+            <input type="text" class="dropdown-search-input" placeholder="Search...">
+        </div>
         {% for code,name in fabric_choices %}
         <label>
             <input type="radio" name="fabric" value="{{ code }}"
@@ -232,6 +283,9 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
     </div>
 
     <div class="options-container">
+        <div class="dropdown-search">
+            <input type="text" class="dropdown-search-input" placeholder="Search...">
+        </div>
         {% for code,name in gender_choices %}
         <label>
             <input type="radio" name="gender" value="{{ code }}"
@@ -244,7 +298,7 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
 
 <!-- Images -->
 <div class="form-group">
-    <label "productImages">Product Image <small> (Upload minimum of 3 images) </small></label>
+    <label "productImages">Product Image <small> (Must upload minimum of 3 images) </small></label>
     {% for i in "12345" %}
     <div class="image-input-group">
         <label for="productImage{{ i }}">Product Image {{ i }}</label>
@@ -253,9 +307,10 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
     </div>
     {% endfor %}
 </div>
+    
 
 <label>About Product</label>
-<textarea name="about_product" rows="4">{{ product.about_product|default:'' }}</textarea>
+<textarea name="about_product" rows="3">{{ product.about_product|default:'' }}</textarea>
 
 {% if product %}
 <label>
@@ -265,7 +320,7 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
 {% endif %}
 
 <div class="actions">
-    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">Back</a>
+    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
     <button type="submit" class="btn btn-primary">Save</button>
 </div>
 
@@ -561,5 +616,76 @@ setupDropdown("genderDropdown", "genderSelected");
 
 window.addEventListener("DOMContentLoaded", filterSubcategories);
 </script>
+<script>
+/* === DROPDOWN SEARCH (non-breaking) === */
+document.querySelectorAll(".custom-select").forEach(dropdown => {
 
+    const searchInput = dropdown.querySelector(".dropdown-search-input");
+    if (!searchInput) return;
+
+    const options = dropdown.querySelectorAll(".options-container label");
+
+    searchInput.addEventListener("input", function () {
+        const term = this.value.toLowerCase();
+
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            option.style.display = text.includes(term) ? "flex" : "none";
+        });
+    });
+
+    /* Reset search when dropdown closes */
+    document.addEventListener("click", e => {
+        if (!dropdown.contains(e.target)) {
+            searchInput.value = "";
+            options.forEach(o => o.style.display = "flex");
+        }
+    });
+
+});
+</script>
+<script>
+/* === DROPDOWN CLICK FIX (ADD-ON, NON-BREAKING) === */
+
+/* 1️⃣ Prevent internal clicks from triggering toggle */
+document.querySelectorAll(".custom-select").forEach(dropdown => {
+
+    const options = dropdown.querySelector(".options-container");
+    const search = dropdown.querySelector(".dropdown-search");
+
+    if (options) {
+        options.addEventListener("click", e => e.stopPropagation());
+    }
+
+    if (search) {
+        search.addEventListener("click", e => e.stopPropagation());
+    }
+
+});
+
+
+/* 2️⃣ Override toggle behavior → open only from select box */
+document.querySelectorAll(".select-box").forEach(box => {
+
+    box.addEventListener("click", function (e) {
+        e.stopPropagation();
+
+        const dropdown = this.closest(".custom-select");
+
+        /* close others (optional but safer UX) */
+        document.querySelectorAll(".custom-select").forEach(d => {
+            if (d !== dropdown) d.classList.remove("active");
+        });
+
+        dropdown.classList.toggle("active");
+    });
+
+});
+
+
+/* 3️⃣ Global outside click closer */
+document.addEventListener("click", function () {
+    document.querySelectorAll(".custom-select").forEach(d => d.classList.remove("active"));
+});
+</script>
 {% endblock %}

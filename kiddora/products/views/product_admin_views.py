@@ -13,8 +13,6 @@ from django.contrib import messages
 from django.db import transaction
 from decimal import Decimal
 
-from decimal import Decimal
-
 def calculate_final_price(base_price, discount_percent):
     try:
         base = Decimal(base_price or 0)
@@ -30,52 +28,30 @@ def calculate_final_price(base_price, discount_percent):
 def admin_product_details(request, product_id):
 
     product = get_object_or_404(
-        Product.objects.select_related(
-            "subcategory",
-            "subcategory__category"
-        ),
+        Product.objects.select_related("subcategory","subcategory__category"),
         id=product_id
     )
 
-    # ---- PRODUCT IMAGES ----
     images = ProductImage.objects.filter(product=product)
 
-    # ---- VARIANTS + INVENTORY ----
     variants = (
         ProductVariant.objects
         .filter(product=product)
         .select_related("color", "age_group")
         .annotate(
-            stock=Coalesce(
-                F("inventory__quantity_available"), Value(0)
-            ),
-            sold=Coalesce(
-                F("inventory__quantity_sold"), Value(0)
-            ),
-            reserved=Coalesce(
-                F("inventory__quantity_reserved"), Value(0)
-            ),
+            stock=Coalesce(F("inventory__quantity_available"), Value(0)),
+            sold=Coalesce(F("inventory__quantity_sold"), Value(0)),
+            reserved=Coalesce(F("inventory__quantity_reserved"), Value(0)),
         )
     )
-
-    # ---- TOTAL STOCK SUMMARY ----
     stock_summary = variants.aggregate(
         total_stock=Coalesce(Sum("stock"), Value(0)),
         total_sold=Coalesce(Sum("sold"), Value(0)),
         total_reserved=Coalesce(Sum("reserved"), Value(0)),
     )
+    # coupons = Coupon.objects.filter(is_active=True,products=product)
 
-    # ---- COUPONS / OFFERS ----
-    # Adjust relation name if different
-    # coupons = Coupon.objects.filter(
-    #     is_active=True,
-    #     products=product
-    # )
-
-    # ---- FINAL PRICE ----
-    final_price = product.base_price - (
-        product.base_price * product.discount_percent / 100
-    )
+    final_price = product.base_price - (product.base_price * product.discount_percent / 100)
 
     context = {
         "product": product,
@@ -88,14 +64,8 @@ def admin_product_details(request, product_id):
         "final_price": final_price,
         "last_updated": product.updated_at if hasattr(product, "updated_at") else product.id,
     }
+    return render(request, "products/admin/admin_product_details.html",context  )
 
-    return render(
-        request,
-        "products/admin/admin_product_details.html",
-        context,
-    )
-
-# PRODUCT LIST
 @never_cache
 @admin_login_required
 def admin_product_list(request):
@@ -111,27 +81,16 @@ def admin_product_list(request):
     queryset = Product.objects.select_related(
         "subcategory", "subcategory__category"
     ).filter(subcategory__category__is_active=True)
-
-    # SEARCH
+    queryset = queryset.filter(is_active=True)
+# SEARCH
     queryset = apply_search(queryset, search, ["product_name", "brand"])
 
-    queryset = Product.objects.select_related(
-        "subcategory", "subcategory__category"
-    ).filter(subcategory__category__is_active=True)
-
-    # ---- RATINGS ANNOTATION ----
-    # queryset = queryset.annotate(
-    #     avg_rating=Coalesce(Avg("reviews__rating"), Value(0.0)),
-    #     rating_count=Coalesce(Count("review"), Value(0)),
-    # )
-
-    # ---- POPULARITY (BASED ON SOLD QTY) ----
+    # POPULARITY (BASED ON SOLD QTY)
     queryset = queryset.annotate(
         popularity_score=Coalesce(
             Sum("variants__inventory__quantity_sold"), Value(0)
         )
     )
-
     # FILTERS
     queryset = apply_product_filters(queryset, category_id, subcategory_id)
 
@@ -151,7 +110,6 @@ def admin_product_list(request):
         "az": "product_name",
         "za": "-product_name",
         "new": "-id",
-        "rating": "-avg_rating",
         "popular": "-popularity_score",
     }
 
@@ -169,57 +127,90 @@ def admin_product_list(request):
 
     return render(request, "products/admin/admin_product_list.html", context)
 
-
-# -----------------------------
 # ADD PRODUCT
-# -----------------------------
+
 @never_cache
 @admin_login_required
-@transaction.atomic
 def admin_add_product(request):
+
     preview_final_price = None
     
     if request.method == "POST":
         base_price = request.POST.get("base_price")
         discount_percent = request.POST.get("discount_percent")
-
         preview_final_price = calculate_final_price(base_price, discount_percent)
 
+        # Collect images by individual field names matching the HTML
+        image1 = request.FILES.get("productImage1")
+        image2 = request.FILES.get("productImage2")
+        image3 = request.FILES.get("productImage3")
+        image4 = request.FILES.get("productImage4")
+        image5 = request.FILES.get("productImage5")
+        # Validate minimum 3 images BEFORE touching the database
+        if not (image1 and image2 and image3):
+            messages.error(request, "Minimum 3 images required")
+            return render(
+                request,
+                "products/admin/admin_product_form.html",
+                {
+                    "subcategories": SubCategory.objects.filter(category__is_active=True),
+                    "preview_final_price": preview_final_price,
+                    "fabric_choices": Product.FABRIC_CHOICES,
+                    "gender_choices": Product.GENDER_CHOICES,
+                },
+            )
+        print("Images received:",image1, image2, image3)
+        print("Base Price:", base_price, "Discount Percent:", discount_percent, "Calculated Final Price:", preview_final_price)
+        
         name = request.POST.get("product_name").strip()
         subcategory = get_object_or_404(
             SubCategory, id=request.POST.get("subcategory")
         )
+        print("Creating product with name:", name, "and subcategory:", subcategory)
 
-        product = Product.objects.create(
-            product_name=name,
-            brand=request.POST.get("brand"),
-            gender=request.POST.get("gender"),
-            fabric=request.POST.get("fabric"),
-            base_price=base_price,
-            discount_percent=discount_percent or 0,
-            about_product=request.POST.get("about_product"),
-            subcategory=subcategory,
-        )
+        # Process images before DB writes — fail fast if process_image errors
+        processed1 = process_image(image1)
+        processed2 = process_image(image2)
+        processed3 = process_image(image3)
+        processed4 = process_image(image4) if image4 else None
+        processed5 = process_image(image5) if image5 else None
 
-        # IMAGE HANDLING
-        images = request.FILES.getlist("images")
-        if len(images) < 3:
-            messages.error(request, "Minimum 3 images required")
-            product.delete()
-            return redirect("products:admin_add_product")
+        # Now write to DB inside a single clean transaction
+        with transaction.atomic():
+            product = Product.objects.create(
+                product_name=name,
+                brand=request.POST.get("brand"),
+                gender=request.POST.get("gender"),
+                fabric=request.POST.get("fabric"),
+                base_price=base_price,
+                discount_percent=discount_percent or 0,
+                about_product=request.POST.get("about_product"),
+                subcategory=subcategory,
+                is_active=True,
+            )
+            img_instance = ProductImage(
+                product=product,
+                image1=processed1,
+                image2=processed2,
+                image3=processed3,
+                image4=processed4,
+                image5=processed5,
+                is_default=True,
+            )
+        
+            ProductImage.objects.filter(
+                product=product, is_default=True
+            ).update(is_default=False)
+            
+            super(ProductImage, img_instance).save(force_insert=True)
 
-        processed = [process_image(img) for img in images[:5]]
-
-        ProductImage.objects.create(
-            product=product,
-            image1=processed[0],
-            image2=processed[1],
-            image3=processed[2],
-            image4=processed[3] if len(processed) > 3 else None,
-            image5=processed[4] if len(processed) > 4 else None,
-            is_default=True,
-        )
-
+        print("Product images saved for product ID:", product.id)
+        print("image1",image1)
+        print("image2",image2)
+        print("image3",image3)
+        print("image4",image4)
+        print("image5",image5)
+        
         messages.success(request, "Product added successfully")
         return redirect("products:admin_product_list")
     
@@ -248,7 +239,6 @@ def admin_edit_product(request, product_id):
     if request.method == "POST":
         base_price = request.POST.get("base_price")
         discount_percent = request.POST.get("discount_percent")
-
         preview_final_price = calculate_final_price(base_price, discount_percent)
 
         product.product_name = request.POST.get("product_name")
@@ -257,29 +247,27 @@ def admin_edit_product(request, product_id):
         product.fabric = request.POST.get("fabric")
         product.base_price = base_price
         product.discount_percent = discount_percent
-        
         product.about_product = request.POST.get("about_product")
         product.subcategory_id = request.POST.get("subcategory")
         product.is_active = bool(request.POST.get("is_active"))
-
         product.save()
+
         messages.success(request, "Product updated")
         return redirect("products:admin_product_list")
 
     return render(
         request,"products/admin/admin_product_form.html",
         {
-            "product": product, "subcategories": SubCategory.objects.all(),
+            "product": product, 
+            "subcategories": SubCategory.objects.all(),
             "preview_final_price": preview_final_price,
             "fabric_choices": Product.FABRIC_CHOICES,
             "gender_choices": Product.GENDER_CHOICES,
         },
     )
 
-
-# -----------------------------
 # SOFT DELETE PRODUCT
-# -----------------------------
+
 @never_cache
 @admin_login_required
 def admin_delete_product(request, product_id):
@@ -289,10 +277,8 @@ def admin_delete_product(request, product_id):
     messages.success(request, "Product deleted safely")
     return redirect("products:admin_product_list")
 
-
-# -----------------------------
 # VARIANT MANAGEMENT
-# -----------------------------
+
 @never_cache
 @admin_login_required
 def admin_add_variant(request, product_id):
@@ -324,7 +310,6 @@ def admin_add_variant(request, product_id):
             "ages": AgeGroup.objects.all(),
         },
     )
-
 
 @admin_login_required
 @never_cache
