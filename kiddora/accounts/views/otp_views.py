@@ -118,7 +118,7 @@ def forgot_password(request):
                     message = (
                         "Hi,\n\n"
                         "We received a request to reset your Kiddora account password.\n\n"
-                        f"Your One-Time Password (OTP) is {user.otp}.\n"
+                        f"Your One-Time Password (OTP) is {otp}.\n"
                         f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
                         "If you did not request a password reset, please ignore this email or contact support.\n\n"
                         "Best regards,\n"

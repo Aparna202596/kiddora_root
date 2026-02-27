@@ -6,62 +6,82 @@
     <title>{% block title %}Kiddora Admin{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
             crossorigin="anonymous"
             referrerpolicy="no-referrer">
+
+    <!-- Cropper CSS only (JS loaded at bottom) -->
     <link rel="stylesheet" href="https://unpkg.com/cropperjs/dist/cropper.min.css">
-    <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
 
     <style>
-        /* GLOBAL RESET */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: "Segoe UI", Arial, sans-serif;
-            background-color: #ffffffff;
+            background-color: #ffffff;
         }
 
-        /* AUTH LAYOUT */
+        /* ── LOADER ── */
+        #global-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(3px);
+            z-index: 999999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            /* always receives pointer events regardless of body.loading */
+            pointer-events: all !important;
+        }
+        #global-loader.active {
+            display: flex;
+        }
+        .loader-spinner {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 5px solid #f3d6ed;
+            border-top-color: #f062c0;
+            animation: spin 0.75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #444;
+            letter-spacing: 0.3px;
+        }
+        /* Freeze all interactions while loading except the loader itself */
+        body.loading * { pointer-events: none !important; }
+        body.loading #global-loader { pointer-events: all !important; }
+
+        /* ── AUTH LAYOUT ── */
         .auth-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-
         .auth-card {
             background: #fff;
             width: 820px;
             border-radius: 14px;
             display: flex;
             padding: 35px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
         }
-
-        .auth-left {
-            flex: 1;
-            padding-right: 30px;
-        }
-
+        .auth-left { flex: 1; padding-right: 30px; }
         .auth-left h2 {
             font-size: 26px;
             margin-bottom: 8px;
             color: #333;
             font-family: "Segoe Script", cursive;
         }
-
-        .auth-left p {
-            font-size: 14px;
-            color: #777;
-            margin-bottom: 18px;
-        }
-
+        .auth-left p { font-size: 14px; color: #777; margin-bottom: 18px; }
         .google-btn {
             display: flex;
             align-items: center;
@@ -74,27 +94,14 @@
             justify-content: center;
             margin-bottom: 15px;
         }
-
-        .divider {
-            text-align: center;
-            font-size: 13px;
-            color: #aaa;
-            margin: 12px 0 18px;
-        }
-
-        .auth-left form {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        .divider { text-align: center; font-size: 13px; color: #aaa; margin: 12px 0 18px; }
+        .auth-left form { display: flex; flex-direction: column; gap: 12px; }
         .auth-left input {
             padding: 10px 12px;
             border-radius: 6px;
             border: 1px solid #ccc;
             font-size: 14px;
         }
-
         .primary-btn {
             margin-top: 10px;
             padding: 11px;
@@ -105,34 +112,23 @@
             font-size: 15px;
             cursor: pointer;
         }
+        .primary-btn:hover { background-color: #d98ab2; }
 
-        .primary-btn:hover {
-            background-color: #d98ab2;
-        }
-
-        /* ADMIN HEADER */
+        /* ── HEADER ── */
         .site-header {
             background: #fff;
             border-bottom: 1px solid #e5e5e5;
             padding: 12px 20px;
         }
-
         .header-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+        .logo img { height: 40px; }
+        .icon-btn { color: #333; font-size: 18px; }
 
-        .logo img {
-            height: 40px;
-        }
-
-        .icon-btn {
-            color: #333;
-            font-size: 18px;
-        }
-
-        /* SIDEBAR */
+        /* ── SIDEBAR ── */
         .sidebar-nav {
             width: 240px;
             position: fixed;
@@ -141,12 +137,9 @@
             background: #ffffff;
             border-right: 1px solid #ddd;
             padding-top: 20px;
+            overflow-y: auto;
         }
-
-        .sidebar-nav ul {
-            list-style: none;
-        }
-
+        .sidebar-nav ul { list-style: none; }
         .sidebar-nav li a {
             display: flex;
             align-items: center;
@@ -156,23 +149,17 @@
             text-decoration: none;
             font-size: 14px;
         }
+        .sidebar-nav li a:hover { background-color: #f3e1ec; }
+        .sidebar-nav .logout a { color: #c0392b; }
 
-        .sidebar-nav li a:hover {
-            background-color: #f3e1ec;
-        }
-
-        .sidebar-nav .logout a {
-            color: #c0392b;
-        }
-
-        /* MAIN CONTENT */
+        /* ── MAIN CONTENT ── */
         .main-content {
             margin-left: 240px;
             padding: 30px;
             min-height: calc(100vh - 140px);
         }
 
-        /* FOOTER */
+        /* ── FOOTER ── */
         .site-footer {
             background: #fff;
             border-top: 1px solid #ddd;
@@ -181,65 +168,127 @@
             font-size: 13px;
         }
 
-        /* RESPONSIVE */
+        /* ── RESPONSIVE ── */
         @media (max-width: 900px) {
-            .sidebar-nav {
-                display: none;
-            }
-
-            .main-content {
-                margin-left: 0;
-            }
-
-            .auth-card {
-                width: 90%;
-                flex-direction: column;
-            }
+            .sidebar-nav { display: none; }
+            .main-content { margin-left: 0; }
+            .auth-card { width: 90%; flex-direction: column; }
         }
     </style>
 </head>
-
 <body>
 
-<header class="site-header">
-    <div class="header-container">
-        <div class="logo">
-            <a href="{% url 'shopcore:home' %}">
-                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
-            </a>
-        </div>
-        <div class="header-actions">
-            <a href="{% url 'accounts:admin_profile' %}" class="icon-btn">
-                <i class="fa-regular fa-user"></i>
-            </a>
-        </div>
+    <!-- Loader is FIRST so it overlays everything -->
+    <div id="global-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-label" id="loader-label">Loading...</div>
     </div>
-</header>
 
-<nav class="sidebar-nav">
-    <ul>
-        <li><a href="{% url 'accounts:admin_dashboard' %}"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
-        <li><a href="{% url 'accounts:admin_user_list' %}"><i class="fa-solid fa-user-group"></i> Customers</a></li>
-        <li><a href="{% url 'products:admin_category_list' %}"><i class="fa-solid fa-tags"></i> Category</a></li>
-        <li><a href="{% url 'products:admin_product_list' %}"><i class="fa-solid fa-cubes"></i> Products</a></li>
-        <li><a href="{% url 'products:admin_inventory_list' %}"><i class="fa-solid fa-warehouse"></i> Inventory</a></li>
-        <li><a href="{% url 'accounts:sales_report' %}"><i class="fa-solid fa-chart-column"></i> Sales Report</a></li>
-        <li><a href="#"><i class="fa-solid fa-bag-shopping"></i> Orders</a></li>
-        <li><a href="#"><i class="fa-solid fa-ticket"></i> Coupons</a></li>
-        <li><a href="#"><i class="fa-solid fa-rotate-left"></i> Refund / Return</a></li>
-        <li><a href="#"><i class="fa-solid fa-image"></i> Banners</a></li>
-        <li><a href="#"><i class="fa-solid fa-share-nodes"></i> Referrals</a></li>
-        <li class="logout"><a href="{% url 'accounts:admin_logout' %}"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>
-    </ul>
-</nav>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="{% url 'shopcore:home' %}">
+                    <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
+                </a>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'accounts:admin_profile' %}" class="icon-btn">
+                    <i class="fa-regular fa-user"></i>
+                </a>
+            </div>
+        </div>
+    </header>
 
-<main class="main-content">
-    {% block content %}{% endblock %}
-</main>
+    <nav class="sidebar-nav">
+        <ul>
+            <li><a href="{% url 'accounts:admin_dashboard' %}"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+            <li><a href="{% url 'accounts:admin_user_list' %}"><i class="fa-solid fa-user-group"></i> Customers</a></li>
+            <li><a href="{% url 'products:admin_category_list' %}"><i class="fa-solid fa-tags"></i> Category</a></li>
+            <li><a href="{% url 'products:admin_product_list' %}"><i class="fa-solid fa-cubes"></i> Products</a></li>
+            <li><a href="{% url 'products:admin_inventory_list' %}"><i class="fa-solid fa-warehouse"></i> Inventory</a></li>
+            <li><a href="{% url 'accounts:sales_report' %}"><i class="fa-solid fa-chart-column"></i> Sales Report</a></li>
+            <li><a href="#"><i class="fa-solid fa-bag-shopping"></i> Orders</a></li>
+            <li><a href="#"><i class="fa-solid fa-ticket"></i> Coupons</a></li>
+            <li><a href="#"><i class="fa-solid fa-rotate-left"></i> Refund / Return</a></li>
+            <li><a href="#"><i class="fa-solid fa-image"></i> Banners</a></li>
+            <li><a href="#"><i class="fa-solid fa-share-nodes"></i> Referrals</a></li>
+            <li class="logout">
+                <a href="{% url 'accounts:admin_logout' %}">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                </a>
+            </li>
+        </ul>
+    </nav>
 
-<footer class="site-footer">
-    © 2025 | Kiddora | All Rights Reserved
-</footer>
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        © 2025 | Kiddora | All Rights Reserved
+    </footer>
+
+    <!-- Cropper JS at bottom — only needed on product form pages -->
+    <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
+
+    <script>
+    (function () {
+        const loader = document.getElementById('global-loader');
+        const label  = document.getElementById('loader-label');
+
+        function show(msg) {
+            label.textContent = msg || 'Loading...';
+            loader.classList.add('active');
+            document.body.classList.add('loading');
+        }
+
+        function hide() {
+            loader.classList.remove('active');
+            document.body.classList.remove('loading');
+        }
+
+        /* 1. Form submissions */
+        document.addEventListener('submit', function (e) {
+            if (e.target.tagName !== 'FORM') return;
+            const btn = e.target.querySelector('[type=submit]');
+            const lower = btn ? btn.textContent.trim().toLowerCase() : '';
+            const map = {
+                'save': 'Saving...', 'update': 'Updating...',
+                'delete': 'Deleting...', 'add': 'Adding...',
+                'upload': 'Uploading...', 'login': 'Signing in...',
+                'search': 'Searching...', 'sign': 'Signing in...',
+            };
+            let msg = 'Processing...';
+            for (const [key, val] of Object.entries(map)) {
+                if (lower.includes(key)) { msg = val; break; }
+            }
+            show(msg);
+        });
+
+        /* 2. Navigation link clicks */
+        document.addEventListener('click', function (e) {
+            const anchor = e.target.closest('a');
+            if (!anchor) return;
+            const href = anchor.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript')) return;
+            if (anchor.target === '_blank') return;
+            if (anchor.closest('form')) return;
+            if (anchor.hasAttribute('onclick')) return;
+            show('Loading...');
+        });
+
+        /* 3. Hide on page restore (back/forward cache) */
+        window.addEventListener('pageshow', hide);
+
+        /* 4. Hide on back/forward navigation */
+        window.addEventListener('popstate', hide);
+
+        /* 5. Safety net — never stay stuck longer than 15s */
+        document.addEventListener('submit', function () {
+            setTimeout(hide, 15000);
+        });
+    })();
+    </script>
 
 </body>
 </html>

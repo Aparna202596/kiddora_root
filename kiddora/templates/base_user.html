@@ -1,166 +1,227 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
-<script src="{% static 'js/ui-utils.js' %}"></script>
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-            <title>{% block title %}Kiddora{% endblock %}</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Font Awesome -->
-            <link rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-            crossorigin="anonymous" />
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Kiddora{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-            <style>
-                * { margin:0; padding:0; box-sizing:border-box; }
-                body { font-family:"Segoe UI", Arial, sans-serif; background:#fff; color:#333; }
-                a { text-decoration:none; color:inherit; }
-                ul { list-style:none; }
-/* HEADER */
-                .site-header {background:#fff; border-bottom:1px solid #eaeaea;}
-                .header-container {
-                    max-width:1400px;
-                    margin:auto;
-                    padding:14px 32px;
-                    display:flex;
-                    align-items:center;
-                    justify-content:space-between;}
-                .logo img { height:42px; }
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+          crossorigin="anonymous">
 
-/* NAV */
-                .main-nav ul {display:flex; gap:20px; align-items:center;
-                }
-                .main-nav a {font-size:15px; font-weight:500;}
-                .main-nav a:hover { color:#ff66cc; }
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #333; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
 
-/* ACTIONS */
-                .header-actions {display:flex; align-items:center; gap:15px;}
-                .search-form {position:relative;}
-                .search-form input {
-                    width:180px;
-                    height:34px;
-                    padding:0 36px 0 12px;
-                    border:1px solid #ccc;
-                    border-radius:18px;
-                }
-                .search-form button {
-                    position:absolute;
-                    right:6px;
-                    top:50%;
-                    transform:translateY(-50%);
-                    border:none;
-                    background:none;
-                    cursor:pointer;
-                    color:#f06292;
-                    font-size:14px;
-                }
-                .icon-btn {font-size:18px;}
-                .icon-btn:hover { color:#ff66cc; }
-                .profile {border:1px solid #ddd;padding:7px;border-radius:50%;}
-/* CONTENT */
-                .main-content {
-                    min-height:60vh;
-                    padding:40px 20px;
-                }
+        /* ── LOADER ── */
+        #global-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(3px);
+            z-index: 999999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            pointer-events: all !important;
+        }
+        #global-loader.active { display: flex; }
+        .loader-spinner {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 5px solid #f3d6ed;
+            border-top-color: #f062c0;
+            animation: spin 0.75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #444;
+            letter-spacing: 0.3px;
+        }
+        body.loading * { pointer-events: none !important; }
+        body.loading #global-loader { pointer-events: all !important; }
 
-/*  FOOTER */
+        /* ── HEADER ── */
+        .site-header { background: #fff; border-bottom: 1px solid #eaeaea; }
+        .header-container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo img { height: 42px; }
 
-                .site-footer { background:#fff; padding-top:40px; border-top:1px solid #fff; }
-                .footer-container {
-                    max-width:1200px; margin:auto; padding:0 20px;
-                    display:grid; grid-template-columns:repeat(4,1fr); gap:30px;
-                }
-                .footer-logo img { height:50px; }
-                .footer-column h4 { font-size:15px; margin-bottom:15px; color:#000; }
-                .footer-column ul li { margin-bottom:8px; }
-                .footer-column ul li a { font-size:14px; color:#555; }
-                .footer-column ul li a:hover { color:#f06292; }
-                .footer-column form { display:flex; flex-direction:column; gap:10px; }
-                .footer-column input[type="email"] { padding:8px 10px; border:1px solid #fff; border-radius:5px; }
-                .footer-column button { padding:8px; border:none; background:#f06292; color:#fff; border-radius:5px; cursor:pointer; }
-                .footer-column button:hover { background:#e91e63; }
-                .social-icons { margin-top:15px; display:flex; gap:15px; }
-                .social-icons a { font-size:18px; color:#333; }
-                .social-icons a:hover { color:#f06292; }
-                .footer-bottom { text-align:center; padding:15px 0; margin-top:30px; font-size:13px; color:#393939; border-top:1px solid #fff; }
-/* RESPONSIVE */
-                @media(max-width:992px){.main-nav { display:none; } .footer-container { grid-template-columns:repeat(2,1fr); } }
-                @media(max-width:576px){.footer-container { grid-template-columns:1fr; } }
-            </style>
-            {% block extra_css %}{% endblock %}
-        </head>
-        <body>
-            <header class="site-header">
-                <div class="header-container">
-                    <div class="logo">
-                        <a href="{% url 'shopcore:home' %}">
-                            <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
-                        </a>
-        </div>
+        /* ── NAV ── */
+        .main-nav ul { display: flex; gap: 20px; align-items: center; }
+        .main-nav a { font-size: 15px; font-weight: 500; }
+        .main-nav a:hover { color: #ff66cc; }
 
-        <nav class="main-nav">
-            <ul>
-                <li><a href="{% url 'shopcore:home' %}">Home</a></li>
-                <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
-                <li><a href="{% url 'products:category_list' %}">Categories</a></li>
-                <li><a href="{% url 'products:product_list' %}">Shop</a></li>
-                <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
-            </ul>
-        </nav>
+        /* ── HEADER ACTIONS ── */
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .search-form { position: relative; }
+        .search-form input {
+            width: 180px;
+            height: 34px;
+            padding: 0 36px 0 12px;
+            border: 1px solid #ccc;
+            border-radius: 18px;
+        }
+        .search-form button {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #f06292;
+            font-size: 14px;
+        }
+        .icon-btn { font-size: 18px; }
+        .icon-btn:hover { color: #ff66cc; }
+        .profile { border: 1px solid #ddd; padding: 7px; border-radius: 50%; }
 
-        <div class="header-actions">
-            <form method="get" action="{% url 'products:product_search' %}" class="search-form">
-                <input type="text" name="q" placeholder="Search products..."
-                        value="{{ request.GET.q|default:'' }}">
-                <button type="submit" aria-label="Search">
-                    <i class="fa fa-search"></i>
-                </button>
-            </form>
+        /* ── MAIN CONTENT ── */
+        .main-content { min-height: 60vh; padding: 40px 20px; }
 
-            <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
-            <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
-                <i class="fa-regular fa-user"></i>
-            </a>
-            <a href="#" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
-        </div>
+        /* ── FOOTER ── */
+        .site-footer { background: #fff; padding-top: 40px; border-top: 1px solid #eaeaea; }
+        .footer-container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-logo img { height: 50px; }
+        .footer-column h4 { font-size: 15px; margin-bottom: 15px; color: #000; }
+        .footer-column ul li { margin-bottom: 8px; }
+        .footer-column ul li a { font-size: 14px; color: #555; }
+        .footer-column ul li a:hover { color: #f06292; }
+        .footer-column form { display: flex; flex-direction: column; gap: 10px; }
+        .footer-column input[type="email"] {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .footer-column button {
+            padding: 8px;
+            border: none;
+            background: #f06292;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .footer-column button:hover { background: #e91e63; }
+        .social-icons { margin-top: 15px; display: flex; gap: 15px; }
+        .social-icons a { font-size: 18px; color: #333; }
+        .social-icons a:hover { color: #f06292; }
+        .footer-bottom {
+            text-align: center;
+            padding: 15px 0;
+            margin-top: 30px;
+            font-size: 13px;
+            color: #393939;
+            border-top: 1px solid #eaeaea;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 992px) {
+            .main-nav { display: none; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 576px) {
+            .footer-container { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Loader first child of body -->
+    <div id="global-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-label" id="loader-label">Loading...</div>
     </div>
-</header>
 
-<main class="main-content">
-    {% block content %}{% endblock %}
-</main>
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="{% url 'shopcore:home' %}">
+                    <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
+                </a>
+            </div>
 
-<footer class="site-footer">
-    <div class="footer-container">
-        <div class="footer-logo">
-            <img src="{% static 'images/kiddora_logo.PNG' %}">
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="{% url 'shopcore:home' %}">Home</a></li>
+                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
+                    <li><a href="{% url 'products:category_list' %}">Categories</a></li>
+                    <li><a href="{% url 'products:product_list' %}">Shop</a></li>
+                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <form method="get" action="{% url 'products:product_search' %}" class="search-form">
+                    <input type="text" name="q" placeholder="Search products..."
+                           value="{{ request.GET.q|default:'' }}">
+                    <button type="submit" aria-label="Search">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </form>
+                <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
+                <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
+                    <i class="fa-regular fa-user"></i>
+                </a>
+                <a href="#" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
+            </div>
         </div>
+    </header>
 
-        <div class="footer-column">
-            <h4>Info</h4>
-            <ul>
-                <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
-                <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
-                <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
-            </ul>
-        </div>
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
 
-        <div class="footer-column">
-            <h4>Policies</h4>
-            <ul>
-                <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
-                <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
-                <li><a href="{% url 'shopcore:terms_conditions' %}">Terms & Conditions</a></li>
-            </ul>
-        </div>
-
-        <div class="footer-column">
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-logo">
+                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
+            </div>
+            <div class="footer-column">
+                <h4>Info</h4>
+                <ul>
+                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
+                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
+                    <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Policies</h4>
+                <ul>
+                    <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
+                    <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
+                    <li><a href="{% url 'shopcore:terms_conditions' %}">Terms &amp; Conditions</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
                 <h4>Subscribe to Our Newsletter</h4>
                 <form method="post" action="#">
                     {% csrf_token %}
                     <input type="email" name="email" placeholder="Email Address" required>
-                    {% comment %} <button type="submit">Subscribe</button> {% endcomment %}
+                    <button type="submit">Subscribe</button>
                 </form>
                 <div class="social-icons">
                     <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -168,13 +229,70 @@
                     <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
                 </div>
             </div>
-    </div>
+        </div>
+        <div class="footer-bottom">
+            © 2025 Kiddora. All Rights Reserved.
+        </div>
+    </footer>
 
-    <div class="footer-bottom">
-        © 2025 Kiddora. All Rights Reserved.
-    </div>
-</footer>
-{% block extra_js %}{% endblock %}
-{% include "confirm_modal.html" %}
+    <!-- Page-specific JS -->
+    {% block extra_js %}{% endblock %}
+
+    <!-- Static assets loaded at bottom -->
+    <link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
+    <script src="{% static 'js/ui-utils.js' %}"></script>
+
+    <!-- Confirm modal (no duplicate loader inside) -->
+    {% include "confirm_modal.html" %}
+
+    <script>
+    (function () {
+        const loader = document.getElementById('global-loader');
+        const label  = document.getElementById('loader-label');
+
+        function show(msg) {
+            label.textContent = msg || 'Loading...';
+            loader.classList.add('active');
+            document.body.classList.add('loading');
+        }
+        function hide() {
+            loader.classList.remove('active');
+            document.body.classList.remove('loading');
+        }
+
+        document.addEventListener('submit', function (e) {
+            if (e.target.tagName !== 'FORM') return;
+            const btn = e.target.querySelector('[type=submit]');
+            const lower = btn ? btn.textContent.trim().toLowerCase() : '';
+            const map = {
+                'save': 'Saving...', 'update': 'Updating...',
+                'delete': 'Deleting...', 'add': 'Adding...',
+                'upload': 'Uploading...', 'login': 'Signing in...',
+                'search': 'Searching...', 'subscribe': 'Subscribing...',
+            };
+            let msg = 'Processing...';
+            for (const [key, val] of Object.entries(map)) {
+                if (lower.includes(key)) { msg = val; break; }
+            }
+            show(msg);
+        });
+
+        document.addEventListener('click', function (e) {
+            const anchor = e.target.closest('a');
+            if (!anchor) return;
+            const href = anchor.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript')) return;
+            if (anchor.target === '_blank') return;
+            if (anchor.closest('form')) return;
+            if (anchor.hasAttribute('onclick')) return;
+            show('Loading...');
+        });
+
+        window.addEventListener('pageshow', hide);
+        window.addEventListener('popstate', hide);
+        document.addEventListener('submit', function () { setTimeout(hide, 15000); });
+    })();
+    </script>
+
 </body>
 </html>

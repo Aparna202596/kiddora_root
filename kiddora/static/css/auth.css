@@ -26,7 +26,21 @@ body {
     padding: 35px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
-
+/* ── MESSAGES ── */
+.messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.message {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.message button {
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+}
+.message button:hover { opacity: 1; }
+.message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+.message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+.message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+.message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 /* LEFT SECTION */
 .auth-left {
     flex: 1;

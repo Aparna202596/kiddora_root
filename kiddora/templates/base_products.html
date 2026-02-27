@@ -1,31 +1,58 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
-<script src="{% static 'js/ui-utils.js' %}"></script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Kiddora{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Icons (Font Awesome) -->
-    
+
     <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-        integrity="sha512-..."
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer" />
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer">
+
     <style>
-/* GLOBAL RESET & BASE */
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:"Segoe UI", Arial, sans-serif; background-color:#fff; color:#333; }
-        a { text-decoration:none; color:inherit; }
-        ul { list-style:none; }
-/* HEADER */
-        .site-header {
-            width: 100%;
-            background: #ffffff;
-            border-bottom: 1px solid #eaeaea;
+        /* ── RESET ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #333; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* ── LOADER ── */
+        #global-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(3px);
+            z-index: 999999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            pointer-events: all !important;
         }
+        #global-loader.active { display: flex; }
+        .loader-spinner {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 5px solid #f3d6ed;
+            border-top-color: #f062c0;
+            animation: spin 0.75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-label {
+            font-size: 15px;
+            font-weight: 600;
+            color: #444;
+            letter-spacing: 0.3px;
+        }
+        body.loading * { pointer-events: none !important; }
+        body.loading #global-loader { pointer-events: all !important; }
+
+        /* ── HEADER ── */
+        .site-header { width: 100%; background: #fff; border-bottom: 1px solid #eaeaea; }
         .header-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -35,408 +62,353 @@
             justify-content: space-between;
         }
         .logo img { height: 42px; }
-/* Navigation */
-        .main-nav ul { display: flex; gap: 20px; align-items:center; }
+        .main-nav ul { display: flex; gap: 20px; align-items: center; }
         .main-nav ul li a { font-size: 15px; font-weight: 500; color: #333; }
         .main-nav ul li a:hover { color: #ff66cc; }
-        .category-dropdown { padding: 5px 10px; border-radius: 5px; border:1px solid #ccc; }
-/* Header Actions */
-        .header-actions { display:flex; align-items:center; gap:15px; }
-        .search-form { position: relative; display:flex; }
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+        .search-form { position: relative; display: flex; }
         .search-form input {
-            width: 180px; height:34px; padding:0 10px; border:1px solid #ccc; border-radius:18px;
+            width: 180px; height: 34px; padding: 0 10px;
+            border: 1px solid #ccc; border-radius: 18px;
         }
         .search-form button {
-            border:none; background:#f06292; color:#fff; padding:0 12px; border-radius:18px; cursor:pointer;
+            border: none; background: #f06292; color: #fff;
+            padding: 0 12px; border-radius: 18px; cursor: pointer;
         }
-        .search-form button:hover { background:#e91e63; }
-        .icon-btn { font-size:18px; color:#333; text-decoration:none; }
-        .icon-btn:hover { color:#ff66cc; }
-        .icon-btn.profile { border:1px solid #ddd; padding:7px; border-radius:50%; }
-        /* ACCOUNT LAYOUT */
-.account-layout {
-    max-width: 1400px;
-    margin: auto;
-    display: flex;
-    gap: 30px;
-}
+        .search-form button:hover { background: #e91e63; }
+        .icon-btn { font-size: 18px; color: #333; }
+        .icon-btn:hover { color: #ff66cc; }
+        .icon-btn.profile { border: 1px solid #ddd; padding: 7px; border-radius: 50%; }
 
-/* ========== FILTER SIDEBAR ========== */
-.filter {
-    width: 260px;
-    background: #fff;
-    border-radius: 10px;
-    padding: 18px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-}
+        /* ── MAIN CONTENT WRAPPER ── */
+        .main-content {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+            min-height: 60vh;
+        }
 
-.filter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 18px;
-}
+        /* ── PRODUCT LAYOUT ── */
+        .account-layout {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
 
-.filter-header h3 {
-    font-size: 15px;
-    font-weight: 600;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
+        /* ── FILTER SIDEBAR ── */
+        .filter {
+            width: 260px;
+            flex-shrink: 0;
+            background: #fff;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+        }
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .filter-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .clear-btn { font-size: 12px; color: #f06292; }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 16px; }
+        .sidebar-menu details { border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .sidebar-menu summary {
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-menu summary::-webkit-details-marker { display: none; }
+        .filter-options {
+            margin-top: 10px;
+            padding-left: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+        }
+        .filter-options label { display: flex; gap: 8px; cursor: pointer; }
+        .hierarchy {
+            margin-left: 12px;
+            margin-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .apply-filter-btn {
+            margin-top: 18px;
+            width: 100%;
+            padding: 9px;
+            border: none;
+            background: #f06292;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .apply-filter-btn:hover { background: #e91e63; }
 
-.clear-btn {
-    font-size: 12px;
-    color: #f06292;
-}
+        /* ── CONTENT AREA ── */
+        .account-content {
+            flex: 1;
+            background: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+        }
 
-.sidebar-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.sidebar-menu details {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-
-.sidebar-menu summary {
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.sidebar-menu summary::-webkit-details-marker {
-    display: none;
-}
-
-.filter-options {
-    margin-top: 10px;
-    padding-left: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 13px;
-}
-
-.filter-options label {
-    display: flex;
-    gap: 8px;
-    cursor: pointer;
-}
-
-.hierarchy {
-    margin-left: 12px;
-    margin-top: 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.apply-filter-btn {
-    margin-top: 18px;
-    width: 100%;
-    padding: 9px;
-    border: none;
-    background: #f06292;
-    color: #fff;
-    border-radius: 6px;
-    font-size: 14px;
-}
-.apply-filter-btn:hover {
-    background: #e91e63;
-}
-
-/* CONTENT AREA */
-.account-content {
-    flex: 1;
-    background: #fff;
-    border-radius: 10px;
-    padding: 30px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-}
-
-/* RESPONSIVE */
-@media (max-width: 992px) {
-    .account-layout {
-        flex-direction: column;
-    }
-
-    .account-sidebar {
-        width: 100%;
-    }
-}
-{% comment %} /* MAIN CONTENT*/
-        .main-content { min-height:60vh; padding:40px 20px; } {% endcomment %}
-/* FOOTER */
-        .site-footer { background:#fff; padding-top:40px; border-top:1px solid #fff; }
+        /* ── FOOTER ── */
+        .site-footer { background: #fff; padding-top: 40px; border-top: 1px solid #eaeaea; }
         .footer-container {
-            max-width:1200px; margin:auto; padding:0 20px;
-            display:grid; grid-template-columns:repeat(4,1fr); gap:30px;
+            max-width: 1200px; margin: auto; padding: 0 20px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;
         }
-        .footer-logo img { height:50px; }
-        .footer-column h4 { font-size:15px; margin-bottom:15px; color:#000; }
-        .footer-column ul li { margin-bottom:8px; }
-        .footer-column ul li a { font-size:14px; color:#555; }
-        .footer-column ul li a:hover { color:#f06292; }
-        .footer-column form { display:flex; flex-direction:column; gap:10px; }
-        .footer-column input[type="email"] { padding:8px 10px; border:1px solid #fff; border-radius:5px; }
-        .footer-column button { padding:8px; border:none; background:#f06292; color:#fff; border-radius:5px; cursor:pointer; }
-        .footer-column button:hover { background:#e91e63; }
-        .social-icons { margin-top:15px; display:flex; gap:15px; }
-        .social-icons a { font-size:18px; color:#333; }
-        .social-icons a:hover { color:#f06292; }
-        .footer-bottom { text-align:center; padding:15px 0; margin-top:30px; font-size:13px; color:#393939; border-top:1px solid #fff; }
-/* RESPONSIVE */
-        @media (max-width:992px) { .main-nav { display:none; } .footer-container { grid-template-columns:repeat(2,1fr); } }
-        @media (max-width:576px) { .footer-container { grid-template-columns:1fr; } .search-form input { width:140px; } }
+        .footer-logo img { height: 50px; }
+        .footer-column h4 { font-size: 15px; margin-bottom: 15px; color: #000; }
+        .footer-column ul li { margin-bottom: 8px; }
+        .footer-column ul li a { font-size: 14px; color: #555; }
+        .footer-column ul li a:hover { color: #f06292; }
+        .footer-column form { display: flex; flex-direction: column; gap: 10px; }
+        .footer-column input[type="email"] {
+            padding: 8px 10px; border: 1px solid #ddd; border-radius: 5px;
+        }
+        .footer-column button {
+            padding: 8px; border: none; background: #f06292;
+            color: #fff; border-radius: 5px; cursor: pointer;
+        }
+        .footer-column button:hover { background: #e91e63; }
+        .social-icons { margin-top: 15px; display: flex; gap: 15px; }
+        .social-icons a { font-size: 18px; color: #333; }
+        .social-icons a:hover { color: #f06292; }
+        .footer-bottom {
+            text-align: center; padding: 15px 0; margin-top: 30px;
+            font-size: 13px; color: #393939; border-top: 1px solid #eaeaea;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 992px) {
+            .main-nav { display: none; }
+            .account-layout { flex-direction: column; }
+            .filter { width: 100%; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 576px) {
+            .footer-container { grid-template-columns: 1fr; }
+            .search-form input { width: 140px; }
+        }
     </style>
+
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-<!-- HEADER -->
+
+    <!-- Loader — first child of body -->
+    <div id="global-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-label" id="loader-label">Loading...</div>
+    </div>
+
     <header class="site-header">
         <div class="header-container">
-<!-- Logo -->
             <div class="logo">
                 <a href="{% url 'shopcore:home' %}">
                     <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
                 </a>
             </div>
-<!-- Navigation -->
+
             <nav class="main-nav">
                 <ul>
                     <li><a href="{% url 'shopcore:home' %}">Home</a></li>
                     <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
                     <li><a href="{% url 'products:category_list' %}">Category</a></li>
-                    <li><a href="{% url 'products:product_list'%}">Shop</a></li>
+                    <li><a href="{% url 'products:product_list' %}">Shop</a></li>
                     <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
                 </ul>
             </nav>
-<!-- Actions -->
+
             <div class="header-actions">
-<!-- Search -->
                 <form method="get" action="{% url 'products:product_search' %}" class="search-form">
-                    <input 
-                        type="text"
-                        name="q"
-                        placeholder="Search products..."
-                        value="{{ request.GET.q|default:'' }}"
-                        required>
+                    <input type="text" name="q" placeholder="Search products..."
+                            value="{{ request.GET.q|default:'' }}">
                     <button type="submit" aria-label="Search">
                         <i class="fa fa-search"></i>
                     </button>
                 </form>
-<!-- Wishlist -->
                 <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
-<!-- Profile -->
-                <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile"><i class="fa-regular fa-user"></i></a>
-<!-- Cart -->
+                <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
+                    <i class="fa-regular fa-user"></i>
+                </a>
                 <a href="#" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
             </div>
         </div>
     </header>
 
     <main class="main-content">
-    <div class="account-layout">
+        <div class="account-layout">
 
-<!-- SIDEBAR -->
-<aside class="filter">
+            <!-- FILTER SIDEBAR -->
+            <aside class="filter">
+                <div class="filter-header">
+                    <h3><i class="fa-solid fa-sliders"></i> FILTER &amp; SORT</h3>
+                    <a href="{{ request.path }}" class="clear-btn">Clear All</a>
+                </div>
+                <form method="get">
+                    <ul class="sidebar-menu">
 
-    <!-- HEADER -->
-    <div class="filter-header">
-        <h3><i class="fa-solid fa-sliders"></i> FILTER & SORT</h3>
-        <a href="{{ request.path }}" class="clear-btn">Clear All</a>
-    </div>
-
-    <form method="get">
-        <ul class="sidebar-menu">
-            <!-- SORT BY -->
-            <li>
-                <details>
-                    <summary><i class="fa-solid fa-arrow-up-wide-short"></i> Sort By</summary>
-                    <div class="filter-options">
-                        {% for option in sort_options %}
-                            <label>
-                                <input type="checkbox" name="sort_by" value="{{ option.key }}">
-                                {{ option.label }}
-                            </label>
-                        {% endfor %}
-                    </div>
-                </details>
-            </li>
-
-
-            <!-- AGE GROUP -->
-            <li>
-                <details>
-                    <summary><i class="fa-solid fa-child"></i> Age Group</summary>
-                    <div class="filter-options">
-                        {% for age in age_groups %}
-                            <label>
-                                <input type="checkbox" name="age" value="{{ age.id }}">
-                                {{ age.name }}
-                            </label>
-                        {% empty %}
-                            <span class="empty">No age groups</span>
-                        {% endfor %}
-                    </div>
-                </details>
-            </li>
-
-            <!-- FABRIC TYPE -->
-            <li>
-                <details>
-                    <summary>
-                        <i class="fa-solid fa-shirt"></i> Fabric Type
-                    </summary>
-
-                    <div class="filter-options">
-                        {% for fabric in fabric_types %}
-                            <label>
-                                <input type="checkbox" name="fabric" value="{{ fabric }}">
-                                {{ fabric|title }}
-                            </label>
-                        {% empty %}
-                            <span style="font-size:12px;color:#999;">
-                                No fabric types available
-                            </span>
-                        {% endfor %}
-                    </div>
-                </details>
-            </li>
-
-            <!-- PRODUCT TYPES (DYNAMIC HIERARCHY) -->
-            <li>
-                <details>
-                    <summary>
-                        <i class="fa-solid fa-layer-group"></i> Product Types
-                    </summary>
-
-                    <div class="filter-options">
-
-                        {% for category in categories %}
-                            <!-- CATEGORY -->
-                            <label>
-                                <input type="checkbox" name="category" value="{{ category.id }}">
-                                {{ category.category_name }}
-                            </label>
-
-                            <div class="hierarchy">
-                                {% for sub in category.subcategories.all %}
-                                    <!-- SUBCATEGORY -->
+                        <!-- SORT BY -->
+                        <li>
+                            <details {% if sort_by %}open{% endif %}>
+                                <summary><i class="fa-solid fa-arrow-up-wide-short"></i> Sort By</summary>
+                                <div class="filter-options">
+                                    {% for option in sort_options %}
                                     <label>
-                                        <input type="checkbox" name="subcategory" value="{{ sub.id }}">
-                                        {{ sub.subcategory_name }}
+                                        <input type="radio" name="sort_by" value="{{ option.key }}"
+                                            {% if sort_by == option.key %}checked{% endif %}>
+                                        {{ option.label }}
                                     </label>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </li>
 
+                        <!-- PRODUCT TYPES -->
+                        <li>
+                            <details {% if selected_categories or selected_subcategories %}open{% endif %}>
+                                <summary><i class="fa-solid fa-layer-group"></i> Product Types</summary>
+                                <div class="filter-options">
+                                    {% for cat in categories %}
+                                    <label>
+                                        <input type="checkbox" name="category" value="{{ cat.id }}"
+                                            {% if cat.id|stringformat:"s" in selected_categories %}checked{% endif %}>
+                                        <strong>{{ cat.category_name }}</strong>
+                                    </label>
                                     <div class="hierarchy">
-                                        {% for product in sub.products.all %}
-                                            <!-- PRODUCT -->
-                                            <label>
-                                                <input type="checkbox" name="product" value="{{ product.id }}">
-                                                {{ product.product_name }}
-                                            </label>
-
-                                            <div class="hierarchy">
-                                                {% for variant in product.variants.all %}
-                                                    <!-- PRODUCT VARIANT -->
-                                                    <label>
-                                                        <input type="checkbox" name="variant" value="{{ variant.id }}">
-                                                        {{ variant.color }} / {{ variant.size }}
-                                                    </label>
-                                                {% endfor %}
-                                            </div>
+                                        {% for sub in cat.active_subcategories %}
+                                        <label>
+                                            <input type="checkbox" name="subcategory" value="{{ sub.id }}"
+                                                {% if sub.id|stringformat:"s" in selected_subcategories %}checked{% endif %}>
+                                            {{ sub.subcategory_name }}
+                                        </label>
                                         {% endfor %}
                                     </div>
-                                {% endfor %}
-                            </div>
+                                    {% empty %}
+                                    <span style="font-size:12px;color:#999;">No categories</span>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </li>
 
-                        {% endfor %}
+                        <!-- AGE GROUP -->
+                        <li>
+                            <details {% if selected_age_groups %}open{% endif %}>
+                                <summary><i class="fa-solid fa-child"></i> Age Group</summary>
+                                <div class="filter-options">
+                                    {% for age in age_groups %}
+                                    <label>
+                                        <input type="checkbox" name="age" value="{{ age.id }}"
+                                            {% if age.id|stringformat:"s" in selected_age_groups %}checked{% endif %}>
+                                        {{ age.age }}
+                                    </label>
+                                    {% empty %}
+                                    <span style="font-size:12px;color:#999;">No age groups</span>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </li>
 
-                    </div>
-                </details>
-            </li>
+                        <!-- GENDER -->
+                        <li>
+                            <details {% if selected_genders %}open{% endif %}>
+                                <summary><i class="fa-solid fa-children"></i> Gender</summary>
+                                <div class="filter-options">
+                                    {% for gender in genders %}
+                                    <label>
+                                        <input type="checkbox" name="gender" value="{{ gender.code }}"
+                                            {% if gender.code in selected_genders %}checked{% endif %}>
+                                        {{ gender.label }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </li>
 
-            <!-- GENDER -->
-            <li>
-                <details>
-                    <summary><i class="fa-solid fa-children"></i> Gender</summary>
-                    <div class="filter-options">
-                        {% for gender in genders %}
-                            <label>
-                                <input type="checkbox" name="gender" value="{{ gender.code }}">
-                                {{ gender.label }}
-                            </label>
-                        {% endfor %}
-                    </div>
-                </details>
-            </li>
+                        <!-- FABRIC TYPE -->
+                        <li>
+                            <details {% if selected_fabrics %}open{% endif %}>
+                                <summary><i class="fa-solid fa-shirt"></i> Fabric Type</summary>
+                                <div class="filter-options">
+                                    {% for fabric in fabric_types %}
+                                    <label>
+                                        <input type="checkbox" name="fabric" value="{{ fabric.code }}"
+                                            {% if fabric.code in selected_fabrics %}checked{% endif %}>
+                                        {{ fabric.label }}
+                                    </label>
+                                    {% empty %}
+                                    <span style="font-size:12px;color:#999;">No fabric types</span>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </li>
 
-            <!-- COLOR -->
-            <li>
-                <details>
-                    <summary>
-                        <i class="fa-solid fa-palette"></i> Color
-                    </summary>
+                        <!-- COLOR -->
+                        <li>
+                            <details {% if selected_colors %}open{% endif %}>
+                                <summary><i class="fa-solid fa-palette"></i> Color</summary>
+                                <div class="filter-options">
+                                    {% for color in colors %}
+                                    <label>
+                                        <input type="checkbox" name="color" value="{{ color.id }}"
+                                            {% if color.id|stringformat:"s" in selected_colors %}checked{% endif %}>
+                                        {{ color.color }}
+                                    </label>
+                                    {% empty %}
+                                    <span style="font-size:12px;color:#999;">No colors</span>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </li>
 
-                    <div class="filter-options">
-                        {% for color in colors %}
-                            <label>
-                                <input type="checkbox" name="color" value="{{ color }}">
-                                {{ color|title }}
-                            </label>
-                        {% empty %}
-                            <span style="font-size:12px;color:#999;">No colors available</span>
-                        {% endfor %}
-                    </div>
-                </details>
-            </li>
+                        <!-- PRICE -->
+                        <li>
+                            <details {% if request.GET.min_price or request.GET.max_price %}open{% endif %}>
+                                <summary><i class="fa-solid fa-indian-rupee-sign"></i> Price</summary>
+                                <div class="filter-options">
+                                    <input type="number" name="min_price" placeholder="Min ₹"
+                                        value="{{ request.GET.min_price|default:'' }}">
+                                    <input type="number" name="max_price" placeholder="Max ₹"
+                                        value="{{ request.GET.max_price|default:'' }}">
+                                </div>
+                            </details>
+                        </li>
 
-            <!-- PRICE -->
-            <li>
-                <details>
-                    <summary><i class="fa-solid fa-indian-rupee-sign"></i> Price</summary>
-                    <div class="filter-options">
-                        <input type="number"
-                                name="min_price"
-                                placeholder="Min"
-                                value="{{ request.GET.min_price|default:min_price }}">
+                    </ul>
+                    <button type="submit" class="apply-filter-btn">Apply Filters</button>
+                </form>
+            </aside>
 
-                        <input type="number"
-                                name="max_price"
-                                placeholder="Max"
-                                value="{{ request.GET.max_price|default:max_price }}">
-                    </div>
-                </details>
-            </li>
+            <!-- PAGE CONTENT -->
+            <section class="account-content">
+                {% block content %}{% endblock %}
+            </section>
 
+        </div>
+    </main>
 
-        </ul>
-
-        <button type="submit" class="apply-filter-btn">
-            Apply Filters
-        </button>
-
-    </form>
-</aside>
-
-
-<!-- PAGE CONTENT -->
-        <section class="account-content">
-            {% block content %}{% endblock %}
-        </section>
-
-    </div>
-</main>
-
-<!-- FOOTER -->
     <footer class="site-footer">
         <div class="footer-container">
-            <div class="footer-logo"><img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo"></div>
+            <div class="footer-logo">
+                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
+            </div>
             <div class="footer-column">
                 <h4>Info</h4>
                 <ul>
@@ -450,7 +422,7 @@
                 <ul>
                     <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy Notice</a></li>
                     <li><a href="{% url 'shopcore:return_policy' %}">Return Policy</a></li>
-                    <li><a href="{% url 'shopcore:terms_conditions' %}">Terms and Conditions</a></li>
+                    <li><a href="{% url 'shopcore:terms_conditions' %}">Terms &amp; Conditions</a></li>
                     <li><a href="{% url 'shopcore:cookie_policy' %}">Cookie Policy</a></li>
                 </ul>
             </div>
@@ -459,7 +431,7 @@
                 <form method="post" action="#">
                     {% csrf_token %}
                     <input type="email" name="email" placeholder="Email Address" required>
-                    {% comment %} <button type="submit">Subscribe</button> {% endcomment %}
+                    <button type="submit">Subscribe</button>
                 </form>
                 <div class="social-icons">
                     <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -470,6 +442,63 @@
         </div>
         <div class="footer-bottom">© 2025 | Kiddora | All Rights Reserved</div>
     </footer>
+
+    <link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
+    <script src="{% static 'js/ui-utils.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+
     {% include "confirm_modal.html" %}
+
+    <script>
+    (function () {
+        const loader = document.getElementById('global-loader');
+        const label  = document.getElementById('loader-label');
+
+        function show(msg) {
+            label.textContent = msg || 'Loading...';
+            loader.classList.add('active');
+            document.body.classList.add('loading');
+        }
+        function hide() {
+            loader.classList.remove('active');
+            document.body.classList.remove('loading');
+        }
+
+        document.addEventListener('submit', function (e) {
+            if (e.target.tagName !== 'FORM') return;
+            const btn = e.target.querySelector('[type=submit]');
+            const lower = btn ? btn.textContent.trim().toLowerCase() : '';
+            const map = {
+                'save': 'Saving...', 'update': 'Updating...',
+                'delete': 'Deleting...', 'add': 'Adding...',
+                'upload': 'Uploading...', 'login': 'Signing in...',
+                'search': 'Searching...', 'apply': 'Filtering...',
+                'subscribe': 'Subscribing...',
+            };
+            let msg = 'Processing...';
+            for (const [key, val] of Object.entries(map)) {
+                if (lower.includes(key)) { msg = val; break; }
+            }
+            show(msg);
+        });
+
+        document.addEventListener('click', function (e) {
+            const anchor = e.target.closest('a');
+            if (!anchor) return;
+            const href = anchor.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript')) return;
+            if (anchor.target === '_blank') return;
+            if (anchor.closest('form')) return;
+            if (anchor.hasAttribute('onclick')) return;
+            show('Loading...');
+        });
+
+        window.addEventListener('pageshow', hide);
+        window.addEventListener('popstate', hide);
+        document.addEventListener('submit', function () { setTimeout(hide, 15000); });
+    })();
+    </script>
+
 </body>
 </html>

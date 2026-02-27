@@ -51,7 +51,7 @@ def delete_profile(request):
         user.delete()
 
         messages.success(request, f"Account {username} deleted successfully.")
-        return redirect("anonymous_home")
+        return redirect("shopcore:anonymous_home")
 
     return render(request, "accounts/profile/delete_profile.html", {"user": user})
 

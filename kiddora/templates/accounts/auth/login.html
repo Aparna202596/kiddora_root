@@ -7,133 +7,129 @@
     <title>Login | Kiddora</title>
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
     <style>
+        .auth-left h2 { text-align: center; font-size: 28px; margin-bottom: 24px; color: #111827; }
 
-    /* Center the h2 */
-        .auth-left h2 {
-            text-align: center;
-            font-size: 28px;
-            margin-bottom: 24px;
-            color: #111827;
+        /* ── MESSAGES ── */
+        .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .message {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
         }
-    /* Google login button */
-    .google-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        background-color: #fff;
-        color: #444;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 10px;
-        font-weight: 500;
-        text-decoration: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        width: 100%;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        font-size: 14px;
-    }
+        .message button {
+            background: none; border: none; cursor: pointer;
+            font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+        }
+        .message button:hover { opacity: 1; }
+        .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+        .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
 
-    .google-btn:hover {
-        background-color: #f7f7f7;
-    }
-
-    .google-btn img {
-        width: 18px;
-        height: 18px;
-    }
-     /* Password toggle */
-    .password-field {
-        position: relative;
-    }
-
-    .toggle-password {
-        position: absolute;
-        right: 12px;
-        top: 10px;
-        cursor: pointer;
-        font-size: 14px;
-    }
-
-    /* Error messages */
-    .error-box {
-        background: #fee2e2;
-        color: #991b1b;
-        padding: 10px;
-        border-radius: 6px;
-        margin-bottom: 12px;
-        font-size: 14px;
-    }
+        /* ── GOOGLE BUTTON ── */
+        .google-btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: #fff; color: #444; border: 1px solid #ddd;
+            border-radius: 6px; padding: 10px; font-weight: 500;
+            text-decoration: none; width: 100%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px;
+            transition: background 0.2s;
+        }
+        .google-btn:hover { background: #f7f7f7; }
+        .google-btn img { width: 18px; height: 18px; }
+        
+        /* ── PASSWORD TOGGLE ── */
+        .password-field { position: relative; }
+        .password-field input {
+            width: 100%;
+            padding: 12px 42px 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+        .password-field input:focus {
+            border-color: #eb5ed6;
+            outline: none;
+        }
+        .toggle-password {
+            position: absolute; right: 12px; top: 50%;
+            transform: translateY(-50%); cursor: pointer;
+            font-size: 16px; user-select: none;
+        }
     </style>
 </head>
 <body>
-
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-left">
             <h2>Login</h2>
 
             {% if messages %}
+            <div class="messages" id="msgContainer">
                 {% for message in messages %}
-                    <div class="error-box">
-                        {{ message }}
-                    </div>
+                <div class="message {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                </div>
                 {% endfor %}
+            </div>
             {% endif %}
+
             <a href="{% url 'accounts:google_login' %}" class="google-btn">
-            <img src="{% static 'images/google_icon.png' %}" alt="Google Logo">
+                <img src="{% static 'images/google_icon.png' %}" alt="Google Logo">
                 Login with Google
             </a>
-
             <div class="divider">or</div>
 
             <form method="post" novalidate>
                 {% csrf_token %}
-
-                <input type="email" name="email" placeholder="Email" value="{{ form_data.email|default:remembered_user }}" required>
+                <input type="email" name="email" placeholder="Email"
+                        value="{{ form_data.email|default:remembered_user }}" required>
 
                 <div class="password-field">
-                    <input type="password"
-                            id="password"
-                            name="password"
-                            placeholder="Password"
-                            required>
-                    <span class="toggle-password" onclick="togglePassword()">👁</span>
+                    <input type="password" id="password" name="password"
+                            placeholder="Password" required>
+                    <span class="toggle-password"
+                            onclick="togglePassword('password', this)">👁</span>
                 </div>
 
                 <label>
                     <input type="checkbox" name="remember_me"
-                    {% if form_data.remember_me %}checked{% endif %}>
+                            {% if form_data.remember_me %}checked{% endif %}>
                     Remember Me
                 </label>
-                
-                <a href="{% url 'accounts:forgot_password' %}">
-                    Forgot Password?
-                </a><br>
 
+                <a href="{% url 'accounts:forgot_password' %}">Forgot Password?</a><br>
                 <button type="submit" class="primary-btn">Login</button>
             </form>
 
             <p class="bottom-text">
-                New User?
-                <a href="{% url 'accounts:signup' %}">Sign up now!</a>
+                New User? <a href="{% url 'accounts:signup' %}">Sign up now!</a>
             </p>
         </div>
-
-
         <div class="auth-right">
             <img src="{% static 'images/gcas_01.jpeg' %}" alt="Login image">
         </div>
     </div>
 </div>
-<script>
-function togglePassword() {
-    const passwordField = document.getElementById("password");
-    passwordField.type =
-        passwordField.type === "password" ? "text" : "password";
-}
-</script>
 
+<script>
+    function togglePassword(fieldId, icon) {
+        const field = document.getElementById(fieldId);
+        const isText = field.type === "text";
+        field.type = isText ? "password" : "text";
+        icon.textContent = isText ? "👁" : "⌣";
+    }
+
+    /* ── Auto-dismiss messages after 15 seconds ── */
+    const msgContainer = document.getElementById("msgContainer");
+    if (msgContainer) {
+        setTimeout(() => {
+            msgContainer.querySelectorAll(".message").forEach(msg => {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 15000);
+    }
+</script>
 </body>
 </html>

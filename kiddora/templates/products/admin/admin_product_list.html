@@ -157,7 +157,7 @@ tbody tr:hover {
         <table id="productTable">
             <thead>
                 <tr>
-                    <th><a href="?sort=id&dir={% if sort == 'id' and dir == 'asc' %}desc{% else %}asc{% endif %}"> ID ⬍ </a></th>
+                    {% comment %} <th><a href="?sort=id&dir={% if sort == 'id' and dir == 'asc' %}desc{% else %}asc{% endif %}"> ID ⬍ </a></th> {% endcomment %}
                     <th><a href="?sort=product_name&dir={% if sort == 'product_name' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Product Name ⬍ </a></th>
                     <th><a href="?sort=brand&dir={% if sort == 'brand' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Brand ⬍ </a></th>
                     <th><a href="?sort=base_price&dir={% if sort == 'base_price' and dir == 'asc' %}desc{% else %}asc{% endif %}"> Base Price ⬍ </a></th>
@@ -173,7 +173,7 @@ tbody tr:hover {
             <tbody>
             {% for prod in page_obj %}
                 <tr>
-                    <td>{{ prod.id }}</td>
+                    {% comment %} <td>{{ prod.id }}</td> {% endcomment %}
                     <td>
                         <a href="{% url 'products:admin_product_details' prod.id %}">
                             {{ prod.product_name }}
@@ -194,7 +194,7 @@ tbody tr:hover {
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7">No products found</td>
+                    <td colspan="10">No products found</td>
                 </tr>
             {% endfor %}
             </tbody>

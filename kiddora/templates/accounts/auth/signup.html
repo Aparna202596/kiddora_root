@@ -5,98 +5,107 @@
     <meta charset="UTF-8">
     <title>Signup | Kiddora</title>
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-
     <style>
-            /* Center the h2 */
-        .auth-left h2 {
-            text-align: center;
-            font-size: 28px;
-            margin-bottom: 24px;
-            color: #111827;
-        }
-        .password-field {
-            position: relative;
-        }
+        .auth-left h2 { text-align: center; font-size: 28px; margin-bottom: 24px; color: #111827; }
 
+        /* ── MESSAGES ── */
+        .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .message {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+        }
+        .message button {
+            background: none; border: none; cursor: pointer;
+            font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+        }
+        .message button:hover { opacity: 1; }
+        .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+        .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+
+        /* ── PASSWORD ── */
+        .password-field { position: relative; }
+        .password-field input {
+            width: 100%; padding: 12px 42px 12px 15px;
+            border-radius: 8px; border: 1px solid #ccc;
+            font-size: 15px; transition: border-color 0.3s;
+        }
+        .password-field input:focus { border-color: #eb5ed6; outline: none; }
         .toggle-password {
-            position: absolute;
-            right: 12px;
-            top: 10px;
-            cursor: pointer;
+            position: absolute; right: 12px; top: 50%;
+            transform: translateY(-50%); cursor: pointer;
+            font-size: 16px; user-select: none;
         }
 
-        .strength-container {
-            width: 100%;
-            height: 6px;
-            background: #eee;
-            border-radius: 4px;
-            margin-top: 6px;
-        }
+        /* ── STRENGTH BAR ── */
+        .strength-container { height: 6px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+        #strengthBar { height: 100%; width: 0%; border-radius: 4px; transition: width 0.3s, background 0.3s; }
+        #strengthText { font-size: 12px; margin-top: 2px; }
 
-        #strengthBar {
-            height: 6px;
-            width: 0%;
-            border-radius: 4px;
-            transition: width 0.3s;
-        }
-
+        /* ── PASSWORD RULES ── */
         .password-rules {
-            list-style: none;
-            padding: 0;
-            font-size: 13px;
+            list-style: none; padding: 0;
+            display: flex; flex-direction: column; gap: 4px;
+            font-size: 12px; color: #9ca3af;
         }
+        .password-rules li::before { content: "✖ "; }
+        .password-rules li.valid { color: #16a34a; }
+        .password-rules li.valid::before { content: "✔ "; }
 
-        .password-rules li {
-            color: #9ca3af;
-        }
-
-        .password-rules li.valid {
-            color: #16a34a;
-        }
-
-        #matchText {
-            font-size: 13px;
-        }
+        /* ── MATCH TEXT ── */
+        #matchText { font-size: 12px; margin-top: -6px; }
     </style>
 </head>
 <body>
-
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-left">
             <h2>Create Account</h2>
 
+            {% if messages %}
+            <div class="messages" id="msgContainer">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <form method="post" novalidate>
                 {% csrf_token %}
-
-                <input type="text" name="username" placeholder="User Name" value="{{ form_data.username }}" required>
-                <input type="email" name="email" placeholder="Email" required>
+                <input type="text" name="username" placeholder="User Name"
+                        value="{{ form_data.username|default:'' }}" required>
+                <input type="email" name="email" placeholder="Email"
+                        value="{{ form_data.email|default:'' }}" required>
 
                 <div class="password-field">
-                    <input type="password" id="password1" name="password1" placeholder="Password" required>
-                    <span class="toggle-password" onclick="togglePassword('password1', this)">👁</span>
+                    <input type="password" id="password1" name="password1"
+                            placeholder="Password" required>
+                    <span class="toggle-password"
+                            onclick="togglePassword('password1', this)">👁</span>
                 </div>
 
-                <!-- Strength bar -->
                 <div class="strength-container">
                     <div id="strengthBar"></div>
                 </div>
                 <p id="strengthText"></p>
 
-                <!-- Requirements -->
                 <ul class="password-rules">
-                    <li id="rule-length">✔ At least 6 characters</li>
-                    <li id="rule-uppercase">✔ One uppercase letter</li>
-                    <li id="rule-number">✔ One number</li>
-                    <li id="rule-special">✔ One special character</li>
+                    <li id="rule-length">At least 6 characters</li>
+                    <li id="rule-uppercase">One uppercase letter</li>
+                    <li id="rule-number">One number</li>
+                    <li id="rule-special">One special character</li>
                 </ul>
 
                 <div class="password-field">
-                    <input type="password" id="password2" name="password2" placeholder="Confirm Password" required>
-                    <span class="toggle-password" onclick="togglePassword('password2', this)">👁</span>
+                    <input type="password" id="password2" name="password2"
+                            placeholder="Confirm Password" required>
+                    <span class="toggle-password"
+                            onclick="togglePassword('password2', this)">👁</span>
                 </div>
-
                 <p id="matchText"></p>
+
                 <button type="submit" class="primary-btn">Sign Up</button>
             </form>
 
@@ -105,67 +114,53 @@
                 <a href="{% url 'accounts:login' %}">Login now!</a>
             </p>
         </div>
-
         <div class="auth-right">
             <img src="{% static 'images/gcas_08.jpeg' %}" alt="Signup image">
         </div>
     </div>
 </div>
+
 <script>
     const passwordInput = document.getElementById("password1");
     const confirmInput = document.getElementById("password2");
-
     const strengthBar = document.getElementById("strengthBar");
     const strengthText = document.getElementById("strengthText");
-
     const ruleLength = document.getElementById("rule-length");
     const ruleUpper = document.getElementById("rule-uppercase");
     const ruleNumber = document.getElementById("rule-number");
     const ruleSpecial = document.getElementById("rule-special");
+    const matchText = document.getElementById("matchText");
 
     passwordInput.addEventListener("input", () => {
         const val = passwordInput.value;
-
         let strength = 0;
 
-        if (val.length >= 6) {
-            ruleLength.classList.add("valid");
-            strength++;
-        } else ruleLength.classList.remove("valid");
+        val.length >= 6 ? (ruleLength.classList.add("valid"),  strength++) : ruleLength.classList.remove("valid");
+        /[A-Z]/.test(val) ? (ruleUpper.classList.add("valid"),   strength++) : ruleUpper.classList.remove("valid");
+        /[0-9]/.test(val) ? (ruleNumber.classList.add("valid"),  strength++) : ruleNumber.classList.remove("valid");
+        /[^A-Za-z0-9]/.test(val) ? (ruleSpecial.classList.add("valid"), strength++) : ruleSpecial.classList.remove("valid");
 
-        if (/[A-Z]/.test(val)) {
-            ruleUpper.classList.add("valid");
-            strength++;
-        } else ruleUpper.classList.remove("valid");
-
-        if (/[0-9]/.test(val)) {
-            ruleNumber.classList.add("valid");
-            strength++;
-        } else ruleNumber.classList.remove("valid");
-
-        if (/[^A-Za-z0-9]/.test(val)) {
-            ruleSpecial.classList.add("valid");
-            strength++;
-        } else ruleSpecial.classList.remove("valid");
-
-        // Strength indicator
-        const width = strength * 25;
-        strengthBar.style.width = width + "%";
-
+        strengthBar.style.width = (strength * 25) + "%";   // ← was undefined 'width'
         if (strength <= 1) {
             strengthBar.style.background = "#ef4444";
             strengthText.textContent = "Weak password";
-        } else if (strength === 2 || strength === 3) {
+            strengthText.style.color = "#ef4444";
+        } else if (strength <= 3) {
             strengthBar.style.background = "#f59e0b";
             strengthText.textContent = "Medium password";
+            strengthText.style.color = "#f59e0b";
         } else {
             strengthBar.style.background = "#16a34a";
             strengthText.textContent = "Strong password";
+            strengthText.style.color = "#16a34a";
         }
+        checkMatch();
     });
 
-    confirmInput.addEventListener("input", () => {
-        const matchText = document.getElementById("matchText");
+    confirmInput.addEventListener("input", checkMatch);
+
+    function checkMatch() {
+        if (!confirmInput.value) { matchText.textContent = ""; return; }
         if (confirmInput.value === passwordInput.value) {
             matchText.textContent = "Passwords match ✔";
             matchText.style.color = "#16a34a";
@@ -173,14 +168,26 @@
             matchText.textContent = "Passwords do not match";
             matchText.style.color = "#ef4444";
         }
-    });
+    }
 
     function togglePassword(fieldId, icon) {
         const field = document.getElementById(fieldId);
-        field.type = field.type === "password" ? "text" : "password";
+        const isText = field.type === "text";
+        field.type = isText ? "password" : "text";
+        icon.textContent = isText ? "👁" : "⌣";
     }
-    </script>
+
+    /* ── Auto-dismiss messages after 15 seconds ── */
+    const msgContainer = document.getElementById("msgContainer");
+    if (msgContainer) {
+        setTimeout(() => {
+            msgContainer.querySelectorAll(".message").forEach(msg => {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 15000);
+    }
+</script>
 </body>
 </html>
-
-

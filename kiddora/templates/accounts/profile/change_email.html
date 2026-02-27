@@ -90,24 +90,37 @@
         }
 
         .messages {
-            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
         }
-
         .message {
-            padding: 10px;
-            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 8px;
             font-size: 14px;
+            font-weight: 500;
         }
+        .message button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            padding: 0 0 0 10px;
+            color: inherit;
+            opacity: 0.7;
+        }
+        .message button:hover { opacity: 1; }
 
-        .message.error {
-            background-color: #ffe5e5;
-            color: #d60000;
-        }
-
-        .message.success {
-            background-color: #e6ffed;
-            color: #1a7f37;
-        }
+        /* Django message tag colours */
+        .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+        .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+        .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+        .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 
         @media (max-width: 768px) {
             .auth-card {
@@ -132,15 +145,6 @@
 
         <div class="auth-center">
             <h2>Change Email</h2>
-
-            {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="message {{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
             <form method="post">
                 {% csrf_token %}
                 <input name="email" type="email" placeholder="Enter New Email Address" required>
