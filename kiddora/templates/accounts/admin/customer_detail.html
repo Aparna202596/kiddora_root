@@ -17,6 +17,7 @@
     margin-bottom: 24px;
 }
 
+
 .detail-card h2 {
     font-size: 24px;
     margin-bottom: 20px;
@@ -78,6 +79,22 @@ th {
     margin-bottom: 16px;
     border: 2px solid #e5e7eb;
 }
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 26px;
+}
+
+.btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #fff;
+    text-decoration: none;
+}
+
+.btn-secondary { background: #777; }
 </style>
 
 <div class="customer-wrapper">
@@ -148,5 +165,8 @@ th {
             </tbody>
         </table>
     </div>
+    <div class="actions">
+    <a href="{% url 'accounts:admin_user_list' %}" class="btn btn-secondary">← Back</a>
+</div>
 </div>
 {% endblock %}

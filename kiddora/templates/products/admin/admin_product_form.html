@@ -307,10 +307,9 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
     </div>
     {% endfor %}
 </div>
-    
 
 <label>About Product</label>
-<textarea name="about_product" rows="3">{{ product.about_product|default:'' }}</textarea>
+<textarea name="about_product" rows="4">{{ product.about_product|default:'' }}</textarea>
 
 {% if product %}
 <label>
@@ -320,7 +319,7 @@ value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{
 {% endif %}
 
 <div class="actions">
-    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
+    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">Back</a>
     <button type="submit" class="btn btn-primary">Save</button>
 </div>
 
@@ -556,7 +555,6 @@ function cropImage() {
     }
 }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script>
 /* === PRICE CALCULATION === */
 function updateFinalPrice() {

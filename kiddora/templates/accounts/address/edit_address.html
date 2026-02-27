@@ -1,65 +1,112 @@
-{% extends "base_profile.html" %} 
+{% extends "base_profile.html" %}
 {% block content %}
 <style>
     .form-container {
-        max-width: 500px;
-        margin: 30px auto;
-        padding: 20px;
-        background: #fff;
-        border-radius: 12px;
+        max-width: 500px; margin: 30px auto; padding: 20px;
+        background: #fff; border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
-    .form-container h2 {
-        text-align: center;
-        color: #f062c0;
-        margin-bottom: 20px;
-    }
+    .form-container h2 { text-align: center; color: #f062c0; margin-bottom: 20px; }
     .form-container form input,
     .form-container form select {
-        width: 100%;
-        padding: 10px 12px;
-        margin: 8px 0;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        font-size: 14px;
+        width: 100%; padding: 10px 12px; margin: 8px 0;
+        border-radius: 8px; border: 1px solid #ddd; font-size: 14px;
     }
     .form-container form button {
-        width: 100%;
-        padding: 10px;
-        background: #f062c0;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        margin-top: 12px;
+        width: 100%; padding: 10px; background: #f062c0; color: #fff;
+        border: none; border-radius: 8px; font-size: 16px;
+        margin-top: 12px; cursor: pointer; transition: 0.3s;
+    }
+    .form-container form button:hover { background: #e94cab; }
+    .default-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #555;
         cursor: pointer;
-        transition: 0.3s;
     }
-    .form-container form button:hover {
-        background: #e94cab;
+    .default-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #f062c0;
+        cursor: pointer;
+        margin: 0;
     }
+    .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .message {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    }
+    .message button {
+        background: none; border: none; cursor: pointer;
+        font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+    }
+    .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+    .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
 </style>
 
 <div class="form-container">
     <h2>Edit Address</h2>
+
+    {% if messages %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <form method="post">
         {% csrf_token %}
-        <input name="address_line1" value="{{ form_data.full_name|default: address.address_line1 }}" placeholder="Address Line 1">
-        <input name="city" value="{{ address.city }}" placeholder="City">
-        <input name="state" value="{{ address.state }}" placeholder="State">
-        <input name="country" value="{{ address.country }}" placeholder="Country">
-        <input name="pincode" value="{{ address.pincode }}" placeholder="Pincode">
-        
+        <input name="address_line1"
+                value="{{ form_data.address_line1|default:address.address_line1 }}"
+                placeholder="Address Line 1" required>
+        <input name="city"
+                value="{{ form_data.city|default:address.city }}"
+                placeholder="City" required>
+        <input name="state"
+                value="{{ form_data.state|default:address.state }}"
+                placeholder="State" required>
+        <input name="country"
+                value="{{ form_data.country|default:address.country }}"
+                placeholder="Country" required>
+        <input name="pincode"
+                value="{{ form_data.pincode|default:address.pincode }}"
+                placeholder="Pincode" required>
+
         <label>Address Type</label>
         <select name="address_type" required>
             <option value="">-- Select --</option>
-            <option value="home" {% if address.address_type == "home" %}selected{% endif %}>Home</option>
-            <option value="work" {% if address.address_type == "work" %}selected{% endif %}>Work</option>
+            <option value="home"  {% if address.address_type == "home"  %}selected{% endif %}>Home</option>
+            <option value="work"  {% if address.address_type == "work"  %}selected{% endif %}>Work</option>
             <option value="other" {% if address.address_type == "other" %}selected{% endif %}>Other</option>
         </select>
-        
-        <button type="submit"onclick="confirmUpdate('editForm')" >Update</button>
-    </form>
+
+        <label class="default-label">
+            <input type="checkbox" name="is_default"
+                {% if address.is_default %}checked{% endif %}>
+            Default
+        </label>
+
+        <button type="submit">Update</button>
     </form>
 </div>
+
+<script>
+    const msgContainer = document.getElementById("msgContainer");
+    if (msgContainer) {
+        setTimeout(() => {
+            msgContainer.querySelectorAll(".message").forEach(msg => {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 15000);
+    }
+</script>
 {% endblock %}
