@@ -31,11 +31,11 @@ def address_add(request):
     if request.method == "POST":
         form_data = request.POST.dict()
         address_line1 = request.POST.get("address_line1", "").strip()
-        city          = request.POST.get("city", "").strip()
-        state         = request.POST.get("state", "").strip()       
-        country       = request.POST.get("country", "").strip()     
-        pincode       = request.POST.get("pincode", "").strip()
-        address_type  = request.POST.get("address_type", "").strip()
+        city = request.POST.get("city", "").strip()
+        state = request.POST.get("state", "").strip()       
+        country = request.POST.get("country", "").strip()     
+        pincode = request.POST.get("pincode", "").strip()
+        address_type = request.POST.get("address_type", "").strip()
 
         if not all([address_line1, city, state, country, pincode]):
             messages.error(request, "All fields are required.")

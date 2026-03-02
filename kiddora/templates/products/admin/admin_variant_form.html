@@ -1,102 +1,297 @@
 {% extends "base_admin.html" %}
 {% block content %}
 <style>
-.form-box{
-    width:46%;
-    margin:40px auto;
-    padding:26px;
-    background:#f7f7f9;
-    border-radius:14px;
-    box-shadow:0 6px 16px rgba(0,0,0,.08)
+.form-box {
+    width: 46%;
+    margin: 40px auto;
+    padding: 26px;
+    background: #f7f7f9;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.08);
 }
-h2{text-align:center;margin-bottom:22px}
-label{display:block;margin-top:14px;font-weight:600}
-select,input{
-    width:100%;
-    padding:10px;
-    margin-top:6px;
-    border-radius:8px;
-    border:1px solid #cfcfcf
+h2 { text-align: center; margin-bottom: 22px; }
+label { display: block; margin-top: 14px; font-weight: 600; }
+input {
+    width: 100%; padding: 10px; margin-top: 6px;
+    border-radius: 8px; border: 1px solid #cfcfcf;
 }
-.actions{
-    display:flex;
-    justify-content:space-between;
-    margin-top:24px
+
+/* ── CUSTOM SELECT (matches product form) ── */
+.custom-select { position: relative; margin-top: 8px; }
+
+.select-box {
+    width: 100%;
+    padding: 10px 40px 10px 12px;
+    border: 1px solid #cfcfcf;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    position: relative;
+    font-size: 14px;
+    color: #333;
+    user-select: none;
 }
-.btn{
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    color:#fff;
-    text-decoration:none
+.select-box::after {
+    content: "▼";
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px; color: #666;
+    pointer-events: none;
 }
-.btn-primary{background:#f062c0}
-.btn-secondary{background:#777}
-.note{
-    margin-top:14px;
-    font-size:13px;
-    color:#666
+
+.options-container {
+    display: none;
+    position: absolute;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #d6d6db;
+    border-radius: 10px;
+    margin-top: 6px;
+    max-height: 230px;
+    overflow-y: auto;
+    z-index: 100;
+    padding: 4px 0;
 }
+.custom-select.active .options-container { display: block; }
+
+/* Sticky search bar */
+.dropdown-search {
+    padding: 6px 8px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+.dropdown-search-input {
+    width: 100%; padding: 6px 8px;
+    border-radius: 6px; border: 1px solid #ddd;
+    font-size: 13px; outline: none;
+}
+.dropdown-search-input:focus { border-color: #f062c0; }
+
+/* Option rows */
+.options-container label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #222;
+    cursor: pointer;
+    margin-top: 0;
+}
+.options-container label:hover { background: #f2ddf6; }
+
+/* Radio dot */
+.options-container input[type="radio"] {
+    appearance: none;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 2px solid #aaa;
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+    margin: 0;
+}
+.options-container input[type="radio"]:checked { border-color: #f062c0; }
+.options-container input[type="radio"]:checked::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    background: #f062c0;
+    border-radius: 50%;
+}
+.options-container label:has(input[type="radio"]:checked) {
+    background: #fdf0fa;
+    color: #c0369a;
+}
+
+/* No-results row */
+.no-results {
+    display: none;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #999;
+}
+
+/* Active / is_active checkbox */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    margin-top: 14px;
+    cursor: pointer;
+}
+.checkbox-label input[type="checkbox"] {
+    width: auto; margin: 0;
+    accent-color: #f062c0;
+}
+
+.note { margin-top: 14px; font-size: 13px; color: #666; }
+.actions { display: flex; justify-content: space-between; margin-top: 24px; }
+.btn {
+    padding: 10px 18px; border: none;
+    border-radius: 8px; cursor: pointer;
+    color: #fff; text-decoration: none;
+}
+.btn-primary  { background: #f062c0; }
+.btn-secondary{ background: #777; }
 </style>
 
 <div class="form-box">
+    <h2>{% if variant %}Edit Variant{% else %}Add Variant{% endif %}</h2>
 
-<h2>
-{% if variant %}Edit Variant{% else %}Add Variant{% endif %}
-</h2>
+    <form method="post" id="variantForm">
+        {% csrf_token %}
 
-<form method="post">
-{% csrf_token %}
+        {% if product %}
+        <p><strong>Product:</strong> {{ product.product_name }}</p>
+        {% endif %}
 
-{% if product %}
-<p><strong>Product:</strong> {{ product.product_name }}</p>
-{% endif %}
+        <!-- ── COLOR ── -->
+        <label>Color</label>
+        <div class="custom-select" id="colorDropdown">
+            <div class="select-box" id="colorSelected">
+                {% if variant %}{{ variant.color.color }}{% else %}Select Color{% endif %}
+            </div>
+            <div class="options-container">
+                <div class="dropdown-search">
+                    <input type="text" class="dropdown-search-input" placeholder="Search color...">
+                </div>
+                {% for c in colors %}
+                <label>
+                    <input type="radio" name="color" value="{{ c.id }}"
+                        {% if variant and variant.color.id == c.id %}checked{% endif %}>
+                    {{ c.color }}
+                </label>
+                {% endfor %}
+                <div class="no-results">No colors found</div>
+            </div>
+        </div>
 
-<label>Color</label>
-<select name="color" required>
-    <option value="">Select Color</option>
-    {% for c in colors %}
-        <option value="{{ c.id }}"
-        {% if variant and variant.color.id == c.id %}selected{% endif %}>
-        {{ c.color }}
-        </option>
-    {% endfor %}
-</select>
+        <!-- ── AGE GROUP ── -->
+        <label>Age Group</label>
+        <div class="custom-select" id="ageDropdown">
+            <div class="select-box" id="ageSelected">
+                {% if variant %}{{ variant.age_group.age }}{% else %}Select Age Group{% endif %}
+            </div>
+            <div class="options-container">
+                <div class="dropdown-search">
+                    <input type="text" class="dropdown-search-input" placeholder="Search age group...">
+                </div>
+                {% for a in ages %}
+                <label>
+                    <input type="radio" name="age_group" value="{{ a.id }}"
+                        {% if variant and variant.age_group.id == a.id %}checked{% endif %}>
+                    {{ a.age }}
+                </label>
+                {% endfor %}
+                <div class="no-results">No age groups found</div>
+            </div>
+        </div>
 
-<label>Age Group</label>
-<select name="age_group" required>
-    <option value="">Select Age</option>
-    {% for a in ages %}
-        <option value="{{ a.id }}"
-        {% if variant and variant.age_group.id == a.id %}selected{% endif %}>
-        {{ a.age }}
-        </option>
-    {% endfor %}
-</select>
+        <!-- ── INITIAL STOCK (add only) ── -->
+        {% if not variant %}
+        <label>Initial Stock</label>
+        <input type="number" name="stock" min="0" value="0" required>
+        {% endif %}
 
-{% if not variant %}
-<label>Initial Stock</label>
-<input type="number" name="stock" min="0" required>
-{% endif %}
+        <!-- ── IS ACTIVE (edit only) ── -->
+        {% if variant %}
+        <label class="checkbox-label">
+            <input type="checkbox" name="is_active"
+                   {% if variant.is_active %}checked{% endif %}>
+            Active
+        </label>
+        {% endif %}
 
-{% if variant %}
-<label>
-    <input type="checkbox" name="is_active"
-    {% if variant.is_active %}checked{% endif %}>
-    Active
-</label>
-{% endif %}
+        <div class="note">
+            Create multiple variants by repeating combinations
+            (e.g., 4 colors × 3 ages = 12 variants).
+        </div>
 
-<div class="note">
-Create multiple variants by repeating combinations (e.g., 4 colors × 3 ages ≈ 12 variants).
+        <div class="actions">
+            <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
+            <button type="submit" class="btn btn-primary">Save Variant</button>
+        </div>
+    </form>
 </div>
 
-<div class="actions">
-    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">Back</a>
-    <button type="submit" class="btn btn-primary">Save Variant</button>
-</div>
+<script>
+function setupSearchDropdown(dropdownId, selectedId) {
+    const dropdown    = document.getElementById(dropdownId);
+    const selectedBox = document.getElementById(selectedId);
+    const container   = dropdown.querySelector('.options-container');
+    const searchInput = dropdown.querySelector('.dropdown-search-input');
+    const options     = dropdown.querySelectorAll('.options-container label');
+    const noResults   = dropdown.querySelector('.no-results');
 
-</form>
-</div>
+    /* Open / close on select-box click */
+    selectedBox.addEventListener('click', function (e) {
+        e.stopPropagation();
+        document.querySelectorAll('.custom-select').forEach(d => {
+            if (d !== dropdown) d.classList.remove('active');
+        });
+        dropdown.classList.toggle('active');
+        if (dropdown.classList.contains('active')) {
+            setTimeout(() => searchInput.focus(), 50);
+        }
+    });
+
+    /* Keep panel open on internal clicks */
+    container.addEventListener('click', e => e.stopPropagation());
+    dropdown.querySelector('.dropdown-search').addEventListener('click', e => e.stopPropagation());
+
+    /* Select an option */
+    options.forEach(label => {
+        label.querySelector('input[type="radio"]').addEventListener('change', () => {
+            selectedBox.textContent = label.textContent.trim();
+            dropdown.classList.remove('active');
+            searchInput.value = '';
+            options.forEach(o => o.style.display = 'flex');
+            if (noResults) noResults.style.display = 'none';
+        });
+    });
+
+    /* Filter on search input */
+    searchInput.addEventListener('input', function () {
+        const term = this.value.toLowerCase();
+        let visible = 0;
+        options.forEach(opt => {
+            const match = opt.textContent.toLowerCase().includes(term);
+            opt.style.display = match ? 'flex' : 'none';
+            if (match) visible++;
+        });
+        if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+    });
+}
+
+setupSearchDropdown('colorDropdown', 'colorSelected');
+setupSearchDropdown('ageDropdown',   'ageSelected');
+
+/* Global outside-click closer */
+document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select').forEach(d => d.classList.remove('active'));
+});
+
+/* Form validation */
+document.getElementById('variantForm').addEventListener('submit', function (e) {
+    if (!this.querySelector('input[name="color"]:checked')) {
+        e.preventDefault();
+        alert('Please select a color.');
+        document.getElementById('colorDropdown').classList.add('active');
+        return;
+    }
+    if (!this.querySelector('input[name="age_group"]:checked')) {
+        e.preventDefault();
+        alert('Please select an age group.');
+        document.getElementById('ageDropdown').classList.add('active');
+    }
+});
+</script>
+
 {% endblock %}

@@ -1,8 +1,6 @@
 {% extends "base_admin.html" %}
 {% block content %}
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-
 <style>
 .form-box {
     width: 70%;
@@ -12,354 +10,262 @@
     border-radius: 14px;
     box-shadow: 0 6px 16px rgba(0,0,0,.08);
 }
-
-h2 {
-    text-align: center;
-    margin-bottom: 22px;
-}
-
-label {
-    display: block;
-    margin-top: 14px;
-    font-weight: 600;
-}
-
+h2 { text-align: center; margin-bottom: 22px; }
+label { display: block; margin-top: 14px; font-weight: 600; }
 input, select, textarea {
-    width: 100%;
-    padding: 10px;
-    margin-top: 6px;
-    border-radius: 8px;
-    border: 1px solid #cfcfcf;
+    width: 100%; padding: 10px; margin-top: 6px;
+    border-radius: 8px; border: 1px solid #cfcfcf;
 }
-
 textarea { resize: vertical; }
 
-/* Search box inside dropdown */
+/* ── DROPDOWN SEARCH ── */
 .dropdown-search {
-    padding: 6px 8px;
-    border-bottom: 1px solid #eee;
-    background: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    padding: 6px 8px; border-bottom: 1px solid #eee;
+    background: #fff; position: sticky; top: 0; z-index: 2;
 }
-
 .dropdown-search-input {
-    width: 100%;
-    padding: 6px 8px;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    font-size: 14px;
+    width: 100%; padding: 6px 8px;
+    border-radius: 6px; border: 1px solid #ddd; font-size: 14px;
 }
 
-.radio-group {
-    display: flex;
-    flex-direction: column; /* Stack items vertically */
-    gap: 8px; /* space between each radio option */
-    margin-top: 8px;
-    padding: 10px;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #e2e2e2;
-}
-
-.radio-group label {
-    display: flex;
-    align-items: center;
-    gap: 10px; /* space between radio and text */
-    font-weight: 500;
-    background: #f3f3f6;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    justify-content: flex-start; /* Align content to the left */
-}
-
-/* Custom dropdown */
-.custom-select { 
-    position: relative; 
-    margin-top: 8px; 
-}
-
+/* ── CUSTOM SELECT ── */
+.custom-select { position: relative; margin-top: 8px; }
 .select-box {
-    width: 100%;
-    padding: 10px 40px 10px 12px;
-    border: 1px solid #cfcfcf;
-    border-radius: 8px;
-    background: #fff;
-    cursor: pointer;
-    position: relative;
+    width: 100%; padding: 10px 40px 10px 12px;
+    border: 1px solid #cfcfcf; border-radius: 8px;
+    background: #fff; cursor: pointer; position: relative;
 }
-
 .select-box::after {
-    content: "▼";
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 12px;
-    color: #666;
+    content: "▼"; position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%); font-size: 12px; color: #666;
 }
-
-/* Dropdown panel */
 .options-container {
-    display: none;
-    position: absolute;
-    width: 100%;
-    background: #ffffff;            
-    border: 1px solid #d6d6db;
-    border-radius: 10px;
-    margin-top: 6px;
-    max-height: 240px;
-    overflow-y: auto;
-    z-index: 10;
-    padding: 8px 0;
+    display: none; position: absolute; width: 100%;
+    background: #fff; border: 1px solid #d6d6db;
+    border-radius: 10px; margin-top: 6px;
+    max-height: 240px; overflow-y: auto; z-index: 10; padding: 8px 0;
 }
-
-/* Each option row */
 .options-container label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 4px 8px;
-    font-size: 16px;                /* large text */
-    font-weight: 500;
-    color: #222;
-    cursor: pointer;
-    transition: background .0s ease;
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 8px; font-size: 16px; font-weight: 500;
+    color: #222; cursor: pointer;
 }
-/* Hover state */
-.options-container label:hover {
-    background: #f2ddf6;
-}
-
-/* Radio button */
+.options-container label:hover { background: #f2ddf6; }
 .options-container input[type="radio"] {
-    appearance: none;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    border: 2px solid #111;
-    position: relative;
-    flex-shrink: 0;
+    appearance: none; width: 8px; height: 8px;
+    border-radius: 50%; border: 2px solid #111;
+    position: relative; flex-shrink: 0;
 }
-/* Filled dot when selected */
 .options-container input[type="radio"]:checked::after {
-    content: "";
-    position: absolute;
-    inset: 3px;
-    background: #111;
-    border-radius: 50%;
+    content: ""; position: absolute; inset: 3px;
+    background: #111; border-radius: 50%;
 }
-
-/* Selected row subtle highlight */
-.options-container label:has(input[type="radio"]:checked) {
-    background: #ffffff;
-}
+.options-container label:has(input[type="radio"]:checked) { background: #fff; }
 .custom-select.active .options-container { display: block; }
 
-.actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 26px;
-}
+/* ── IMAGE INPUTS ── */
+.image-input-group { margin-top: 12px; }
+.preview-container { margin-top: 6px; }
 
+/* ── ACTIONS ── */
+.actions { display: flex; justify-content: space-between; margin-top: 26px; }
 .btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    color: #fff;
-    text-decoration: none;
+    padding: 10px 18px; border: none;
+    border-radius: 8px; cursor: pointer; color: #fff; text-decoration: none;
 }
-
 .btn-primary { background: #f062c0; }
 .btn-secondary { background: #777; }
 </style>
 
 <div class="form-box">
-<h2>{% if product %}Edit Product{% else %}Add Product{% endif %}</h2>
+    <h2>{% if product %}Edit Product{% else %}Add Product{% endif %}</h2>
 
-<form method="post" enctype="multipart/form-data">
-{% csrf_token %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
 
-<label>Product Name</label>
-<input type="text" name="product_name" value="{{ product.product_name|default:'' }}" required>
+        <label>Product Name</label>
+        <input type="text" name="product_name" value="{{ product.product_name|default:'' }}" required>
 
-<!-- ✅ ADDED hidden field to keep existing JS working -->
-<input type="hidden" id="categorySelect">
+        <input type="hidden" id="categorySelect">
 
-<label>Category</label>
-<div class="custom-select" id="categoryDropdown">
-    <div class="select-box" id="categorySelected">
-        {% if product %}
-            {{ product.subcategory.category.category_name }}
-        {% else %}
-            Select one category
-        {% endif %}
-    </div>
-
-    <div class="options-container">
-        <div class="dropdown-search">
-            <input type="text" class="dropdown-search-input" placeholder="Search...">
+        <label>Category</label>
+        <div class="custom-select" id="categoryDropdown">
+            <div class="select-box" id="categorySelected">
+                {% if product %}{{ product.subcategory.category.category_name }}{% else %}Select one category{% endif %}
+            </div>
+            <div class="options-container">
+                <div class="dropdown-search">
+                    <input type="text" class="dropdown-search-input" placeholder="Search...">
+                </div>
+                {% regroup subcategories by category as category_list %}
+                {% for group in category_list %}
+                <label>
+                    <input type="radio" name="category" value="{{ group.grouper.id }}"
+                        {% if product and product.subcategory.category.id == group.grouper.id %}checked{% endif %}>
+                    {{ group.grouper.category_name }}
+                </label>
+                {% endfor %}
+            </div>
         </div>
-        {% regroup subcategories by category as category_list %}
-        {% for group in category_list %}
-            <label>
-                <input type="radio" name="category" value="{{ group.grouper.id }}"
-                {% if product and product.subcategory.category.id == group.grouper.id %}checked{% endif %}>
-                {{ group.grouper.category_name }}
-            </label>
-        {% endfor %}
-    </div>
-</div>
 
-<label>Subcategory</label>
-<div class="custom-select" id="subcategoryDropdown">
-    <div class="select-box" id="subcategorySelected">
-        {% if product %}
-            {{ product.subcategory.subcategory_name }}
-        {% else %}
-            Select one subcategory
-        {% endif %}
-    </div>
-
-    <div class="options-container" id="subcategoryOptions">
-        <div class="dropdown-search">
-            <input type="text" class="dropdown-search-input" placeholder="Search...">
+        <label>Subcategory</label>
+        <div class="custom-select" id="subcategoryDropdown">
+            <div class="select-box" id="subcategorySelected">
+                {% if product %}{{ product.subcategory.subcategory_name }}{% else %}Select one subcategory{% endif %}
+            </div>
+            <div class="options-container" id="subcategoryOptions">
+                <div class="dropdown-search">
+                    <input type="text" class="dropdown-search-input" placeholder="Search...">
+                </div>
+                {% regroup subcategories by category as category_list %}
+                {% for group in category_list %}
+                    {% for sub in group.list %}
+                    <label class="subcategory-item" data-category="{{ group.grouper.id }}">
+                        <input type="radio" name="subcategory" value="{{ sub.id }}"
+                            {% if product and product.subcategory.id == sub.id %}checked{% endif %}>
+                        {{ sub.subcategory_name }}
+                    </label>
+                    {% endfor %}
+                {% endfor %}
+            </div>
         </div>
-        {% regroup subcategories by category as category_list %}
-        {% for group in category_list %}
-            {% for sub in group.list %}
-            <label class="subcategory-item" data-category="{{ group.grouper.id }}">
-                <input type="radio" name="subcategory" value="{{ sub.id }}"
-                {% if product and product.subcategory.id == sub.id %}checked{% endif %}>
-                {{ sub.subcategory_name }}
-            </label>
+
+        <label>Brand</label>
+        <input type="text" name="brand" value="{{ product.brand|default:'' }}" required>
+
+        <label>Base Price</label>
+        <input type="number" step="0.01" id="base_price" name="base_price"
+                value="{{ product.base_price|default:'' }}" required>
+
+        <label>Discount in %</label>
+        <input type="number" id="discount_percent" name="discount_percent"
+                value="{{ product.discount_percent|default:0 }}">
+
+        <label>Final Price</label>
+        <input type="text" id="final_price_preview"
+                value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{ product.final_price }}{% else %}0.00{% endif %}"
+                readonly>
+
+        <label>Fabric</label>
+        <div class="custom-select" id="fabricDropdown">
+            <div class="select-box" id="fabricSelected">
+                {% if product %}{{ product.get_fabric_display }}{% else %}Select the fabric{% endif %}
+            </div>
+            <div class="options-container">
+                <div class="dropdown-search">
+                    <input type="text" class="dropdown-search-input" placeholder="Search...">
+                </div>
+                {% for code, name in fabric_choices %}
+                <label>
+                    <input type="radio" name="fabric" value="{{ code }}"
+                        {% if product and product.fabric == code %}checked{% endif %}>
+                    {{ name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <label>Gender</label>
+        <div class="custom-select" id="genderDropdown">
+            <div class="select-box" id="genderSelected">
+                {% if product %}{{ product.get_gender_display }}{% else %}Select the gender{% endif %}
+            </div>
+            <div class="options-container">
+                <div class="dropdown-search">
+                    <input type="text" class="dropdown-search-input" placeholder="Search...">
+                </div>
+                {% for code, name in gender_choices %}
+                <label>
+                    <input type="radio" name="gender" value="{{ code }}"
+                        {% if product and product.gender == code %}checked{% endif %}>
+                    {{ name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Images -->
+        <div class="form-group">
+            <label>Product Images <small>(Must upload minimum of 3 images)</small></label>
+            {% for i in "12345" %}
+            <div class="image-input-group">
+                <label for="productImage{{ i }}">Product Image {{ i }}</label>
+                <input type="file" id="productImage{{ i }}" class="product-image"
+                        name="productImage{{ i }}" accept="image/*">
+                <div id="preview{{ i }}" class="preview-container"></div>
+            </div>
             {% endfor %}
-        {% endfor %}
-    </div>
-</div>
-
-<label>Brand</label>
-<input type="text" name="brand" value="{{ product.brand|default:'' }}" required>
-
-<label>Base Price</label>
-<input type="number" step="0.01" id="base_price" name="base_price"
-value="{{ product.base_price|default:'' }}" required>
-
-<label>Discount in %</label>
-<input type="number" id="discount_percent" name="discount_percent"
-value="{{ product.discount_percent|default:0 }}">
-
-<label>Final Price</label>
-<input type="text" id="final_price_preview"
-value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{ product.final_price }}{% else %}0.00{% endif %}" readonly>
-
-<label>Fabric</label>
-<div class="custom-select" id="fabricDropdown">
-    <div class="select-box" id="fabricSelected">
-        {% if product %}{{ product.get_fabric_display }}{% else %}Select the fabric{% endif %}
-    </div>
-
-    <div class="options-container">
-        <div class="dropdown-search">
-            <input type="text" class="dropdown-search-input" placeholder="Search...">
         </div>
-        {% for code,name in fabric_choices %}
-        <label>
-            <input type="radio" name="fabric" value="{{ code }}"
-            {% if product and product.fabric == code %}checked{% endif %}>
-            {{ name }}
+
+        <label>About Product</label>
+        <textarea name="about_product" rows="3">{{ product.about_product|default:'' }}</textarea>
+
+        {% if product %}
+        <label style="display:flex; align-items:center; gap:8px; font-weight:500; margin-top:14px;">
+            <input type="checkbox" name="is_active"
+                    {% if product.is_active %}checked{% endif %}
+                    style="width:auto; margin:0;">
+            Active
         </label>
-        {% endfor %}
-    </div>
-</div>
+        {% endif %}
 
-<label>Gender</label>
-<div class="custom-select" id="genderDropdown">
-    <div class="select-box" id="genderSelected">
-        {% if product %}{{ product.get_gender_display }}{% else %}Select the gender{% endif %}
-    </div>
-
-    <div class="options-container">
-        <div class="dropdown-search">
-            <input type="text" class="dropdown-search-input" placeholder="Search...">
+        <div class="actions">
+            <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
+            <button type="submit" class="btn btn-primary">Save</button>
         </div>
-        {% for code,name in gender_choices %}
-        <label>
-            <input type="radio" name="gender" value="{{ code }}"
-            {% if product and product.gender == code %}checked{% endif %} required>
-            {{ name }}
-        </label>
-        {% endfor %}
+    </form>
+</div>
+
+<!-- CROPPER MODAL  — must be a complete wrapper-->
+<div id="cropperModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.8); z-index:99999;">
+
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:#fff; border-radius:10px; width:90%; max-width:800px;
+                height:90%; max-height:600px; display:flex; flex-direction:column;">
+
+        <!-- Header -->
+        <div style="padding:15px 20px; border-bottom:1px solid #ddd; display:flex;
+                    justify-content:space-between; align-items:center;
+                    background:#f8f9fa; border-radius:10px 10px 0 0;">
+            <h3 style="margin:0; color:#333;">Crop Your Image</h3>
+            <button onclick="closeCropPopup()"
+                    style="background:none; border:none; font-size:24px; cursor:pointer; color:#666;">
+                &times;
+            </button>
+        </div>
+
+        <!-- Cropper area -->
+        <div id="cropper-container"
+            style="flex:1; padding:20px; position:relative; overflow:hidden;">
+            <img id="cropperImage"
+                style="max-width:100%; max-height:100%; display:block; margin:0 auto;">
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:15px 20px; border-top:1px solid #ddd; display:flex;
+                    justify-content:flex-end; gap:10px;
+                    background:#f8f9fa; border-radius:0 0 10px 10px;">
+            <button onclick="closeCropPopup()"
+                    style="padding:8px 16px; background:#6c757d; color:#fff;
+                        border:none; border-radius:4px; cursor:pointer;">
+                Cancel
+            </button>
+            <button id="cropSaveBtn" onclick="cropImage()" disabled
+                    style="padding:8px 16px; background:#007bff; color:#fff;
+                        border:none; border-radius:4px; cursor:pointer;">
+                Loading...
+            </button>
+        </div>
     </div>
 </div>
 
-<!-- Images -->
-<div class="form-group">
-    <label "productImages">Product Image <small> (Must upload minimum of 3 images) </small></label>
-    {% for i in "12345" %}
-    <div class="image-input-group">
-        <label for="productImage{{ i }}">Product Image {{ i }}</label>
-        <input type="file" id="productImage{{ i }}" class="product-image" name="productImage{{ i }}" accept="image/*">
-        <div id="preview{{ i }}" class="preview-container"></div>
-    </div>
-    {% endfor %}
-</div>
-    
-
-<label>About Product</label>
-<textarea name="about_product" rows="3">{{ product.about_product|default:'' }}</textarea>
-
-{% if product %}
-<label>
-    <input type="checkbox" name="is_active" {% if product.is_active %}checked{% endif %}>
-    Active
-</label>
-{% endif %}
-
-<div class="actions">
-    <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
-    <button type="submit" class="btn btn-primary">Save</button>
-</div>
-
-</form>
-</div>
-
-<!-- Cropper Container -->
-<div id="cropper-container"
-    style="flex: 1; padding: 20px; position: relative; overflow: hidden;">
-    <img id="cropperImage"
-        style="max-width: 100%; max-height: 100%; display: block; margin: 0 auto;">
-</div>
-
-<!-- Footer -->
-<div style="padding: 15px 20px; border-top: 1px solid #ddd; display: flex;
-            justify-content: flex-end; gap: 10px;
-            background: #f8f9fa; border-radius: 0 0 10px 10px;">
-    <button onclick="closeCropPopup()"
-            style="padding: 8px 16px; background: #6c757d; color: white;
-                   border: none; border-radius: 4px; cursor: pointer;">
-        Cancel
-    </button>
-    <button id="cropSaveBtn"
-            onclick="cropImage()"
-            disabled
-            style="padding: 8px 16px; background: #007bff; color: white;
-                   border: none; border-radius: 4px; cursor: pointer;">
-        Loading...
-    </button>
-</div>
-
-    </div>
-</div>
-
-<!-- ✅ LOAD CROPPER.JS FIRST — before any function that uses it -->
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.12/dist/cropper.min.js"></script> {% endcomment %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-
+<!-- Cropper functions -->
 <script>
-let cropper = null;
+let cropper      = null;
 let currentInput = null;
 let currentPreview = null;
 let originalFile = null;
@@ -373,284 +279,226 @@ document.addEventListener('DOMContentLoaded', function () {
 function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
+
     if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
         alert('Please select a valid image file (JPEG, JPG, or PNG)');
         e.target.value = '';
         return;
     }
-    currentInput = e.target;
-    originalFile = file;
-    const imageNumber = e.target.id.replace('productImage', '');
-    currentPreview = document.getElementById('preview' + imageNumber);
+
+    currentInput   = e.target;
+    originalFile   = file;
+    const num      = e.target.id.replace('productImage', '');
+    currentPreview = document.getElementById('preview' + num);
+
     const reader = new FileReader();
-    reader.onload = function (event) {
-        showCropModal(event.target.result);
-    };
+    reader.onload = ev => showCropModal(ev.target.result);
     reader.readAsDataURL(file);
 }
 
 function showCropModal(imageSrc) {
-    const modal = document.getElementById('cropperModal');
+    const modal        = document.getElementById('cropperModal');
     const cropperImage = document.getElementById('cropperImage');
-    const cropBtn = document.getElementById('cropSaveBtn');
+    const cropBtn      = document.getElementById('cropSaveBtn');
 
-    if (cropper) {
-        cropper.destroy();
-        cropper = null;
-    }
+    if (cropper) { cropper.destroy(); cropper = null; }
 
-    modal.style.display = 'block';
+    modal.style.display          = 'block';
     document.body.style.overflow = 'hidden';
-    cropBtn.disabled = true;
-    cropBtn.textContent = 'Loading...';
-    cropBtn.style.background = '#007bff';
+    cropBtn.disabled             = true;
+    cropBtn.textContent          = 'Loading...';
+    cropBtn.style.background     = '#007bff';
 
     cropperImage.src = imageSrc;
-    cropperImage.onload = function () {
-        setTimeout(initCropper, 200);
-    };
+    cropperImage.onload = () => setTimeout(initCropper, 200);
 }
 
 function initCropper() {
     const cropperImage = document.getElementById('cropperImage');
-    const cropBtn = document.getElementById('cropSaveBtn');
+    const cropBtn      = document.getElementById('cropSaveBtn');
 
-    /* Safety check — if Cropper library failed to load */
-    if (typeof Cropper === 'undefined') {
-        cropBtn.textContent = 'Error: library missing';
-        console.error('Cropper.js not loaded');
-        return;
-    }
-
+    // Simple, standard initialization
     try {
+        if (typeof Cropper !== 'function') {
+            throw new Error("Cropper library not loaded correctly.");
+        }
+
         cropper = new Cropper(cropperImage, {
-            aspectRatio: 4 / 3,
+            aspectRatio: 3 / 4,
             viewMode: 1,
             dragMode: 'move',
             autoCropArea: 0.7,
-            responsive: true,
+            restore: false,
             guides: true,
             center: true,
-            highlight: true,
+            highlight: false,
             cropBoxMovable: true,
             cropBoxResizable: true,
-            ready: function () {
+            toggleDragModeOnDblclick: false,
+            ready() {
                 cropBtn.disabled = false;
                 cropBtn.textContent = 'Crop & Save';
                 cropBtn.style.background = '#28a745';
             }
         });
-    } catch (error) {
-        console.error('Cropper init error:', error);
-        cropBtn.textContent = 'Error';
-        alert('Failed to initialize cropper: ' + error.message);
+    } catch (err) {
+        console.error('Cropper init error:', err);
+        alert('Failed to initialize cropper: ' + err.message);
     }
 }
-
 function closeCropPopup() {
-    const modal = document.getElementById('cropperModal');
-    modal.style.display = 'none';
+    document.getElementById('cropperModal').style.display = 'none';
     document.body.style.overflow = 'auto';
-
-    if (cropper) {
-        cropper.destroy();
-        cropper = null;
-    }
-
-    currentInput = null;
-    currentPreview = null;
-    originalFile = null;
+    if (cropper) { cropper.destroy(); cropper = null; }
+    currentInput = currentPreview = originalFile = null;
 }
 
 function cropImage() {
-    if (!cropper) {
-        alert('Cropper not ready');
-        return;
-    }
+    if (!cropper) { alert('Cropper not ready'); return; }
 
     const cropBtn = document.getElementById('cropSaveBtn');
-    cropBtn.disabled = true;
+    cropBtn.disabled    = true;
     cropBtn.textContent = 'Processing...';
 
     try {
         const canvas = cropper.getCroppedCanvas({
-            width: 800,
-            height: 600,
+            width: 800, height: 600,
             imageSmoothingEnabled: true,
             imageSmoothingQuality: 'high'
         });
 
-        canvas.toBlob(function (blob) {
+        canvas.toBlob(blob => {
             if (!blob) {
                 alert('Failed to process image');
-                cropBtn.disabled = false;
+                cropBtn.disabled    = false;
                 cropBtn.textContent = 'Crop & Save';
                 return;
             }
 
-            const fileName = originalFile.name.replace(/\.[^/.]+$/, '') + '_cropped.jpg';
+            const fileName   = originalFile.name.replace(/\.[^/.]+$/, '') + '_cropped.jpg';
             const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
-
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(croppedFile);
-            currentInput.files = dataTransfer.files;
+            const dt = new DataTransfer();
+            dt.items.add(croppedFile);
+            currentInput.files = dt.files;
 
             if (currentPreview) {
                 currentPreview.innerHTML = '';
-
                 const img = document.createElement('img');
                 img.src = canvas.toDataURL('image/jpeg', 0.8);
-                img.style.cssText = 'max-width:200px; border:2px solid #28a745; border-radius:4px; margin-top:10px;';
-
-                const successText = document.createElement('p');
-                successText.textContent = '✓ Image cropped successfully!';
-                successText.style.cssText = 'color:#28a745; font-size:14px; margin-top:5px;';
-
+                img.style.cssText = 'max-width:200px;border:2px solid #28a745;border-radius:4px;margin-top:10px;';
+                const ok = document.createElement('p');
+                ok.textContent  = '✓ Image cropped successfully!';
+                ok.style.cssText = 'color:#28a745;font-size:14px;margin-top:5px;';
                 currentPreview.appendChild(img);
-                currentPreview.appendChild(successText);
+                currentPreview.appendChild(ok);
             }
 
             closeCropPopup();
-
         }, 'image/jpeg', 0.85);
 
-    } catch (error) {
-        console.error('Crop error:', error);
-        alert('Failed to crop image: ' + error.message);
-        cropBtn.disabled = false;
+    } catch (err) {
+        console.error('Crop error:', err);
+        alert('Failed to crop image: ' + err.message);
+        cropBtn.disabled    = false;
         cropBtn.textContent = 'Crop & Save';
     }
 }
 </script>
+
+<!-- Price + dropdowns -->
 <script>
-/* === PRICE CALCULATION === */
 function updateFinalPrice() {
-    let base = parseFloat(document.getElementById("base_price").value) || 0;
-    let discount = parseFloat(document.getElementById("discount_percent").value) || 0;
-    let final = base - (base * discount / 100);
-    document.getElementById("final_price_preview").value = final.toFixed(2);
+    const base     = parseFloat(document.getElementById('base_price').value) || 0;
+    const discount = parseFloat(document.getElementById('discount_percent').value) || 0;
+    document.getElementById('final_price_preview').value =
+        (base - base * discount / 100).toFixed(2);
 }
+document.getElementById('base_price').addEventListener('input', updateFinalPrice);
+document.getElementById('discount_percent').addEventListener('input', updateFinalPrice);
 
-document.getElementById("base_price").addEventListener("input", updateFinalPrice);
-document.getElementById("discount_percent").addEventListener("input", updateFinalPrice);
-
-/* === SUBCATEGORY FILTER === */
 function filterSubcategories() {
-    const selectedCategory = document.getElementById("categorySelect").value;
-    const items = document.querySelectorAll(".subcategory-item");
-
-    items.forEach(item => {
-        if (!selectedCategory || item.dataset.category === selectedCategory) {
-            item.style.display = "flex";
-        } else {
-            item.style.display = "none";
-            item.querySelector("input").checked = false;
-        }
+    const sel = document.getElementById('categorySelect').value;
+    document.querySelectorAll('.subcategory-item').forEach(item => {
+        const show = !sel || item.dataset.category === sel;
+        item.style.display = show ? 'flex' : 'none';
+        if (!show) item.querySelector('input').checked = false;
     });
 }
 
-/* === DROPDOWN INTERACTION === */
 function setupDropdown(dropdownId, selectedId) {
     const dropdown = document.getElementById(dropdownId);
     const selected = document.getElementById(selectedId);
 
-    dropdown.addEventListener("click", () => dropdown.classList.toggle("active"));
-
-    dropdown.querySelectorAll("input[type=radio]").forEach(radio => {
-        radio.addEventListener("change", () => {
+    dropdown.querySelectorAll('input[type=radio]').forEach(radio => {
+        radio.addEventListener('change', () => {
             selected.textContent = radio.parentElement.textContent.trim();
-
-            if (dropdownId === "categoryDropdown") {
-                document.getElementById("categorySelect").value = radio.value;
+            if (dropdownId === 'categoryDropdown') {
+                document.getElementById('categorySelect').value = radio.value;
                 filterSubcategories();
             }
-
-            dropdown.classList.remove("active");
+            dropdown.classList.remove('active');
         });
     });
 
-    document.addEventListener("click", e => {
-        if (!dropdown.contains(e.target)) dropdown.classList.remove("active");
+    document.addEventListener('click', e => {
+        if (!dropdown.contains(e.target)) dropdown.classList.remove('active');
     });
 }
 
-setupDropdown("categoryDropdown", "categorySelected");
-setupDropdown("subcategoryDropdown", "subcategorySelected");
-setupDropdown("fabricDropdown", "fabricSelected");
-setupDropdown("genderDropdown", "genderSelected");
+setupDropdown('categoryDropdown',    'categorySelected');
+setupDropdown('subcategoryDropdown', 'subcategorySelected');
+setupDropdown('fabricDropdown',      'fabricSelected');
+setupDropdown('genderDropdown',      'genderSelected');
 
-window.addEventListener("DOMContentLoaded", filterSubcategories);
+window.addEventListener('DOMContentLoaded', filterSubcategories);
 </script>
+
+<!-- Dropdown search -->
 <script>
-/* === DROPDOWN SEARCH (non-breaking) === */
-document.querySelectorAll(".custom-select").forEach(dropdown => {
-
-    const searchInput = dropdown.querySelector(".dropdown-search-input");
+document.querySelectorAll('.custom-select').forEach(dropdown => {
+    const searchInput = dropdown.querySelector('.dropdown-search-input');
     if (!searchInput) return;
+    const opts = dropdown.querySelectorAll('.options-container label');
 
-    const options = dropdown.querySelectorAll(".options-container label");
-
-    searchInput.addEventListener("input", function () {
+    searchInput.addEventListener('input', function () {
         const term = this.value.toLowerCase();
-
-        options.forEach(option => {
-            const text = option.textContent.toLowerCase();
-            option.style.display = text.includes(term) ? "flex" : "none";
+        opts.forEach(o => {
+            o.style.display = o.textContent.toLowerCase().includes(term) ? 'flex' : 'none';
         });
     });
 
-    /* Reset search when dropdown closes */
-    document.addEventListener("click", e => {
+    document.addEventListener('click', e => {
         if (!dropdown.contains(e.target)) {
-            searchInput.value = "";
-            options.forEach(o => o.style.display = "flex");
+            searchInput.value = '';
+            opts.forEach(o => o.style.display = 'flex');
         }
     });
-
 });
 </script>
+
+<!-- Dropdown click fix -->
 <script>
-/* === DROPDOWN CLICK FIX (ADD-ON, NON-BREAKING) === */
-
-/* 1️⃣ Prevent internal clicks from triggering toggle */
-document.querySelectorAll(".custom-select").forEach(dropdown => {
-
-    const options = dropdown.querySelector(".options-container");
-    const search = dropdown.querySelector(".dropdown-search");
-
-    if (options) {
-        options.addEventListener("click", e => e.stopPropagation());
-    }
-
-    if (search) {
-        search.addEventListener("click", e => e.stopPropagation());
-    }
-
+document.querySelectorAll('.custom-select').forEach(dropdown => {
+    const opts   = dropdown.querySelector('.options-container');
+    const search = dropdown.querySelector('.dropdown-search');
+    if (opts)   opts.addEventListener('click',   e => e.stopPropagation());
+    if (search) search.addEventListener('click', e => e.stopPropagation());
 });
 
-
-/* 2️⃣ Override toggle behavior → open only from select box */
-document.querySelectorAll(".select-box").forEach(box => {
-
-    box.addEventListener("click", function (e) {
+document.querySelectorAll('.select-box').forEach(box => {
+    box.addEventListener('click', function (e) {
         e.stopPropagation();
-
-        const dropdown = this.closest(".custom-select");
-
-        /* close others (optional but safer UX) */
-        document.querySelectorAll(".custom-select").forEach(d => {
-            if (d !== dropdown) d.classList.remove("active");
+        const dropdown = this.closest('.custom-select');
+        document.querySelectorAll('.custom-select').forEach(d => {
+            if (d !== dropdown) d.classList.remove('active');
         });
-
-        dropdown.classList.toggle("active");
+        dropdown.classList.toggle('active');
     });
-
 });
 
-
-/* 3️⃣ Global outside click closer */
-document.addEventListener("click", function () {
-    document.querySelectorAll(".custom-select").forEach(d => d.classList.remove("active"));
+document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select').forEach(d => d.classList.remove('active'));
 });
 </script>
+
 {% endblock %}

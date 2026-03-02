@@ -12,7 +12,7 @@
             referrerpolicy="no-referrer">
 
     <!-- Cropper CSS only (JS loaded at bottom) -->
-    <link rel="stylesheet" href="https://unpkg.com/cropperjs/dist/cropper.min.css">
+    {% comment %} <link rel="stylesheet" href="https://unpkg.com/cropperjs/dist/cropper.min.css"> {% endcomment %}
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -229,7 +229,7 @@
     </footer>
 
     <!-- Cropper JS at bottom — only needed on product form pages -->
-    <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
+    {% comment %} <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script> {% endcomment %}
 
     <script>
     (function () {
@@ -289,6 +289,29 @@
         });
     })();
     </script>
+    <!-- Confirm Modal JS -->
+    <script>
+    function openConfirmModal(message, onConfirm) {
+        document.getElementById('confirmMessage').textContent = message;
+        document.getElementById('confirmModal').style.display = 'flex';
+        document.getElementById('confirmActionBtn').onclick = function () {
+            onConfirm();
+            closeConfirmModal();
+        };
+    }
 
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').style.display = 'none';
+    }
+    </script>
+
+    <!-- Loader JS -->
+    <script>
+    (function () {
+        ...existing loader code...
+    })();
+    </script>
+</body>
+</html>
 </body>
 </html>
