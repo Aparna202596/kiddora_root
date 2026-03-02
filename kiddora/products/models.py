@@ -24,21 +24,30 @@ class SubCategory(models.Model):
 class Product(models.Model):
 
     GENDER_CHOICES = [
-        ('boy', 'Boy'),
-        ('girl', 'Girl'),
+        ('boys', 'Boys'),
+        ('girls', 'Girls'),
         ('unisex', 'Unisex'),
     ]
 
     FABRIC_CHOICES = [
         ("Cotton", "Cotton"),
+        ("Organic_cotton", "Organic Cotton"),
+        ("Cotton_spandex", "Cotton Spandex"),
+        ("Cotton_blend", "Cotton Blend"),
+        ("Cotton_pique", "Cotton Pique"),
+        ("Cotton_knit", "Cotton Knit"),
+        ("Cotton_stretch", "Cotton Stretch"),
+        ("Cotton_polyster", "Cotton Polyester"),
+        ("Jersey", "Jersey"),
         ("Polyester", "Polyester"),
         ("Wool", "Wool"),
         ("Silk", "Silk"),
         ("Denim", "Denim"),
+        ("Denim_cotton", "Denim Cotton"),
         ("Linen", "Linen"),
+        ("Linen_blend", "Linen Blend"),
         ("Fleece", "Fleece"),
         ("Velvet", "Velvet"),
-        ("Organic_cotton", "Organic Cotton"),
         ("Wool_blends", "Wool Blends"),
         ("Other", "Other"),
     ]

@@ -72,6 +72,7 @@ def admin_product_list(request):
 
     search = request.GET.get("search", "")
     sort = request.GET.get("sort", "new")
+    dir = request.GET.get("dir", "asc")
     category_id = request.GET.get("category")
     subcategory_id = request.GET.get("subcategory")
     min_price = request.GET.get("min_price")
@@ -105,15 +106,22 @@ def admin_product_list(request):
 
     # SORTING
     sort_map = {
-        "price_low": "final_price",
-        "price_high": "-final_price",
-        "az": "product_name",
-        "za": "-product_name",
-        "new": "-id",
-        "popular": "-popularity_score",
+        "product_name": "product_name",
+        "brand": "brand",
+        "final_price": "final_price",
+        "subcategory__subcategory_name": "subcategory__subcategory_name",
+        "subcategory__category__category_name":"subcategory__category__category_name",
+        "gender": "gender",
+        "new": "id",
+        "popular": "popularity_score",
     }
 
-    queryset = apply_sorting(queryset, sort, sort_map, "-id")
+    if sort in sort_map:
+        field = sort_map[sort]
+        order_field = f"-{field}" if dir == "desc" else field
+        queryset = queryset.order_by(order_field)
+    else:
+        queryset = queryset.order_by("-id")
 
     page_obj = paginate_queryset(request, queryset, 15)
 
@@ -121,11 +129,12 @@ def admin_product_list(request):
         "page_obj": page_obj,
         "search": search,
         "sort": sort,
+        "dir":dir,
         "categories": Category.objects.filter(is_active=True),
         "subcategories": SubCategory.objects.filter(category__is_active=True),
     }
 
-    return render(request, "products/admin/admin_product_list.html", context)
+    return render(request, "products/admin/admin_product_lists.html", context)
 
 # ADD PRODUCT
 

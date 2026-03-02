@@ -178,7 +178,7 @@ tbody tr:hover {
                             title="Edit">✏️</a>
                         <a class="icon-delete"
                             href="{% url 'products:admin_delete_subcategory' sub.id %}"
-                            onclick="confirmDelete(event, this.href)"
+                            onclick="confirmSubcategoryDelete(event, this.href, '{{ sub.subcategory_name }}')"
                             title="Delete">🗑️</a>
                     </td>
                 </tr>
@@ -193,6 +193,17 @@ tbody tr:hover {
 
     {% include "products/admin/pagination.html" %}
 </div>
+<script>
 
+function confirmVariantDelete(e, url, variantLabel) {
+    e.preventDefault();
+    openConfirmModal(
+        'Delete variant "' + variantLabel + '"? This cannot be undone.',
+        function () {
+            window.location.href = url;
+        }
+    );
+}
+</script>
 
 {% endblock %}

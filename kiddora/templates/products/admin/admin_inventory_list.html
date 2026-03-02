@@ -1,6 +1,7 @@
 {% extends "base_admin.html" %}
 {% block content %}
 <style>
+/* Existing styles retained */
 .container { padding: 25px; }
 h2 { text-align: center; margin-bottom: 20px; color: #333; }
 .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
@@ -17,12 +18,15 @@ h2 { text-align: center; margin-bottom: 20px; color: #333; }
 .table-wrapper { border-radius: 14px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 12px; text-align: center; vertical-align: middle; }
-th { background: #020202; color: #fff; cursor: pointer; }
+th { background: #020202; color: #fff; cursor: pointer; position: relative; }
+
+
+
 tbody tr:hover { background: #f1f0ff; }
 .stock-badge { padding: 4px 10px; border-radius: 12px; color: #fff; font-size: 0.85em; }
-.stock-high  { background-color: #2dce89; }
+.stock-high { background-color: #2dce89; }
 .stock-medium{ background-color: #fd9644; }
-.stock-low   { background-color: #fc5c65; }
+.stock-low { background-color: #fc5c65; }
 .update-form { display: flex; justify-content: center; gap: 6px; }
 .update-form input[type=number] { width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid #ccc; }
 .update-btn {
@@ -34,36 +38,34 @@ tbody tr:hover { background: #f1f0ff; }
 
 <div class="container">
     <h2>Inventory Management</h2>
-
     <form method="get" class="search-box">
         <input type="text" name="search" placeholder="Search by product, SKU, brand..." value="{{ search }}">
         <button type="submit" class="search-btn">Search</button>
         <a href="{% url 'products:admin_inventory_list' %}" class="search-btn">Clear</a>
     </form>
-
+    
     <div class="table-wrapper">
         <table id="inventoryTable">
             <thead>
                 <tr>
-                    <th>Product</th>
-                    <th>Category</th>
-                    <th>SubCategory</th>
-                    <th>SKU</th>
-                    <th>Color</th>
-                    <th>Age Group</th>
-                    <th>Available</th>
-                    <th>Reserved</th>
-                    <th>Sold</th>
-                    <th>Update Stock</th>
-                </tr>
+                    <th onclick="sortTable(0)">Product ⬍</th>
+                    <th onclick="sortTable(1)">Category ⬍</th>
+                    <th onclick="sortTable(2)">SubCategory ⬍</th>
+                    <th onclick="sortTable(3)">SKU ⬍</th>
+                    <th onclick="sortTable(4)">Color ⬍</th>
+                    <th onclick="sortTable(5)">Age Group ⬍</th>
+                    <th onclick="sortTable(6)">Available ⬍</th>
+                    <th onclick="sortTable(7)">Reserved ⬍</th>
+                    <th onclick="sortTable(8)">Sold ⬍</th>
+                    <th>Update Stock</th> </tr>
             </thead>
             <tbody>
-            {% for item in inventories %}   {# matches context key "inventories" #}
+            {% for item in inventories %}
                 <tr>
                     <td>{{ item.variant.product.product_name }}</td>
                     <td>{{ item.variant.product.subcategory.category.category_name }}</td>
                     <td>{{ item.variant.product.subcategory.subcategory_name }}</td>
-                    <td>{{ item.variant.sku }}</td>   {# sku is on variant, not product #}
+                    <td>{{ item.variant.sku }}</td>
                     <td>{{ item.variant.color }}</td>
                     <td>{{ item.variant.age_group }}</td>
                     <td>
@@ -78,9 +80,7 @@ tbody tr:hover { background: #f1f0ff; }
                     <td>{{ item.quantity_reserved }}</td>
                     <td>{{ item.quantity_sold }}</td>
                     <td>
-                        <form method="post"
-                                action="{% url 'products:update_stock' item.id %}"
-                                class="update-form">
+                        <form method="post" action="{% url 'products:update_stock' item.id %}" class="update-form">
                             {% csrf_token %}
                             <input type="number" name="quantity" placeholder="qty" min="1" required>
                             <select name="action" style="padding:4px;border-radius:6px;border:1px solid #ccc;">
@@ -99,7 +99,6 @@ tbody tr:hover { background: #f1f0ff; }
             </tbody>
         </table>
     </div>
-
     {% include "products/admin/pagination.html" %}
 </div>
 
@@ -108,15 +107,37 @@ function sortTable(colIndex) {
     const table = document.getElementById("inventoryTable");
     const tbody = table.tBodies[0];
     const rows = Array.from(tbody.rows);
-    const asc = table.dataset.sort !== "asc";
-    table.dataset.sort = asc ? "asc" : "desc";
+    
+    // Track sort direction for each column individually
+    const currentDir = table.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
+    const lastCol = table.getAttribute('data-sort-col');
+    
+    // If clicking a new column, default to ascending
+    const dir = (lastCol == colIndex) ? currentDir : 'asc';
+    
     rows.sort((a, b) => {
-        let x = a.cells[colIndex].innerText.toLowerCase();
-        let y = b.cells[colIndex].innerText.toLowerCase();
-        return !isNaN(x) && !isNaN(y)
-            ? (asc ? x - y : y - x)
-            : (asc ? x.localeCompare(y) : y.localeCompare(x));
+        let x = a.cells[colIndex].innerText.trim();
+        let y = b.cells[colIndex].innerText.trim();
+
+        // Check if the content is a number (handles badges and plain text)
+        const xNum = parseFloat(x);
+        const yNum = parseFloat(y);
+
+        if (!isNaN(xNum) && !isNaN(yNum)) {
+            return dir === "asc" ? xNum - yNum : yNum - xNum;
+        }
+
+        // Fallback to string comparison
+        return dir === "asc" 
+            ? x.localeCompare(y, undefined, {numeric: true, sensitivity: 'base'}) 
+            : y.localeCompare(x, undefined, {numeric: true, sensitivity: 'base'});
     });
+
+    // Update state
+    table.setAttribute('data-sort-dir', dir);
+    table.setAttribute('data-sort-col', colIndex);
+
+    // Re-append rows in new order
     rows.forEach(row => tbody.appendChild(row));
 }
 </script>
