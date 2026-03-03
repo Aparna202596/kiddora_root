@@ -1,24 +1,4 @@
 /* =========================
-    GLOBAL LOADER
-========================= */
-
-function showLoader() {
-    document.getElementById("globalLoader").style.display = "flex";
-}
-
-function hideLoader() {
-    document.getElementById("globalLoader").style.display = "none";
-}
-
-/* Auto loader on form submit */
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll("form").forEach(form => {
-        form.addEventListener("submit", () => showLoader());
-    });
-});
-
-
-/* =========================
     CONFIRMATION MODAL
 ========================= */
 
@@ -52,7 +32,7 @@ function confirmDelete(url) {
 }
 
 function confirmSave(formId) {
-    openConfirmModal("Save changes?", () => {
+    openConfirmModal("Confirm Save?", () => {
         document.getElementById(formId).submit();
     });
 }

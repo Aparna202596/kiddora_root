@@ -1,5 +1,5 @@
 {% extends "base_admin.html" %}
-
+{% load static %}
 {% block content %}
 <style>
 .form-box {
@@ -10,18 +10,15 @@
     border-radius: 16px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
-
 h2 {
     text-align: center;
     margin-bottom: 20px;
 }
-
 label {
     display: block;
     margin-top: 12px;
     font-weight: 500;
 }
-
 input[type="text"],
 select {
     width: 100%;
@@ -30,13 +27,11 @@ select {
     border-radius: 6px;
     border: 1px solid #ccc;
 }
-
 .form-actions {
     display: flex;
-    justify-content: space-between; /* Save left, Cancel right */
+    justify-content: space-between;
     margin-top: 25px;
 }
-
 .btn-custom {
     padding: 8px 18px;
     background: #f06292;
@@ -47,7 +42,6 @@ select {
     text-decoration: none;
     text-align: center;
 }
-
 .btn-custom:hover {
     background: #e15b88;
 }
@@ -81,7 +75,7 @@ select {
             </div>
             {% endif %}
 
-    <form method="post">
+    <form id="subcategoryForm" method="post">
         {% csrf_token %}
 
         <label>Category</label>
@@ -100,16 +94,19 @@ select {
                 value="{{ subcategory.subcategory_name|default:'' }}"
                 required>
 
-        
-
         <div class="form-actions">
-
-            <button type="submit" class="btn-custom">Save</button>
-
+            {% if subcategory %}
+            <button type="button" class="btn-custom" onclick="confirmUpdate('subcategoryForm')">Save</button>
+            {% else %}
+            <button type="button" class="btn-custom" onclick="confirmSave('subcategoryForm')">Save</button>
+            {% endif %}
             <a href="{% url 'products:admin_subcategory_list' %}" class="btn-custom">Cancel</a>
         </div>
     </form>
 </div>
+
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
 /* ── Auto-dismiss messages after 15 seconds ── */
     const msgContainer = document.getElementById("msgContainer");

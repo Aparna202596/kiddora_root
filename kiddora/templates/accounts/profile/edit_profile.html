@@ -1,6 +1,6 @@
 {% extends "base_profile.html" %}
+{% load static %}
 {% block content %}
-
 <style>
 .profile-container {
     max-width: 500px;
@@ -11,20 +11,17 @@
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     font-family: 'Arial', sans-serif;
 }
-
 .profile-container h2 {
     text-align: center;
     margin-bottom: 25px;
     font-size: 26px;
     color: #333;
 }
-
 .profile-container form {
     display: flex;
     flex-direction: column;
     gap: 18px;
 }
-
 .profile-container input[type="text"],
 .profile-container input[type="file"],
 .profile-container input[type="tel"] {
@@ -35,11 +32,9 @@
     width: 100%;
     box-sizing: border-box;
 }
-
 .profile-container input[type="file"] {
     padding: 6px 10px;
 }
-
 .profile-container button {
     padding: 12px 0;
     border: none;
@@ -51,11 +46,9 @@
     cursor: pointer;
     transition: background 0.3s ease;
 }
-
 .profile-container button:hover {
     background-color: #bd35a2ff;
 }
-
 .profile-image-preview {
     width: 100px;
     height: 100px;
@@ -81,7 +74,6 @@
     .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
     .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
-
 <div class="profile-container">
     <h2>Edit Profile</h2>
     {% if messages %}
@@ -97,12 +89,12 @@
     {% if request.user.profile_image %}
         <img src="{{ request.user.profile_image.url }}" alt="Profile Image" class="profile-image-preview">
     {% endif %}
-    <form method="post" enctype="multipart/form-data">
+    <!-- FIX: added id="profileForm" so confirmSave('profileForm') can find and submit it -->
+    <form id="profileForm" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="text" name="full_name" placeholder="Full Name" value="{{ form_data.full_name|default:user.full_name }}">
         <input type="tel" name="phone" placeholder="Phone Number" value="{{ form_data.phone|default:user.phone }}">
         <input type="file" name="profile_image" accept="image/*">
-        
         <div class="profile-field">
                 <label>Gender</label>
                 <div class="gender-options">
@@ -118,9 +110,12 @@
                     </label>
                 </div>
             </div>
-        <button type="submit" onclick="confirmSave('profileForm')">Save</button>
+        <button type="button" onclick="confirmSave('profileForm')">Save</button>
     </form>
 </div>
+
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
 /* ── Auto-dismiss messages after 15 seconds ── */
     const msgContainer = document.getElementById("msgContainer");

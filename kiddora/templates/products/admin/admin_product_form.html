@@ -1,4 +1,5 @@
 {% extends "base_admin.html" %}
+{% load static %}
 {% block content %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <style>
@@ -17,7 +18,6 @@ input, select, textarea {
     border-radius: 8px; border: 1px solid #cfcfcf;
 }
 textarea { resize: vertical; }
-
 /* ── DROPDOWN SEARCH ── */
 .dropdown-search {
     padding: 6px 8px; border-bottom: 1px solid #eee;
@@ -27,7 +27,6 @@ textarea { resize: vertical; }
     width: 100%; padding: 6px 8px;
     border-radius: 6px; border: 1px solid #ddd; font-size: 14px;
 }
-
 /* ── CUSTOM SELECT ── */
 .custom-select { position: relative; margin-top: 8px; }
 .select-box {
@@ -62,11 +61,9 @@ textarea { resize: vertical; }
 }
 .options-container label:has(input[type="radio"]:checked) { background: #fff; }
 .custom-select.active .options-container { display: block; }
-
 /* ── IMAGE INPUTS ── */
 .image-input-group { margin-top: 12px; }
 .preview-container { margin-top: 6px; }
-
 /* ── ACTIONS ── */
 .actions { display: flex; justify-content: space-between; margin-top: 26px; }
 .btn {
@@ -91,7 +88,6 @@ textarea { resize: vertical; }
     .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
     .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
-
 <div class="form-box">
     <h2>{% if product %}Edit Product{% else %}Add Product{% endif %}</h2>
     {% if messages %}
@@ -104,14 +100,12 @@ textarea { resize: vertical; }
                 {% endfor %}
             </div>
             {% endif %}
-    <form method="post" enctype="multipart/form-data">
+    <!-- FIX: added id="productForm" so confirmSave/confirmUpdate can locate and submit it -->
+    <form id="productForm" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-
         <label>Product Name</label>
         <input type="text" name="product_name" value="{{ product.product_name|default:'' }}" required>
-
         <input type="hidden" id="categorySelect">
-
         <label>Category</label>
         <div class="custom-select" id="categoryDropdown">
             <div class="select-box" id="categorySelected">
@@ -131,7 +125,6 @@ textarea { resize: vertical; }
                 {% endfor %}
             </div>
         </div>
-
         <label>Subcategory</label>
         <div class="custom-select" id="subcategoryDropdown">
             <div class="select-box" id="subcategorySelected">
@@ -153,23 +146,18 @@ textarea { resize: vertical; }
                 {% endfor %}
             </div>
         </div>
-
         <label>Brand</label>
         <input type="text" name="brand" value="{{ product.brand|default:'' }}" required>
-
         <label>Base Price</label>
         <input type="number" step="0.01" id="base_price" name="base_price"
                 value="{{ product.base_price|default:'' }}" required>
-
         <label>Discount in %</label>
         <input type="number" id="discount_percent" name="discount_percent"
                 value="{{ product.discount_percent|default:0 }}">
-
         <label>Final Price</label>
         <input type="text" id="final_price_preview"
                 value="{% if preview_final_price %}{{ preview_final_price }}{% elif product %}{{ product.final_price }}{% else %}0.00{% endif %}"
                 readonly>
-
         <label>Fabric</label>
         <div class="custom-select" id="fabricDropdown">
             <div class="select-box" id="fabricSelected">
@@ -188,7 +176,6 @@ textarea { resize: vertical; }
                 {% endfor %}
             </div>
         </div>
-
         <label>Gender</label>
         <div class="custom-select" id="genderDropdown">
             <div class="select-box" id="genderSelected">
@@ -207,7 +194,6 @@ textarea { resize: vertical; }
                 {% endfor %}
             </div>
         </div>
-
         <!-- Images -->
         <div class="form-group">
             <label>Product Images <small>(Must upload minimum of 3 images)</small></label>
@@ -220,10 +206,8 @@ textarea { resize: vertical; }
             </div>
             {% endfor %}
         </div>
-
         <label>About Product</label>
         <textarea name="about_product" rows="3">{{ product.about_product|default:'' }}</textarea>
-
         {% if product %}
         <label style="display:flex; align-items:center; gap:8px; font-weight:500; margin-top:14px;">
             <input type="checkbox" name="is_active"
@@ -232,23 +216,32 @@ textarea { resize: vertical; }
             Active
         </label>
         {% endif %}
-
         <div class="actions">
             <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
-            <button type="submit" class="btn btn-primary">Save</button>
+            <!--
+                FIX: type="button" stops the form submitting immediately.
+                     confirmSave()   → used when adding a new product
+                     confirmUpdate() → used when editing an existing product
+                Both functions are provided by ui-utils.js and submit the form after modal confirmation.
+            -->
+            {% if product %}
+            <button type="button" class="btn btn-primary"
+                    onclick="confirmUpdate('productForm')">Save</button>
+            {% else %}
+            <button type="button" class="btn btn-primary"
+                    onclick="confirmSave('productForm')">Save</button>
+            {% endif %}
         </div>
     </form>
 </div>
 
-<!-- CROPPER MODAL  — must be a complete wrapper-->
+<!-- CROPPER MODAL -->
 <div id="cropperModal"
     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(0,0,0,0.8); z-index:99999;">
-
     <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
                 background:#fff; border-radius:10px; width:90%; max-width:800px;
                 height:90%; max-height:600px; display:flex; flex-direction:column;">
-
         <!-- Header -->
         <div style="padding:15px 20px; border-bottom:1px solid #ddd; display:flex;
                     justify-content:space-between; align-items:center;
@@ -259,14 +252,12 @@ textarea { resize: vertical; }
                 &times;
             </button>
         </div>
-
         <!-- Cropper area -->
         <div id="cropper-container"
             style="flex:1; padding:20px; position:relative; overflow:hidden;">
             <img id="cropperImage"
                 style="max-width:100%; max-height:100%; display:block; margin:0 auto;">
         </div>
-
         <!-- Footer -->
         <div style="padding:15px 20px; border-top:1px solid #ddd; display:flex;
                     justify-content:flex-end; gap:10px;
@@ -285,68 +276,55 @@ textarea { resize: vertical; }
     </div>
 </div>
 
-{% comment %} <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.5.12/dist/cropper.min.js"></script> {% endcomment %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
 <!-- Cropper functions -->
 <script>
 let cropper      = null;
 let currentInput = null;
 let currentPreview = null;
 let originalFile = null;
-
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.product-image').forEach(input => {
         input.addEventListener('change', handleImageSelect);
     });
 });
-
 function handleImageSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
-
     if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
         alert('Please select a valid image file (JPEG, JPG, or PNG)');
         e.target.value = '';
         return;
     }
-
     currentInput   = e.target;
     originalFile   = file;
     const num      = e.target.id.replace('productImage', '');
     currentPreview = document.getElementById('preview' + num);
-
     const reader = new FileReader();
     reader.onload = ev => showCropModal(ev.target.result);
     reader.readAsDataURL(file);
 }
-
 function showCropModal(imageSrc) {
     const modal        = document.getElementById('cropperModal');
     const cropperImage = document.getElementById('cropperImage');
     const cropBtn      = document.getElementById('cropSaveBtn');
-
     if (cropper) { cropper.destroy(); cropper = null; }
-
     modal.style.display          = 'block';
     document.body.style.overflow = 'hidden';
     cropBtn.disabled             = true;
     cropBtn.textContent          = 'Loading...';
     cropBtn.style.background     = '#007bff';
-
     cropperImage.src = imageSrc;
     cropperImage.onload = () => setTimeout(initCropper, 200);
 }
-
 function initCropper() {
     const cropperImage = document.getElementById('cropperImage');
     const cropBtn      = document.getElementById('cropSaveBtn');
-
-    // Simple, standard initialization
     try {
         if (typeof Cropper !== 'function') {
             throw new Error("Cropper library not loaded correctly.");
         }
-
         cropper = new Cropper(cropperImage, {
             aspectRatio: 3 / 4,
             viewMode: 1,
@@ -376,21 +354,17 @@ function closeCropPopup() {
     if (cropper) { cropper.destroy(); cropper = null; }
     currentInput = currentPreview = originalFile = null;
 }
-
 function cropImage() {
     if (!cropper) { alert('Cropper not ready'); return; }
-
     const cropBtn = document.getElementById('cropSaveBtn');
     cropBtn.disabled    = true;
     cropBtn.textContent = 'Processing...';
-
     try {
         const canvas = cropper.getCroppedCanvas({
             width: 800, height: 600,
             imageSmoothingEnabled: true,
             imageSmoothingQuality: 'high'
         });
-
         canvas.toBlob(blob => {
             if (!blob) {
                 alert('Failed to process image');
@@ -398,28 +372,24 @@ function cropImage() {
                 cropBtn.textContent = 'Crop & Save';
                 return;
             }
-
-            const fileName   = originalFile.name.replace(/\.[^/.]+$/, '') + '_cropped.jpg';
+            const fileName    = originalFile.name.replace(/\.[^/.]+$/, '') + '_cropped.jpg';
             const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
             const dt = new DataTransfer();
             dt.items.add(croppedFile);
             currentInput.files = dt.files;
-
             if (currentPreview) {
                 currentPreview.innerHTML = '';
                 const img = document.createElement('img');
                 img.src = canvas.toDataURL('image/jpeg', 0.8);
                 img.style.cssText = 'max-width:200px;border:2px solid #28a745;border-radius:4px;margin-top:10px;';
                 const ok = document.createElement('p');
-                ok.textContent  = '✓ Image cropped successfully!';
+                ok.textContent   = '✓ Image cropped successfully!';
                 ok.style.cssText = 'color:#28a745;font-size:14px;margin-top:5px;';
                 currentPreview.appendChild(img);
                 currentPreview.appendChild(ok);
             }
-
             closeCropPopup();
         }, 'image/jpeg', 0.85);
-
     } catch (err) {
         console.error('Crop error:', err);
         alert('Failed to crop image: ' + err.message);
@@ -439,7 +409,6 @@ function updateFinalPrice() {
 }
 document.getElementById('base_price').addEventListener('input', updateFinalPrice);
 document.getElementById('discount_percent').addEventListener('input', updateFinalPrice);
-
 function filterSubcategories() {
     const sel = document.getElementById('categorySelect').value;
     document.querySelectorAll('.subcategory-item').forEach(item => {
@@ -448,11 +417,9 @@ function filterSubcategories() {
         if (!show) item.querySelector('input').checked = false;
     });
 }
-
 function setupDropdown(dropdownId, selectedId) {
     const dropdown = document.getElementById(dropdownId);
     const selected = document.getElementById(selectedId);
-
     dropdown.querySelectorAll('input[type=radio]').forEach(radio => {
         radio.addEventListener('change', () => {
             selected.textContent = radio.parentElement.textContent.trim();
@@ -463,17 +430,14 @@ function setupDropdown(dropdownId, selectedId) {
             dropdown.classList.remove('active');
         });
     });
-
     document.addEventListener('click', e => {
         if (!dropdown.contains(e.target)) dropdown.classList.remove('active');
     });
 }
-
 setupDropdown('categoryDropdown',    'categorySelected');
 setupDropdown('subcategoryDropdown', 'subcategorySelected');
 setupDropdown('fabricDropdown',      'fabricSelected');
 setupDropdown('genderDropdown',      'genderSelected');
-
 window.addEventListener('DOMContentLoaded', filterSubcategories);
 </script>
 
@@ -483,14 +447,12 @@ document.querySelectorAll('.custom-select').forEach(dropdown => {
     const searchInput = dropdown.querySelector('.dropdown-search-input');
     if (!searchInput) return;
     const opts = dropdown.querySelectorAll('.options-container label');
-
     searchInput.addEventListener('input', function () {
         const term = this.value.toLowerCase();
         opts.forEach(o => {
             o.style.display = o.textContent.toLowerCase().includes(term) ? 'flex' : 'none';
         });
     });
-
     document.addEventListener('click', e => {
         if (!dropdown.contains(e.target)) {
             searchInput.value = '';
@@ -508,7 +470,6 @@ document.querySelectorAll('.custom-select').forEach(dropdown => {
     if (opts)   opts.addEventListener('click',   e => e.stopPropagation());
     if (search) search.addEventListener('click', e => e.stopPropagation());
 });
-
 document.querySelectorAll('.select-box').forEach(box => {
     box.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -519,11 +480,14 @@ document.querySelectorAll('.select-box').forEach(box => {
         dropdown.classList.toggle('active');
     });
 });
-
 document.addEventListener('click', () => {
     document.querySelectorAll('.custom-select').forEach(d => d.classList.remove('active'));
 });
 </script>
+
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
+
 <script>
 /* ── Auto-dismiss messages after 15 seconds ── */
     const msgContainer = document.getElementById("msgContainer");

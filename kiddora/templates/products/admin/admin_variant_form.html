@@ -1,4 +1,5 @@
 {% extends "base_admin.html" %}
+{% load static %}
 {% block content %}
 <style>
 .form-box {
@@ -15,10 +16,8 @@ input {
     width: 100%; padding: 10px; margin-top: 6px;
     border-radius: 8px; border: 1px solid #cfcfcf;
 }
-
-/* ── CUSTOM SELECT (matches product form) ── */
+/* ── CUSTOM SELECT ── */
 .custom-select { position: relative; margin-top: 8px; }
-
 .select-box {
     width: 100%;
     padding: 10px 40px 10px 12px;
@@ -39,7 +38,6 @@ input {
     font-size: 12px; color: #666;
     pointer-events: none;
 }
-
 .options-container {
     display: none;
     position: absolute;
@@ -54,8 +52,6 @@ input {
     padding: 4px 0;
 }
 .custom-select.active .options-container { display: block; }
-
-/* Sticky search bar */
 .dropdown-search {
     padding: 6px 8px;
     border-bottom: 1px solid #eee;
@@ -70,8 +66,6 @@ input {
     font-size: 13px; outline: none;
 }
 .dropdown-search-input:focus { border-color: #f062c0; }
-
-/* Option rows */
 .options-container label {
     display: flex;
     align-items: center;
@@ -84,8 +78,6 @@ input {
     margin-top: 0;
 }
 .options-container label:hover { background: #f2ddf6; }
-
-/* Radio dot */
 .options-container input[type="radio"] {
     appearance: none;
     width: 10px; height: 10px;
@@ -108,16 +100,12 @@ input {
     background: #fdf0fa;
     color: #c0369a;
 }
-
-/* No-results row */
 .no-results {
     display: none;
     padding: 10px 12px;
     font-size: 13px;
     color: #999;
 }
-
-/* Active / is_active checkbox */
 .checkbox-label {
     display: flex;
     align-items: center;
@@ -130,7 +118,6 @@ input {
     width: auto; margin: 0;
     accent-color: #f062c0;
 }
-
 .note { margin-top: 14px; font-size: 13px; color: #666; }
 .actions { display: flex; justify-content: space-between; margin-top: 24px; }
 .btn {
@@ -156,7 +143,6 @@ input {
     .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
     .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
-
 <div class="form-box">
     <h2>{% if variant %}Edit Variant{% else %}Add Variant{% endif %}</h2>
     {% if messages %}
@@ -169,14 +155,11 @@ input {
                 {% endfor %}
             </div>
             {% endif %}
-
     <form method="post" id="variantForm">
         {% csrf_token %}
-
         {% if product %}
         <p><strong>Product:</strong> {{ product.product_name }}</p>
         {% endif %}
-
         <!-- ── COLOR ── -->
         <label>Color</label>
         <div class="custom-select" id="colorDropdown">
@@ -197,7 +180,6 @@ input {
                 <div class="no-results">No colors found</div>
             </div>
         </div>
-
         <!-- ── AGE GROUP ── -->
         <label>Age Group</label>
         <div class="custom-select" id="ageDropdown">
@@ -218,13 +200,11 @@ input {
                 <div class="no-results">No age groups found</div>
             </div>
         </div>
-
         <!-- ── INITIAL STOCK (add only) ── -->
         {% if not variant %}
         <label>Initial Stock</label>
         <input type="number" name="stock" min="0" value="0" required>
         {% endif %}
-
         <!-- ── IS ACTIVE (edit only) ── -->
         {% if variant %}
         <label class="checkbox-label">
@@ -233,20 +213,51 @@ input {
             Active
         </label>
         {% endif %}
-
         <div class="note">
             Create multiple variants by repeating combinations
             (e.g., 4 colors × 3 ages = 12 variants).
         </div>
-
         <div class="actions">
             <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
-            <button type="submit" class="btn btn-primary">Save Variant</button>
+            <!--
+                type="button" prevents immediate submit.
+                validateAndConfirm() runs the same validation as before,
+                then opens confirmUpdate (edit) or confirmSave (add).
+            -->
+            <button type="button" class="btn btn-primary"
+                    onclick="validateAndConfirm()">Save Variant</button>
         </div>
     </form>
 </div>
 
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
+
 <script>
+/* ── Validate then open the appropriate confirm modal ── */
+function validateAndConfirm() {
+    const form = document.getElementById('variantForm');
+
+    if (!form.querySelector('input[name="color"]:checked')) {
+        alert('Please select a color.');
+        document.getElementById('colorDropdown').classList.add('active');
+        return;
+    }
+    if (!form.querySelector('input[name="age_group"]:checked')) {
+        alert('Please select an age group.');
+        document.getElementById('ageDropdown').classList.add('active');
+        return;
+    }
+
+    /* Validation passed — open confirm modal */
+    {% if variant %}
+    confirmUpdate('variantForm');
+    {% else %}
+    confirmSave('variantForm');
+    {% endif %}
+}
+
+/* ── Custom-select dropdown setup ── */
 function setupSearchDropdown(dropdownId, selectedId) {
     const dropdown    = document.getElementById(dropdownId);
     const selectedBox = document.getElementById(selectedId);
@@ -255,7 +266,6 @@ function setupSearchDropdown(dropdownId, selectedId) {
     const options     = dropdown.querySelectorAll('.options-container label');
     const noResults   = dropdown.querySelector('.no-results');
 
-    /* Open / close on select-box click */
     selectedBox.addEventListener('click', function (e) {
         e.stopPropagation();
         document.querySelectorAll('.custom-select').forEach(d => {
@@ -267,11 +277,9 @@ function setupSearchDropdown(dropdownId, selectedId) {
         }
     });
 
-    /* Keep panel open on internal clicks */
     container.addEventListener('click', e => e.stopPropagation());
     dropdown.querySelector('.dropdown-search').addEventListener('click', e => e.stopPropagation());
 
-    /* Select an option */
     options.forEach(label => {
         label.querySelector('input[type="radio"]').addEventListener('change', () => {
             selectedBox.textContent = label.textContent.trim();
@@ -282,7 +290,6 @@ function setupSearchDropdown(dropdownId, selectedId) {
         });
     });
 
-    /* Filter on search input */
     searchInput.addEventListener('input', function () {
         const term = this.value.toLowerCase();
         let visible = 0;
@@ -298,26 +305,11 @@ function setupSearchDropdown(dropdownId, selectedId) {
 setupSearchDropdown('colorDropdown', 'colorSelected');
 setupSearchDropdown('ageDropdown',   'ageSelected');
 
-/* Global outside-click closer */
 document.addEventListener('click', () => {
     document.querySelectorAll('.custom-select').forEach(d => d.classList.remove('active'));
 });
-
-/* Form validation */
-document.getElementById('variantForm').addEventListener('submit', function (e) {
-    if (!this.querySelector('input[name="color"]:checked')) {
-        e.preventDefault();
-        alert('Please select a color.');
-        document.getElementById('colorDropdown').classList.add('active');
-        return;
-    }
-    if (!this.querySelector('input[name="age_group"]:checked')) {
-        e.preventDefault();
-        alert('Please select an age group.');
-        document.getElementById('ageDropdown').classList.add('active');
-    }
-});
 </script>
+
 <script>
 /* ── Auto-dismiss messages after 15 seconds ── */
     const msgContainer = document.getElementById("msgContainer");

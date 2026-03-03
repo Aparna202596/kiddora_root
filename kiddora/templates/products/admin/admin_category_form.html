@@ -1,5 +1,5 @@
 {% extends "base_admin.html" %}
-
+{% load static %}
 {% block content %}
 <style>
 .form-box {
@@ -7,21 +7,18 @@
     margin: 40px auto;
     padding: 25px;
     background: #f8f9fa;
-    border-radius: 16px; /* curved edges */
+    border-radius: 16px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
-
 h2 {
-    text-align: center; /* center heading */
+    text-align: center;
     margin-bottom: 20px;
 }
-
 label {
     display: block;
     margin-top: 12px;
     font-weight: 500;
 }
-
 input[type="text"] {
     width: 100%;
     padding: 8px;
@@ -29,13 +26,11 @@ input[type="text"] {
     border-radius: 6px;
     border: 1px solid #ccc;
 }
-
 .form-actions {
     display: flex;
-    justify-content: space-between; /* left & right */
+    justify-content: space-between;
     margin-top: 25px;
 }
-
 .btn-custom {
     padding: 8px 18px;
     background: #f06292;
@@ -46,7 +41,6 @@ input[type="text"] {
     text-decoration: none;
     text-align: center;
 }
-
 .btn-custom:hover {
     background: #f42f71;
 }
@@ -66,7 +60,6 @@ input[type="text"] {
     .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
     .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
-
 <div class="form-box">
     <h2>{% if category %}Edit Category{% else %}Add Category{% endif %}</h2>
     {% if messages %}
@@ -79,30 +72,31 @@ input[type="text"] {
                 {% endfor %}
             </div>
             {% endif %}
-    <form method="post">
+    <form id="categoryForm" method="post">
         {% csrf_token %}
-
         <label>Category Name</label>
-
         <input type="text"
                 name="category_name"
                 value="{{ category.category_name|default:'' }}"
                 required>
-
         <label>
             <input type="checkbox" name="is_active"
                     {% if category and category.is_active %}checked{% endif %}>
             Active
         </label>
-
         <div class="form-actions">
-
-            <button type="submit" class="btn-custom">Save</button>
-
+            {% if category %}
+            <button type="button" class="btn-custom" onclick="confirmUpdate('categoryForm')">Save</button>
+            {% else %}
+            <button type="button" class="btn-custom" onclick="confirmSave('categoryForm')">Save</button>
+            {% endif %}
             <a href="{% url 'products:admin_category_list' %}" class="btn-custom">Cancel</a>
-            
+        </div>
     </form>
 </div>
+
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
 /* ── Auto-dismiss messages after 15 seconds ── */
     const msgContainer = document.getElementById("msgContainer");
