@@ -1,7 +1,5 @@
 {% extends "base_admin.html" %}
-
 {% block title %}Admin Dashboard | Kiddora{% endblock %}
-
 {% block content %}
 <style>
 .dashboard-wrapper {
@@ -10,38 +8,61 @@
     min-height: 100vh;
 }
 .dashboard-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; }
-
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 20px; }
 .stat-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
 .stat-label { font-size: 13px; color: #777; }
 .stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; }
 .stat-extra { font-size: 12px; margin-top: 6px; }
-
-.bg-blue { background: linear-gradient(135deg,#dbeafe,#eff6ff); }
-.bg-green { background: linear-gradient(135deg,#dcfce7,#f0fdf4); }
+.bg-blue   { background: linear-gradient(135deg,#dbeafe,#eff6ff); }
+.bg-green  { background: linear-gradient(135deg,#dcfce7,#f0fdf4); }
 .bg-yellow { background: linear-gradient(135deg,#fef3c7,#fffbeb); }
-.bg-red { background: linear-gradient(135deg,#fee2e2,#fff1f2); }
-
+.bg-red    { background: linear-gradient(135deg,#fee2e2,#fff1f2); }
 .section { margin-top: 40px; }
 .section-title { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 24px; }
 .chart-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-
+.chart-card canvas { max-height: 280px; }
 .table-wrapper { overflow-x: auto; background: #fff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #eee; text-align: left; }
 th { background: #f8fafc; font-weight: 600; }
-
 .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: #fff; }
-.badge-green { background:#16a34a; }
+.badge-green  { background:#16a34a; }
 .badge-yellow { background:#f59e0b; }
-.badge-red { background:#dc2626; }
+.badge-red    { background:#dc2626; }
 
+/* Donut centre-text overlay — pure HTML, no canvas plugin */
+.donut-wrapper { position: relative; display: inline-block; width: 100%; }
+.donut-center-label {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -58%);
+    text-align: center;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    width: 120px;          /* constrain to fit inside the cutout */
+}
+.dcl-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+}
+.dcl-title  { font-size: 9px;  color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; }
+.dcl-value  { font-size: 13px; font-weight: 700; color: #374151; }
+.dcl-sub    { font-size: 8px;  color: #b0b8c1; }
+.dcl-divider {
+    width: 30px; height: 1px;
+    background: #e5e7eb;
+    margin: 2px 0;
+}
 @media(max-width:768px){ .dashboard-title { font-size: 20px; } }
 </style>
 
 <div class="dashboard-wrapper">
-
     <h2 class="dashboard-title">Admin Dashboard</h2>
 
     <!-- ===== KPI CARDS ===== -->
@@ -67,13 +88,13 @@ th { background: #f8fafc; font-weight: 600; }
             <div class="stat-value">{{ products_sold }}</div>
         </div>
         <div class="stat-card bg-blue">
-            <div class="stat-label">New Customers (30 Days)</div>
+            <div class="stat-label">New Customers (Last 30 Days)</div>
             <div class="stat-value">{{ new_customers }}</div>
-            <div class="stat-extra">Growth: {{ customer_growth }}%</div>
+            <div class="stat-extra">Growth: {{ customer_growth_30days }}%</div>
         </div>
     </div>
 
-    <!-- ===== CHARTS ===== -->
+    <!-- ===== TOP PERFORMANCE ===== -->
     <div class="section">
         <h3 class="section-title">Top Performance Analytics</h3>
         <div class="chart-grid">
@@ -92,13 +113,35 @@ th { background: #f8fafc; font-weight: 600; }
         </div>
     </div>
 
+    <!-- ===== ADVANCED ANALYTICS ===== -->
     <div class="section">
         <h3 class="section-title">Advanced Analytics</h3>
         <div class="chart-grid">
+
             <div class="chart-card">
-                <h4>Total Orders / Customers / Revenue</h4>
-                <canvas id="donutChart"></canvas>
+                <h4>Total Orders / Cust. Growth in last 10 days / Revenue (₹)</h4>
+                <div class="donut-wrapper">
+                    <canvas id="donutChart"></canvas>
+                    <div class="donut-center-label">
+                        <div class="dcl-row">
+                            <span class="dcl-title">Total Orders</span>
+                            <span class="dcl-value">{{ total_orders }}</span>
+                        </div>
+                        <div class="dcl-divider"></div>
+                        <div class="dcl-row">
+                            <span class="dcl-title">Cust. Growth</span>
+                            <span class="dcl-value">{{ customer_growth_10days }}%</span>
+                            <span class="dcl-sub">last 10 days</span>
+                        </div>
+                        <div class="dcl-divider"></div>
+                        <div class="dcl-row">
+                            <span class="dcl-title">Revenue</span>
+                            <span class="dcl-value">₹{{ total_revenue }}</span>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <div class="chart-card">
                 <h4>Products Sold (Last 7 Days)</h4>
                 <canvas id="areaChart"></canvas>
@@ -117,11 +160,8 @@ th { background: #f8fafc; font-weight: 600; }
             <table>
                 <thead>
                     <tr>
-                        <th>Order ID</th>
-                        <th>User</th>
-                        <th>Status</th>
-                        <th>Final Amount</th>
-                        <th>Date</th>
+                        <th>Order ID</th><th>User</th><th>Status</th>
+                        <th>Final Amount</th><th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -148,12 +188,12 @@ th { background: #f8fafc; font-weight: 600; }
             </table>
         </div>
     </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-/* ===== TOP PRODUCTS ===== */
+
+/* ── TOP PRODUCTS ── */
 new Chart(document.getElementById('productChart'), {
     type: 'bar',
     data: {
@@ -165,10 +205,10 @@ new Chart(document.getElementById('productChart'), {
             borderRadius: 6
         }]
     },
-    options:{ responsive:true, plugins:{ legend:{ display:false } } }
+    options: { responsive: true, plugins: { legend: { display: false } } }
 });
 
-/* ===== TOP CATEGORIES ===== */
+/* ── TOP CATEGORIES ── */
 new Chart(document.getElementById('categoryChart'), {
     type: 'bar',
     data: {
@@ -180,10 +220,10 @@ new Chart(document.getElementById('categoryChart'), {
             borderRadius: 6
         }]
     },
-    options:{ responsive:true, plugins:{ legend:{ display:false } } }
+    options: { responsive: true, plugins: { legend: { display: false } } }
 });
 
-/* ===== TOP BRANDS ===== */
+/* ── TOP BRANDS ── */
 new Chart(document.getElementById('brandChart'), {
     type: 'bar',
     data: {
@@ -195,56 +235,62 @@ new Chart(document.getElementById('brandChart'), {
             borderRadius: 6
         }]
     },
-    options:{ responsive:true, plugins:{ legend:{ display:false } } }
+    options: { responsive: true, plugins: { legend: { display: false } } }
 });
 
-/* ===== DONUT CHART ===== */
+/* ── DONUT CHART ── */
+(function () {
+    const totalOrders    = {{ total_orders }};
+    const custGrowthRaw  = {{ customer_growth_10days }};   // may be 0 or negative
+    const revenueRaw     = {{ total_revenue|floatformat:0 }};
 
-Chart.register({
-    id: 'centerText',
-    beforeDraw(chart) {
-        const { ctx, chartArea } = chart;
-        if (!chartArea) return;
+    // Arc size must be > 0; use absolute value so negative growth still shows a segment
+    const arcOrders  = Math.max(totalOrders, 1);
+    const arcGrowth  = Math.max(Math.abs(custGrowthRaw), 1);
+    const arcRevenue = Math.max(revenueRaw, 1);
 
-        const centerX = (chartArea.left + chartArea.right) / 2;
-        const centerY = (chartArea.top + chartArea.bottom) / 2;
+    // Normalise to 0–100 so all three arcs are proportionally visible
+    const maxArc = Math.max(arcOrders, arcGrowth, arcRevenue);
+    const normOrders  = (arcOrders  / maxArc) * 100;
+    const normGrowth  = (arcGrowth  / maxArc) * 100;
+    const normRevenue = (arcRevenue / maxArc) * 100;
 
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        ctx.font = '12px sans-serif';
-        ctx.fillStyle = '#374151';
-        ctx.fillText('Customer Growth', centerX, centerY - 6);
-
-        ctx.font = '11px sans-serif';
-        ctx.fillStyle = '#6b7280';
-        ctx.fillText('{{ customer_growth }}%', centerX, centerY + 8);
-
-        ctx.restore();
-    }
-});
-
-new Chart(document.getElementById('donutChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Total Orders','Customer Growth (%)','Total Revenue'],
-        datasets: [{
-            data: [{{ total_orders }}, {{ customer_growth }}, {{ total_revenue|floatformat:0 }}],
-            backgroundColor: ['#aaa7e7','#9ce4cc','#fcaa7f'],
-            hoverOffset: 6
-        }]
-    },
-    options:{
-        responsive:true,
-        cutout: '50%', 
-        plugins:{
-            legend:{ display:true }
+    new Chart(document.getElementById('donutChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Total Orders', 'Customer Growth (10d %)', 'Total Revenue (₹)'],
+            
+            datasets: [{
+                data: [normOrders, normGrowth, normRevenue],
+                backgroundColor: ['#aaa7e7', '#9ce4cc', '#fcaa7f'],
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '58%',
+            plugins: {
+                legend: { display: true, position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        // Always display the real, un-normalised values in the tooltip
+                        label: function (context) {
+                            const i = context.dataIndex;
+                            if (i === 0) return '  Total Orders: ' + totalOrders;
+                            if (i === 1) {
+                                const sign = custGrowthRaw >= 0 ? '+' : '';
+                                return '  Customer Growth (10d): ' + sign + custGrowthRaw + '%';
+                            }
+                            return '  Total Revenue: ₹' + revenueRaw.toLocaleString('en-IN');
+                        }
+                    }
+                }
+            }
         }
-    }
-});
+    });
+})();
 
-/* ===== AREA CHART (Products Sold Last 7 Days) ===== */
+/* ── AREA CHART — Products Sold Last 7 Days ── */
 new Chart(document.getElementById('areaChart'), {
     type: 'line',
     data: {
@@ -252,34 +298,41 @@ new Chart(document.getElementById('areaChart'), {
         datasets: [{
             label: 'Products Sold',
             data: [{% for qty in products_sold_per_day %}{{ qty }},{% endfor %}],
-            fill:true,
-            backgroundColor:'rgba(59,130,246,0.2)',
-            borderColor:'rgba(59,130,246,1)',
-            tension:0.3
+            fill: true,
+            backgroundColor: 'rgba(59,130,246,0.2)',
+            borderColor: 'rgba(59,130,246,1)',
+            tension: 0.3
         }]
     },
-    options:{ responsive:true, plugins:{ legend:{ display:false } } }
+    options: { responsive: true, plugins: { legend: { display: false } } }
 });
 
-/* ===== LINE CHART (Revenue Trend) ===== */
+/* ── LINE CHART — Revenue Trend ──
+   Currently shows a flat line because total_revenue is a cumulative scalar,
+   not a per-month breakdown. To make this dynamic, aggregate monthly revenue
+   in the view and pass it as `monthly_revenue` (list of 12 values).
+*/
 new Chart(document.getElementById('lineChart'), {
-    type:'line',
-    data:{
-        labels:[ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ],
-        datasets:[{
-            label:'Total Revenue',
-            data:[ {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                    {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }} ],
-            borderColor:'rgba(220,38,38,1)',
-            backgroundColor:'rgba(220,38,38,0.1)',
-            fill:true,
-            tension:0.3
+    type: 'line',
+    data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+        datasets: [{
+            label: 'Total Revenue (₹)',
+            data: [
+                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
+                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}
+            ],
+            borderColor: 'rgba(220,38,38,1)',
+            backgroundColor: 'rgba(220,38,38,0.1)',
+            fill: true,
+            tension: 0.3
         }]
     },
-    options:{ responsive:true }
+    options: { responsive: true }
 });
 </script>
 {% endblock %}

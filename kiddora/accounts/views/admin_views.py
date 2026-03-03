@@ -1,5 +1,4 @@
 from django.views.decorators.cache import never_cache
-
 from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required
 from django.contrib.auth import get_user_model
@@ -18,59 +17,110 @@ User = get_user_model()
 @never_cache
 @admin_login_required
 def admin_dashboard_view(request):
+    today = timezone.now().date()
 
-    today =timezone.now().date()
-    
+    # --- Date ranges ---
+    ten_days_ago = today - timedelta(days=10)   # FIX: used for 10-day window (inclusive of today)
+    last_30_days = today - timedelta(days=30)
+    previous_30_days_start = today - timedelta(days=60)
+
     last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
-    
     last_7_days_labels = [d.strftime("%d %b") for d in last_7_days]
 
-    last_30_days = today - timedelta(days=30)
-
-    previous_30_days = today - timedelta(days=60)
-
+    # --- Core KPIs ---
     total_orders = Order.objects.count()
-
     completed_orders = Order.objects.filter(order_status="DELIVERED").count()
-
-    total_revenue = Payment.objects.filter(payment_status='PAID').aggregate(total=Sum('order__final_amount'))['total'] or 0
-
+    total_revenue = (
+        Payment.objects.filter(payment_status='PAID')
+        .aggregate(total=Sum('order__final_amount'))['total'] or 0
+    )
     products_sold = OrderItem.objects.aggregate(total=Sum('quantity')).get("total") or 0
-
     total_stock = Inventory.objects.aggregate(total=Sum("quantity_available"))["total"] or 0
-
     low_stock_count = Inventory.objects.filter(quantity_available__lte=5).count()
 
-    new_customers = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER,date_joined__gte=last_30_days).count()
+    # --- Customer KPIs ---
+    # Customers who joined today
+    today_customers = CustomUser.objects.filter(
+        role=CustomUser.ROLE_CUSTOMER,
+        date_joined__date=today
+    ).count()
 
-    current_users = new_customers
+    # FIX: include today in the 10-day window (lte=today, not lt=today)
+    last_10_days_customers = CustomUser.objects.filter(
+        role=CustomUser.ROLE_CUSTOMER,
+        date_joined__date__gte=ten_days_ago,
+        date_joined__date__lte=today          # was __lt=today — excluded today
+    ).count()
 
-    previous_users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER,date_joined__gte=previous_30_days,date_joined__lt=last_30_days).count()
-    
+    # New customers in the last 30 days (for the static card)
+    new_customers = CustomUser.objects.filter(
+        role=CustomUser.ROLE_CUSTOMER,
+        date_joined__date__gte=last_30_days
+    ).count()
+
+    # Previous 30-day window for growth comparison
+    previous_users = CustomUser.objects.filter(
+        role=CustomUser.ROLE_CUSTOMER,
+        date_joined__date__gte=previous_30_days_start,
+        date_joined__date__lt=last_30_days
+    ).count()
+
+    # --- Customer growth (30-day) for static card ---
+    if previous_users > 0:
+        customer_growth_30days = round(
+            ((new_customers - previous_users) / previous_users) * 100, 2
+        )
+    else:
+        customer_growth_30days = 100 if new_customers > 0 else 0
+
+    # --- Customer growth (10-day) for donut chart ---
+    # Compare today's sign-ups against the daily average over the past 10 days
+    average_last_10_days = last_10_days_customers / 10 if last_10_days_customers > 0 else 0
+
+    if average_last_10_days > 0:
+        customer_growth_10days = round(
+            ((today_customers - average_last_10_days) / average_last_10_days) * 100, 2
+        )
+    else:
+        customer_growth_10days = 100 if today_customers > 0 else 0
+
+    # --- Products sold per day (last 7 days) ---
     products_sold_per_day = []
     for d in last_7_days:
-        qty = OrderItem.objects.filter(order__created_at__date=d).aggregate(total=Sum("quantity"))["total"] or 0
+        qty = (
+            OrderItem.objects.filter(order__created_at__date=d)
+            .aggregate(total=Sum("quantity"))["total"] or 0
+        )
         products_sold_per_day.append(qty)
 
+    # --- Recent orders filter ---
     filter_type = request.GET.get("filter", "monthly")
-
     if filter_type == "yearly":
         start_date = timezone.now() - timedelta(days=365)
     else:
         start_date = timezone.now() - timedelta(days=30)
 
     orders = Order.objects.filter(created_at__gte=start_date).order_by("-created_at")
-    
-    top_products = (OrderItem.objects.values("variant__product__product_name").annotate(total=Sum("quantity")).order_by("-total")[:10])
-    
-    top_categories = (OrderItem.objects.values("variant__product__subcategory__category__category_name").annotate(total=Sum("quantity")).order_by("-total")[:10])
-    
-    top_brands = (OrderItem.objects.values("variant__product__brand").annotate(total=Sum("quantity")).order_by("-total")[:10])
 
-    if previous_users > 0:
-        customer_growth = round(((current_users - previous_users) / previous_users) * 100, 2)
-    else:
-        customer_growth = 100 if current_users > 0 else 0
+    # --- Top performers ---
+    top_products = (
+        OrderItem.objects
+        .values("variant__product__product_name")
+        .annotate(total=Sum("quantity"))
+        .order_by("-total")[:10]
+    )
+    top_categories = (
+        OrderItem.objects
+        .values("variant__product__subcategory__category__category_name")
+        .annotate(total=Sum("quantity"))
+        .order_by("-total")[:10]
+    )
+    top_brands = (
+        OrderItem.objects
+        .values("variant__product__brand")
+        .annotate(total=Sum("quantity"))
+        .order_by("-total")[:10]
+    )
 
     context = {
         "total_orders": total_orders,
@@ -79,9 +129,10 @@ def admin_dashboard_view(request):
         "products_sold": products_sold,
         "total_stock": total_stock,
         "low_stock_count": low_stock_count,
-        "new_customers": new_customers,
-        "customer_growth": customer_growth,
-        "orders":orders,
+        "new_customers": new_customers,                        # 30-day count  → static card
+        "customer_growth_30days": customer_growth_30days,     # 30-day growth % → static card
+        "customer_growth_10days": customer_growth_10days,     # 10-day growth % → donut chart
+        "orders": orders,
         "top_products": top_products,
         "top_categories": top_categories,
         "top_brands": top_brands,
@@ -90,7 +141,6 @@ def admin_dashboard_view(request):
         "products_sold_per_day": products_sold_per_day,
     }
     return render(request, "accounts/admin/admin_dashboard.html", context)
-
 # ADMIN USER LIST
 @never_cache
 @admin_login_required

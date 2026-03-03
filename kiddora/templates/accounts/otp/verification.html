@@ -75,7 +75,7 @@
                 {% if request.resolver_match.url_name == "verify_signup_otp" %}
                     <a href="{% url 'accounts:resend_signup_otp' %}" class="link">Resend OTP</a>
                 {% elif request.resolver_match.url_name == "verify_forgot_password_otp" %}
-                    <a href="{% url 'accounts:forgot_password' %}" class="link">Request New OTP</a>
+                    <a href="{% url 'accounts:resend_reset_password_otp' %}" class="link">Resend OTP</a>
                 {% else %}
                     <a href="{% url 'accounts:change_email' %}" class="link">Request New OTP</a>
                 {% endif %}
@@ -107,10 +107,10 @@ const countdown = setInterval(function () {
         clearInterval(countdown);
         timerEl.style.display = "none";
         resendWrapper.style.display = "block";
-        verifyBtn.disabled = true;
-        verifyBtn.innerText = "OTP Expired";
-        verifyBtn.style.opacity = "0.6";
-        verifyBtn.style.cursor = "not-allowed";
+        // Optional: Depending on UX, you may want to keep the verify button active 
+        // if the OTP is still technically valid (5 mins) even if resend is available.
+        // verifyBtn.disabled = true; 
+        // verifyBtn.innerText = "OTP Expired";
     }
 }, 1000);
 
@@ -126,7 +126,6 @@ const countdown = setInterval(function () {
             });
         }, 15000);
     }
-
 </script>
 </body>
 </html>
