@@ -140,10 +140,35 @@ input {
 }
 .btn-primary  { background: #f062c0; }
 .btn-secondary{ background: #777; }
+/* ── MESSAGES ── */
+    .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .message {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    }
+    .message button {
+        background: none; border: none; cursor: pointer;
+        font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+    }
+    .message button:hover { opacity: 1; }
+    .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+    .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+    .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+    .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
 
 <div class="form-box">
     <h2>{% if variant %}Edit Variant{% else %}Add Variant{% endif %}</h2>
+    {% if messages %}
+            <div class="messages" id="msgContainer">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
 
     <form method="post" id="variantForm">
         {% csrf_token %}
@@ -293,5 +318,17 @@ document.getElementById('variantForm').addEventListener('submit', function (e) {
     }
 });
 </script>
-
+<script>
+/* ── Auto-dismiss messages after 15 seconds ── */
+    const msgContainer = document.getElementById("msgContainer");
+    if (msgContainer) {
+        setTimeout(() => {
+            msgContainer.querySelectorAll(".message").forEach(msg => {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 15000);
+    }
+</script>
 {% endblock %}

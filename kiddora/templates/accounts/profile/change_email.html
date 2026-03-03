@@ -89,34 +89,17 @@
             background-color: #b83583ff;
         }
 
-        .messages {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
+        /* ── MESSAGES ── */
+        .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
         .message {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
         }
         .message button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
-            padding: 0 0 0 10px;
-            color: inherit;
-            opacity: 0.7;
+            background: none; border: none; cursor: pointer;
+            font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
         }
         .message button:hover { opacity: 1; }
-
-        /* Django message tag colours */
         .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
         .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
         .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
@@ -145,6 +128,16 @@
 
         <div class="auth-center">
             <h2>Change Email</h2>
+            {% if messages %}
+            <div class="messages" id="msgContainer">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
             <form method="post">
                 {% csrf_token %}
                 <input name="email" type="email" placeholder="Enter New Email Address" required>
@@ -153,6 +146,18 @@
         </div>
     </div>
 </div>
-
+<script>
+/* ── Auto-dismiss messages after 15 seconds ── */
+    const msgContainer = document.getElementById("msgContainer");
+    if (msgContainer) {
+        setTimeout(() => {
+            msgContainer.querySelectorAll(".message").forEach(msg => {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 15000);
+    }
+</script>
 </body>
 </html>

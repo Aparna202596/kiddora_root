@@ -25,6 +25,8 @@
         .message button:hover { opacity: 1; }
         .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
         .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+        .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+        .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
     </style>
 </head>
 <body>
@@ -107,10 +109,6 @@ const countdown = setInterval(function () {
         clearInterval(countdown);
         timerEl.style.display = "none";
         resendWrapper.style.display = "block";
-        // Optional: Depending on UX, you may want to keep the verify button active 
-        // if the OTP is still technically valid (5 mins) even if resend is available.
-        // verifyBtn.disabled = true; 
-        // verifyBtn.innerText = "OTP Expired";
     }
 }, 1000);
 

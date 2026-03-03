@@ -66,6 +66,21 @@
     font-size: 13px;
     color: #dc2626;
 }
+/* ── MESSAGES ── */
+    .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .message {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    }
+    .message button {
+        background: none; border: none; cursor: pointer;
+        font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+    }
+    .message button:hover { opacity: 1; }
+    .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+    .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+    .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+    .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
 
 <div class="delete-wrapper">
@@ -73,10 +88,15 @@
     <p>Deleting your account is permanent. All your data will be lost.</p>
 
     {% if messages %}
-        {% for message in messages %}
-            <div class="message">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+            <div class="messages" id="msgContainer">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
 
     <form method="post">
         {% csrf_token %}
@@ -88,4 +108,17 @@
     
     <a href="{% url 'accounts:user_profile' %}">Cancel</a>
 </div>
+<script>
+/* ── Auto-dismiss messages after 15 seconds ── */
+    const msgContainer = document.getElementById("msgContainer");
+    if (msgContainer) {
+        setTimeout(() => {
+            msgContainer.querySelectorAll(".message").forEach(msg => {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 15000);
+    }
+</script>
 {% endblock %}

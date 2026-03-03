@@ -1,43 +1,68 @@
 {% extends "base_admin.html" %}
 {% block content %}
 <style>
-/* Existing styles retained */
-.container { padding: 25px; }
-h2 { text-align: center; margin-bottom: 20px; color: #333; }
-.search-box { display: flex; gap: 10px; margin-bottom: 25px; }
-.search-box input {
-    flex: 1; padding: 10px; border-radius: 25px;
-    border: 1px solid #ccc; outline: none;
-}
-.search-box input:focus { border-color: #333; box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
-.search-btn {
-    padding: 8px 18px; border-radius: 25px; background: #333;
-    color: #fff; border: none; cursor: pointer; text-decoration: none;
-}
-.search-btn:hover { background: #000; }
-.table-wrapper { border-radius: 14px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px; text-align: center; vertical-align: middle; }
-th { background: #020202; color: #fff; cursor: pointer; position: relative; }
+
+    .container { padding: 25px; }
+    h2 { text-align: center; margin-bottom: 20px; color: #333; }
+    .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
+    .search-box input {
+        flex: 1; padding: 10px; border-radius: 25px;
+        border: 1px solid #ccc; outline: none;
+    }
+    .search-box input:focus { border-color: #333; box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
+    .search-btn {
+        padding: 8px 18px; border-radius: 25px; background: #333;
+        color: #fff; border: none; cursor: pointer; text-decoration: none;
+    }
+    .search-btn:hover { background: #000; }
+    .table-wrapper { border-radius: 14px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: center; vertical-align: middle; }
+    th { background: #020202; color: #fff; cursor: pointer; position: relative; }
 
 
 
-tbody tr:hover { background: #f1f0ff; }
-.stock-badge { padding: 4px 10px; border-radius: 12px; color: #fff; font-size: 0.85em; }
-.stock-high { background-color: #2dce89; }
-.stock-medium{ background-color: #fd9644; }
-.stock-low { background-color: #fc5c65; }
-.update-form { display: flex; justify-content: center; gap: 6px; }
-.update-form input[type=number] { width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid #ccc; }
-.update-btn {
-    padding: 6px 14px; border-radius: 20px; background: #f062c0;
-    color: #fff; border: none; cursor: pointer; font-size: 14px;
-}
-.update-btn:hover { background: #e04faf; }
+    tbody tr:hover { background: #f1f0ff; }
+    .stock-badge { padding: 4px 10px; border-radius: 12px; color: #fff; font-size: 0.85em; }
+    .stock-high { background-color: #2dce89; }
+    .stock-medium{ background-color: #fd9644; }
+    .stock-low { background-color: #fc5c65; }
+    .update-form { display: flex; justify-content: center; gap: 6px; }
+    .update-form input[type=number] { width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid #ccc; }
+    .update-btn {
+        padding: 6px 14px; border-radius: 20px; background: #f062c0;
+        color: #fff; border: none; cursor: pointer; font-size: 14px;
+    }
+    .update-btn:hover { background: #e04faf; }
+/* ── MESSAGES ── */
+    .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .message {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    }
+    .message button {
+        background: none; border: none; cursor: pointer;
+        font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+    }
+    .message button:hover { opacity: 1; }
+    .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+    .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+    .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+    .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
 
 <div class="container">
     <h2>Inventory Management</h2>
+    {% if messages %}
+            <div class="messages" id="msgContainer">
+                {% for message in messages %}
+                <div class="message {{ message.tags }}">
+                    <span>{{ message }}</span>
+                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
     <form method="get" class="search-box">
         <input type="text" name="search" placeholder="Search by product, SKU, brand..." value="{{ search }}">
         <button type="submit" class="search-btn">Search</button>
@@ -140,5 +165,18 @@ function sortTable(colIndex) {
     // Re-append rows in new order
     rows.forEach(row => tbody.appendChild(row));
 }
+</script>
+<script>
+/* ── Auto-dismiss messages after 15 seconds ── */
+    const msgContainer = document.getElementById("msgContainer");
+    if (msgContainer) {
+        setTimeout(() => {
+            msgContainer.querySelectorAll(".message").forEach(msg => {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(() => msg.remove(), 500);
+            });
+        }, 15000);
+    }
 </script>
 {% endblock %}
