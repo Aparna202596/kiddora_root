@@ -8,6 +8,7 @@ app_name = "products"
 
 urlpatterns = [
     #calatog views
+    path("user/search/", catalog_views.search_products, name="product_search"),
     path("user/categories/", catalog_views.category_list_view, name="category_list"),
     path("user/categories/<int:category_id>/subcategories/",catalog_views.subcategory_list_view,name="subcategory_list"),
     path("user/products/",catalog_views.product_list,name="product_list"),
@@ -47,5 +48,5 @@ urlpatterns = [
     path("admin/inventory/<int:inventory_id>/update/", inventory_stock_views.update_stock, name="update_stock"),
 
     #search_views
-    path("user/search/", search_views.search_products, name="product_search"),
+    
 ]
