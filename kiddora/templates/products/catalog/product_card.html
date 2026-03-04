@@ -1,0 +1,42 @@
+{% comment %}
+Partial: products/catalog/product_card.html
+Context variable: product  (Product model instance)
+CSS classes match both product_list.html and search_results.html styles.
+{% endcomment %}
+<article class="product-card">
+    {% if product.discount_percent %}
+    <div class="pc-badge">{{ product.discount_percent }}% OFF</div>
+    {% endif %}
+
+    <a href="{% url 'products:product_detail' product.id %}" aria-hidden="true" tabindex="-1">
+        <div class="pc-img">
+            {% with img=product.images.first %}
+            {% if img and img.image1 %}
+                <img src="{{ img.image1.url }}" alt="{{ product.product_name }}" loading="lazy">
+            {% else %}
+                <span class="pc-img-placeholder">👕</span>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </a>
+
+    <div class="pc-body">
+        <div class="pc-brand">{{ product.brand }}</div>
+        <a href="{% url 'products:product_detail' product.id %}">
+            <div class="pc-name">{{ product.product_name }}</div>
+        </a>
+        <div class="pc-price">
+            {% if product.discount_percent %}
+                <span class="pc-final red">₹{{ product.final_price|floatformat:0 }}</span>
+                <span class="pc-base">₹{{ product.base_price|floatformat:0 }}</span>
+                <span class="pc-off">({{ product.discount_percent }}% off)</span>
+            {% else %}
+                <span class="pc-final black">₹{{ product.final_price|floatformat:0 }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="pc-footer">
+        <a href="{% url 'products:product_detail' product.id %}" class="pc-view-btn">View Details</a>
+    </div>
+</article>

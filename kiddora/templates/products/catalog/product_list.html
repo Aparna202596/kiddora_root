@@ -1,176 +1,211 @@
-{% extends "base_profile.html" %}
+{% extends "base_products.html" %}
+{% block title %}
+  {% if query %}Results for "{{ query }}"
+  {% elif current_subcategory %}{{ current_subcategory.subcategory_name }}
+  {% elif current_category %}{{ current_category.category_name }}
+  {% else %}All Products{% endif %} — Kiddora
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+    <a href="{% url 'shopcore:home' %}">Home</a><span class="sep">›</span>
+    <a href="{% url 'products:category_list' %}">Categories</a>
+    {% if current_category %}
+        <span class="sep">›</span>
+        {% if current_subcategory %}
+            <a href="{% url 'products:product_list_by_category' current_category.id %}">{{ current_category.category_name }}</a>
+        {% else %}
+            <strong>{{ current_category.category_name }}</strong>
+        {% endif %}
+    {% endif %}
+    {% if current_subcategory %}
+        <span class="sep">›</span><strong>{{ current_subcategory.subcategory_name }}</strong>
+    {% elif not current_category %}
+        <span class="sep">›</span>
+        <strong>{% if query %}Search: "{{ query }}"{% else %}All Products{% endif %}</strong>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Toolbar ── */
+.listing-toolbar {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 10px; margin-bottom: 18px;
+    padding: 10px 14px; background: #fafafa;
+    border: 1px solid #eee; border-radius: 8px;
+}
+.toolbar-count { font-size: 13px; color: #888; flex: 1; }
+.toolbar-count strong { color: #333; }
+
+/* inline search */
+.toolbar-search { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 18px; overflow: hidden; background: #fff; transition: border-color .2s; }
+.toolbar-search:focus-within { border-color: #f06292; }
+.toolbar-search input { border: none; padding: 5px 12px; font-size: 13px; outline: none; width: 160px; background: transparent; }
+.ts-clear { background: none; border: none; cursor: pointer; padding: 0 6px; color: #bbb; font-size: 13px; display: none; align-items: center; }
+.ts-clear.show { display: flex; }
+.ts-clear:hover { color: #f06292; }
+.ts-submit { border: none; background: #f06292; color: #fff; padding: 6px 12px; cursor: pointer; font-size: 13px; transition: background .2s; }
+.ts-submit:hover { background: #e91e63; }
+
+/* sort select */
+.sort-select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 18px; font-size: 13px; cursor: pointer; outline: none; background: #fff; transition: border-color .2s; }
+.sort-select:focus { border-color: #f06292; }
+
+/* active filter chips */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; background: #fff0f6; border: 1px solid #f8b4d2; border-radius: 50px; padding: 3px 10px; font-size: 12px; font-weight: 600; color: #c2185b; }
+.chip-rm { cursor: pointer; color: #e91e63; font-size: 14px; line-height: 1; }
+.chip-rm:hover { color: #880e4f; }
+
+/* product grid */
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 16px; }
+
+/* product card */
+.product-card { border: 1px solid #eee; border-radius: 10px; overflow: hidden; background: #fff; transition: box-shadow .22s, transform .22s; position: relative; display: flex; flex-direction: column; }
+.product-card:hover { box-shadow: 0 8px 26px rgba(0,0,0,.1); transform: translateY(-3px); }
+.pc-badge { position: absolute; top: 8px; left: 8px; background: #f06292; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 50px; z-index: 2; }
+.pc-img { width: 100%; aspect-ratio: 4/5; overflow: hidden; background: #fafafa; display: flex; align-items: center; justify-content: center; }
+.pc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+.product-card:hover .pc-img img { transform: scale(1.05); }
+.pc-img-placeholder { font-size: 3rem; color: #ddd; }
+.pc-body { padding: 10px 12px 8px; flex: 1; }
+.pc-brand { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #aaa; font-weight: 600; }
+.pc-name { font-size: 13px; font-weight: 600; color: #222; margin: 3px 0 6px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pc-name:hover { color: #f06292; }
+.pc-price { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.pc-final { font-size: 15px; font-weight: 700; }
+.pc-final.black { color: #111; }
+.pc-final.red   { color: #e91e63; }
+.pc-base { font-size: 12px; color: #bbb; text-decoration: line-through; }
+.pc-off  { font-size: 11px; font-weight: 700; color: #f06292; background: #fff0f6; padding: 1px 6px; border-radius: 50px; }
+.pc-footer { padding: 8px 12px 12px; border-top: 1px solid #f5f5f5; margin-top: auto; }
+.pc-view-btn { display: block; text-align: center; padding: 7px; background: #f06292; color: #fff; border-radius: 6px; font-weight: 600; font-size: 13px; transition: background .2s; }
+.pc-view-btn:hover { background: #e91e63; }
+
+/* empty state */
+.empty-products { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #aaa; }
+.empty-products h2 { font-size: 18px; color: #555; margin-bottom: 10px; }
+.empty-products a { color: #f06292; font-weight: 600; }
+
+/* pagination */
+.pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px; margin-top: 32px; }
+.pagination a, .pagination .pg-current, .pagination .pg-disabled, .pagination .pg-dots {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 36px; height: 36px; padding: 0 8px; border-radius: 7px;
+    font-size: 13px; font-weight: 600; text-decoration: none;
+    transition: all .18s;
+}
+.pagination a { background: #fff; border: 1px solid #ddd; color: #333; }
+.pagination a:hover { border-color: #f06292; color: #f06292; background: #fff0f6; }
+.pagination .pg-current { background: #f06292; color: #fff; border: 1px solid #f06292; }
+.pagination .pg-disabled { background: #f9f9f9; color: #ccc; border: 1px solid #eee; cursor: not-allowed; }
+.pagination .pg-dots { border: none; background: none; color: #bbb; cursor: default; }
+.pagination .pg-nav { padding: 0 14px; font-size: 12px; }
+.pg-summary { text-align: center; font-size: 12px; color: #aaa; margin-top: 8px; }
+</style>
+{% endblock %}
 
 {% block content %}
-<style>
-    .filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        margin-bottom: 20px;
-        background: #f9f9f9;
-        padding: 15px;
-        border-radius: 8px;
-    }
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-    }
-    .filter-group label {
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-    .filter-group input, .filter-group select {
-        padding: 5px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-    .product-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-    }
-    .product-card {
-        background: #fff;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        text-align: center;
-        transition: transform 0.3s, box-shadow 0.3s;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
-    .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .product-card h5 {
-        margin: 10px 0 5px 0;
-        font-size: 1.1rem;
-    }
-    .product-card p {
-        margin: 3px 0;
-    }
-    .variants-preview {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-        justify-content: center;
-        margin-top: 10px;
-    }
-    .variant-badge {
-        padding: 3px 6px;
-        border-radius: 5px;
-        font-size: 0.8rem;
-        color: #fff;
-        cursor: default;
-    }
-    .variant-color { background-color: #00bcd4; }
-    .variant-size { background-color: #00796b; }
-    .pagination {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-        gap: 10px;
-    }
-    .pagination a {
-        padding: 8px 12px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        text-decoration: none;
-        color: #333;
-    }
-    .pagination a.active {
-        background-color: #00bcd4;
-        color: #fff;
-        border-color: #00bcd4;
-    }
-</style>
+<!-- Toolbar -->
+<div class="listing-toolbar">
+    <span class="toolbar-count">
+        <strong>{{ page_obj.paginator.count }}</strong>
+        product{{ page_obj.paginator.count|pluralize }} found
+        {% if query %} for <em>"{{ query }}"</em>{% endif %}
+    </span>
 
-<h2>
-    {% if subcategory %}
-        {{ subcategory.subcategory_name }}
-    {% elif category %}
-        {{ category.category_name }}
-    {% else %}
-        Products
+    <!-- Inline search (preserves all filters) -->
+    <form method="get" action="" class="toolbar-search">
+        {% for c in selected_categories %}<input type="hidden" name="category" value="{{ c }}">{% endfor %}
+        {% for s in selected_subcategories %}<input type="hidden" name="subcategory" value="{{ s }}">{% endfor %}
+        {% for c in selected_colors %}<input type="hidden" name="color" value="{{ c }}">{% endfor %}
+        {% for a in selected_age_groups %}<input type="hidden" name="age" value="{{ a }}">{% endfor %}
+        {% for g in selected_genders %}<input type="hidden" name="gender" value="{{ g }}">{% endfor %}
+        {% for f in selected_fabrics %}<input type="hidden" name="fabric" value="{{ f }}">{% endfor %}
+        {% for b in selected_brands %}<input type="hidden" name="brand" value="{{ b }}">{% endfor %}
+        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
+        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+        {% if sort_by %}<input type="hidden" name="sort_by" value="{{ sort_by }}">{% endif %}
+        <input type="text" name="q" id="toolbarQ" placeholder="Search…" value="{{ query }}" autocomplete="off">
+        <button type="button" class="ts-clear {% if query %}show{% endif %}" id="toolbarClear">✕</button>
+        <button type="submit" class="ts-submit"><i class="fa fa-search"></i></button>
+    </form>
+
+    <!-- Sort (preserves filters + search) -->
+    <form method="get" action="">
+        {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+        {% for c in selected_categories %}<input type="hidden" name="category" value="{{ c }}">{% endfor %}
+        {% for s in selected_subcategories %}<input type="hidden" name="subcategory" value="{{ s }}">{% endfor %}
+        {% for c in selected_colors %}<input type="hidden" name="color" value="{{ c }}">{% endfor %}
+        {% for a in selected_age_groups %}<input type="hidden" name="age" value="{{ a }}">{% endfor %}
+        {% for g in selected_genders %}<input type="hidden" name="gender" value="{{ g }}">{% endfor %}
+        {% for f in selected_fabrics %}<input type="hidden" name="fabric" value="{{ f }}">{% endfor %}
+        {% for b in selected_brands %}<input type="hidden" name="brand" value="{{ b }}">{% endfor %}
+        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
+        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+        <select name="sort_by" class="sort-select" onchange="this.form.submit()" aria-label="Sort">
+            <option value="">Sort by</option>
+            {% for opt in sort_options %}
+            <option value="{{ opt.key }}" {% if sort_by == opt.key %}selected{% endif %}>{{ opt.label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<!-- Active filter chips -->
+{% if query or selected_genders or request.GET.min_price or request.GET.max_price or selected_brands %}
+<div class="filter-chips">
+    {% if query %}
+    <span class="chip">🔍 {{ query }}
+        <a href="?{% querystring request.GET q='' page='' %}" class="chip-rm">✕</a>
+    </span>
     {% endif %}
-</h2>
+    {% for g in selected_genders %}
+    <span class="chip">Gender: {{ g }}
+        <a href="?{% querystring request.GET gender='' page='' %}" class="chip-rm">✕</a>
+    </span>
+    {% endfor %}
+    {% for b in selected_brands %}
+    <span class="chip">Brand: {{ b }}
+        <a href="?{% querystring request.GET brand='' page='' %}" class="chip-rm">✕</a>
+    </span>
+    {% endfor %}
+    {% if request.GET.min_price or request.GET.max_price %}
+    <span class="chip">
+        ₹{{ request.GET.min_price|default:'0' }} – ₹{{ request.GET.max_price|default:'∞' }}
+        <a href="?{% querystring request.GET min_price='' max_price='' page='' %}" class="chip-rm">✕</a>
+    </span>
+    {% endif %}
+</div>
+{% endif %}
 
-<form method="get" class="filters">
-    <div class="filter-group">
-        <label>Search</label>
-        <input type="text" name="q" value="{{ request.GET.q }}">
-    </div>
-    <div class="filter-group">
-        <label>Color</label>
-        <select name="color" multiple>
-            {% for color in filters.colors %}
-                <option value="{{ color }}" {% if color in filters.selected_colors %}selected{% endif %}>{{ color }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    
-    <div class="filter-group">
-        <label>Age Group</label>
-        <select name="age_group" multiple>
-            {% for age in filters.age_groups %}
-                <option value="{{ age }}" {% if age in filters.selected_age_groups %}selected{% endif %}>{{ age }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="filter-group">
-        <label>Price</label>
-        <input type="number" name="min_price" placeholder="Min" value="{{ filters.min_price }}">
-        <input type="number" name="max_price" placeholder="Max" value="{{ filters.max_price }}">
-    </div>
-    <div class="filter-group">
-        <label>Sort By</label>
-        <select name="sort_by">
-            <option value="">Default</option>
-            <option value="price_low" {% if filters.sort_by == "price_low" %}selected{% endif %}>Price: Low to High</option>
-            <option value="price_high" {% if filters.sort_by == "price_high" %}selected{% endif %}>Price: High to Low</option>
-            <option value="az" {% if filters.sort_by == "az" %}selected{% endif %}>A-Z</option>
-            <option value="za" {% if filters.sort_by == "za" %}selected{% endif %}>Z-A</option>
-            <option value="popularity" {% if filters.sort_by == "popularity" %}selected{% endif %}>Popularity</option>
-        </select>
-    </div>
-    <div class="filter-group" style="align-self:flex-end">
-        <button type="submit">Apply Filters</button>
-    </div>
-</form>
-
+<!-- Product grid -->
 <div class="product-grid">
-    {% for product in page_obj %}
-        <div class="product-card">
-            <h5>{{ product.product_name }}</h5>
-            <p>Brand: {{ product.brand }}</p>
-            <p>Price: ₹{{ product.final_price }}</p>
-            
-            <div class="variants-preview">
-                {% for variant in product.variants.all %}
-                    <span class="variant-badge variant-color" title="Color">{{ variant.color }}</span>
-                    <span class="variant-badge variant-size" title="Size">{{ variant.size }}</span>
-                {% endfor %}
-            </div>
-
-            <a href="{% url 'products:product_detail' product.id %}" style="margin-top:10px; display:inline-block;">View Details</a>
-        </div>
+    {% for product in products %}
+    {% include "products/catalog/product_card.html" %}
     {% empty %}
-        <p>No products found.</p>
+    <div class="empty-products">
+        <h2>No products found</h2>
+        <p>Try adjusting your filters or <a href="{% url 'products:product_list' %}">browse all products</a>.</p>
+    </div>
     {% endfor %}
 </div>
 
-<div class="pagination">
-    {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}">Prev</a>
-    {% endif %}
-    {% for num in page_obj.paginator.page_range %}
-        <a href="?page={{ num }}" class="{% if page_obj.number == num %}active{% endif %}">{{ num }}</a>
-    {% endfor %}
-    {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">Next</a>
-    {% endif %}
-</div>
+<!-- Pagination -->
+{% include "pagination.html" %}
+{% endblock %}
 
+{% block extra_js %}
+<script>
+(function(){
+    var q=document.getElementById('toolbarQ'), clr=document.getElementById('toolbarClear');
+    if(!q||!clr) return;
+    function s(){ clr.classList.toggle('show', q.value.length > 0); }
+    q.addEventListener('input', s);
+    clr.addEventListener('click', function(){ q.value=''; s(); q.focus(); });
+    s();
+})();
+</script>
 {% endblock %}

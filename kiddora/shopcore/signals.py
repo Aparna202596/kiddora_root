@@ -33,8 +33,6 @@ def handle_order_item_status(sender, instance, **kwargs):
         deduct_stock_on_delivery(instance.variant, instance.quantity)
 
 #RETURN
-
-
 @receiver(post_save, sender=Return)
 def refund_to_wallet(sender, instance, **kwargs):
     if instance.status == "REFUNDED" and not instance.locked:

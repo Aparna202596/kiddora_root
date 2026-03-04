@@ -5,19 +5,16 @@
     <meta charset="UTF-8">
     <title>{% block title %}Kiddora{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <link rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
             crossorigin="anonymous"
             referrerpolicy="no-referrer">
-
     <style>
         /* ── RESET ── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #333; }
         a { text-decoration: none; color: inherit; }
         ul { list-style: none; }
-
         /* ── LOADER ── */
         #global-loader {
             display: none;
@@ -50,7 +47,6 @@
         }
         body.loading * { pointer-events: none !important; }
         body.loading #global-loader { pointer-events: all !important; }
-
         /* ── HEADER ── */
         .site-header { width: 100%; background: #fff; border-bottom: 1px solid #eaeaea; }
         .header-container {
@@ -66,20 +62,88 @@
         .main-nav ul li a { font-size: 15px; font-weight: 500; color: #333; }
         .main-nav ul li a:hover { color: #ff66cc; }
         .header-actions { display: flex; align-items: center; gap: 15px; }
-        .search-form { position: relative; display: flex; }
-        .search-form input {
-            width: 180px; height: 34px; padding: 0 10px;
-            border: 1px solid #ccc; border-radius: 18px;
+        /* FIX: Clean single search form styling */
+        .search-form {
+            position: relative;
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccc;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #fff;
+            transition: border-color .2s;
         }
-        .search-form button {
-            border: none; background: #f06292; color: #fff;
-            padding: 0 12px; border-radius: 18px; cursor: pointer;
+        .search-form:focus-within { border-color: #f06292; }
+        .search-form input[type="text"] {
+            width: 180px;
+            height: 34px;
+            padding: 0 8px 0 12px;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
         }
-        .search-form button:hover { background: #e91e63; }
+        /* Clear button — hidden by default, shown via JS */
+        .search-form .sf-clear {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 5px;
+            color: #bbb;
+            font-size: 13px;
+            line-height: 1;
+            display: none;
+            align-items: center;
+        }
+        .search-form .sf-clear.show { display: flex; }
+        .search-form .sf-clear:hover { color: #f06292; }
+        /* Search submit button */
+        .search-form .sf-submit {
+            border: none;
+            background: #f06292;
+            color: #fff;
+            height: 34px;
+            padding: 0 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background .2s;
+        }
+        .search-form .sf-submit:hover { background: #e91e63; }
         .icon-btn { font-size: 18px; color: #333; }
         .icon-btn:hover { color: #ff66cc; }
         .icon-btn.profile { border: 1px solid #ddd; padding: 7px; border-radius: 50%; }
-
+        /* ── BREADCRUMB ── */
+        .breadcrumb-bar {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 8px 20px;
+            font-size: 13px;
+            color: #888;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+        }
+        .breadcrumb-bar a { color: #f06292; }
+        .breadcrumb-bar a:hover { text-decoration: underline; }
+        .breadcrumb-bar .sep { color: #ccc; margin: 0 2px; }
+        .breadcrumb-bar strong { color: #333; }
+        /* ── MESSAGES ── */
+        .messages-wrap { max-width: 1400px; margin: 8px auto; padding: 0 20px; }
+        .alert {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .alert-warning { background: #FFF8E7; color: #92400E; border-left: 3px solid #D97706; }
+        .alert-error   { background: #FEF2F2; color: #991B1B; border-left: 3px solid #DC2626; }
+        .alert-success { background: #F0FDF4; color: #14532D; border-left: 3px solid #2E8B57; }
+        .alert-info    { background: #EFF6FF; color: #1E3A5F; border-left: 3px solid #3B82F6; }
         /* ── MAIN CONTENT WRAPPER ── */
         .main-content {
             max-width: 1400px;
@@ -87,14 +151,12 @@
             padding: 0 20px;
             min-height: 60vh;
         }
-
         /* ── PRODUCT LAYOUT ── */
         .account-layout {
             display: flex;
             gap: 30px;
             align-items: flex-start;
         }
-
         /* ── FILTER SIDEBAR ── */
         .filter {
             width: 260px;
@@ -103,6 +165,8 @@
             border-radius: 10px;
             padding: 18px;
             box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 10px;
         }
         .filter-header {
             display: flex;
@@ -118,6 +182,7 @@
             align-items: center;
         }
         .clear-btn { font-size: 12px; color: #f06292; }
+        .clear-btn:hover { text-decoration: underline; }
         .sidebar-menu { display: flex; flex-direction: column; gap: 16px; }
         .sidebar-menu details { border-bottom: 1px solid #eee; padding-bottom: 10px; }
         .sidebar-menu summary {
@@ -127,6 +192,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            user-select: none;
+            padding: 4px 0;
         }
         .sidebar-menu summary::-webkit-details-marker { display: none; }
         .filter-options {
@@ -137,7 +204,15 @@
             gap: 6px;
             font-size: 13px;
         }
-        .filter-options label { display: flex; gap: 8px; cursor: pointer; }
+        .filter-options label { display: flex; gap: 8px; cursor: pointer; align-items: center; }
+        .filter-options input[type=checkbox],
+        .filter-options input[type=radio] { accent-color: #f06292; cursor: pointer; }
+        .filter-options input[type=number] {
+            width: 100%; padding: 5px 8px;
+            border: 1px solid #ddd; border-radius: 5px;
+            font-size: 13px; outline: none;
+        }
+        .filter-options input[type=number]:focus { border-color: #f06292; }
         .hierarchy {
             margin-left: 12px;
             margin-top: 6px;
@@ -154,10 +229,11 @@
             color: #fff;
             border-radius: 6px;
             font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
+            transition: background .2s;
         }
         .apply-filter-btn:hover { background: #e91e63; }
-
         /* ── CONTENT AREA ── */
         .account-content {
             flex: 1;
@@ -165,8 +241,8 @@
             border-radius: 10px;
             padding: 30px;
             box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            min-width: 0;
         }
-
         /* ── FOOTER ── */
         .site-footer { background: #fff; padding-top: 40px; border-top: 1px solid #eaeaea; }
         .footer-container {
@@ -194,24 +270,21 @@
             text-align: center; padding: 15px 0; margin-top: 30px;
             font-size: 13px; color: #393939; border-top: 1px solid #eaeaea;
         }
-
         /* ── RESPONSIVE ── */
         @media (max-width: 992px) {
             .main-nav { display: none; }
             .account-layout { flex-direction: column; }
-            .filter { width: 100%; }
+            .filter { width: 100%; position: static; }
             .footer-container { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 576px) {
             .footer-container { grid-template-columns: 1fr; }
-            .search-form input { width: 140px; }
+            .search-form input[type="text"] { width: 130px; }
         }
     </style>
-
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-
     <!-- Loader — first child of body -->
     <div id="global-loader">
         <div class="loader-spinner"></div>
@@ -225,7 +298,6 @@
                     <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
                 </a>
             </div>
-
             <nav class="main-nav">
                 <ul>
                     <li><a href="{% url 'shopcore:home' %}">Home</a></li>
@@ -235,12 +307,19 @@
                     <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
                 </ul>
             </nav>
-
             <div class="header-actions">
-                <form method="get" action="{% url 'products:product_search' %}" class="search-form">
-                    <input type="text" name="q" placeholder="Search products..."
-                            value="{{ request.GET.q|default:'' }}">
-                    <button type="submit" aria-label="Search">
+                <!--
+                    FIX 1: Single input, correct URL name (search_products not product_search),
+                            clear button wired to JS below.
+                -->
+                <form method="get" action="{% url 'products:search_products' %}" class="search-form" role="search">
+                    <input type="text" name="q" id="headerSearchQ"
+                           value="{{ request.GET.q|default:'' }}"
+                           placeholder="Search products..."
+                           autocomplete="off" aria-label="Search products">
+                    <button type="button" class="sf-clear {% if request.GET.q %}show{% endif %}"
+                            id="headerSearchClear" aria-label="Clear search">✕</button>
+                    <button type="submit" class="sf-submit" aria-label="Search">
                         <i class="fa fa-search"></i>
                     </button>
                 </form>
@@ -253,18 +332,44 @@
         </div>
     </header>
 
+    <!-- Django messages -->
+    {% if messages %}
+    <div class="messages-wrap">
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}">
+            {% if msg.tags == 'warning' %}⚠️
+            {% elif msg.tags == 'error' %}❌
+            {% elif msg.tags == 'success' %}✅
+            {% else %}ℹ️{% endif %}
+            {{ msg }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Breadcrumb slot -->
+    {% block breadcrumb %}{% endblock %}
+
     <main class="main-content">
         <div class="account-layout">
 
-            <!-- FILTER SIDEBAR -->
+            <!--
+                FIX 2: Sidebar wrapped in a block so child templates can override it
+                        (category list, detail page, search results = no sidebar).
+                FIX 3: Brand filter section added.
+                FIX 4: Hidden input preserves search query when filters are applied.
+            -->
+            {% block filter_sidebar %}
             <aside class="filter">
                 <div class="filter-header">
                     <h3><i class="fa-solid fa-sliders"></i> FILTER &amp; SORT</h3>
                     <a href="{{ request.path }}" class="clear-btn">Clear All</a>
                 </div>
-                <form method="get">
-                    <ul class="sidebar-menu">
+                <form method="get" action="">
+                    <!-- Preserve active search query when applying filters -->
+                    {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
 
+                    <ul class="sidebar-menu">
                         <!-- SORT BY -->
                         <li>
                             <details {% if sort_by %}open{% endif %}>
@@ -280,7 +385,6 @@
                                 </div>
                             </details>
                         </li>
-
                         <!-- PRODUCT TYPES -->
                         <li>
                             <details {% if selected_categories or selected_subcategories %}open{% endif %}>
@@ -307,7 +411,23 @@
                                 </div>
                             </details>
                         </li>
-
+                        <!-- BRAND (FIX 3: was missing) -->
+                        <li>
+                            <details {% if selected_brands %}open{% endif %}>
+                                <summary><i class="fa-solid fa-tag"></i> Brand</summary>
+                                <div class="filter-options">
+                                    {% for brand in brands %}
+                                    <label>
+                                        <input type="checkbox" name="brand" value="{{ brand }}"
+                                            {% if brand in selected_brands %}checked{% endif %}>
+                                        {{ brand }}
+                                    </label>
+                                    {% empty %}
+                                    <span style="font-size:12px;color:#999;">No brands</span>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </li>
                         <!-- AGE GROUP -->
                         <li>
                             <details {% if selected_age_groups %}open{% endif %}>
@@ -325,7 +445,6 @@
                                 </div>
                             </details>
                         </li>
-
                         <!-- GENDER -->
                         <li>
                             <details {% if selected_genders %}open{% endif %}>
@@ -341,7 +460,6 @@
                                 </div>
                             </details>
                         </li>
-
                         <!-- FABRIC TYPE -->
                         <li>
                             <details {% if selected_fabrics %}open{% endif %}>
@@ -359,7 +477,6 @@
                                 </div>
                             </details>
                         </li>
-
                         <!-- COLOR -->
                         <li>
                             <details {% if selected_colors %}open{% endif %}>
@@ -377,30 +494,28 @@
                                 </div>
                             </details>
                         </li>
-
                         <!-- PRICE -->
                         <li>
                             <details {% if request.GET.min_price or request.GET.max_price %}open{% endif %}>
                                 <summary><i class="fa-solid fa-indian-rupee-sign"></i> Price</summary>
                                 <div class="filter-options">
                                     <input type="number" name="min_price" placeholder="Min ₹"
-                                        value="{{ request.GET.min_price|default:'' }}">
+                                        value="{{ request.GET.min_price|default:'' }}" min="0">
                                     <input type="number" name="max_price" placeholder="Max ₹"
-                                        value="{{ request.GET.max_price|default:'' }}">
+                                        value="{{ request.GET.max_price|default:'' }}" min="0">
                                 </div>
                             </details>
                         </li>
-
                     </ul>
                     <button type="submit" class="apply-filter-btn">Apply Filters</button>
                 </form>
             </aside>
+            {% endblock filter_sidebar %}
 
             <!-- PAGE CONTENT -->
             <section class="account-content">
                 {% block content %}{% endblock %}
             </section>
-
         </div>
     </main>
 
@@ -445,16 +560,25 @@
 
     <link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
     <script src="{% static 'js/ui-utils.js' %}"></script>
-
     {% block extra_js %}{% endblock %}
-
     {% include "confirm_modal.html" %}
 
     <script>
+    /* ── Header search clear button ── */
+    (function () {
+        var q   = document.getElementById('headerSearchQ');
+        var clr = document.getElementById('headerSearchClear');
+        if (!q || !clr) return;
+        function sync() { clr.classList.toggle('show', q.value.length > 0); }
+        q.addEventListener('input', sync);
+        clr.addEventListener('click', function () { q.value = ''; sync(); q.focus(); });
+        sync();
+    })();
+
+    /* ── Page loader ── */
     (function () {
         const loader = document.getElementById('global-loader');
         const label  = document.getElementById('loader-label');
-
         function show(msg) {
             label.textContent = msg || 'Loading...';
             loader.classList.add('active');
@@ -464,7 +588,6 @@
             loader.classList.remove('active');
             document.body.classList.remove('loading');
         }
-
         document.addEventListener('submit', function (e) {
             if (e.target.tagName !== 'FORM') return;
             const btn = e.target.querySelector('[type=submit]');
@@ -482,7 +605,6 @@
             }
             show(msg);
         });
-
         document.addEventListener('click', function (e) {
             const anchor = e.target.closest('a');
             if (!anchor) return;
@@ -493,12 +615,10 @@
             if (anchor.hasAttribute('onclick')) return;
             show('Loading...');
         });
-
         window.addEventListener('pageshow', hide);
         window.addEventListener('popstate', hide);
         document.addEventListener('submit', function () { setTimeout(hide, 15000); });
     })();
     </script>
-
 </body>
 </html>

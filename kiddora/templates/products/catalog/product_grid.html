@@ -1,0 +1,22 @@
+{% comment %}
+Partial: products/catalog/product_grid.html
+Returned when request has X-Requested-With: XMLHttpRequest header.
+Contains only the product grid + pagination – no page shell.
+{% endcomment %}
+<div class="product-grid" id="productGrid">
+    {% for product in products %}
+    {% include "products/catalog/product_card.html" %}
+    {% empty %}
+    <div class="empty-products">
+        <h2>No products found</h2>
+        <p>Try adjusting your search or filters.</p>
+        <a href="{% url 'product_list' %}" class="btn btn-primary">Browse all products</a>
+    </div>
+    {% endfor %}
+</div>
+
+{% include "pagination.html" %}
+
+<p style="font-size:.78rem;color:var(--muted);text-align:right;margin-top:.5rem;">
+    Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+</p>
