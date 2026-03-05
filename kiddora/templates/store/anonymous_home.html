@@ -6,331 +6,372 @@
     <title>Home | Kiddora</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
     <!-- Font Awesome (icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-            integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+            crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
-        /* GLOBAL RESET */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+        /* ── RESET ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", Arial, sans-serif; background: #ffffff; color: #333; line-height: 1.5; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
 
-body {
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: #ffffff;
-    color: #333;
-    line-height: 1.5;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
-
-ul {
-    list-style: none;
-}
-
-/* ================= HEADER ================= */
-.site-header {
-    width: 100%;
-    background: #ffffff;
-    border-bottom: 1px solid #eee;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.header-container {
-    max-width: 1400px;
-    margin: auto;
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.logo img {
-    height: 42px;
-}
-
-.main-nav ul {
-    display: flex;
-    gap: 24px;
-    align-items: center;
-}
-
-.main-nav a {
-    font-size: 15px;
-    font-weight: 500;
-    position: relative;
-}
-
-.main-nav a::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -4px;
-    width: 0;
-    height: 2px;
-    background: #f06292;
-    transition: 0.3s;
-}
-
-.main-nav a:hover::after {
-    width: 100%;
-}
-
-/* AUTH BUTTONS */
-.auth-buttons {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.admin-btn ,
-.login-btn,
-.signup-btn {
-    padding: 7px 18px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    background: #f06292;
-    color: #fff;
-    border: 1px solid #f06292;
-}
-
-.admin-btn:hover {
-    background: #e91e63;
-}
-.login-btn:hover {
-    background: #e91e63;
-}
-.signup-btn:hover {
-    background: #e91e63;
-} 
-
-/* ================= MAIN CONTENT ================= */
-.home-container {
-    max-width: 1400px;
-    margin: auto;
-    padding: 20px;
-}
-
-/* BANNER */
-.banner {
-    display: flex;
-    justify-content: center;
-}
-
-.banner img {
-    width: 100%;
-    max-height: 500px;
-    object-fit: cover;
-    border-radius: 16px;
-    margin-bottom: 50px;
-}
-
-/* SECTION TITLES */
-.category-section { margin-bottom: 90px; }
-.section-title {
-    text-align: center;
-    font-size: 24px;
-    font-weight: 600;
-    margin: 60px 0 30px;
-    margin-bottom:45px;
-    letter-spacing: 0.5px;
-}
-        
-/* CARD GRID */
-.card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 30px;
-}
-
-/* CARD */
-.card {
-    text-align: center;
-    background: #fff;
-    border-radius: 16px;
-    border-radius: 18px;
-    overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-}
-
-/* IMAGE 2:3 RATIO */
-
-.card img {
-    width: 100%;
-    aspect-ratio: 2 / 2;
-    object-fit: cover;
-    border-radius: 16px;
-}
-.shop-by-category .card img {
-    aspect-ratio: 2 / 3;
-}
-
-/* CARD TEXT */
-.card h4 {
-    margin: 12px 0 6px;
-    font-size: 15px;
-    font-weight: 500;
-}
-
-/* ================= TABS ================= */
-.tabs {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 35px;
-}
-
-.tabs button {
-    padding: 9px 26px;
-    border-radius: 25px;
-    border: none;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    color: #fff;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.tabs button:hover {
-    transform: scale(1.05);
-    opacity: 0.9;
-}
-
-.tab-boys { background: #4a90e2; }
-.tab-girls { background: #f06292; }
-.tab-kids { background: #ff9800; }
-
-/* ================= PRODUCTS ================= */
-.product-info {
-    padding: 10px 0 14px;
-}
-
-.price {
-    font-weight: 600;
-    margin-top: 4px;
-}
-
-.cart-icon {
-    margin-top: 8px;
-    font-size: 18px;
-    color: #f06292;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.cart-icon:hover {
-    transform: scale(1.2);
-}
-
-/* ================= FOOTER ================= */
-    .site-footer { background:#fff; padding-top:40px; border-top:1px solid #fff; }
-    .footer-container {
-        max-width:1200px; margin:auto; padding:0 20px;
-        display:grid; grid-template-columns:repeat(4,1fr); gap:30px;
+        /* ── LOADER ── */
+        #global-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(3px);
+            z-index: 999999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            pointer-events: all !important;
         }
-    .footer-logo img { height:50px; }
-    .footer-column h4 { font-size:15px; margin-bottom:15px; color:#000; }
-    .footer-column ul li { margin-bottom:8px; }
-    .footer-column ul li a { font-size:14px; color:#555; }
-    .footer-column ul li a:hover { color:#f06292; }
-    .footer-column form { display:flex; flex-direction:column; gap:10px; }
-    .footer-column input[type="email"] { padding:8px 10px; border:1px solid #fff; border-radius:5px; }
-    .footer-column button { padding:8px; border:none; background:#f06292; color:#fff; border-radius:5px; cursor:pointer; }
-    .footer-column button:hover { background:#e91e63; }
-    .social-icons { margin-top:15px; display:flex; gap:15px; }
-    .social-icons a { font-size:18px; color:#333; }
-    .social-icons a:hover { color:#f06292; }
-    .footer-bottom { text-align:center; padding:15px 0; margin-top:30px; font-size:13px; color:#393939; border-top:1px solid #fff; }
+        #global-loader.active { display: flex; }
+        .loader-spinner {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            border: 5px solid #f3d6ed;
+            border-top-color: #f062c0;
+            animation: spin 0.75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-label { font-size: 15px; font-weight: 600; color: #444; letter-spacing: 0.3px; }
+        body.loading * { pointer-events: none !important; }
+        body.loading #global-loader { pointer-events: all !important; }
 
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-    .header-container {
-        padding: 12px 16px;
-    }
+        /* ══════════════════════════════════════
+           ── HEADER (base_user style) ──
+        ══════════════════════════════════════ */
+        .site-header {
+            width: 100%;
+            background: #fff;
+            border-bottom: 2px solid #f06292;
+            box-shadow: 0 2px 8px rgba(240, 98, 146, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .logo img { height: 42px; }
 
-    .logo img {
-        height: 36px;
-    }
+        /* Nav */
+        .main-nav ul { display: flex; gap: 24px; align-items: center; }
+        .main-nav ul li a {
+            font-size: 15px;
+            font-weight: 500;
+            color: #444;
+            position: relative;
+            padding-bottom: 3px;
+            transition: color 0.2s;
+        }
+        .main-nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 0; height: 2px;
+            background: #f06292;
+            border-radius: 2px;
+            transition: width 0.2s;
+        }
+        .main-nav ul li a:hover { color: #f06292; }
+        .main-nav ul li a:hover::after { width: 100%; }
 
-    .auth-buttons a {
-        padding: 6px 14px;
-        font-size: 13px;
-    }
+        /* Header actions — search + auth buttons */
+        .header-actions { display: flex; align-items: center; gap: 14px; }
 
-    .section-title {
-        font-size: 20px;
-        margin: 40px 0 20px;
-    }
-}
+        /* Search form (base_user style) */
+        .search-form {
+            position: relative;
+            display: flex;
+            align-items: center;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 22px;
+            overflow: hidden;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-form:focus-within {
+            border-color: #f06292;
+            box-shadow: 0 0 0 3px rgba(240, 98, 146, 0.12);
+            background: #fff;
+        }
+        .search-form input[type="text"] {
+            width: 180px;
+            height: 36px;
+            padding: 0 8px 0 14px;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+        }
+        .search-form .sf-clear {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 5px;
+            color: #bbb;
+            font-size: 13px;
+            line-height: 1;
+            display: none;
+            align-items: center;
+        }
+        .search-form .sf-clear.show { display: flex; }
+        .search-form .sf-clear:hover { color: #f06292; }
+        .search-form .sf-submit {
+            border: none;
+            background: #f06292;
+            color: #fff;
+            height: 36px;
+            padding: 0 14px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .search-form .sf-submit:hover { background: #e91e63; }
 
-@media (max-width: 992px) {
-    .main-nav {
-        display: none;
-    }
+        /* Auth buttons (anonymous-specific, kept as-is, styled consistently) */
+        .auth-buttons { display: flex; align-items: center; gap: 10px; }
+        .admin-btn,
+        .login-btn,
+        .signup-btn {
+            padding: 7px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s, transform 0.15s;
+            background: #f06292;
+            color: #fff;
+            border: 1.5px solid #f06292;
+            display: inline-flex;
+            align-items: center;
+        }
+        .admin-btn:hover,
+        .login-btn:hover,
+        .signup-btn:hover {
+            background: #e91e63;
+            border-color: #e91e63;
+            transform: translateY(-1px);
+        }
 
-    .footer-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
+        /* ══════════════════════════════════════
+           ── MAIN CONTENT (unchanged) ──
+        ══════════════════════════════════════ */
+        .home-container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 20px;
+        }
 
-    .banner img {
-        max-height: 260px;
-    }
-}
+        /* BANNER */
+        .banner { display: flex; justify-content: center; }
+        .banner img {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 50px;
+        }
 
-@media (max-width: 576px) {
-    .card-grid {
-        gap: 24px;
-    }
+        /* SECTION TITLES */
+        .category-section { margin-bottom: 90px; }
+        .section-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 60px 0 45px;
+            letter-spacing: 0.5px;
+        }
 
-    .card img {
-        height: auto;
-    }
+        /* CARD GRID */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 30px;
+        }
 
-    .footer-container {
-        grid-template-columns: 1fr;
-    }
+        /* CARD */
+        .card {
+            text-align: center;
+            background: #fff;
+            border-radius: 18px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+        .card img {
+            width: 100%;
+            aspect-ratio: 2 / 2;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+        .shop-by-category .card img { aspect-ratio: 2 / 3; }
+        .card h4 { margin: 12px 0 6px; font-size: 15px; font-weight: 500; }
 
-    .section-title {
-        font-size: 20px;
-    }
+        /* TABS */
+        .tabs { display: flex; justify-content: center; gap: 16px; margin-bottom: 35px; }
+        .tabs button {
+            padding: 9px 26px;
+            border-radius: 25px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            color: #fff;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .tabs button:hover { transform: scale(1.05); opacity: 0.9; }
+        .tab-boys  { background: #4a90e2; }
+        .tab-girls { background: #f06292; }
+        .tab-kids  { background: #ff9800; }
 
-    .footer-column form {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
+        /* PRODUCTS */
+        .product-info { padding: 10px 0 14px; }
+        .price { font-weight: 600; margin-top: 4px; }
+        .cart-icon { margin-top: 8px; font-size: 18px; color: #f06292; cursor: pointer; transition: transform 0.2s ease; }
+        .cart-icon:hover { transform: scale(1.2); }
 
-    .footer-column button {
-        width: 100%;
-    }
-}
+        /* ══════════════════════════════════════
+           ── FOOTER (base_user style) ──
+        ══════════════════════════════════════ */
+        .site-footer {
+            background: #fafafa;
+            padding-top: 48px;
+            border-top: 2px solid #f06292;
+            margin-top: 40px;
+        }
+        .footer-container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .footer-logo img { height: 50px; }
+        .footer-column h4 {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #222;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f06292;
+            display: inline-block;
+        }
+        .footer-column ul li { margin-bottom: 9px; }
+        .footer-column ul li a {
+            font-size: 14px;
+            color: #666;
+            transition: color 0.2s, padding-left 0.2s;
+            display: inline-block;
+        }
+        .footer-column ul li a:hover { color: #f06292; padding-left: 4px; }
+        .footer-column form { display: flex; flex-direction: column; gap: 10px; }
+        .footer-column input[type="email"] {
+            padding: 9px 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .footer-column input[type="email"]:focus { border-color: #f06292; }
+        .footer-column button {
+            padding: 9px 12px;
+            border: none;
+            background: #f06292;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .footer-column button:hover { background: #e91e63; }
+        .social-icons { margin-top: 16px; display: flex; gap: 12px; }
+        .social-icons a {
+            font-size: 18px;
+            color: #555;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .social-icons a:hover {
+            color: #f06292;
+            border-color: #f06292;
+            background: rgba(240, 98, 146, 0.06);
+        }
+        .footer-bottom {
+            text-align: center;
+            padding: 16px 0;
+            margin-top: 36px;
+            font-size: 13px;
+            color: #888;
+            border-top: 1px solid #eaeaea;
+            background: #fff;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 992px) {
+            .main-nav { display: none; }
+            .footer-container { grid-template-columns: repeat(2, 1fr); }
+            .banner img { max-height: 260px; }
+        }
+        @media (max-width: 768px) {
+            .header-container { padding: 12px 16px; }
+            .logo img { height: 36px; }
+            .section-title { font-size: 20px; margin: 40px 0 20px; }
+        }
+        @media (max-width: 576px) {
+            .card-grid { gap: 24px; }
+            .card img { height: auto; }
+            .footer-container { grid-template-columns: 1fr; }
+            .section-title { font-size: 20px; }
+            .footer-column form { display: flex; flex-direction: column; gap: 10px; }
+            .footer-column button { width: 100%; }
+            .search-form input[type="text"] { width: 130px; }
+        }
     </style>
 </head>
 
 <body>
-<!-- HEADER -->
+
+    <!-- Loader -->
+    <div id="global-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-label" id="loader-label">Loading...</div>
+    </div>
+
+    <!-- ══ HEADER ══ -->
     <header class="site-header">
         <div class="header-container">
             <div class="logo">
-                <a href="{% url 'shopcore:anonymous_home' %}"><img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo"></a>
+                <a href="{% url 'shopcore:anonymous_home' %}">
+                    <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
+                </a>
             </div>
             <nav class="main-nav">
                 <ul>
@@ -341,185 +382,188 @@ ul {
                     <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
                 </ul>
             </nav>
-            <div class="auth-buttons">
-                <a href="{% url 'accounts:admin_login' %}" class="admin-btn">Admin Login</a>
-                <a href="{% url 'accounts:login' %}" class="login-btn">Login</a>
-                <a href="{% url 'accounts:signup' %}" class="signup-btn">Sign Up</a>
+            <div class="header-actions">
+                <!-- Search (base_user style) -->
+                <form method="get" action="{% url 'products:search_products' %}" class="search-form" role="search">
+                    <input type="text" name="q" id="headerSearchQ"
+                           value="{{ request.GET.q|default:'' }}"
+                           placeholder="Search products..."
+                           autocomplete="off" aria-label="Search products">
+                    <button type="button" class="sf-clear {% if request.GET.q %}show{% endif %}"
+                            id="headerSearchClear" aria-label="Clear search">✕</button>
+                    <button type="submit" class="sf-submit" aria-label="Search">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </form>
+                <!-- Auth buttons (anonymous-specific content preserved) -->
+                <div class="auth-buttons">
+                    <a href="{% url 'accounts:admin_login' %}" class="admin-btn">Admin Login</a>
+                    <a href="{% url 'accounts:login' %}" class="login-btn">Login</a>
+                    <a href="{% url 'accounts:signup' %}" class="signup-btn">Sign Up</a>
+                </div>
             </div>
         </div>
     </header>
-<!-- MAIN CONTENT -->
-<div class="home-container">
 
-    <!-- BANNER -->
-    <div class="banner">
-        <img src="{% static 'images/banner.jpeg' %}" alt="offer">
+    <!-- ══ MAIN CONTENT (unchanged) ══ -->
+    <div class="home-container">
+
+        <!-- BANNER -->
+        <div class="banner">
+            <img src="{% static 'images/banner.jpeg' %}" alt="offer">
+        </div>
+
+        <!-- SHOP BY CATEGORY -->
+        <section class="category-section">
+            <h3 class="section-title"><strong>SHOP BY CATEGORY</strong></h3>
+            <div class="shop-by-category card-grid">
+                <div class="card">
+                    <img src="{% static 'images/new_born.jpeg' %}" alt="Newborn category">
+                    <h4>Newborn</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/boys.jpeg' %}" alt="Boys category">
+                    <h4>Boys</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/girls.jpeg' %}" alt="Girls category">
+                    <h4>Girls</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/casual.jpeg' %}" alt="Casuals category">
+                    <h4>Casual Wear</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/ethnic_wear.jpeg' %}" alt="Ethnic category">
+                    <h4>Ethnic Wear</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/party_wear.jpeg' %}" alt="Party Wear category">
+                    <h4>Party Wear</h4>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOP TRENDS -->
+        <section class="category-section">
+            <h3 class="section-title"><strong>TOP TRENDS</strong></h3>
+            <div class="tabs">
+                <button class="tab-girls">Girls</button>
+                <button class="tab-boys">Boys</button>
+                <button class="tab-kids">Kids</button>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <img src="{% static 'images/b_cord_set_01.jpeg' %}" alt="Boys cord set">
+                    <h4>Boys Cord Set</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/bcas_01.jpeg' %}" alt="Shirt and shorts">
+                    <h4>Shirt &amp; Shorts</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/romber_01.jpeg' %}" alt="Rompers">
+                    <h4>Rompers</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/bcas_03.jpeg' %}" alt="Casual set">
+                    <h4>Casual Set</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/winter.jpeg' %}" alt="Sweaters">
+                    <h4>Sweaters</h4>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/gcas_01.jpeg' %}" alt="girl casual">
+                    <h4>Girls Casual Set</h4>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW ARRIVALS -->
+        <section class="category-section">
+            <h3 class="section-title"><strong>NEW ARRIVALS</strong></h3>
+            <div class="card-grid">
+                <div class="card">
+                    <img src="{% static 'images/bcas_04.jpeg' %}" alt="Boys Shirt & Shorts">
+                    <div class="product-info">
+                        <h4>Boys T-Shirt &amp; Shorts</h4>
+                        <div class="price">₹ 599</div>
+                        <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/gcas_03.jpeg' %}" alt="Girls Cord Set">
+                    <div class="product-info">
+                        <h4>Girls Shorts &amp; Top Set</h4>
+                        <div class="price">₹ 999</div>
+                        <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/gcas_04.jpeg' %}" alt="Casual Outfit">
+                    <div class="product-info">
+                        <h4>Casual Outfit</h4>
+                        <div class="price">₹ 1,199</div>
+                        <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/gcas_05.jpeg' %}" alt="Girls Casual Outfit">
+                    <div class="product-info">
+                        <h4>Girls Casual Outfit</h4>
+                        <div class="price">₹ 899</div>
+                        <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/gethnic_01.jpeg' %}" alt="Girls Ethnic Wear">
+                    <div class="product-info">
+                        <h4>Girls Ethnic Wear</h4>
+                        <div class="price">₹ 1,899</div>
+                        <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="{% static 'images/gpajama_01.jpeg' %}" alt="Girls night Wear">
+                    <div class="product-info">
+                        <h4>Pajama Set</h4>
+                        <div class="price">₹ 599</div>
+                        <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </div>
 
-    <!-- SHOP BY CATEGORY -->
-    <section class="category-section">
-        <h3 class="section-title"><strong>SHOP BY CATEGORY</strong></h3>
-
-        <div class="shop-by-category card-grid">
-            <div class="card">
-                <img src="{% static 'images/new_born.jpeg' %}" alt="Newborn category">
-                <h4>Newborn</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/boys.jpeg' %}" alt="Boys category">
-                <h4>Boys</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/girls.jpeg' %}" alt="Girls category">
-                <h4>Girls</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/casual.jpeg' %}" alt="Casuals category">
-                <h4>Casual Wear</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/ethnic_wear.jpeg' %}" alt="Ethnic category">
-                <h4>Ethnic Wear</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/party_wear.jpeg' %}" alt="Party Wear category">
-                <h4>Party Wear</h4>
-            </div>
-        </div>
-    </section>
-
-    <!-- TOP TRENDS -->
-    <section class="category-section">
-        <h3 class="section-title"><strong>TOP TRENDS</strong></h3>
-
-        <div class="tabs">
-            <button class="tab-girls">Girls</button>
-            <button class="tab-boys">Boys</button>
-            <button class="tab-kids">Kids</button>
-        </div>
-
-        <div class="card-grid">
-            <div class="card">
-        <img src="{% static 'images/b_cord_set_01.jpeg' %}" alt="Boys cord set">
-                <h4>Boys Cord Set</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/bcas_01.jpeg' %}" alt="Shirt and shorts">
-                <h4>Shirt & Shorts</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/romber_01.jpeg' %}" alt="Rompers">
-                <h4>Rompers</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/bcas_03.jpeg' %}" alt="Casual set">
-                <h4>Casual Set</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/winter.jpeg' %}" alt="Sweaters">
-                <h4>Sweaters</h4>
-            </div>
-            <div class="card">
-                <img src="{% static 'images/gcas_01.jpeg' %}" alt="girl casual">
-                <h4>Girls Casual Set</h4>
-            </div>
-        </div>
-    </section>
-
-    <!-- NEW ARRIVALS -->
-    <section class="category-section">
-        <h3 class="section-title"><strong>NEW ARRIVALS</strong></h3>
-
-        <div class="card-grid">
-
-            <div class="card">
-                <img src="{% static 'images/bcas_04.jpeg' %}" alt="Boys Shirt & Shorts">
-                <div class="product-info">
-                    <h4>Boys T-Shirt & Shorts</h4>
-                    <div class="price">₹ 599</div>
-                    <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="{% static 'images/gcas_03.jpeg' %}" alt="Girls Cord Set">
-                <div class="product-info">
-                    <h4>Girls Shorts & Top Set</h4>
-                    <div class="price">₹ 999</div>
-                    <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="{% static 'images/gcas_04.jpeg' %}" alt="Casual Outfit">
-                <div class="product-info">
-                    <h4>Casual Outfit</h4>
-                    <div class="price">₹ 1,199</div>
-                    <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="{% static 'images/gcas_05.jpeg' %}" alt="Girls Casual Outfit">
-                <div class="product-info">
-                    <h4>Girls Casual Outfit</h4>
-                    <div class="price">₹ 899</div>
-                    <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="{% static 'images/gethnic_01.jpeg' %}" alt="Girls Ethnic Wear">
-                <div class="product-info">
-                    <h4>Girls Ethnic Wear</h4>
-                    <div class="price">₹ 1,899</div>
-                    <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <img src="{% static 'images/gpajama_01.jpeg' %}" alt="Girls night Wear">
-                <div class="product-info">
-                    <h4>Pajama Set</h4>
-                    <div class="price">₹ 599</div>
-                    <div class="cart-icon"><i class="fa fa-shopping-cart" aria-hidden="true"></i></div>
-                </div>
-            </div>
-        </div>
-    </section>
-</div>
-
-<!-- FOOTER -->
+    <!-- ══ FOOTER (base_user style, anonymous content preserved) ══ -->
     <footer class="site-footer">
-    <div class="footer-container">
-        <div class="footer-logo">
-            <img src="{% static 'images/kiddora_logo.PNG' %}">
-        </div>
-
-        <div class="footer-column">
-            <h4>Info</h4>
-            <ul>
-                <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
-                <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
-                <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
-            </ul>
-        </div>
-
-        <div class="footer-column">
-            <h4>Policies</h4>
-            <ul>
-                <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
-                <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
-                <li><a href="{% url 'shopcore:terms_conditions' %}">Terms</a></li>
-            </ul>
-        </div>
-
-        <div class="footer-column">
+        <div class="footer-container">
+            <div class="footer-logo">
+                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
+            </div>
+            <div class="footer-column">
+                <h4>Info</h4>
+                <ul>
+                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
+                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
+                    <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Policies</h4>
+                <ul>
+                    <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
+                    <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
+                    <li><a href="{% url 'shopcore:terms_conditions' %}">Terms</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
                 <h4>Subscribe to Our Newsletter</h4>
                 <form method="post" action="#">
                     {% csrf_token %}
                     <input type="email" name="email" placeholder="Email Address" required>
-                    {% comment %} <button type="submit">Subscribe</button> {% endcomment %}
                 </form>
                 <div class="social-icons">
                     <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -527,14 +571,66 @@ ul {
                     <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
                 </div>
             </div>
-    </div>
+        </div>
+        <div class="footer-bottom">© 2025 Kiddora. All Rights Reserved.</div>
+    </footer>
 
-    <div class="footer-bottom">
-        © 2025 Kiddora. All Rights Reserved.
-    </div>
-</footer>
+    <script>
+    /* ── Header search clear button ── */
+    (function () {
+        var q   = document.getElementById('headerSearchQ');
+        var clr = document.getElementById('headerSearchClear');
+        if (!q || !clr) return;
+        function sync() { clr.classList.toggle('show', q.value.length > 0); }
+        q.addEventListener('input', sync);
+        clr.addEventListener('click', function () { q.value = ''; sync(); q.focus(); });
+        sync();
+    })();
 
-<!-- Bootstrap JS (placed at the end for performance) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    /* ── Page loader ── */
+    (function () {
+        const loader = document.getElementById('global-loader');
+        const label  = document.getElementById('loader-label');
+        function show(msg) {
+            label.textContent = msg || 'Loading...';
+            loader.classList.add('active');
+            document.body.classList.add('loading');
+        }
+        function hide() {
+            loader.classList.remove('active');
+            document.body.classList.remove('loading');
+        }
+        document.addEventListener('submit', function (e) {
+            if (e.target.tagName !== 'FORM') return;
+            const btn = e.target.querySelector('[type=submit]');
+            const lower = btn ? btn.textContent.trim().toLowerCase() : '';
+            const map = {
+                'save': 'Saving...', 'update': 'Updating...',
+                'delete': 'Deleting...', 'add': 'Adding...',
+                'upload': 'Uploading...', 'login': 'Signing in...',
+                'search': 'Searching...', 'subscribe': 'Subscribing...',
+            };
+            let msg = 'Processing...';
+            for (const [key, val] of Object.entries(map)) {
+                if (lower.includes(key)) { msg = val; break; }
+            }
+            show(msg);
+        });
+        document.addEventListener('click', function (e) {
+            const anchor = e.target.closest('a');
+            if (!anchor) return;
+            const href = anchor.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript')) return;
+            if (anchor.target === '_blank') return;
+            if (anchor.closest('form')) return;
+            if (anchor.hasAttribute('onclick')) return;
+            show('Loading...');
+        });
+        window.addEventListener('pageshow', hide);
+        window.addEventListener('popstate', hide);
+        document.addEventListener('submit', function () { setTimeout(hide, 15000); });
+    })();
+    </script>
+
 </body>
 </html>

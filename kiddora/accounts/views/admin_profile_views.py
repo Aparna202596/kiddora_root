@@ -39,24 +39,9 @@ def admin_edit_profile(request):
         {"admin": admin},
     )
 
-
 @never_cache
 @admin_login_required
-def admin_activity_log(request):
-    """
-    Shows recent system activity (orders handled in the system).
-    """
-    recent_orders = Order.objects.select_related("user").order_by("-created_at")[:50]
-
-    return render(
-        request,
-        "accounts/admin_profile/admin_activity_log.html",
-        {"recent_orders": recent_orders},
-    )
-
-@never_cache
-@admin_login_required
-def admin_security_info(request):
+def admin_activity_info(request):
     admin = request.user
 
     # Active sessions (best-effort, Django-native)
@@ -75,6 +60,6 @@ def admin_security_info(request):
 
     return render(
         request,
-        "accounts/admin_profile/admin_security.html",
+        "accounts/admin_profile/admin_activity.html",
         context,
     )

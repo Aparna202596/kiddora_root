@@ -15,6 +15,7 @@
         body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #333; }
         a { text-decoration: none; color: inherit; }
         ul { list-style: none; }
+
         /* ── LOADER ── */
         #global-loader {
             display: none;
@@ -47,8 +48,16 @@
         }
         body.loading * { pointer-events: none !important; }
         body.loading #global-loader { pointer-events: all !important; }
-        /* ── HEADER ── */
-        .site-header { width: 100%; background: #fff; border-bottom: 1px solid #eaeaea; }
+
+        /* ══════════════════════════════════════
+           ── HEADER (Unified) ──
+        ══════════════════════════════════════ */
+        .site-header {
+            width: 100%;
+            background: #fff;
+            border-bottom: 2px solid #f06292;
+            box-shadow: 0 2px 8px rgba(240, 98, 146, 0.08);
+        }
         .header-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -56,34 +65,62 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 20px;
         }
         .logo img { height: 42px; }
-        .main-nav ul { display: flex; gap: 20px; align-items: center; }
-        .main-nav ul li a { font-size: 15px; font-weight: 500; color: #333; }
-        .main-nav ul li a:hover { color: #ff66cc; }
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        /* FIX: Clean single search form styling */
+
+        /* Nav */
+        .main-nav ul { display: flex; gap: 24px; align-items: center; }
+        .main-nav ul li a {
+            font-size: 15px;
+            font-weight: 500;
+            color: #444;
+            position: relative;
+            padding-bottom: 3px;
+            transition: color 0.2s;
+        }
+        .main-nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 0; height: 2px;
+            background: #f06292;
+            border-radius: 2px;
+            transition: width 0.2s;
+        }
+        .main-nav ul li a:hover { color: #f06292; }
+        .main-nav ul li a:hover::after { width: 100%; }
+
+        /* Header actions */
+        .header-actions { display: flex; align-items: center; gap: 14px; }
+
+        /* Search form */
         .search-form {
             position: relative;
             display: flex;
             align-items: center;
-            border: 1px solid #ccc;
-            border-radius: 18px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 22px;
             overflow: hidden;
-            background: #fff;
-            transition: border-color .2s;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .search-form:focus-within { border-color: #f06292; }
+        .search-form:focus-within {
+            border-color: #f06292;
+            box-shadow: 0 0 0 3px rgba(240, 98, 146, 0.12);
+            background: #fff;
+        }
         .search-form input[type="text"] {
             width: 180px;
-            height: 34px;
-            padding: 0 8px 0 12px;
+            height: 36px;
+            padding: 0 8px 0 14px;
             border: none;
             outline: none;
             background: transparent;
             font-size: 14px;
+            color: #333;
         }
-        /* Clear button — hidden by default, shown via JS */
+        /* Clear button */
         .search-form .sf-clear {
             background: none;
             border: none;
@@ -97,21 +134,39 @@
         }
         .search-form .sf-clear.show { display: flex; }
         .search-form .sf-clear:hover { color: #f06292; }
-        /* Search submit button */
+        /* Search submit */
         .search-form .sf-submit {
             border: none;
             background: #f06292;
             color: #fff;
-            height: 34px;
-            padding: 0 12px;
+            height: 36px;
+            padding: 0 14px;
             cursor: pointer;
             font-size: 14px;
-            transition: background .2s;
+            transition: background 0.2s;
+            flex-shrink: 0;
         }
         .search-form .sf-submit:hover { background: #e91e63; }
-        .icon-btn { font-size: 18px; color: #333; }
-        .icon-btn:hover { color: #ff66cc; }
-        .icon-btn.profile { border: 1px solid #ddd; padding: 7px; border-radius: 50%; }
+
+        /* Icon buttons */
+        .icon-btn {
+            font-size: 18px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            transition: color 0.2s, background 0.2s;
+        }
+        .icon-btn:hover { color: #f06292; background: rgba(240, 98, 146, 0.08); }
+        .icon-btn.profile {
+            border: 1.5px solid #e0e0e0;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        .icon-btn.profile:hover { border-color: #f06292; }
+
         /* ── BREADCRUMB ── */
         .breadcrumb-bar {
             max-width: 1400px;
@@ -128,6 +183,7 @@
         .breadcrumb-bar a:hover { text-decoration: underline; }
         .breadcrumb-bar .sep { color: #ccc; margin: 0 2px; }
         .breadcrumb-bar strong { color: #333; }
+
         /* ── MESSAGES ── */
         .messages-wrap { max-width: 1400px; margin: 8px auto; padding: 0 20px; }
         .alert {
@@ -144,6 +200,7 @@
         .alert-error   { background: #FEF2F2; color: #991B1B; border-left: 3px solid #DC2626; }
         .alert-success { background: #F0FDF4; color: #14532D; border-left: 3px solid #2E8B57; }
         .alert-info    { background: #EFF6FF; color: #1E3A5F; border-left: 3px solid #3B82F6; }
+
         /* ── MAIN CONTENT WRAPPER ── */
         .main-content {
             max-width: 1400px;
@@ -151,12 +208,14 @@
             padding: 0 20px;
             min-height: 60vh;
         }
+
         /* ── PRODUCT LAYOUT ── */
         .account-layout {
             display: flex;
             gap: 30px;
             align-items: flex-start;
         }
+
         /* ── FILTER SIDEBAR ── */
         .filter {
             width: 260px;
@@ -234,6 +293,7 @@
             transition: background .2s;
         }
         .apply-filter-btn:hover { background: #e91e63; }
+
         /* ── CONTENT AREA ── */
         .account-content {
             flex: 1;
@@ -243,33 +303,94 @@
             box-shadow: 0 4px 14px rgba(0,0,0,0.06);
             min-width: 0;
         }
-        /* ── FOOTER ── */
-        .site-footer { background: #fff; padding-top: 40px; border-top: 1px solid #eaeaea; }
+
+        /* ══════════════════════════════════════
+           ── FOOTER (Unified) ──
+        ══════════════════════════════════════ */
+        .site-footer {
+            background: #fafafa;
+            padding-top: 48px;
+            border-top: 2px solid #f06292;
+            margin-top: 40px;
+        }
         .footer-container {
-            max-width: 1200px; margin: auto; padding: 0 20px;
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
         }
         .footer-logo img { height: 50px; }
-        .footer-column h4 { font-size: 15px; margin-bottom: 15px; color: #000; }
-        .footer-column ul li { margin-bottom: 8px; }
-        .footer-column ul li a { font-size: 14px; color: #555; }
-        .footer-column ul li a:hover { color: #f06292; }
+        .footer-column h4 {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #222;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f06292;
+            display: inline-block;
+        }
+        .footer-column ul li { margin-bottom: 9px; }
+        .footer-column ul li a {
+            font-size: 14px;
+            color: #666;
+            transition: color 0.2s, padding-left 0.2s;
+            display: inline-block;
+        }
+        .footer-column ul li a:hover { color: #f06292; padding-left: 4px; }
         .footer-column form { display: flex; flex-direction: column; gap: 10px; }
         .footer-column input[type="email"] {
-            padding: 8px 10px; border: 1px solid #ddd; border-radius: 5px;
+            padding: 9px 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
         }
+        .footer-column input[type="email"]:focus { border-color: #f06292; }
         .footer-column button {
-            padding: 8px; border: none; background: #f06292;
-            color: #fff; border-radius: 5px; cursor: pointer;
+            padding: 9px 12px;
+            border: none;
+            background: #f06292;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
         }
         .footer-column button:hover { background: #e91e63; }
-        .social-icons { margin-top: 15px; display: flex; gap: 15px; }
-        .social-icons a { font-size: 18px; color: #333; }
-        .social-icons a:hover { color: #f06292; }
-        .footer-bottom {
-            text-align: center; padding: 15px 0; margin-top: 30px;
-            font-size: 13px; color: #393939; border-top: 1px solid #eaeaea;
+        .social-icons { margin-top: 16px; display: flex; gap: 12px; }
+        .social-icons a {
+            font-size: 18px;
+            color: #555;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
         }
+        .social-icons a:hover {
+            color: #f06292;
+            border-color: #f06292;
+            background: rgba(240, 98, 146, 0.06);
+        }
+        .footer-bottom {
+            text-align: center;
+            padding: 16px 0;
+            margin-top: 36px;
+            font-size: 13px;
+            color: #888;
+            border-top: 1px solid #eaeaea;
+            background: #fff;
+        }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 992px) {
             .main-nav { display: none; }
@@ -280,17 +401,19 @@
         @media (max-width: 576px) {
             .footer-container { grid-template-columns: 1fr; }
             .search-form input[type="text"] { width: 130px; }
+            .header-container { padding: 12px 16px; }
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Loader — first child of body -->
+    <!-- Loader -->
     <div id="global-loader">
         <div class="loader-spinner"></div>
         <div class="loader-label" id="loader-label">Loading...</div>
     </div>
 
+    <!-- ══ HEADER ══ -->
     <header class="site-header">
         <div class="header-container">
             <div class="logo">
@@ -308,10 +431,6 @@
                 </ul>
             </nav>
             <div class="header-actions">
-                <!--
-                    FIX 1: Single input, correct URL name (search_products not product_search),
-                            clear button wired to JS below.
-                -->
                 <form method="get" action="{% url 'products:search_products' %}" class="search-form" role="search">
                     <input type="text" name="q" id="headerSearchQ"
                            value="{{ request.GET.q|default:'' }}"
@@ -347,18 +466,11 @@
     </div>
     {% endif %}
 
-    <!-- Breadcrumb slot -->
     {% block breadcrumb %}{% endblock %}
 
     <main class="main-content">
         <div class="account-layout">
 
-            <!--
-                FIX 2: Sidebar wrapped in a block so child templates can override it
-                        (category list, detail page, search results = no sidebar).
-                FIX 3: Brand filter section added.
-                FIX 4: Hidden input preserves search query when filters are applied.
-            -->
             {% block filter_sidebar %}
             <aside class="filter">
                 <div class="filter-header">
@@ -366,9 +478,7 @@
                     <a href="{{ request.path }}" class="clear-btn">Clear All</a>
                 </div>
                 <form method="get" action="">
-                    <!-- Preserve active search query when applying filters -->
                     {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
-
                     <ul class="sidebar-menu">
                         <!-- SORT BY -->
                         <li>
@@ -411,7 +521,7 @@
                                 </div>
                             </details>
                         </li>
-                        <!-- BRAND (FIX 3: was missing) -->
+                        <!-- BRAND -->
                         <li>
                             <details {% if selected_brands %}open{% endif %}>
                                 <summary><i class="fa-solid fa-tag"></i> Brand</summary>
@@ -512,13 +622,13 @@
             </aside>
             {% endblock filter_sidebar %}
 
-            <!-- PAGE CONTENT -->
             <section class="account-content">
                 {% block content %}{% endblock %}
             </section>
         </div>
     </main>
 
+    <!-- ══ FOOTER ══ -->
     <footer class="site-footer">
         <div class="footer-container">
             <div class="footer-logo">
@@ -542,7 +652,7 @@
                 </ul>
             </div>
             <div class="footer-column">
-                <h4>Subscribe to Our Newsletter</h4>
+                <h4>Newsletter</h4>
                 <form method="post" action="#">
                     {% csrf_token %}
                     <input type="email" name="email" placeholder="Email Address" required>

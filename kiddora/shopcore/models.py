@@ -8,7 +8,6 @@ import uuid
 
 #  COUPON
 #  User-applied discount codes at checkout.
-
 class Coupon(models.Model):
     DISCOUNT_TYPE_CHOICES = (
         ("PERCENT", "Percentage"),
@@ -19,54 +18,24 @@ class Coupon(models.Model):
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
     #   PERCENT type → discount_value = 10  means 10%
     #   FLAT type    → discount_value = 100 means ₹100 off
-    discount_value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(1)],
-                                help_text="Percentage (1–100) for PERCENT type, or flat amount for FLAT type.")
-    max_discount = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True,
-        help_text="Maximum discount in ₹ for PERCENT coupons. Leave blank for no cap.",
-    )
-    min_order_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0,
-        help_text="Minimum cart value required to apply this coupon.",
-    )
-
-    # Validity window
-    # FIX: added start_date so coupons can be scheduled in advance
-    start_date   = models.DateTimeField(default=timezone.now)
-    expiry_date  = models.DateTimeField()
-
-    # Usage tracking
-    usage_limit  = models.PositiveIntegerField(
-        default=1,
-        help_text="0 = unlimited uses.",
-    )
-    used_count   = models.PositiveIntegerField(default=0)
-
-    # FIX: removed offer_type / product FK / category FK from Coupon.
-    # Those belong on the Offer model. Coupons are generic checkout codes.
-    # FIX: used_by M2M remains to prevent a single user applying the same coupon twice.
-    used_by = models.ManyToManyField(
-        CustomUser,
-        blank=True,
-        related_name="used_coupons",
-        help_text="Users who have already redeemed this coupon.",
-    )
-
-    is_active  = models.BooleanField(default=True)
-    # FIX: added soft-delete flag + created_at timestamp
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(1)])
+    max_discount = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
+    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    start_date = models.DateTimeField(default=timezone.now)
+    expiry_date = models.DateTimeField()
+    usage_limit = models.PositiveIntegerField(default=1)
+    used_count = models.PositiveIntegerField(default=0)
+    used_by = models.ManyToManyField(CustomUser,blank=True,related_name="used_coupons")
+    is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         ordering = ["-created_at"]
 
     def is_valid(self):
         """Check coupon is active, not deleted, and within its date window."""
         now = timezone.now()
-        return (
-            self.is_active
-            and not self.is_deleted
-            and self.start_date <= now <= self.expiry_date
-        )
+        return (self.is_active and not self.is_deleted and self.start_date <= now <= self.expiry_date)
 
     def clean(self):
         if self.discount_type == "PERCENT":
@@ -78,47 +47,21 @@ class Coupon(models.Model):
     def __str__(self):
         return f"{self.code} ({self.discount_type}: {self.discount_value})"
 
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  OFFER
-#  Automatic admin-set discounts on products or categories.
-#  Applied at product display / cart calculation — NOT entered by user.
-#  Per instructions: apply the LARGEST offer when both product & category
-#  offers exist (logic handled in views/cart utils, not here).
-# ═════════════════════════════════════════════════════════════════════════════
 class Offer(models.Model):
     OFFER_TYPE_CHOICES = (
-        ("PRODUCT",  "Product Offer"),
+        ("PRODUCT", "Product Offer"),
         ("CATEGORY", "Category Offer"),
-        # FIX: REFERRAL type added per instructions
         ("REFERRAL", "Referral Offer"),
     )
 
-    offer_type       = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
-    # FIX: product / category are nullable because REFERRAL offers apply to neither
-    product          = models.ForeignKey(
-        Product, on_delete=models.CASCADE,
-        null=True, blank=True, related_name="offers",
-    )
-    category         = models.ForeignKey(
-        Category, on_delete=models.CASCADE,
-        null=True, blank=True, related_name="offers",
-    )
-    discount_percent = models.PositiveIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(100)],
-    )
-    # FIX: added validity window — offers must have start/end dates
-    start_date       = models.DateTimeField(default=timezone.now)
-    end_date         = models.DateTimeField(null=True, blank=True)
-
-    # For REFERRAL offers: the coupon code awarded to the referrer
-    referral_coupon  = models.ForeignKey(
-        Coupon, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name="referral_offers",
-        help_text="Coupon awarded to referrer when referral offer triggers.",
-    )
-
-    is_active  = models.BooleanField(default=True)
+    offer_type = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, related_name="offers")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True, related_name="offers")
+    discount_percent = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(100)])
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    referral_coupon  = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_offers")
+    is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -142,25 +85,17 @@ class Offer(models.Model):
         target = self.product or self.category or "Referral"
         return f"{self.get_offer_type_display()} – {self.discount_percent}% on {target}"
 
-
-# ═════════════════════════════════════════════════════════════════════════════
-#  REFERRAL
-#  Each user gets one ReferralCode on account creation.
-#  ReferralUse records each successful referral.
-# ═════════════════════════════════════════════════════════════════════════════
 class ReferralCode(models.Model):
     """One per user; generated at signup and never changes."""
-    user = models.OneToOneField(
-        CustomUser, on_delete=models.CASCADE, related_name="referral_code",
-    )
-    code       = models.CharField(max_length=20, unique=True)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referral_code")
+    code = models.CharField(max_length=20, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.code:
-            # Generate a short, readable referral code
+
             while True:
-                code = f"KID{uuid.uuid4().hex[:7].upper()}"
+                code = f"KIDREF{uuid.uuid4().hex[:7].upper()}"
                 if not ReferralCode.objects.filter(code=code).exists():
                     self.code = code
                     break
@@ -172,8 +107,7 @@ class ReferralCode(models.Model):
 class ReferralUse(models.Model):
     referral_code = models.ForeignKey(ReferralCode, on_delete=models.CASCADE, related_name="uses",)
     referred_user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referred_by")
-    coupon_awarded = models.ForeignKey(Coupon, on_delete=models.SET_NULL,null=True, blank=True, related_name="referral_uses",
-                                help_text="Coupon given to the referrer after this user registered.")
+    coupon_awarded = models.ForeignKey(Coupon, on_delete=models.SET_NULL,null=True, blank=True, related_name="referral_uses")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -242,13 +176,10 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2,
-                                            help_text="Sum of all item totals before discounts.")
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0,
-                                            help_text="Offer/product discounts applied.")
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    final_amount = models.DecimalField(max_digits=10, decimal_places=2,
-                                            help_text="total_amount - discount_amount - coupon_discount + shipping_charge")
+    final_amount = models.DecimalField(max_digits=10, decimal_places=2) #"total_amount - discount_amount - coupon_discount + shipping_charge"
     order_date = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
@@ -284,9 +215,9 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items")
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, related_name="order_items")
     quantity = models.PositiveIntegerField()
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price at time of purchase (snapshot).")
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Offer discount applied to this item.")
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="(unit_price × quantity) - discount_amount")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2) #"unit_price × quantity) - discount_amount"
     item_status = models.CharField(max_length=20, choices=ITEM_STATUS_CHOICES, default="ACTIVE")
     cancel_reason = models.TextField(blank=True, null=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
@@ -298,8 +229,6 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.order.order_id} – {self.variant}"
 
-#  RETURN
-#  Per-item return requests. One Return per OrderItem.
 class Return(models.Model):
     STATUS_CHOICES = (
         ("REQUESTED", "Requested"),
@@ -365,14 +294,12 @@ class WalletTransaction(models.Model):
     )
 
     wallet         = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
-    txn_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True, 
-                                        help_text="UUID transaction ID. Use in admin wallet management and ledger.")
+    txn_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
     txn_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     balance_after = models.DecimalField(max_digits=10, decimal_places=2)
     reference_type = models.CharField(max_length=20, choices=REFERENCE_TYPE_CHOICES, null=True, blank=True)
-    reference_id = models.CharField(max_length=50, null=True, blank=True,
-                                        help_text="PK of related Order/Return/etc.")
+    reference_id = models.CharField(max_length=50, null=True, blank=True)
     description = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
@@ -403,4 +330,4 @@ class WishlistItem(models.Model):
         ordering = ["-added_at"]
 
     def __str__(self):
-        return f"{self.wishlist.user.email} ♡ {self.product.product_name}"
+        return f"{self.wishlist.user.email} - {self.product.product_name}"

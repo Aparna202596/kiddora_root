@@ -24,8 +24,8 @@ class SubCategory(models.Model):
 class Product(models.Model):
 
     GENDER_CHOICES = [
-        ('boys', 'Boys'),
-        ('girls', 'Girls'),
+        ('Boys', 'Boys'),
+        ('Girls', 'Girls'),
         ('unisex', 'Unisex'),
     ]
 
@@ -172,7 +172,7 @@ class ProductVariant(models.Model):
     age_group = models.ForeignKey(AgeGroup,on_delete=models.PROTECT,related_name="variants")
     sku = models.CharField(max_length=100, unique=True, blank=True)
     barcode = models.CharField(max_length=100, unique=True, blank=True)
-
+    created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -231,6 +231,7 @@ class Inventory(models.Model):
     quantity_available = models.PositiveIntegerField()
     quantity_reserved = models.PositiveIntegerField(default=0)
     quantity_sold = models.PositiveIntegerField(default=0)
+    quantity_added = models.PositiveIntegerField(default=0) 
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

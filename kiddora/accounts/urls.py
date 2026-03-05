@@ -29,8 +29,7 @@ urlpatterns = [
     
     path("admin/admin-profile/",admin_profile_views.admin_profile, name="admin_profile"),
     path("admin/admin-profile/edit/",admin_profile_views.admin_edit_profile,name="admin_edit_profile"),
-    path("admin/admin-profile/activity/",admin_profile_views.admin_activity_log,name="admin_activity_log"),
-    path("admin/admin-profile/security/",admin_profile_views.admin_security_info,name="admin_security_info"),
+    path("admin/admin-profile/activity/",admin_profile_views.admin_activity_info,name="admin_activity_info"),
     
     # ADMIN – USER MANAGEMENT
     path("admin/customers/", admin_views.admin_user_list, name="admin_user_list"),

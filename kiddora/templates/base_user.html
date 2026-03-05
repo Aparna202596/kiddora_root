@@ -8,9 +8,11 @@
 
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-          crossorigin="anonymous">
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer">
 
     <style>
+        /* ── RESET ── */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #333; }
         a { text-decoration: none; color: inherit; }
@@ -49,53 +51,188 @@
         body.loading * { pointer-events: none !important; }
         body.loading #global-loader { pointer-events: all !important; }
 
-        /* ── HEADER ── */
-        .site-header { background: #fff; border-bottom: 1px solid #eaeaea; }
+        /* ══════════════════════════════════════
+           ── HEADER (Unified) ──
+        ══════════════════════════════════════ */
+        .site-header {
+            width: 100%;
+            background: #fff;
+            border-bottom: 2px solid #f06292;
+            box-shadow: 0 2px 8px rgba(240, 98, 146, 0.08);
+        }
         .header-container {
             max-width: 1400px;
-            margin: auto;
+            margin: 0 auto;
             padding: 14px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 20px;
         }
         .logo img { height: 42px; }
 
-        /* ── NAV ── */
-        .main-nav ul { display: flex; gap: 20px; align-items: center; }
-        .main-nav a { font-size: 15px; font-weight: 500; }
-        .main-nav a:hover { color: #ff66cc; }
-
-        /* ── HEADER ACTIONS ── */
-        .header-actions { display: flex; align-items: center; gap: 15px; }
-        .search-form { position: relative; }
-        .search-form input {
-            width: 180px;
-            height: 34px;
-            padding: 0 36px 0 12px;
-            border: 1px solid #ccc;
-            border-radius: 18px;
+        /* Nav */
+        .main-nav ul { display: flex; gap: 24px; align-items: center; }
+        .main-nav ul li a {
+            font-size: 15px;
+            font-weight: 500;
+            color: #444;
+            position: relative;
+            padding-bottom: 3px;
+            transition: color 0.2s;
         }
-        .search-form button {
+        .main-nav ul li a::after {
+            content: '';
             position: absolute;
-            right: 6px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: none;
-            background: none;
-            cursor: pointer;
-            color: #f06292;
-            font-size: 14px;
+            bottom: 0; left: 0;
+            width: 0; height: 2px;
+            background: #f06292;
+            border-radius: 2px;
+            transition: width 0.2s;
         }
-        .icon-btn { font-size: 18px; }
-        .icon-btn:hover { color: #ff66cc; }
-        .profile { border: 1px solid #ddd; padding: 7px; border-radius: 50%; }
+        .main-nav ul li a:hover { color: #f06292; }
+        .main-nav ul li a:hover::after { width: 100%; }
 
-        /* ── MAIN CONTENT ── */
-        .main-content { min-height: 60vh; padding: 40px 20px; }
+        /* Header actions */
+        .header-actions { display: flex; align-items: center; gap: 14px; }
 
-        /* ── FOOTER ── */
-        .site-footer { background: #fff; padding-top: 40px; border-top: 1px solid #eaeaea; }
+        /* Search form */
+        .search-form {
+            position: relative;
+            display: flex;
+            align-items: center;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 22px;
+            overflow: hidden;
+            background: #fafafa;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-form:focus-within {
+            border-color: #f06292;
+            box-shadow: 0 0 0 3px rgba(240, 98, 146, 0.12);
+            background: #fff;
+        }
+        .search-form input[type="text"] {
+            width: 180px;
+            height: 36px;
+            padding: 0 8px 0 14px;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+        }
+        /* Clear button */
+        .search-form .sf-clear {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 5px;
+            color: #bbb;
+            font-size: 13px;
+            line-height: 1;
+            display: none;
+            align-items: center;
+        }
+        .search-form .sf-clear.show { display: flex; }
+        .search-form .sf-clear:hover { color: #f06292; }
+        /* Search submit */
+        .search-form .sf-submit {
+            border: none;
+            background: #f06292;
+            color: #fff;
+            height: 36px;
+            padding: 0 14px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .search-form .sf-submit:hover { background: #e91e63; }
+
+        /* Icon buttons */
+        .icon-btn {
+            font-size: 18px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            transition: color 0.2s, background 0.2s;
+        }
+        .icon-btn:hover { color: #f06292; background: rgba(240, 98, 146, 0.08); }
+        .icon-btn.profile {
+            border: 1.5px solid #e0e0e0;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        .icon-btn.profile:hover { border-color: #f06292; }
+
+        /* ── ACCOUNT LAYOUT ── */
+        .main-content {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+            min-height: 60vh;
+        }
+        .account-layout {
+            display: flex;
+            gap: 30px;
+        }
+
+        /* ── SIDEBAR (unchanged) ── */
+        .account-sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            align-self: flex-start;
+        }
+        .sidebar-header {
+            background: #f06292;
+            color: #fff;
+            text-align: center;
+            padding: 20px 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .sidebar-profile-icon { font-size: 34px; margin-bottom: 8px; }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 4px; }
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            color: #333;
+            transition: background 0.2s;
+        }
+        .sidebar-menu li a:hover { background: #f8f8f8; color: #f06292; }
+        .sidebar-menu li.danger a { color: #d32f2f; }
+        .sidebar-menu li.danger a:hover { background: #fdecea; }
+
+        /* ── CONTENT AREA ── */
+        .account-content {
+            flex: 1;
+            background: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+        }
+
+        /* ══════════════════════════════════════
+           ── FOOTER (Unified) ──
+        ══════════════════════════════════════ */
+        .site-footer {
+            background: #fafafa;
+            padding-top: 48px;
+            border-top: 2px solid #f06292;
+            margin-top: 40px;
+        }
         .footer-container {
             max-width: 1200px;
             margin: auto;
@@ -105,44 +242,86 @@
             gap: 30px;
         }
         .footer-logo img { height: 50px; }
-        .footer-column h4 { font-size: 15px; margin-bottom: 15px; color: #000; }
-        .footer-column ul li { margin-bottom: 8px; }
-        .footer-column ul li a { font-size: 14px; color: #555; }
-        .footer-column ul li a:hover { color: #f06292; }
+        .footer-column h4 {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #222;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f06292;
+            display: inline-block;
+        }
+        .footer-column ul li { margin-bottom: 9px; }
+        .footer-column ul li a {
+            font-size: 14px;
+            color: #666;
+            transition: color 0.2s, padding-left 0.2s;
+            display: inline-block;
+        }
+        .footer-column ul li a:hover { color: #f06292; padding-left: 4px; }
         .footer-column form { display: flex; flex-direction: column; gap: 10px; }
         .footer-column input[type="email"] {
-            padding: 8px 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 9px 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
         }
+        .footer-column input[type="email"]:focus { border-color: #f06292; }
         .footer-column button {
-            padding: 8px;
+            padding: 9px 12px;
             border: none;
             background: #f06292;
             color: #fff;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
         }
         .footer-column button:hover { background: #e91e63; }
-        .social-icons { margin-top: 15px; display: flex; gap: 15px; }
-        .social-icons a { font-size: 18px; color: #333; }
-        .social-icons a:hover { color: #f06292; }
+        .social-icons { margin-top: 16px; display: flex; gap: 12px; }
+        .social-icons a {
+            font-size: 18px;
+            color: #555;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .social-icons a:hover {
+            color: #f06292;
+            border-color: #f06292;
+            background: rgba(240, 98, 146, 0.06);
+        }
         .footer-bottom {
             text-align: center;
-            padding: 15px 0;
-            margin-top: 30px;
+            padding: 16px 0;
+            margin-top: 36px;
             font-size: 13px;
-            color: #393939;
+            color: #888;
             border-top: 1px solid #eaeaea;
+            background: #fff;
         }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 992px) {
             .main-nav { display: none; }
+            .account-layout { flex-direction: column; }
+            .account-sidebar { width: 100%; }
             .footer-container { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 576px) {
             .footer-container { grid-template-columns: 1fr; }
+            .search-form input[type="text"] { width: 130px; }
+            .header-container { padding: 12px 16px; }
         }
     </style>
 
@@ -150,17 +329,18 @@
 </head>
 <body>
 
-    <!-- Loader first child of body -->
+    <!-- Loader -->
     <div id="global-loader">
         <div class="loader-spinner"></div>
         <div class="loader-label" id="loader-label">Loading...</div>
     </div>
 
+    <!-- ══ HEADER ══ -->
     <header class="site-header">
         <div class="header-container">
             <div class="logo">
                 <a href="{% url 'shopcore:home' %}">
-                    <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
+                    <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
                 </a>
             </div>
 
@@ -168,17 +348,21 @@
                 <ul>
                     <li><a href="{% url 'shopcore:home' %}">Home</a></li>
                     <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
-                    <li><a href="{% url 'products:category_list' %}">Categories</a></li>
+                    <li><a href="{% url 'products:category_list' %}">Category</a></li>
                     <li><a href="{% url 'products:product_list' %}">Shop</a></li>
                     <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
                 </ul>
             </nav>
 
             <div class="header-actions">
-                <form method="get" action="{% url 'products:product_search' %}" class="search-form">
-                    <input type="text" name="q" placeholder="Search products..."
-                           value="{{ request.GET.q|default:'' }}">
-                    <button type="submit" aria-label="Search">
+                <form method="get" action="{% url 'products:search_products' %}" class="search-form" role="search">
+                    <input type="text" name="q" id="headerSearchQ"
+                           value="{{ request.GET.q|default:'' }}"
+                           placeholder="Search products..."
+                           autocomplete="off" aria-label="Search products">
+                    <button type="button" class="sf-clear {% if request.GET.q %}show{% endif %}"
+                            id="headerSearchClear" aria-label="Clear search">✕</button>
+                    <button type="submit" class="sf-submit" aria-label="Search">
                         <i class="fa fa-search"></i>
                     </button>
                 </form>
@@ -192,32 +376,85 @@
     </header>
 
     <main class="main-content">
-        {% block content %}{% endblock %}
+        <div class="account-layout">
+
+            <!-- ── SIDEBAR (unchanged) ── -->
+            <aside class="account-sidebar">
+                <div class="sidebar-header">
+                    <i class="fa-regular fa-user sidebar-profile-icon"></i>
+                    <p>Hello, <strong>{{ request.user.full_name }}</strong></p>
+                </div>
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="{% url 'accounts:user_profile' %}">
+                            <i class="fa-regular fa-id-card"></i> Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fa-solid fa-box"></i> My Orders
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fa-solid fa-wallet"></i> Wallet
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'accounts:address_list' %}">
+                            <i class="fa-solid fa-location-dot"></i> Address
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fa-solid fa-gift"></i> Refer &amp; Earn
+                        </a>
+                    </li>
+                    <li class="danger">
+                        <a href="{% url 'accounts:delete_profile' %}">
+                            <i class="fa-solid fa-trash"></i> Delete Account
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'accounts:logout' %}">
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+
+            <section class="account-content">
+                {% block content %}{% endblock %}
+            </section>
+
+        </div>
     </main>
 
+    <!-- ══ FOOTER ══ -->
     <footer class="site-footer">
         <div class="footer-container">
             <div class="footer-logo">
-                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
+                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora Logo">
             </div>
             <div class="footer-column">
                 <h4>Info</h4>
                 <ul>
+                    <li><a href="{% url 'shopcore:contact_us' %}">Contact Us</a></li>
                     <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
-                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
                     <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
                 </ul>
             </div>
             <div class="footer-column">
                 <h4>Policies</h4>
                 <ul>
-                    <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
-                    <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
+                    <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy Notice</a></li>
+                    <li><a href="{% url 'shopcore:return_policy' %}">Return Policy</a></li>
                     <li><a href="{% url 'shopcore:terms_conditions' %}">Terms &amp; Conditions</a></li>
+                    <li><a href="{% url 'shopcore:cookie_policy' %}">Cookie Policy</a></li>
                 </ul>
             </div>
             <div class="footer-column">
-                <h4>Subscribe to Our Newsletter</h4>
+                <h4>Newsletter</h4>
                 <form method="post" action="#">
                     {% csrf_token %}
                     <input type="email" name="email" placeholder="Email Address" required>
@@ -230,22 +467,29 @@
                 </div>
             </div>
         </div>
-        <div class="footer-bottom">
-            © 2025 Kiddora. All Rights Reserved.
-        </div>
+        <div class="footer-bottom">© 2025 | Kiddora | All Rights Reserved</div>
     </footer>
 
-    <!-- Page-specific JS -->
-    {% block extra_js %}{% endblock %}
-
-    <!-- Static assets loaded at bottom -->
     <link rel="stylesheet" href="{% static 'css/ui-utils.css' %}">
     <script src="{% static 'js/ui-utils.js' %}"></script>
 
-    <!-- Confirm modal  -->
+    {% block extra_js %}{% endblock %}
+
     {% include "confirm_modal.html" %}
 
     <script>
+    /* ── Header search clear button ── */
+    (function () {
+        var q   = document.getElementById('headerSearchQ');
+        var clr = document.getElementById('headerSearchClear');
+        if (!q || !clr) return;
+        function sync() { clr.classList.toggle('show', q.value.length > 0); }
+        q.addEventListener('input', sync);
+        clr.addEventListener('click', function () { q.value = ''; sync(); q.focus(); });
+        sync();
+    })();
+
+    /* ── Page loader ── */
     (function () {
         const loader = document.getElementById('global-loader');
         const label  = document.getElementById('loader-label');

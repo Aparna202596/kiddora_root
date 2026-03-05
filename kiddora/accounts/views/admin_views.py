@@ -88,7 +88,7 @@ def admin_dashboard_view(request):
     products_sold_per_day = []
     for d in last_7_days:
         qty = (
-            OrderItem.objects.filter(order__created_at__date=d)
+            OrderItem.objects.filter(order__order_date__date=d)
             .aggregate(total=Sum("quantity"))["total"] or 0
         )
         products_sold_per_day.append(qty)
@@ -100,7 +100,7 @@ def admin_dashboard_view(request):
     else:
         start_date = timezone.now() - timedelta(days=30)
 
-    orders = Order.objects.filter(created_at__gte=start_date).order_by("-created_at")
+    orders = Order.objects.filter(order_date__gte=start_date).order_by("-order_date")
 
     # --- Top performers ---
     top_products = (
@@ -212,7 +212,7 @@ def admin_user_detail(request, user_id):
     user = get_object_or_404(
         CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER
     )
-    orders = Order.objects.filter(user=user).order_by('-created_at')
+    orders = Order.objects.filter(user=user).order_by('-order_date')
     return render(request,"accounts/admin/customer_detail.html",{"user": user, "orders": orders},)
 
 @admin_login_required

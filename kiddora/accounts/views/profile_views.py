@@ -21,7 +21,7 @@ OTP_EXPIRY_MINUTES = 5
 def user_profile(request):
     user = request.user
     addresses = UserAddress.objects.filter(user=user)
-    orders = Order.objects.filter(user=user).order_by("-created_at")
+    orders = Order.objects.filter(user=user).order_by("-order_date")
     return render(
         request,
         "accounts/profile/profile.html",
