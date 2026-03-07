@@ -198,47 +198,14 @@ def product_list(request, category_id=None, subcategory_id=None):
         )
     return render(request, "products/catalog/product_list.html", context)
 
-#  Search (standalone search-results page)
-
-# def search_products(request):
-#     query   = request.GET.get("q", "").strip()
-#     sort_by = request.GET.get("sort_by", "")
-
-#     products = Product.objects.filter(
-#         is_active=True,
-#         subcategory__category__is_active=True,
-#     ).select_related("subcategory", "subcategory__category")
-
-#     if query:
-#         products = products.filter(
-#             Q(product_name__icontains=query) |
-#             Q(brand__icontains=query) |
-#             Q(subcategory__subcategory_name__icontains=query) |
-#             Q(subcategory__category__category_name__icontains=query) |
-#             Q(about_product__icontains=query)
-#         )
-
-#     products = products.distinct()
-#     products = _apply_sort(products, sort_by)
-
-#     paginator = Paginator(products, 15)
-#     page_obj = paginator.get_page(request.GET.get("page"))
-
-#     context = {
-#         "products": page_obj.object_list,
-#         "page_obj": page_obj,
-#         "query": query,
-#         "sort_options": SORT_OPTIONS,
-#         "sort_by": sort_by,
-#     }
-#     return render(request, "products/catalog/search_results.html", context)
-
 def search_products(request):
-    """
-    Returns JSON for the header live-search dropdown.
-    Called via fetch() as the user types — no page render.
-    """
+
     query = request.GET.get("q", "").strip()
+    # query = request.GET.get("q","").lower().strip()
+    # query = query.replace(" ", "")
+    query = query.replace("-", " ")
+
+    print(f"Search query: '{query}'")
     if not query or len(query) < 2:
         return JsonResponse({"results": [], "query": query})
 

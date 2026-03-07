@@ -6,7 +6,7 @@ from products.models import *
 from accounts.decorators import admin_login_required
 
 # CATEGORY MANAGEMENT
-
+@never_cache
 @admin_login_required
 def admin_category_list(request):
     search = request.GET.get("search", "").strip()
