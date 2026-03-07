@@ -25,9 +25,9 @@ urlpatterns = [
     path("user/products/<int:product_id>/", catalog_views.product_detail_view, name="product_detail"),
 
     path("user/variant-info/", catalog_views.ajax_variant_info, name="ajax_variant_info"),
-    path("user/products/", catalog_views.ajax_product_grid, name="ajax_product_grid"),
-    path("user/categories/<int:category_id>/products/", catalog_views.ajax_product_grid, name="ajax_product_grid_by_category"),
-    path("user/subcategories/<int:subcategory_id>/products/", catalog_views.ajax_product_grid, name="ajax_product_grid_by_subcategory"),
+    path("user/a/products/", catalog_views.ajax_product_grid, name="ajax_product_grid"),
+    path("user/a/categories/<int:category_id>/products/", catalog_views.ajax_product_grid, name="ajax_product_grid_by_category"),
+    path("user/a/subcategories/<int:subcategory_id>/products/", catalog_views.ajax_product_grid, name="ajax_product_grid_by_subcategory"),
 
     #  ADMIN – CATEGORY MANAGEMENT
 

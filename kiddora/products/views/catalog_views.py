@@ -200,38 +200,89 @@ def product_list(request, category_id=None, subcategory_id=None):
 
 #  Search (standalone search-results page)
 
+# def search_products(request):
+#     query   = request.GET.get("q", "").strip()
+#     sort_by = request.GET.get("sort_by", "")
+
+#     products = Product.objects.filter(
+#         is_active=True,
+#         subcategory__category__is_active=True,
+#     ).select_related("subcategory", "subcategory__category")
+
+#     if query:
+#         products = products.filter(
+#             Q(product_name__icontains=query) |
+#             Q(brand__icontains=query) |
+#             Q(subcategory__subcategory_name__icontains=query) |
+#             Q(subcategory__category__category_name__icontains=query) |
+#             Q(about_product__icontains=query)
+#         )
+
+#     products = products.distinct()
+#     products = _apply_sort(products, sort_by)
+
+#     paginator = Paginator(products, 15)
+#     page_obj = paginator.get_page(request.GET.get("page"))
+
+#     context = {
+#         "products": page_obj.object_list,
+#         "page_obj": page_obj,
+#         "query": query,
+#         "sort_options": SORT_OPTIONS,
+#         "sort_by": sort_by,
+#     }
+#     return render(request, "products/catalog/search_results.html", context)
+
 def search_products(request):
-    query   = request.GET.get("q", "").strip()
-    sort_by = request.GET.get("sort_by", "")
+    """
+    Returns JSON for the header live-search dropdown.
+    Called via fetch() as the user types — no page render.
+    """
+    query = request.GET.get("q", "").strip()
+    if not query or len(query) < 2:
+        return JsonResponse({"results": [], "query": query})
 
-    products = Product.objects.filter(
-        is_active=True,
-        subcategory__category__is_active=True,
-    ).select_related("subcategory", "subcategory__category")
-
-    if query:
-        products = products.filter(
+    products = (
+        Product.objects
+        .filter(
+            is_active=True,
+            subcategory__category__is_active=True,
+        )
+        .filter(
             Q(product_name__icontains=query) |
             Q(brand__icontains=query) |
             Q(subcategory__subcategory_name__icontains=query) |
             Q(subcategory__category__category_name__icontains=query) |
             Q(about_product__icontains=query)
         )
+        .select_related("subcategory", "subcategory__category")
+        .prefetch_related("images")
+        .distinct()
+        [:8]   # max 8 suggestions in dropdown
+    )
 
-    products = products.distinct()
-    products = _apply_sort(products, sort_by)
+    results = []
+    for p in products:
+        img_url = None
+        img_obj = p.images.filter(is_default=True).first() or p.images.first()
+        if img_obj:
+            for field in ("image1", "image2", "image3", "image4", "image5"):
+                val = getattr(img_obj, field)
+                if val:
+                    img_url = val.url
+                    break
+        results.append({
+            "id":       p.id,
+            "name":     p.product_name,
+            "brand":    p.brand,
+            "price":    str(p.final_price),
+            "base":     str(p.base_price),
+            "discount": p.discount_percent,
+            "img":      img_url,
+            "url":      f"/products/user/products/{p.id}/",
+        })
 
-    paginator = Paginator(products, 15)
-    page_obj = paginator.get_page(request.GET.get("page"))
-
-    context = {
-        "products": page_obj.object_list,
-        "page_obj": page_obj,
-        "query": query,
-        "sort_options": SORT_OPTIONS,
-        "sort_by": sort_by,
-    }
-    return render(request, "products/catalog/search_results.html", context)
+    return JsonResponse({"results": results, "query": query})
 
 def product_detail_view(request, product_id):
     try:

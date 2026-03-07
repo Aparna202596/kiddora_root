@@ -149,6 +149,69 @@
             flex-shrink: 0;
         }
         .search-form .sf-submit:hover { background: #e91e63; }
+        /* ── SEARCH DROPDOWN ── */
+        .search-wrap { position: relative; }
+        .search-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 100%;
+            min-width: 320px;
+            background: #fff;
+            border: 1.5px solid #f0c8d8;
+            border-radius: 12px;
+            box-shadow: 0 8px 28px rgba(240,98,146,0.13);
+            z-index: 9999;
+            overflow: hidden;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .search-dropdown.open { display: block; }
+        .sd-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            text-decoration: none;
+            color: #333;
+            border-bottom: 1px solid #fdf0f5;
+            transition: background .15s;
+        }
+        .sd-item:last-child { border-bottom: none; }
+        .sd-item:hover { background: #fff5f9; }
+        .sd-img {
+            width: 42px;
+            height: 52px;
+            flex-shrink: 0;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .sd-img img { width: 100%; height: 100%; object-fit: cover; }
+        .sd-info { flex: 1; min-width: 0; }
+        .sd-name { font-size: 13px; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sd-brand { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: .06em; }
+        .sd-price { font-size: 13px; font-weight: 700; white-space: nowrap; }
+        .sd-price.red { color: #e91e63; }
+        .sd-price.black { color: #222; }
+        .sd-footer {
+            padding: 9px 14px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #f06292;
+            border-top: 1px solid #fde;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .sd-footer:hover { background: #fff5f9; }
+        .sd-empty { padding: 20px 14px; text-align: center; font-size: 13px; color: #bbb; }
+        .sd-loading { padding: 14px; text-align: center; font-size: 13px; color: #ccc; }
 
         /* Icon buttons */
         .icon-btn {
@@ -355,17 +418,20 @@
             </nav>
 
             <div class="header-actions">
-                <form method="get" action="{% url 'products:search_products' %}" class="search-form" role="search">
-                    <input type="text" name="q" id="headerSearchQ"
-                           value="{{ request.GET.q|default:'' }}"
-                           placeholder="Search products..."
-                           autocomplete="off" aria-label="Search products">
-                    <button type="button" class="sf-clear {% if request.GET.q %}show{% endif %}"
-                            id="headerSearchClear" aria-label="Clear search">✕</button>
-                    <button type="submit" class="sf-submit" aria-label="Search">
-                        <i class="fa fa-search"></i>
-                    </button>
-                </form>
+                <div class="search-wrap" id="searchWrap">
+                    <form method="get" action="/products/user/products/" class="search-form" role="search">
+                        <input type="text" name="q" id="headerSearchQ"
+                                value="{{ request.GET.q|default:'' }}"
+                                placeholder="Search products..."
+                                autocomplete="off" aria-label="Search products">
+                        <button type="button" class="sf-clear {% if request.GET.q %}show{% endif %}"
+                                id="headerSearchClear" aria-label="Clear search">✕</button>
+                        <button type="submit" class="sf-submit" aria-label="Search">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                    <div class="search-dropdown" id="searchDropdown"></div>
+                </div>
                 <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
                 <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
                     <i class="fa-regular fa-user"></i>
@@ -478,17 +544,114 @@
     {% include "confirm_modal.html" %}
 
     <script>
-    /* ── Header search clear button ── */
+    
+    /* ── Header live search dropdown ── */
     (function () {
-        var q   = document.getElementById('headerSearchQ');
-        var clr = document.getElementById('headerSearchClear');
-        if (!q || !clr) return;
-        function sync() { clr.classList.toggle('show', q.value.length > 0); }
-        q.addEventListener('input', sync);
-        clr.addEventListener('click', function () { q.value = ''; sync(); q.focus(); });
-        sync();
-    })();
+        var wrap   = document.getElementById('searchWrap');
+        var input  = document.getElementById('headerSearchQ');
+        var clr    = document.getElementById('headerSearchClear');
+        var drop   = document.getElementById('searchDropdown');
+        var timer  = null;
+        var SEARCH_URL = "{% url 'products:search_products' %}";
 
+        if (!input || !drop) return;
+
+        /* clear button */
+        function syncClear() { clr && clr.classList.toggle('show', input.value.length > 0); }
+        input.addEventListener('input', syncClear);
+        if (clr) clr.addEventListener('click', function () {
+            input.value = '';
+            syncClear();
+            closeDrop();
+            input.focus();
+        });
+        syncClear();
+
+        /* open / close */
+        function openDrop(html) {
+            drop.innerHTML = html;
+            drop.classList.add('open');
+        }
+        function closeDrop() {
+            drop.classList.remove('open');
+            drop.innerHTML = '';
+        }
+
+        /* close on outside click */
+        document.addEventListener('click', function (e) {
+            if (!wrap.contains(e.target)) closeDrop();
+        });
+
+        /* keyboard nav */
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeDrop(); input.blur(); }
+            if (e.key === 'Enter') {
+                /* let the form submit normally — shows full filtered product list */
+                closeDrop();
+            }
+        });
+
+        /* fetch suggestions */
+        function fetchSuggestions(q) {
+            drop.innerHTML = '<div class="sd-loading">Searching…</div>';
+            drop.classList.add('open');
+            fetch(SEARCH_URL + '?q=' + encodeURIComponent(q), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!drop.classList.contains('open')) return;
+                if (!data.results || data.results.length === 0) {
+                    openDrop('<div class="sd-empty">No results for "<strong>' +
+                        escHtml(q) + '</strong>"</div>');
+                    return;
+                }
+                var html = '';
+                data.results.forEach(function (p) {
+                    var priceClass = p.discount > 0 ? 'red' : 'black';
+                    var imgHtml = p.img
+                        ? '<img src="' + p.img + '" alt="' + escHtml(p.name) + '" loading="lazy">'
+                        : '👕';
+                    var badge = p.discount > 0
+                        ? ' <small style="font-size:10px;color:#f06292;">(' + p.discount + '% off)</small>'
+                        : '';
+                    html += '<a href="' + p.url + '" class="sd-item">' +
+                        '<div class="sd-img">' + imgHtml + '</div>' +
+                        '<div class="sd-info">' +
+                            '<div class="sd-name">' + escHtml(p.name) + '</div>' +
+                            '<div class="sd-brand">' + escHtml(p.brand) + '</div>' +
+                        '</div>' +
+                        '<div class="sd-price ' + priceClass + '">₹' + p.price + badge + '</div>' +
+                    '</a>';
+                });
+                /* "see all results" footer — submits the form */
+                html += '<a href="/products/user/products/?q=' + encodeURIComponent(q) + '" class="sd-footer">' +
+                    'See all results for "' + escHtml(q) + '" →</a>';
+                openDrop(html);
+            })
+            .catch(function () { closeDrop(); });
+        }
+
+        /* debounce input */
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            var q = input.value.trim();
+            if (q.length < 2) { closeDrop(); return; }
+            timer = setTimeout(function () { fetchSuggestions(q); }, 280);
+        });
+
+        /* reopen on focus if query present */
+        input.addEventListener('focus', function () {
+            var q = input.value.trim();
+            if (q.length >= 2) fetchSuggestions(q);
+        });
+
+        function escHtml(s) {
+            return String(s)
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+    })();
     /* ── Page loader ── */
     (function () {
         const loader = document.getElementById('global-loader');
@@ -529,6 +692,7 @@
             if (anchor.target === '_blank') return;
             if (anchor.closest('form')) return;
             if (anchor.hasAttribute('onclick')) return;
+            if (anchor.closest('.search-dropdown')) return;
             show('Loading...');
         });
 
