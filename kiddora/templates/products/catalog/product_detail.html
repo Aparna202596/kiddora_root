@@ -333,17 +333,11 @@
         </div>
 
         <!-- Variant selectors -->
-        {#
-            variant_data is a plain list of dicts passed from the view:
-            { id, color_id, color_name, age, sku, qty, is_oos }
-            Using dicts avoids RelatedObjectDoesNotExist on missing inventory rows.
-        #}
+        
         {% if variant_data %}
 
         <!-- Color selector -->
-        {# Build unique colors from variant_data via the JS-rendered data tags below.
-           We use a simple template trick: render all color swatches by iterating
-           variant_data and skipping duplicates with an ifchanged on color_id. #}
+        
         <div class="variant-block" id="colorBlock">
             <h4>Colour: <span id="colorLabel">—</span></h4>
             <div class="color-swatches" id="colorSwatches">

@@ -1,8 +1,3 @@
-{% comment %}
-Partial: products/catalog/product_grid.html
-Returned when request has X-Requested-With: XMLHttpRequest header.
-Contains only the product grid + pagination – no page shell.
-{% endcomment %}
 <div class="product-grid" id="productGrid">
     {% for product in products %}
     {% include "products/catalog/product_card.html" %}

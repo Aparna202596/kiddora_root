@@ -108,51 +108,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Toolbar -->
-{% comment %} <div class="listing-toolbar">
-    <span class="toolbar-count">
-        <strong>{{ page_obj.paginator.count }}</strong>
-        product{{ page_obj.paginator.count|pluralize }} found
-        {% if query %} for <em>"{{ query }}"</em>{% endif %}
-    </span> 
-
-    <!-- Inline search (preserves all filters) -->
-    <form method="get" action="" class="toolbar-search">
-        {% for c in selected_categories %}<input type="hidden" name="category" value="{{ c }}">{% endfor %}
-        {% for s in selected_subcategories %}<input type="hidden" name="subcategory" value="{{ s }}">{% endfor %}
-        {% for c in selected_colors %}<input type="hidden" name="color" value="{{ c }}">{% endfor %}
-        {% for a in selected_age_groups %}<input type="hidden" name="age" value="{{ a }}">{% endfor %}
-        {% for g in selected_genders %}<input type="hidden" name="gender" value="{{ g }}">{% endfor %}
-        {% for f in selected_fabrics %}<input type="hidden" name="fabric" value="{{ f }}">{% endfor %}
-        {% for b in selected_brands %}<input type="hidden" name="brand" value="{{ b }}">{% endfor %}
-        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
-        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
-        {% if sort_by %}<input type="hidden" name="sort_by" value="{{ sort_by }}">{% endif %}
-        <input type="text" name="q" id="toolbarQ" placeholder="Search…" value="{{ query }}" autocomplete="off">
-        <button type="button" class="ts-clear {% if query %}show{% endif %}" id="toolbarClear">✕</button>
-        <button type="submit" class="ts-submit"><i class="fa fa-search"></i></button> 
-    </form>
-
-    <!-- Sort (preserves filters + search) -->
-    <form method="get" action="">
-        {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
-        {% for c in selected_categories %}<input type="hidden" name="category" value="{{ c }}">{% endfor %}
-        {% for s in selected_subcategories %}<input type="hidden" name="subcategory" value="{{ s }}">{% endfor %}
-        {% for c in selected_colors %}<input type="hidden" name="color" value="{{ c }}">{% endfor %}
-        {% for a in selected_age_groups %}<input type="hidden" name="age" value="{{ a }}">{% endfor %}
-        {% for g in selected_genders %}<input type="hidden" name="gender" value="{{ g }}">{% endfor %}
-        {% for f in selected_fabrics %}<input type="hidden" name="fabric" value="{{ f }}">{% endfor %}
-        {% for b in selected_brands %}<input type="hidden" name="brand" value="{{ b }}">{% endfor %}
-        {% if request.GET.min_price %}<input type="hidden" name="min_price" value="{{ request.GET.min_price }}">{% endif %}
-        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
-        <select name="sort_by" class="sort-select" onchange="this.form.submit()" aria-label="Sort">
-            <option value="">Sort by</option>
-            {% for opt in sort_options %}
-            <option value="{{ opt.key }}" {% if sort_by == opt.key %}selected{% endif %}>{{ opt.label }}</option>
-            {% endfor %}
-        </select>
-    </form>
-</div> {% endcomment %}
 
 <!-- Active filter chips -->
 {% if query or selected_genders or request.GET.min_price or request.GET.max_price or selected_brands %}
