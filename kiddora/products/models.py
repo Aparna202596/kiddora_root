@@ -75,7 +75,9 @@ class Product(models.Model):
 class Color(models.Model):
 
     COLOR_CHOICES = [
+        ("Multi-color", "Multi-color"),
         ("White", "White"),
+        ("Off-white", "Off-white"),
         ("Black", "Black"),
         ("Gray", "Gray"),
         ("Light Gray", "Light Gray"),
@@ -93,12 +95,14 @@ class Color(models.Model):
         ("Rose", "Rose"),
         ("Blush", "Blush"),
 
+        ("Apricot", "Apricot"),
         ("Orange", "Orange"),
         ("Peach", "Peach"),
         ("Rust", "Rust"),
         ("Burnt Orange", "Burnt Orange"),
         ("Amber", "Amber"),
 
+        ("Light Yellow", "Light Yellow"),
         ("Yellow", "Yellow"),
         ("Mustard", "Mustard"),
         ("Gold", "Gold"),

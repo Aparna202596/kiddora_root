@@ -14,6 +14,7 @@ urlpatterns = [
     path('cookie-policy/',store_views.cookie_policy_view,name='cookie_policy'),
     path('blog/',store_views.blog_view,name='blog'),
     path('terms-conditions/',store_views.terms_conditions_view,name='terms_conditions'),
+    path('size-chart/',store_views.size_chart,name='size_chart'),
 
 
 ]

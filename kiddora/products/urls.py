@@ -4,6 +4,7 @@ from products.views import category_admin_views
 from products.views import product_admin_views
 from products.views import inventory_stock_views
 
+
 app_name = "products"
 
 urlpatterns = [

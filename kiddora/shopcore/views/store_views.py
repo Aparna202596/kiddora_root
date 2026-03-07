@@ -25,8 +25,8 @@ def home(request):
         'categories': categories,
         'products': products
     })
-def size_guide_view(request):
-    return render(request, 'product/catalog/kids_size_chart.html')
+def size_chart(request):
+    return render(request, 'products/catalog/kids_size_chart.html')
 
 def aboutus_view(request):
     return render(request, 'store/about_us.html')

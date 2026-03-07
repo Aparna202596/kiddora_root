@@ -26,7 +26,7 @@
     /* ---------- Images ---------- */
     .product-images { display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 20px; }
     .product-image {
-        flex: 1 1 150px; max-width: 150px;
+        flex: 1 1 150px; max-width: 250px;
         border-radius: 10px; overflow: hidden;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         cursor: zoom-in; transition: transform 0.3s ease;
@@ -118,9 +118,7 @@
                 {% endfor %}
             </div>
             {% endif %}
-    <div class="top-links">
-        <a href="{% url 'products:admin_add_variant' product.id %}" title="Add Variant">+ Add Variant</a>
-    </div>
+    
     <div class="product-details">
         <div class="product-images">
             {% for img_obj in images %}
@@ -164,8 +162,12 @@
             </div>
         </div>
     </div>
+    
     <div class="variants-section">
         <h3>Variants</h3>
+        <div class="top-links">
+            <a href="{% url 'products:admin_add_variant' product.id %}" title="Add Variant">+ Add Variant</a>
+        </div>
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -211,7 +213,7 @@
             </table>
         </div>
     </div>
-    <a href="{% url 'products:admin_product_list' %}" class="btn-back">← Back to Products</a>
+    <a href="{% url 'products:admin_product_list' %}" class="btn-back">← Back to Products List</a>
 </div>
 
 {% include "confirm_modal.html" %}

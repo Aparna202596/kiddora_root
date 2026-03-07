@@ -217,13 +217,7 @@ textarea { resize: vertical; }
         </label>
         {% endif %}
         <div class="actions">
-            <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back</a>
-            <!--
-                FIX: type="button" stops the form submitting immediately.
-                     confirmSave()   → used when adding a new product
-                     confirmUpdate() → used when editing an existing product
-                Both functions are provided by ui-utils.js and submit the form after modal confirmation.
-            -->
+            <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back to Products List</a>
             {% if product %}
             <button type="button" class="btn btn-primary"
                     onclick="confirmUpdate('productForm')">Save</button>

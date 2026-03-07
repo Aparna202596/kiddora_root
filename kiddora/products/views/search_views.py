@@ -352,7 +352,79 @@ def search_products(request):
         "sort_options": SORT_OPTIONS,
         "sort_by":      sort_by,
     }
-    return render(request, "products/catalog/search_results.html", context)
+    return render(request, "products/search/search_results.html", context)
+
+
+def search_autocomplete(request):
+    """
+    AJAX endpoint for the header search dropdown.
+    Returns JSON with up to 8 matching products + up to 4 category suggestions.
+    Called with ?q=<term> via fetch() as the user types.
+    """
+    query = request.GET.get("q", "").strip()
+
+    if not query or len(query) < 2:
+        return JsonResponse({"products": [], "categories": []})
+
+    # Products — active only, max 8
+    products_qs = (
+        Product.objects
+        .filter(
+            is_active=True,
+            subcategory__category__is_active=True,
+        )
+        .filter(
+            Q(product_name__icontains=query) |
+            Q(brand__icontains=query) |
+            Q(subcategory__subcategory_name__icontains=query) |
+            Q(subcategory__category__category_name__icontains=query)
+        )
+        .select_related("subcategory", "subcategory__category")
+        .prefetch_related("images")
+        .distinct()[:8]
+    )
+
+    products_data = []
+    for p in products_qs:
+        # Get first available image
+        img_url = None
+        for img_obj in p.images.all():
+            for field in ("image1", "image2", "image3", "image4", "image5"):
+                val = getattr(img_obj, field)
+                if val:
+                    img_url = val.url
+                    break
+            if img_url:
+                break
+
+        products_data.append({
+            "id":               p.id,
+            "name":             p.product_name,
+            "brand":            p.brand,
+            "final_price":      str(p.final_price),
+            "base_price":       str(p.base_price),
+            "discount_percent": p.discount_percent,
+            "image":            img_url,
+            "url":              f"/products/user/products/{p.id}/",
+        })
+
+    # Category suggestions — max 4
+    from products.models import Category
+    categories_qs = (
+        Category.objects
+        .filter(is_active=True, category_name__icontains=query)
+        [:4]
+    )
+    categories_data = [
+        {
+            "id":   c.id,
+            "name": c.category_name,
+            "url":  f"/products/user/categories/{c.id}/subcategories/",
+        }
+        for c in categories_qs
+    ]
+
+    return JsonResponse({"products": products_data, "categories": categories_data})
 
 
 # ─────────────────────────────────────────────────────────────

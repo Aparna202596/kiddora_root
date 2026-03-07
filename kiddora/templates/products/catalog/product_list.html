@@ -109,12 +109,12 @@
 
 {% block content %}
 <!-- Toolbar -->
-<div class="listing-toolbar">
+{% comment %} <div class="listing-toolbar">
     <span class="toolbar-count">
         <strong>{{ page_obj.paginator.count }}</strong>
         product{{ page_obj.paginator.count|pluralize }} found
         {% if query %} for <em>"{{ query }}"</em>{% endif %}
-    </span>
+    </span> 
 
     <!-- Inline search (preserves all filters) -->
     <form method="get" action="" class="toolbar-search">
@@ -130,7 +130,7 @@
         {% if sort_by %}<input type="hidden" name="sort_by" value="{{ sort_by }}">{% endif %}
         <input type="text" name="q" id="toolbarQ" placeholder="Search…" value="{{ query }}" autocomplete="off">
         <button type="button" class="ts-clear {% if query %}show{% endif %}" id="toolbarClear">✕</button>
-        <button type="submit" class="ts-submit"><i class="fa fa-search"></i></button>
+        <button type="submit" class="ts-submit"><i class="fa fa-search"></i></button> 
     </form>
 
     <!-- Sort (preserves filters + search) -->
@@ -152,13 +152,13 @@
             {% endfor %}
         </select>
     </form>
-</div>
+</div> {% endcomment %}
 
 <!-- Active filter chips -->
 {% if query or selected_genders or request.GET.min_price or request.GET.max_price or selected_brands %}
 <div class="filter-chips">
     {% if query %}
-    <span class="chip">🔍 {{ query }}
+    <span class="chip"> {{ query }}
         <a href="?{% querystring request.GET q='' page='' %}" class="chip-rm">✕</a>
     </span>
     {% endif %}

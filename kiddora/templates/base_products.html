@@ -168,16 +168,42 @@
         .icon-btn.profile:hover { border-color: #f06292; }
 
         /* ── BREADCRUMB ── */
-        .breadcrumb-bar {
+        /* ── BREADCRUMB ── */
+        .breadcrumb-row {
             max-width: 1400px;
             margin: 0 auto;
             padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .breadcrumb-bar {
             font-size: 13px;
             color: #888;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 4px;
+        }
+        .breadcrumb-bar a { color: #f06292; }
+        .breadcrumb-bar a:hover { text-decoration: underline; }
+        .breadcrumb-bar .sep { color: #ccc; margin: 0 2px; }
+        .breadcrumb-bar strong { color: #333; }
+        .size-chart-link {
+            white-space: nowrap;
+            font-size: 13px;
+            font-weight: 600;
+            color: #f06292;
+            border: 1.5px solid #f06292;
+            border-radius: 20px;
+            padding: 4px 14px;
+            transition: background 0.2s, color 0.2s;
+            flex-shrink: 0;
+        }
+        .size-chart-link:hover {
+            background: #f06292;
+            color: #fff;
         }
         .breadcrumb-bar a { color: #f06292; }
         .breadcrumb-bar a:hover { text-decoration: underline; }
@@ -240,6 +266,7 @@
             gap: 8px;
             align-items: center;
         }
+        
         .clear-btn { font-size: 12px; color: #f06292; }
         .clear-btn:hover { text-decoration: underline; }
         .sidebar-menu { display: flex; flex-direction: column; gap: 16px; }
@@ -433,9 +460,9 @@
             <div class="header-actions">
                 <form method="get" action="{% url 'products:search_products' %}" class="search-form" role="search">
                     <input type="text" name="q" id="headerSearchQ"
-                           value="{{ request.GET.q|default:'' }}"
-                           placeholder="Search products..."
-                           autocomplete="off" aria-label="Search products">
+                            value="{{ request.GET.q|default:'' }}"
+                            placeholder="Search products..."
+                            autocomplete="off" aria-label="Search products">
                     <button type="button" class="sf-clear {% if request.GET.q %}show{% endif %}"
                             id="headerSearchClear" aria-label="Clear search">✕</button>
                     <button type="submit" class="sf-submit" aria-label="Search">
@@ -466,7 +493,12 @@
     </div>
     {% endif %}
 
-    {% block breadcrumb %}{% endblock %}
+    <div class="breadcrumb-row">
+        <div>{% block breadcrumb %}{% endblock %}</div>
+        <a href="{% url 'shopcore:size_chart' %}" class="size-chart-link">
+            <i class="fa-solid fa-ruler"></i> Size Chart
+        </a>
+    </div>
 
     <main class="main-content">
         <div class="account-layout">
