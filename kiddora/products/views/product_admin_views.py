@@ -168,14 +168,11 @@ def admin_add_product(request):
                     "gender_choices": Product.GENDER_CHOICES,
                 },
             )
-        print("Images received:",image1, image2, image3)
-        print("Base Price:", base_price, "Discount Percent:", discount_percent, "Calculated Final Price:", preview_final_price)
         
         name = request.POST.get("product_name").strip()
         subcategory = get_object_or_404(
             SubCategory, id=request.POST.get("subcategory")
         )
-        print("Creating product with name:", name, "and subcategory:", subcategory)
 
         # Process images before DB writes — fail fast if process_image errors
         processed1 = process_image(image1)
@@ -212,13 +209,6 @@ def admin_add_product(request):
             ).update(is_default=False)
             
             super(ProductImage, img_instance).save(force_insert=True)
-
-        print("Product images saved for product ID:", product.id)
-        print("image1",image1)
-        print("image2",image2)
-        print("image3",image3)
-        print("image4",image4)
-        print("image5",image5)
         
         messages.success(request, "Product added successfully")
         return redirect("products:admin_product_list")

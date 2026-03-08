@@ -201,11 +201,8 @@ def product_list(request, category_id=None, subcategory_id=None):
 def search_products(request):
 
     query = request.GET.get("q", "").strip()
-    # query = request.GET.get("q","").lower().strip()
-    # query = query.replace(" ", "")
     query = query.replace("-", " ")
 
-    print(f"Search query: '{query}'")
     if not query or len(query) < 2:
         return JsonResponse({"results": [], "query": query})
 
