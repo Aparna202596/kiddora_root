@@ -193,7 +193,7 @@
 
 {% block content %}
 
-<!-- Zoom overlay (b-i: zoomable images) -->
+<!-- Zoom overlay -->
 <div class="zoom-overlay" id="zoomOverlay">
     <button class="zoom-close" onclick="closeZoom()" aria-label="Close zoom">✕</button>
     <img id="zoomImg" src="" alt="Zoomed product image">
@@ -201,14 +201,14 @@
 
 <div class="detail-wrap">
 
-    <!-- ══════════ LEFT: IMAGE GALLERY ══════════ -->
+    <!--  LEFT: IMAGE GALLERY  -->
     <div class="gallery" id="gallery">
 
         <!-- Main image viewer – 4:5 aspect = 1080×1350 (b-i) -->
         <div class="gallery-main hoverable" id="galleryMain"
-             onclick="openZoom()"
-             onmousemove="zoomHover(event)"
-             onmouseleave="zoomReset()">
+                onclick="openZoom()"
+                onmousemove="zoomHover(event)"
+                onmouseleave="zoomReset()">
             <div class="gallery-track-wrap">
                 <div class="gallery-track" id="galleryTrack">
 
@@ -232,7 +232,7 @@
             {% endif %}
         </div>
 
-        <!-- Dots (b-i: shown at bottom of image) -->
+        <!-- Dots  -->
         <div class="gallery-dots" id="galleryDots"></div>
 
         <!-- Thumbnails -->
@@ -248,12 +248,13 @@
             {% endif %}
         </div>
 
-    </div><!-- /gallery -->
+    </div>
+    <!-- /gallery -->
 
-    <!-- ══════════ RIGHT: PRODUCT INFO ══════════ -->
+    <!--  RIGHT: PRODUCT INFO  -->
     <div class="product-info">
 
-        <!-- b-xi: Redirect if blocked handled in view; here we show unavailable banner if needed -->
+        <!-- Redirect if blocked handled in view -->
         {% if all_out_of_stock and not variants %}
         <div class="unavail-banner">
             <h3>⚠ Product Unavailable</h3>
@@ -277,11 +278,10 @@
             {% endif %}
         </div>
 
-        <!-- b-iv + b-v: Price display -->
+        <!-- Price display -->
         <div class="price-block">
             <div class="price-row">
                 {% if product.discount_percent %}
-                    {# Discount applied: final price in RED, base strike-off, discount badge #}
                     <span class="price-final-red">₹{{ product.final_price|floatformat:0 }}</span>
                     <span class="price-base-strike">₹{{ product.base_price|floatformat:0 }}</span>
                     <span class="price-discount-badge">({{ product.discount_percent }}% off)</span>
@@ -293,30 +293,34 @@
             <p class="price-note">Inclusive of all taxes &nbsp;·&nbsp; Free delivery on orders above ₹499</p>
         </div>
 
-        <!-- b-viii + b-ix: Stock info -->
+        <!-- Stock info -->
         <div class="stock-block" id="stockBlock">
             {% if all_out_of_stock %}
                 <span class="stock-tag stock-out">✕ Out of Stock</span>
             {% elif any_in_stock %}
-                <span class="stock-tag stock-in">● In Stock</span>
+                {% if total_stock < 10 %}
+                    <span class="stock-tag stock-low">⚠ Only {{ total_stock }} left!</span>
+                {% else %}
+                    <span class="stock-tag stock-in">● In Stock</span>
+                {% endif %}
             {% else %}
                 <span class="stock-tag stock-none">Select options to check availability</span>
             {% endif %}
         </div>
 
-        <!-- b-ix: Sold-out banner -->
+        <!-- Sold-out banner -->
         {% if all_out_of_stock %}
         <div class="unavail-banner">
             <h3>Sold Out</h3>
             <p>This product is currently out of stock.
-               <a href="/products/user/subcategories/{{ product.subcategory.id }}/products/">
-                   See similar products →
-               </a>
+                <a href="/products/user/subcategories/{{ product.subcategory.id }}/products/">
+                    See similar products →
+                </a>
             </p>
         </div>
         {% endif %}
 
-        <!-- b-vi: Coupons -->
+        {% comment %} <!-- Coupons -->
         <div class="coupon-block">
             <h4>🏷 Applicable Coupons</h4>
             <div class="coupon-chips">
@@ -330,7 +334,7 @@
                     <span class="coupon-chip">FIRST20</span>
                 {% endif %}
             </div>
-        </div>
+        </div> {% endcomment %}
 
         <!-- Variant selectors -->
         
@@ -358,8 +362,8 @@
             </div>
         </div>
 
-        <!-- Age group selector — all chips pre-rendered, JS shows/hides by color -->
-        <!-- Initially hidden; shown after user picks a colour -->
+        <!-- Age group selector -->
+        
         <div class="variant-block" id="ageBlock" style="display:none">
             <h4>Age Group: <span id="ageLabel">—</span></h4>
             <div class="age-chips" id="ageChips">
@@ -631,20 +635,19 @@ function setStockUI(qty, vid) {
     var el     = document.getElementById('stockBlock');
     var addBtn = document.getElementById('addToCart');
     if (!el) return;
-
     if (vid === null) {
-        el.innerHTML = '<span class="stock-tag stock-none">● Select options above</span>';
+        el.innerHTML = '<span class="stock-tag stock-none">● Select options below</span>';
         if (addBtn) { addBtn.disabled = false; addBtn.textContent = 'Add to Cart'; }
         return;
     }
     if (qty === 0) {
         el.innerHTML = '<span class="stock-tag stock-out">✕ Out of Stock</span>';
         if (addBtn) { addBtn.disabled = true; addBtn.textContent = 'Out of Stock'; }
-    } else if (qty <= 5) {
+    } else if (qty < 10) {
         el.innerHTML = '<span class="stock-tag stock-low">⚠ Only ' + qty + ' left!</span>';
         if (addBtn) { addBtn.disabled = false; addBtn.textContent = 'Add to Cart'; }
     } else {
-        el.innerHTML = '<span class="stock-tag stock-in">● In Stock (' + qty + ' available)</span>';
+        el.innerHTML = '<span class="stock-tag stock-in">● In Stock</span>';
         if (addBtn) { addBtn.disabled = false; addBtn.textContent = 'Add to Cart'; }
     }
 }
