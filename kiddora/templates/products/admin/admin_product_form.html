@@ -209,12 +209,12 @@ textarea { resize: vertical; }
         <label>About Product</label>
         <textarea name="about_product" rows="3">{{ product.about_product|default:'' }}</textarea>
         {% if product %}
-        <label style="display:flex; align-items:center; gap:8px; font-weight:500; margin-top:14px;">
+        {% comment %} <label style="display:flex; align-items:center; gap:8px; font-weight:500; margin-top:14px;">
             <input type="checkbox" name="is_active"
                     {% if product.is_active %}checked{% endif %}
                     style="width:auto; margin:0;">
             Active
-        </label>
+        </label> {% endcomment %}
         {% endif %}
         <div class="actions">
             <a href="{% url 'products:admin_product_list' %}" class="btn btn-secondary">← Back to Products List</a>

@@ -39,6 +39,7 @@ def admin_category_list(request):
             "dir": direction,
         },)
 
+@never_cache
 @admin_login_required
 def admin_add_category(request):
     if request.method == "POST":
@@ -60,13 +61,14 @@ def admin_add_category(request):
     categories = Category.objects.filter(is_active=True)
     return render(request, "products/admin/admin_category_form.html", {"categories": categories})
 
+@never_cache
 @admin_login_required
 def admin_edit_category(request, category_id):
     category = get_object_or_404(Category, id=category_id, is_active=True)
 
     if request.method == "POST":
         category_name = request.POST.get("category_name").strip()
-        category.is_active = bool(request.POST.get("is_active"))
+        # category.is_active = bool(request.POST.get("is_active"))
         if Category.objects.filter(category_name__iexact=category_name).exclude(id=category.id).exists():
             messages.error(request, "Category with this name already exists.")
             return redirect("products:admin_edit_category", category_id=category.id)
@@ -78,6 +80,7 @@ def admin_edit_category(request, category_id):
     categories = Category.objects.filter(is_active=True)
     return render(request, "products/admin/admin_category_form.html", {"category": category, "categories": categories})
 
+@never_cache
 @admin_login_required
 def admin_delete_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
@@ -120,7 +123,7 @@ def admin_unblock_category(request, category_id):
     return render(request, "products/admin/admin_confirm_unblock.html", {"category": category})
 
 # SUBCATEGORY MANAGEMENT
-
+@never_cache
 @admin_login_required
 def admin_subcategory_list(request):
     search = request.GET.get("search", "").strip()
@@ -153,6 +156,7 @@ def admin_subcategory_list(request):
         },
     )
 
+@never_cache
 @admin_login_required
 def admin_add_subcategory(request):
     categories = Category.objects.filter(is_active=True)
@@ -171,6 +175,7 @@ def admin_add_subcategory(request):
 
     return render(request, "products/admin/admin_subcategory_form.html", {"categories": categories})
 
+@never_cache
 @admin_login_required
 def admin_edit_subcategory(request, subcategory_id):
     subcategory = get_object_or_404(SubCategory, id=subcategory_id)
@@ -193,6 +198,7 @@ def admin_edit_subcategory(request, subcategory_id):
 
     return render(request, "products/admin/admin_subcategory_form.html", {"subcategory": subcategory, "categories": categories})
 
+@never_cache
 @admin_login_required
 def admin_delete_subcategory(request, subcategory_id):
     subcategory = get_object_or_404(SubCategory, id=subcategory_id)
@@ -202,7 +208,7 @@ def admin_delete_subcategory(request, subcategory_id):
     messages.success(request, "SubCategory deleted safely")
     return redirect("products:admin_subcategory_list")
 
-# BLOCK SUBCATEGORY — guard: block only if parent category is active
+# BLOCK SUBCATEGORY — Blocks the subcategory and all its products, but not the parent category
 @never_cache
 @admin_login_required
 def admin_block_subcategory(request, subcategory_id):
@@ -216,7 +222,7 @@ def admin_block_subcategory(request, subcategory_id):
         return redirect("products:admin_subcategory_list")
     return render(request, "products/admin/admin_confirm_block.html", {"subcategory": subcategory})
 
-
+# UNBLOCK SUBCATEGORY — Unblocks the subcategory and all its products, but only if the parent category is active
 @never_cache
 @admin_login_required
 def admin_unblock_subcategory(request, subcategory_id):

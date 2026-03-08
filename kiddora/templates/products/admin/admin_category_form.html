@@ -79,11 +79,11 @@ input[type="text"] {
                 name="category_name"
                 value="{{ category.category_name|default:'' }}"
                 required>
-        <label>
+        {% comment %} <label>
             <input type="checkbox" name="is_active"
                     {% if category and category.is_active %}checked{% endif %}>
             Active
-        </label>
+        </label> {% endcomment %}
         <div class="form-actions">
             {% if category %}
             <button type="button" class="btn-custom" onclick="confirmUpdate('categoryForm')">Save</button>

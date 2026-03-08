@@ -47,8 +47,8 @@ def admin_inventory_list(request):
 @never_cache
 @admin_login_required
 @transaction.atomic
-def update_stock(request, inventory_id):   # renamed param to inventory_id
-    inventory = get_object_or_404(Inventory, id=inventory_id)  # lookup by id
+def update_stock(request, inventory_id):   # inventory_id is now passed as a parameter
+    inventory = get_object_or_404(Inventory, id=inventory_id)  # fetch the inventory record based on the provided ID
 
     if request.method == "POST":
         try:

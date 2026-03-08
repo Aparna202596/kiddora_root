@@ -245,7 +245,7 @@ def admin_edit_product(request, product_id):
         product.discount_percent = discount_percent
         product.about_product = request.POST.get("about_product")
         product.subcategory_id = request.POST.get("subcategory")
-        product.is_active = bool(request.POST.get("is_active"))
+        # product.is_active = bool(request.POST.get("is_active"))
         product.save()
 
         messages.success(request, "Product updated")
