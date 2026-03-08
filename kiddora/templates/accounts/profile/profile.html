@@ -186,7 +186,7 @@
             <div class="profile-field">
                 <label>Name</label>
                 <div class="input-wrapper">
-                    <input type="text" name="full_name" value="{{ request.user.full_name }}" disabled>
+                    <input type="text" name="full_name" placeholder="Full Name" value="{{ request.user.full_name |default:'' }}" disabled>
                 </div>
             </div>
 
@@ -200,7 +200,7 @@
             <div class="profile-field">
                 <label>Phone</label>
                 <div class="input-wrapper">
-                    <input type="text" name="phone" value="{{ request.user.phone }}" disabled>
+                    <input type="text" name="phone" placeholder="Phone Number" value="{{ request.user.phone |default:'' }}" disabled>
                 </div>
             </div>
 
