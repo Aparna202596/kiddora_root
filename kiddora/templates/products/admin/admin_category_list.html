@@ -177,6 +177,21 @@ tbody tr:hover {
                             onclick="confirmCategoryDelete(event, this.href)"
                             title="Delete">🗑️</a>
                         <a class="icon-add" href="{% url 'products:admin_add_subcategory' %}?category={{ cat.id }}" title="Add SubCategory">➕</a>
+
+                        <!-- ADD-ON: Block / Unblock icons -->
+                        {% if cat.is_active %}
+                            <a href="{% url 'products:admin_block_category' cat.id %}"
+                            style="color:#e74c3c; margin:0 6px; font-size:16px; text-decoration:none;"
+                            title="Block Category">
+                            <i class="fa-solid fa-ban"></i>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'products:admin_unblock_category' cat.id %}"
+                            style="color:#2ecc71; margin:0 6px; font-size:16px; text-decoration:none;"
+                            title="Unblock Category">
+                            <i class="fa-solid fa-circle-check"></i>
+                            </a>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}

@@ -13,7 +13,7 @@ def admin_category_list(request):
     sort = request.GET.get("sort", "id")
     direction = request.GET.get("dir", "desc")
 
-    categories = Category.objects.filter(is_active=True)
+    categories = Category.objects.filter(is_deleted=False)
 
     if search:
         categories = categories.filter(category_name__icontains=search)
@@ -81,11 +81,43 @@ def admin_edit_category(request, category_id):
 @admin_login_required
 def admin_delete_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    category.is_active = False  # soft delete
+    category.is_deleted = True  # soft delete
     category.save()
+    SubCategory.objects.filter(category=category).update(is_deleted=True)
     Product.objects.filter(subcategory__category=category).update(is_active=False)
     messages.success(request, "Category deleted safely")
     return redirect("products:admin_category_list")
+
+# BLOCK CATEGORY 
+@never_cache
+@admin_login_required
+def admin_block_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    if request.method == "POST":
+        category.is_active = False
+        category.save()
+        # Block all subcategories under this category
+        SubCategory.objects.filter(category=category).update(is_active=False)
+        # Block all products under this category's subcategories
+        Product.objects.filter(subcategory__category=category).update(is_active=False)
+        messages.success(request, f"{category.category_name} and its subcategories have been blocked.")
+        return redirect("products:admin_category_list")
+    return render(request, "products/admin/admin_confirm_block.html", {"category": category})
+
+# UNBLOCK CATEGORY
+@never_cache
+@admin_login_required
+def admin_unblock_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    if request.method == "POST":
+        category.is_active = True
+        category.save()
+        SubCategory.objects.filter(category=category).update(is_active=True)
+        Product.objects.filter(subcategory__category=category).update(is_active=True)
+        ProductVariant.objects.filter(product__subcategory__category=category).update(is_active=True)
+        messages.success(request, f"{category.category_name} and all its children have been unblocked.")
+        return redirect("products:admin_category_list")
+    return render(request, "products/admin/admin_confirm_unblock.html", {"category": category})
 
 # SUBCATEGORY MANAGEMENT
 
@@ -95,7 +127,7 @@ def admin_subcategory_list(request):
     sort = request.GET.get("sort", "id")
     direction = request.GET.get("dir", "desc")
 
-    subcategories = SubCategory.objects.filter(category__is_active=True).select_related("category")
+    subcategories = SubCategory.objects.filter(is_deleted=False, category__is_deleted=False).select_related("category")
 
     if search:
         subcategories = subcategories.filter(subcategory_name__icontains=search)
@@ -165,6 +197,42 @@ def admin_edit_subcategory(request, subcategory_id):
 def admin_delete_subcategory(request, subcategory_id):
     subcategory = get_object_or_404(SubCategory, id=subcategory_id)
     Product.objects.filter(subcategory=subcategory).update(is_active=False)
-    subcategory.delete()  
+    subcategory.is_deleted = True    
+    subcategory.save()
     messages.success(request, "SubCategory deleted safely")
     return redirect("products:admin_subcategory_list")
+
+# BLOCK SUBCATEGORY — guard: block only if parent category is active
+@never_cache
+@admin_login_required
+def admin_block_subcategory(request, subcategory_id):
+    subcategory = get_object_or_404(SubCategory, id=subcategory_id)
+    if request.method == "POST":
+        subcategory.is_active = False
+        subcategory.save()
+        Product.objects.filter(subcategory=subcategory).update(is_active=False)
+        ProductVariant.objects.filter(product__subcategory=subcategory).update(is_active=False)
+        messages.success(request, f"{subcategory.subcategory_name} and its products have been blocked.")
+        return redirect("products:admin_subcategory_list")
+    return render(request, "products/admin/admin_confirm_block.html", {"subcategory": subcategory})
+
+
+@never_cache
+@admin_login_required
+def admin_unblock_subcategory(request, subcategory_id):
+    subcategory = get_object_or_404(SubCategory, id=subcategory_id)
+    if request.method == "POST":
+        if not subcategory.category.is_active:
+            messages.error(
+                request,
+                f"Cannot unblock '{subcategory.subcategory_name}' because its category "
+                f"'{subcategory.category.category_name}' is blocked. Unblock the category first."
+            )
+            return redirect("products:admin_subcategory_list")
+        subcategory.is_active = True
+        subcategory.save()
+        Product.objects.filter(subcategory=subcategory).update(is_active=True)
+        ProductVariant.objects.filter(product__subcategory=subcategory).update(is_active=True)
+        messages.success(request, f"{subcategory.subcategory_name} and its products have been unblocked.")
+        return redirect("products:admin_subcategory_list")
+    return render(request, "products/admin/admin_confirm_unblock.html", {"subcategory": subcategory})

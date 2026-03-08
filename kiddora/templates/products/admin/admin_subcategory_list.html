@@ -179,6 +179,21 @@ tbody tr:hover {
                             href="{% url 'products:admin_delete_subcategory' sub.id %}"
                             onclick="confirmSubcategoryDelete(event, this.href)"
                             title="Delete">🗑️</a>
+
+                        <!-- ADD-ON: Block / Unblock icons -->
+                        {% if sub.is_active %}
+                            <a href="{% url 'products:admin_block_subcategory' sub.id %}"
+                            style="color:#e74c3c; margin:0 6px; font-size:16px; text-decoration:none;"
+                            title="Block SubCategory">
+                            <i class="fa-solid fa-ban"></i>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'products:admin_unblock_subcategory' sub.id %}"
+                            style="color:#2ecc71; margin:0 6px; font-size:16px; text-decoration:none;"
+                            title="Unblock SubCategory">
+                            <i class="fa-solid fa-circle-check"></i>
+                            </a>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}

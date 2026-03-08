@@ -35,13 +35,17 @@ urlpatterns = [
     path("admin/category/add/", category_admin_views.admin_add_category, name="admin_add_category"),
     path("admin/category/edit/<int:category_id>/", category_admin_views.admin_edit_category, name="admin_edit_category"),
     path("admin/category/delete/<int:category_id>/", category_admin_views.admin_delete_category, name="admin_delete_category"),
-
+    path("categories/<int:category_id>/block/", category_admin_views.admin_block_category, name="admin_block_category"),
+    path("categories/<int:category_id>/unblock/", category_admin_views.admin_unblock_category, name="admin_unblock_category"),
+    
     # SubCategory 
     path("admin/category/subcategories/", category_admin_views.admin_subcategory_list, name="admin_subcategory_list"),
     path("admin/category/subcategories/add/", category_admin_views.admin_add_subcategory, name="admin_add_subcategory"),
     path("admin/category/subcategories/edit/<int:subcategory_id>/", category_admin_views.admin_edit_subcategory, name="admin_edit_subcategory"),
     path("admin/category/subcategories/delete/<int:subcategory_id>/", category_admin_views.admin_delete_subcategory, name="admin_delete_subcategory"),
-
+    path("subcategories/<int:subcategory_id>/block/", category_admin_views.admin_block_subcategory, name="admin_block_subcategory"),
+    path("subcategories/<int:subcategory_id>/unblock/", category_admin_views.admin_unblock_subcategory, name="admin_unblock_subcategory"),
+    
     #  ADMIN – PRODUCT MANAGEMENT
 
     path("admin/products/", product_admin_views.admin_product_list, name="admin_product_list"),
@@ -49,12 +53,16 @@ urlpatterns = [
     path("admin/products/add/", product_admin_views.admin_add_product, name="admin_add_product"),
     path("admin/products/<int:product_id>/edit/", product_admin_views.admin_edit_product, name="admin_edit_product"),
     path("admin/products/<int:product_id>/delete/", product_admin_views.admin_delete_product, name="admin_delete_product"),
+    path("products/<int:product_id>/block/",   product_admin_views.admin_block_product,   name="admin_block_product"),
+    path("products/<int:product_id>/unblock/", product_admin_views.admin_unblock_product, name="admin_unblock_product"),
 
     # Variants 
 
     path("admin/products/<int:product_id>/variant/add/", product_admin_views.admin_add_variant, name="admin_add_variant"),
     path("admin/products/<int:product_id>/variant/<int:variant_id>/edit/", product_admin_views.admin_edit_variant, name="admin_edit_variant"),
     path("admin/products/<int:product_id>/variant/<int:variant_id>/delete/", product_admin_views.admin_delete_variant, name="admin_delete_variant"),
+    path("products/<int:product_id>/variants/<int:variant_id>/block/",   product_admin_views.admin_block_variant,   name="admin_block_variant"),
+    path("products/<int:product_id>/variants/<int:variant_id>/unblock/", product_admin_views.admin_unblock_variant, name="admin_unblock_variant"),
 
     #  ADMIN – INVENTORY
 

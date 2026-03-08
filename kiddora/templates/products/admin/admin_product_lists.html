@@ -54,6 +54,8 @@ tbody tr:hover { background: #f9f0f6; }
 .icon-edit { color: #000; }
 .icon-delete { color: #dc3545; }
 .icon-edit:hover, .icon-delete:hover { opacity: 0.7; }
+.action-block   { color: #e74c3c; }
+.action-unblock { color: #2ecc71; }
 /* ── MESSAGES ── */
     .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
     .message {
@@ -159,6 +161,20 @@ tbody tr:hover { background: #f9f0f6; }
                             href="{% url 'products:admin_delete_product' prod.id %}"
                             onclick="confirmDelete(event, this.href, '{{ prod.product_name }}')"
                             title="Delete">🗑️</a>
+
+                        {% if prod.is_active %}
+                            <a href="{% url 'products:admin_block_product' prod.id %}"
+                            class="action-block"
+                            title="Block Product">
+                            <i class="fa-solid fa-ban"></i>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'products:admin_unblock_product' prod.id %}"
+                            class="action-unblock"
+                            title="Unblock Product">
+                            <i class="fa-solid fa-circle-check"></i>
+                            </a>
+    {% endif %}
                         
                     </td>
                 </tr>

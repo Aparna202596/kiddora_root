@@ -79,10 +79,8 @@ def admin_product_list(request):
     max_price = request.GET.get("max_price")
     brand = request.GET.get("brand")
 
-    queryset = Product.objects.select_related(
-        "subcategory", "subcategory__category"
-    ).filter(subcategory__category__is_active=True)
-    queryset = queryset.filter(is_active=True)
+    queryset = Product.objects.select_related("subcategory", "subcategory__category").filter(
+        is_deleted=False, subcategory__category__is_deleted=False)
 # SEARCH
     queryset = apply_search(queryset, search, ["product_name", "brand"])
 
@@ -130,8 +128,8 @@ def admin_product_list(request):
         "search": search,
         "sort": sort,
         "dir":dir,
-        "categories": Category.objects.filter(is_active=True),
-        "subcategories": SubCategory.objects.filter(category__is_active=True),
+        "categories": Category.objects.filter(is_deleted=False),
+        "subcategories": SubCategory.objects.filter(is_deleted=False),
     }
 
     return render(request, "products/admin/admin_product_lists.html", context)
@@ -224,7 +222,6 @@ def admin_add_product(request):
         },
     )
 
-
 # -----------------------------
 # EDIT PRODUCT
 # -----------------------------
@@ -271,10 +268,56 @@ def admin_edit_product(request, product_id):
 @admin_login_required
 def admin_delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    product.is_active = False
+    product.is_deleted = True 
     product.save()
     messages.success(request, "Product deleted safely")
     return redirect("products:admin_product_list")
+
+
+# BLOCK PRODUCT (also blocks all variants)
+@never_cache
+@admin_login_required
+def admin_block_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    if request.method == "POST":
+        product.is_active = False
+        product.save()
+        ProductVariant.objects.filter(product=product).update(is_active=False)
+        messages.success(request, f"{product.product_name} and its variants have been blocked.")
+        return redirect("products:admin_product_list")
+    return render(request, "products/admin/admin_confirm_block.html", {"product": product})
+
+
+@never_cache
+@admin_login_required
+def admin_unblock_product(request, product_id):
+    product = get_object_or_404(
+        Product.objects.select_related("subcategory", "subcategory__category"),
+        id=product_id
+    )
+    if request.method == "POST":
+        if not product.subcategory.is_active:
+            messages.error(
+                request,
+                f"Cannot unblock '{product.product_name}' because its subcategory "
+                f"'{product.subcategory.subcategory_name}' is blocked. Unblock the subcategory first."
+            )
+            return redirect("products:admin_product_list")
+        if not product.subcategory.category.is_active:
+            messages.error(
+                request,
+                f"Cannot unblock '{product.product_name}' because its category "
+                f"'{product.subcategory.category.category_name}' is blocked. Unblock the category first."
+            )
+            return redirect("products:admin_product_list")
+        product.is_active = True
+        product.save()
+        ProductVariant.objects.filter(product=product).update(is_active=True)
+        messages.success(request, f"{product.product_name} and its variants have been unblocked.")
+        return redirect("products:admin_product_list")
+    return render(request, "products/admin/admin_confirm_unblock.html", {"product": product})
+
+
 
 # VARIANT MANAGEMENT
 
@@ -346,3 +389,51 @@ def admin_delete_variant(request, product_id, variant_id):
     return redirect(
         "products:admin_product_details", product_id=product_id
     )
+
+# BLOCK VARIANT
+@never_cache
+@admin_login_required
+def admin_block_variant(request, product_id, variant_id):
+    variant = get_object_or_404(ProductVariant, id=variant_id, product_id=product_id)
+    if request.method == "POST":
+        variant.is_active = False
+        variant.save()
+        messages.success(request, f"Variant has been blocked.")
+        return redirect("products:admin_product_details", product_id=product_id)
+    return render(request, "products/admin/admin_confirm_block.html", {"variant": variant, "product_id": product_id})
+
+
+@never_cache
+@admin_login_required
+def admin_unblock_variant(request, product_id, variant_id):
+    variant = get_object_or_404(ProductVariant, id=variant_id, product_id=product_id)
+    product = variant.product
+    subcategory = product.subcategory
+    category = subcategory.category
+    if request.method == "POST":
+        if not product.is_active:
+            messages.error(
+                request,
+                f"Cannot unblock this variant because its product "
+                f"'{product.product_name}' is blocked. Unblock the product first."
+            )
+            return redirect("products:admin_product_details", product_id=product_id)
+        if not subcategory.is_active:
+            messages.error(
+                request,
+                f"Cannot unblock this variant because its subcategory "
+                f"'{subcategory.subcategory_name}' is blocked. Unblock the subcategory first."
+            )
+            return redirect("products:admin_product_details", product_id=product_id)
+        if not category.is_active:
+            messages.error(
+                request,
+                f"Cannot unblock this variant because its category "
+                f"'{category.category_name}' is blocked. Unblock the category first."
+            )
+            return redirect("products:admin_product_details", product_id=product_id)
+        variant.is_active = True
+        variant.save()
+        messages.success(request, "Variant has been unblocked.")
+        return redirect("products:admin_product_details", product_id=product_id)
+    return render(request, "products/admin/admin_confirm_unblock.html", {"variant": variant, "product_id": product_id})

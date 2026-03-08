@@ -7,6 +7,7 @@ import uuid
 class Category(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
         return self.category_name
@@ -14,6 +15,8 @@ class Category(models.Model):
 class SubCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
     subcategory_name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("category", "subcategory_name")
@@ -62,6 +65,7 @@ class Product(models.Model):
     final_price = models.DecimalField(max_digits=10,decimal_places=2,editable=False)
     about_product = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         base = Decimal(self.base_price or 0)

@@ -83,6 +83,8 @@
     .icon-edit  { color: #000; }
     .icon-delete { color: #dc3545; }
     .icon-edit:hover, .icon-delete:hover { opacity: 0.7; }
+    .action-block   { color: #e74c3c; }
+    .action-unblock { color: #2ecc71; }
     .btn-back {
         display: inline-block; padding: 10px 18px;
         background: #666465; color: #fff;
@@ -202,6 +204,20 @@
                                 href="{% url 'products:admin_delete_variant' product.id v.id %}"
                                 onclick="confirmVariantDelete(event, this.href)"
                                 title="Delete">🗑️</a>
+
+                            {% if v.is_active %}
+                                <a href="{% url 'products:admin_block_variant' product.id v.id %}"
+                                class="action-block"
+                                title="Block Variant">
+                                <i class="fa-solid fa-ban"></i>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'products:admin_unblock_variant' product.id v.id %}"
+                                class="action-unblock"
+                                title="Unblock Variant">
+                                <i class="fa-solid fa-circle-check"></i>
+                                </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
