@@ -20,9 +20,9 @@ def calculate_final_price(base_price, discount_percent):
         return base - (base * discount / 100)
     except Exception:
         return 0
-# -----------------------------
+
 # PRODUCT DETAILS
-# -----------------------------
+
 @never_cache
 @admin_login_required
 def admin_product_details(request, product_id):
@@ -222,9 +222,8 @@ def admin_add_product(request):
         },
     )
 
-# -----------------------------
 # EDIT PRODUCT
-# -----------------------------
+
 @never_cache
 @admin_login_required
 def admin_edit_product(request, product_id):
@@ -268,8 +267,10 @@ def admin_edit_product(request, product_id):
 @admin_login_required
 def admin_delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    product.is_deleted = True 
+    product.is_deleted = True
+    product.is_active = False  
     product.save()
+    ProductVariant.objects.filter(product=product).update(is_active=False)
     messages.success(request, "Product deleted safely")
     return redirect("products:admin_product_list")
 
@@ -317,8 +318,6 @@ def admin_unblock_product(request, product_id):
         return redirect("products:admin_product_list")
     return render(request, "products/admin/admin_confirm_unblock.html", {"product": product})
 
-
-
 # VARIANT MANAGEMENT
 
 @never_cache
@@ -329,14 +328,12 @@ def admin_add_variant(request, product_id):
 
     if request.method == "POST":
 
-        variant = ProductVariant.objects.create(
-            product=product,
+        variant = ProductVariant.objects.create(product=product,
             color_id=request.POST.get("color"),
             age_group_id=request.POST.get("age_group"),
         )
 
-        Inventory.objects.create(
-            variant=variant,
+        Inventory.objects.create(variant=variant,
             quantity_available=request.POST.get("stock"),
         )
 

@@ -88,8 +88,14 @@ def subcategory_list_view(request, category_id):
     })
 
 def product_list(request, category_id=None, subcategory_id=None):
-    products = Product.objects.filter(is_active=True,subcategory__category__is_active=True,
-                                        ).select_related("subcategory", "subcategory__category")
+    products = Product.objects.filter(
+            is_active=True,
+            is_deleted=False,
+            subcategory__is_active=True,
+            subcategory__is_deleted=False,
+            subcategory__category__is_active=True,
+            subcategory__category__is_deleted=False, 
+            ).select_related("subcategory", "subcategory__category")
 
     if category_id:
         products = products.filter(subcategory__category_id=category_id)
@@ -210,7 +216,11 @@ def search_products(request):
         Product.objects
         .filter(
             is_active=True,
+            is_deleted=False,
+            subcategory__is_active=True,
+            subcategory__is_deleted=False,
             subcategory__category__is_active=True,
+            subcategory__category__is_deleted=False,
         )
         .filter(
             Q(product_name__icontains=query) |
@@ -255,7 +265,14 @@ def product_detail_view(request, product_id):
         messages.error(request, "Product not found.")
         return redirect("/products/user/products/")
 
-    if not product.is_active or not product.subcategory.category.is_active:
+    if (
+    not product.is_active
+    or product.is_deleted
+    or not product.subcategory.is_active
+    or product.subcategory.is_deleted 
+    or not product.subcategory.category.is_active
+    or product.subcategory.category.is_deleted
+    ):
         messages.warning(
             request,
             "This product is currently unavailable. "

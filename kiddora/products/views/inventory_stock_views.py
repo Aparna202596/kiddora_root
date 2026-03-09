@@ -19,17 +19,18 @@ def admin_inventory_list(request):
         "variant__product__subcategory",
         "variant__product__subcategory__category",
         "variant__color",
-        "variant__age_group",
+        "variant__age_group"
+    ).filter(
+    variant__product__is_deleted=False,
+    variant__product__is_active=True,
+    variant__product__subcategory__is_deleted=False,
+    variant__product__subcategory__category__is_deleted=False,
     ).order_by("-updated_at")
 
     if search:
-        inventories = inventories.filter(
-            variant__product__product_name__icontains=search
-        ) | inventories.filter(
-            variant__sku__icontains=search
-        ) | inventories.filter(
-            variant__product__brand__icontains=search
-        )
+        inventories = inventories.filter(variant__product__product_name__icontains=search) | inventories.filter(
+            variant__sku__icontains=search) | inventories.filter(
+            variant__product__brand__icontains=search)
 
     page_obj = paginate_queryset(request, inventories, 20)
 
