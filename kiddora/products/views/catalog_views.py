@@ -222,7 +222,7 @@ def search_products(request):
         .select_related("subcategory", "subcategory__category")
         .prefetch_related("images")
         .distinct()
-        [:8]   # max 8 suggestions in dropdown
+        [:8]   # Limit to top 8 results for autocomplete dropdown
     )
 
     results = []
