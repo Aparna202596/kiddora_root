@@ -1,0 +1,274 @@
+{% extends "base_admin.html" %}
+{% load static %}
+
+{% block title %}Order {{ order.order_id }} – Admin{% endblock %}
+
+{% block content %}
+<style>
+  .od-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:24px; }
+  .od-header h2 { font-size:20px; font-weight:800; color:#222; }
+  .back-link { font-size:13px; color:#f06292; text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .back-link:hover { text-decoration:underline; }
+
+  .od-layout { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap; }
+  .od-main   { flex:1; min-width:0; }
+  .od-side   { width:300px; flex-shrink:0; }
+
+  .od-card {
+    background:#fff; border:1.5px solid #eee; border-radius:14px;
+    padding:22px; margin-bottom:18px;
+  }
+  .od-card-title {
+    font-size:15px; font-weight:700; color:#222;
+    margin-bottom:16px; padding-bottom:12px; border-bottom:1.5px solid #f5f5f5;
+    display:flex; align-items:center; gap:8px;
+  }
+  .od-card-title i { color:#f06292; }
+
+  /* status badge */
+  .status-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:13px; font-weight:700; border-radius:20px; padding:5px 14px;
+  }
+  .status-PENDING          { background:#fef9c3; color:#854d0e; }
+  .status-CONFIRMED        { background:#dbeafe; color:#1e40af; }
+  .status-SHIPPED          { background:#e0e7ff; color:#4338ca; }
+  .status-OUT_FOR_DELIVERY { background:#ede9fe; color:#6d28d9; }
+  .status-DELIVERED        { background:#dcfce7; color:#15803d; }
+  .status-CANCELLED        { background:#fee2e2; color:#991b1b; }
+
+  /* item row */
+  .oi-row { display:flex; gap:14px; align-items:center; padding:12px 0; border-bottom:1px solid #f5f5f5; }
+  .oi-row:last-child { border-bottom:none; }
+  .oi-img { width:64px; height:80px; border-radius:8px; overflow:hidden; background:#f8f8f8; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .oi-img img { width:100%; height:100%; object-fit:cover; }
+  .oi-img span { font-size:1.3rem; color:#ddd; }
+  .oi-name { font-size:13px; font-weight:700; color:#222; }
+  .oi-meta { font-size:12px; color:#888; margin-top:3px; }
+  .oi-price { margin-left:auto; font-size:14px; font-weight:700; color:#222; text-align:right; white-space:nowrap; }
+
+  .item-status-badge {
+    display:inline-block; font-size:11px; font-weight:700; border-radius:20px; padding:2px 8px;
+  }
+  .is-ACTIVE           { background:#dcfce7; color:#15803d; }
+  .is-CANCELLED        { background:#fee2e2; color:#991b1b; }
+  .is-RETURN_REQUESTED { background:#fef9c3; color:#854d0e; }
+  .is-RETURN_APPROVED  { background:#dbeafe; color:#1e40af; }
+  .is-RETURN_REJECTED  { background:#fee2e2; color:#991b1b; }
+
+  /* meta grid */
+  .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:13px; }
+  .meta-item .label { color:#aaa; font-size:11px; text-transform:uppercase; letter-spacing:.05em; }
+  .meta-item .value { font-weight:600; color:#222; margin-top:2px; }
+
+  /* summary */
+  .sum-row { display:flex; justify-content:space-between; font-size:13px; color:#555; margin-bottom:8px; }
+  .sum-row.total { font-size:15px; font-weight:700; color:#222; border-top:1.5px solid #eee; padding-top:10px; margin-top:4px; }
+
+  /* status update form */
+  .status-form { display:flex; flex-direction:column; gap:10px; }
+  .status-form select {
+    padding:9px 12px; border:1.5px solid #e0e0e0; border-radius:8px;
+    font-size:13px; outline:none; transition:border-color .2s;
+  }
+  .status-form select:focus { border-color:#f06292; }
+  .status-form textarea {
+    padding:9px 12px; border:1.5px solid #e0e0e0; border-radius:8px;
+    font-size:13px; resize:vertical; min-height:70px; outline:none;
+  }
+  .status-form textarea:focus { border-color:#f06292; }
+  .update-btn {
+    padding:10px; background:#f06292; color:#fff; border:none;
+    border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;
+    transition:background .2s;
+  }
+  .update-btn:hover { background:#e91e63; }
+</style>
+
+<div class="od-header">
+  <div>
+    <h2>Order: {{ order.order_id }}</h2>
+    <div style="font-size:13px;color:#aaa;margin-top:4px;">
+      {{ order.order_date|date:"d M Y, g:i A" }}
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <span class="status-badge status-{{ order.order_status }}">{{ order.get_order_status_display }}</span>
+    <a href="{% url 'shopcore:admin_order_list' %}" class="back-link">
+      <i class="fa fa-arrow-left"></i> Back to Orders
+    </a>
+  </div>
+</div>
+
+<div class="od-layout">
+  <!-- MAIN -->
+  <div class="od-main">
+
+    <!-- ORDER META -->
+    <div class="od-card">
+      <div class="od-card-title"><i class="fa fa-info-circle"></i> Order Details</div>
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="label">Customer</div>
+          <div class="value">{{ order.user.get_full_name|default:order.user.email }}</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Email</div>
+          <div class="value">{{ order.user.email }}</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Payment Method</div>
+          <div class="value">{{ order.get_payment_method_display }}</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Payment Status</div>
+          <div class="value">{{ order.get_payment_status_display }}</div>
+        </div>
+        {% if order.delivered_at %}
+        <div class="meta-item">
+          <div class="label">Delivered At</div>
+          <div class="value">{{ order.delivered_at|date:"d M Y, g:i A" }}</div>
+        </div>
+        {% endif %}
+        {% if order.cancelled_at %}
+        <div class="meta-item">
+          <div class="label">Cancelled At</div>
+          <div class="value">{{ order.cancelled_at|date:"d M Y, g:i A" }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% if order.cancel_reason %}
+      <div style="margin-top:14px;background:#fef2f2;border-radius:8px;padding:10px 14px;font-size:13px;color:#991b1b;">
+        <strong>Cancel Reason:</strong> {{ order.cancel_reason }}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ITEMS -->
+    <div class="od-card">
+      <div class="od-card-title"><i class="fa fa-box"></i> Items ({{ order.order_items.count }})</div>
+      {% for d in items_with_img %}
+      {% with oi=d.order_item %}
+      <div class="oi-row">
+        <div class="oi-img">
+          {% if d.img_url %}
+            <img src="{{ d.img_url }}" alt="{{ oi.variant.product.product_name }}" loading="lazy">
+          {% else %}
+            <span>👕</span>
+          {% endif %}
+        </div>
+        <div style="flex:1;">
+          <div class="oi-name">{{ oi.variant.product.product_name }}</div>
+          <div class="oi-meta">
+            {{ oi.variant.color }} · {{ oi.variant.age_group }}
+            · Qty: {{ oi.quantity }} · ₹{{ oi.unit_price }} each
+          </div>
+          <span class="item-status-badge is-{{ oi.item_status }}">{{ oi.get_item_status_display }}</span>
+          {% if oi.cancel_reason %}
+          <div style="font-size:11px;color:#888;margin-top:4px;">Reason: {{ oi.cancel_reason }}</div>
+          {% endif %}
+        </div>
+        <div class="oi-price">₹{{ oi.total_price }}</div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+
+    <!-- DELIVERY ADDRESS -->
+    <div class="od-card">
+      <div class="od-card-title"><i class="fa fa-map-marker-alt"></i> Delivery Address</div>
+      {% with addr=order.address %}
+      <div style="font-size:14px;color:#444;line-height:1.8;">
+        <strong>{{ addr.full_name }}</strong><br>
+        {{ addr.address_line1 }}<br>
+        {% if addr.address_line2 %}{{ addr.address_line2 }}<br>{% endif %}
+        {{ addr.city }}, {{ addr.state }} – {{ addr.pincode }}<br>
+        <i class="fa fa-phone" style="color:#f06292;"></i> {{ addr.phone }}
+      </div>
+      {% endwith %}
+    </div>
+  </div>
+
+  <!-- SIDE -->
+  <div class="od-side">
+
+    <!-- PRICE SUMMARY -->
+    <div class="od-card">
+      <div class="od-card-title"><i class="fa fa-receipt"></i> Price Summary</div>
+      <div class="sum-row"><span>Subtotal</span><span>₹{{ order.total_amount }}</span></div>
+      {% if order.discount_amount > 0 %}
+      <div class="sum-row" style="color:#16a34a;"><span>Discount</span><span>−₹{{ order.discount_amount }}</span></div>
+      {% endif %}
+      {% if order.coupon_discount > 0 %}
+      <div class="sum-row" style="color:#16a34a;"><span>Coupon</span><span>−₹{{ order.coupon_discount }}</span></div>
+      {% endif %}
+      <div class="sum-row"><span>Shipping</span>
+        <span>{% if order.shipping_charge == 0 %}<span style="color:#16a34a;">FREE</span>{% else %}₹{{ order.shipping_charge }}{% endif %}</span>
+      </div>
+      <div class="sum-row total"><span>Grand Total</span><span>₹{{ order.final_amount }}</span></div>
+    </div>
+
+    <!-- UPDATE STATUS -->
+    {% if order.order_status not in "DELIVERED,CANCELLED" %}
+    <div class="od-card">
+      <div class="od-card-title"><i class="fa fa-rotate"></i> Update Status</div>
+      <form method="post" action="{% url 'shopcore:admin_update_order_status' order_id=order.order_id %}"
+            class="status-form"
+            onsubmit="return confirmStatusChange(event)">
+        {% csrf_token %}
+        <select name="order_status" id="statusSelect">
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if val == order.order_status %}selected{% endif %}>
+            {{ label }}
+          </option>
+          {% endfor %}
+        </select>
+
+        <div id="cancelReasonWrap" style="display:none;">
+          <textarea name="cancel_reason" placeholder="Reason for cancellation (optional)…"></textarea>
+        </div>
+
+        <button type="submit" class="update-btn">
+          <i class="fa fa-check"></i> Update Status
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <div class="od-card">
+      <div class="od-card-title"><i class="fa fa-lock"></i> Status Locked</div>
+      <p style="font-size:13px;color:#888;">
+        This order is <strong>{{ order.get_order_status_display }}</strong> and cannot be changed further.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+var statusSelect = document.getElementById('statusSelect');
+var cancelWrap   = document.getElementById('cancelReasonWrap');
+if (statusSelect) {
+  statusSelect.addEventListener('change', function () {
+    if (this.value === 'CANCELLED') {
+      cancelWrap.style.display = 'block';
+    } else {
+      cancelWrap.style.display = 'none';
+    }
+  });
+}
+function confirmStatusChange(e) {
+  e.preventDefault();
+  var newStatus = statusSelect ? statusSelect.value : '';
+  var current   = '{{ order.order_status }}';
+  if (newStatus === current) {
+    alert('Please select a different status.');
+    return false;
+  }
+  openConfirmModal(
+    'Change order status to "' + newStatus.replace(/_/g,' ') + '"?',
+    function () { e.target.submit(); }
+  );
+  return false;
+}
+</script>
+{% endblock %}

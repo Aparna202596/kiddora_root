@@ -1,0 +1,165 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}Banners – Kiddora Admin{% endblock %}
+
+{% block content %}
+<style>
+  .page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+  .page-hdr h2 { font-size:22px; font-weight:800; color:#222; }
+  .btn-add { padding:9px 20px; background:#f06292; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:7px; }
+  .btn-add:hover { background:#e91e63; }
+
+  /* toolbar */
+  .toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .toolbar form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .toolbar input[type=text], .toolbar select { padding:8px 12px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:13px; outline:none; }
+  .toolbar input[type=text]:focus, .toolbar select:focus { border-color:#f06292; }
+  .btn-sm { padding:8px 14px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .btn-pink  { background:#f06292; color:#fff; }
+  .btn-pink:hover { background:#e91e63; }
+  .btn-clear { background:#f5f5f5; color:#555; border:1.5px solid #ddd; text-decoration:none; }
+  .btn-clear:hover { background:#eee; }
+
+  /* banner cards grid */
+  .banner-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; }
+  .banner-card { border:1.5px solid #eee; border-radius:14px; overflow:hidden; background:#fff; transition:box-shadow .2s, border-color .2s; }
+  .banner-card:hover { border-color:#f06292; box-shadow:0 6px 20px rgba(240,98,146,.1); }
+
+  .bc-img { width:100%; height:160px; object-fit:cover; display:block; background:#f8f8f8; }
+  .bc-img-placeholder { width:100%; height:160px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#ddd; }
+
+  .bc-body { padding:14px 16px; }
+  .bc-slot { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; padding:2px 8px; border-radius:20px; margin-bottom:8px; display:inline-block; }
+  .bc-slot.hero      { background:#e0e7ff; color:#4338ca; }
+  .bc-slot.secondary { background:#dcfce7; color:#15803d; }
+  .bc-title    { font-size:15px; font-weight:700; color:#222; margin-bottom:4px; }
+  .bc-subtitle { font-size:12px; color:#888; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bc-meta     { font-size:11px; color:#aaa; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px; }
+  .bc-meta span { display:flex; align-items:center; gap:4px; }
+
+  .bc-actions { display:flex; gap:8px; flex-wrap:wrap; padding:0 16px 14px; }
+  .bc-btn { padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+  .bc-btn-edit   { background:#e0e7ff; color:#4338ca; }
+  .bc-btn-edit:hover { background:#c7d2fe; }
+  .bc-btn-del    { background:#fee2e2; color:#991b1b; }
+  .bc-btn-del:hover { background:#fca5a5; }
+  .bc-btn-toggle-on  { background:#dcfce7; color:#15803d; }
+  .bc-btn-toggle-on:hover { background:#bbf7d0; }
+  .bc-btn-toggle-off { background:#fef9c3; color:#854d0e; }
+  .bc-btn-toggle-off:hover { background:#fde68a; }
+
+  .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .dot-on  { background:#16a34a; }
+  .dot-off { background:#f59e0b; }
+
+  .empty-state { text-align:center; padding:60px 20px; color:#aaa; }
+  .empty-state i { font-size:3rem; margin-bottom:12px; display:block; }
+
+  .order-badge { background:#f5f5f5; color:#555; font-size:11px; font-weight:700; border-radius:20px; padding:2px 8px; }
+</style>
+
+<div class="page-hdr">
+  <h2><i class="fa-solid fa-image" style="color:#f06292;"></i> Banner Management</h2>
+  <a href="{% url 'shopcore:admin_add_banner' %}" class="btn-add">
+    <i class="fa-solid fa-plus"></i> Add Banner
+  </a>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <form method="get">
+    <input type="text" name="search" value="{{ search }}" placeholder="Search title…" style="width:200px;">
+    <select name="slot">
+      <option value="">All Slots</option>
+      {% for val, label in slot_choices %}
+      <option value="{{ val }}" {% if slot_f == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-sm btn-pink"><i class="fa fa-search"></i> Filter</button>
+    {% if search or slot_f %}
+    <a href="{% url 'shopcore:admin_banner_list' %}" class="btn-sm btn-clear">✕ Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- BANNER CARDS -->
+{% if banners %}
+<div class="banner-grid">
+  {% for b in banners %}
+  <div class="banner-card">
+    {% if b.image %}
+      <img src="{{ b.image.url }}" alt="{{ b.title }}" class="bc-img" loading="lazy">
+    {% else %}
+      <div class="bc-img-placeholder">🖼️</div>
+    {% endif %}
+
+    <div class="bc-body">
+      <span class="bc-slot {% if b.slot == 'HERO' %}hero{% else %}secondary{% endif %}">
+        {{ b.get_slot_display }}
+      </span>
+      <div style="float:right;margin-top:2px;">
+        <span class="status-dot {% if b.is_live %}dot-on{% else %}dot-off{% endif %}"></span>
+        <span style="font-size:11px;color:#888;">{% if b.is_live %}Live{% else %}Off{% endif %}</span>
+      </div>
+      <div class="bc-title">{{ b.title }}</div>
+      {% if b.subtitle %}
+      <div class="bc-subtitle">{{ b.subtitle }}</div>
+      {% endif %}
+      <div class="bc-meta">
+        <span><i class="fa fa-sort-numeric-up" style="color:#f06292;"></i> Order: {{ b.display_order }}</span>
+        {% if b.badge_text %}
+        <span><i class="fa fa-tag" style="color:#f06292;"></i> {{ b.badge_text }}</span>
+        {% endif %}
+        {% if b.end_date %}
+        <span><i class="fa fa-calendar-times" style="color:#f06292;"></i> Ends {{ b.end_date|date:"d M Y" }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="bc-actions">
+      <a href="{% url 'shopcore:admin_edit_banner' banner_id=b.id %}" class="bc-btn bc-btn-edit">
+        <i class="fa fa-pen"></i> Edit
+      </a>
+      <form method="post" action="{% url 'shopcore:admin_toggle_banner' banner_id=b.id %}" style="display:contents;">
+        {% csrf_token %}
+        <button type="submit" class="bc-btn {% if b.is_active %}bc-btn-toggle-off{% else %}bc-btn-toggle-on{% endif %}">
+          {% if b.is_active %}
+            <i class="fa fa-eye-slash"></i> Deactivate
+          {% else %}
+            <i class="fa fa-eye"></i> Activate
+          {% endif %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'shopcore:admin_delete_banner' banner_id=b.id %}"
+            onsubmit="return confirmBannerDelete(event, '{{ b.title|escapejs }}')"
+            style="display:contents;">
+        {% csrf_token %}
+        <button type="submit" class="bc-btn bc-btn-del">
+          <i class="fa fa-trash"></i> Delete
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fa-regular fa-image"></i>
+  No banners found{% if search or slot_f %} matching your filters{% endif %}.
+  <br>
+  <a href="{% url 'shopcore:admin_add_banner' %}" style="color:#f06292;font-weight:700;margin-top:12px;display:inline-block;">
+    + Create your first banner
+  </a>
+</div>
+{% endif %}
+
+<script>
+function confirmBannerDelete(e, title) {
+  e.preventDefault();
+  openConfirmModal('Delete banner "' + title + '"? This cannot be undone.', function () {
+    e.target.submit();
+  });
+  return false;
+}
+</script>
+{% endblock %}

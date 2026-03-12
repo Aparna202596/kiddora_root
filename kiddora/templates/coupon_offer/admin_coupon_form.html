@@ -1,0 +1,124 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}{% if action == "Edit" %}Edit Coupon{% else %}Add Coupon{% endif %} – Admin{% endblock %}
+{% block content %}
+<style>
+.form-wrap { max-width:680px; margin:0 auto; }
+.back-link { color:#888; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-bottom:18px; }
+.back-link:hover { color:#f06292; }
+.form-hdr h2 { font-size:22px; font-weight:800; color:#222; margin-bottom:22px; }
+.form-card { background:#fff; border:1.5px solid #eee; border-radius:16px; padding:26px; margin-bottom:20px; }
+.card-title { font-size:13px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.06em; margin-bottom:18px; padding-bottom:10px; border-bottom:1.5px solid #f5f5f5; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:13px; font-weight:700; color:#444; margin-bottom:7px; }
+.form-group input, .form-group select {
+  width:100%; padding:10px 13px; border:1.5px solid #e0e0e0;
+  border-radius:9px; font-size:13px; outline:none; background:#fafafa;
+}
+.form-group input:focus, .form-group select:focus { border-color:#f06292; background:#fff; }
+.form-group .hint { font-size:11px; color:#aaa; margin-top:5px; }
+.toggle-row { display:flex; align-items:center; gap:12px; margin-top:4px; }
+.toggle-row label { font-size:13px; font-weight:700; color:#444; margin:0; }
+.form-actions { display:flex; gap:12px; }
+.btn-save { padding:12px 28px; background:#f06292; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; }
+.btn-save:hover { background:#e91e63; }
+.btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; }
+.btn-cancel:hover { background:#eee; }
+@media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>
+
+<div class="form-wrap">
+  <a href="{% url 'shopcore:admin_coupon_list' %}" class="back-link"><i class="fa fa-arrow-left"></i> Coupons</a>
+  <div class="form-hdr"><h2>{{ action }} Coupon</h2></div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-card">
+      <div class="card-title">Coupon Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Code <span style="color:#e91e63;">*</span></label>
+          <input type="text" name="code" maxlength="20" style="text-transform:uppercase;"
+                 value="{{ coupon.code|default:form_data.code|default:'' }}"
+                 placeholder="e.g. SAVE20" required>
+          <div class="hint">Uppercase alphanumeric, max 20 chars.</div>
+        </div>
+        <div class="form-group">
+          <label>Discount Type <span style="color:#e91e63;">*</span></label>
+          <select name="discount_type" id="discountType" onchange="toggleMaxDiscount()">
+            {% for val, label in discount_choices %}
+            <option value="{{ val }}" {% if coupon.discount_type == val or form_data.discount_type == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Discount Value <span style="color:#e91e63;">*</span></label>
+          <input type="number" name="discount_value" min="1" step="0.01"
+                 value="{{ coupon.discount_value|default:form_data.discount_value|default:'' }}"
+                 placeholder="e.g. 20 (for 20% or ₹20 off)" required>
+        </div>
+        <div class="form-group" id="maxDiscountGroup">
+          <label>Max Discount (₹) <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+          <input type="number" name="max_discount" min="1" step="0.01"
+                 value="{{ coupon.max_discount|default:form_data.max_discount|default:'' }}"
+                 placeholder="Only for PERCENT type">
+          <div class="hint">Cap the discount for percentage coupons.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Minimum Order Amount (₹)</label>
+        <input type="number" name="min_order_amount" min="0" step="0.01"
+               value="{{ coupon.min_order_amount|default:form_data.min_order_amount|default:'0' }}">
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="card-title">Validity & Limits</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date <span style="color:#e91e63;">*</span></label>
+          <input type="datetime-local" name="start_date"
+                 value="{{ coupon.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}" required>
+        </div>
+        <div class="form-group">
+          <label>Expiry Date <span style="color:#e91e63;">*</span></label>
+          <input type="datetime-local" name="expiry_date"
+                 value="{{ coupon.expiry_date|date:'Y-m-d\TH:i'|default:form_data.expiry_date|default:'' }}" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Usage Limit</label>
+        <input type="number" name="usage_limit" min="1"
+               value="{{ coupon.usage_limit|default:form_data.usage_limit|default:'1' }}">
+        <div class="hint">Total number of times this coupon can be used across all users.</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="card-title">Status</div>
+      <div class="toggle-row">
+        <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
+               {% if coupon.is_active or not coupon %}checked{% endif %}>
+        <label for="isActive">Active (visible & usable by customers)</label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-save"><i class="fa fa-check"></i> {{ action }} Coupon</button>
+      <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel"><i class="fa fa-times"></i> Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleMaxDiscount() {
+  const type = document.getElementById('discountType').value;
+  document.getElementById('maxDiscountGroup').style.opacity = type === 'PERCENT' ? '1' : '0.4';
+}
+toggleMaxDiscount();
+</script>
+{% endblock %}

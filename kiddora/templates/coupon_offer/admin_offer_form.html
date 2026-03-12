@@ -1,0 +1,141 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}{{ action }} Offer – Admin{% endblock %}
+{% block content %}
+<style>
+.form-wrap { max-width:680px; margin:0 auto; }
+.back-link { color:#888; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-bottom:18px; }
+.back-link:hover { color:#f06292; }
+.form-hdr h2 { font-size:22px; font-weight:800; color:#222; margin-bottom:22px; }
+.form-card { background:#fff; border:1.5px solid #eee; border-radius:16px; padding:26px; margin-bottom:20px; }
+.card-title { font-size:13px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.06em; margin-bottom:18px; padding-bottom:10px; border-bottom:1.5px solid #f5f5f5; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:13px; font-weight:700; color:#444; margin-bottom:7px; }
+.form-group input, .form-group select {
+  width:100%; padding:10px 13px; border:1.5px solid #e0e0e0; border-radius:9px; font-size:13px; outline:none; background:#fafafa;
+}
+.form-group input:focus, .form-group select:focus { border-color:#f06292; background:#fff; }
+.form-group .hint { font-size:11px; color:#aaa; margin-top:5px; }
+.toggle-row { display:flex; align-items:center; gap:12px; }
+.toggle-row label { font-size:13px; font-weight:700; color:#444; margin:0; }
+.conditional-field { transition:opacity .2s; }
+.form-actions { display:flex; gap:12px; }
+.btn-save { padding:12px 28px; background:#f06292; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; }
+.btn-save:hover { background:#e91e63; }
+.btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; }
+.btn-cancel:hover { background:#eee; }
+@media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>
+
+<div class="form-wrap">
+  <a href="{% url 'shopcore:admin_offer_list' %}" class="back-link"><i class="fa fa-arrow-left"></i> Offers</a>
+  <div class="form-hdr"><h2>{{ action }} Offer</h2></div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-card">
+      <div class="card-title">Offer Configuration</div>
+      <div class="form-group">
+        <label>Offer Type <span style="color:#e91e63;">*</span></label>
+        <select name="offer_type" id="offerType" onchange="toggleTargets()">
+          {% for val, label in offer_types %}
+          <option value="{{ val }}"
+            {% if offer.offer_type == val or form_data.offer_type == val %}selected{% endif %}>
+            {{ label }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group conditional-field" id="productField">
+        <label>Product</label>
+        <select name="product_id">
+          <option value="">— Select Product —</option>
+          {% for p in products %}
+          <option value="{{ p.id }}"
+            {% if offer.product_id == p.id or form_data.product_id == p.id|stringformat:"s" %}selected{% endif %}>
+            {{ p.product_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group conditional-field" id="categoryField">
+        <label>Category</label>
+        <select name="category_id">
+          <option value="">— Select Category —</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}"
+            {% if offer.category_id == c.id or form_data.category_id == c.id|stringformat:"s" %}selected{% endif %}>
+            {{ c.category_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group conditional-field" id="referralField">
+        <label>Referral Coupon <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+        <select name="referral_coupon_id">
+          <option value="">— None —</option>
+          {% for coupon in coupons %}
+          <option value="{{ coupon.id }}"
+            {% if offer.referral_coupon_id == coupon.id %}selected{% endif %}>
+            {{ coupon.code }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Discount % <span style="color:#e91e63;">*</span></label>
+        <input type="number" name="discount_percent" min="1" max="100"
+               value="{{ offer.discount_percent|default:form_data.discount_percent|default:'' }}"
+               placeholder="1 – 100" required>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="card-title">Schedule</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date <span style="color:#e91e63;">*</span></label>
+          <input type="datetime-local" name="start_date"
+                 value="{{ offer.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}" required>
+        </div>
+        <div class="form-group">
+          <label>End Date <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+          <input type="datetime-local" name="end_date"
+                 value="{{ offer.end_date|date:'Y-m-d\TH:i'|default:form_data.end_date|default:'' }}">
+          <div class="hint">Leave blank to run indefinitely.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="card-title">Status</div>
+      <div class="toggle-row">
+        <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
+               {% if offer.is_active or not offer %}checked{% endif %}>
+        <label for="isActive">Active</label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-save"><i class="fa fa-check"></i> {{ action }} Offer</button>
+      <a href="{% url 'shopcore:admin_offer_list' %}" class="btn-cancel"><i class="fa fa-times"></i> Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleTargets() {
+  const type = document.getElementById('offerType').value;
+  document.getElementById('productField').style.display  = type === 'PRODUCT'   ? 'block' : 'none';
+  document.getElementById('categoryField').style.display = type === 'CATEGORY'  ? 'block' : 'none';
+  document.getElementById('referralField').style.display = type === 'REFERRAL'  ? 'block' : 'none';
+}
+toggleTargets();
+</script>
+{% endblock %}

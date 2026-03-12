@@ -1,0 +1,185 @@
+{% extends "base_products.html" %}
+{% load static %}
+
+{% block title %}My Orders – Kiddora{% endblock %}
+
+{% block extra_css %}
+<style>
+  .orders-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 22px; flex-wrap: wrap; gap: 14px;
+  }
+  .orders-header h2 { font-size: 22px; font-weight: 800; color: #222; }
+
+  /* search */
+  .search-bar {
+    display: flex; gap: 10px; align-items: center;
+  }
+  .search-bar input {
+    padding: 9px 14px; border: 1.5px solid #e0e0e0; border-radius: 8px;
+    font-size: 14px; outline: none; width: 240px; transition: border-color .2s;
+  }
+  .search-bar input:focus { border-color: #f06292; }
+  .search-bar button {
+    padding: 9px 18px; background: #f06292; color: #fff; border: none;
+    border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .search-bar .clear-btn {
+    background: #f5f5f5; color: #555; border: 1.5px solid #ddd;
+    padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px;
+  }
+
+  /* order card */
+  .order-card {
+    border: 1.5px solid #eee; border-radius: 12px; padding: 18px 20px;
+    margin-bottom: 16px; transition: border-color .2s, box-shadow .2s;
+  }
+  .order-card:hover { border-color: #f06292; box-shadow: 0 4px 16px rgba(240,98,146,.08); }
+  .order-card-top {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+  }
+  .order-id    { font-size: 15px; font-weight: 700; color: #222; font-family: monospace; }
+  .order-date  { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .order-total { font-size: 16px; font-weight: 700; color: #222; }
+
+  /* status badge */
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 700; border-radius: 20px; padding: 4px 12px;
+  }
+  .status-PENDING          { background: #fef9c3; color: #854d0e; }
+  .status-CONFIRMED        { background: #dbeafe; color: #1e40af; }
+  .status-SHIPPED          { background: #e0e7ff; color: #4338ca; }
+  .status-OUT_FOR_DELIVERY { background: #ede9fe; color: #6d28d9; }
+  .status-DELIVERED        { background: #dcfce7; color: #15803d; }
+  .status-CANCELLED        { background: #fee2e2; color: #991b1b; }
+
+  /* items preview */
+  .order-items-preview { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .preview-img {
+    width: 52px; height: 64px; border-radius: 8px; overflow: hidden;
+    background: #f8f8f8; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .preview-img img { width: 100%; height: 100%; object-fit: cover; }
+  .preview-img span { font-size: 1.3rem; color: #ddd; }
+  .more-items {
+    font-size: 12px; color: #888; background: #f5f5f5;
+    border-radius: 8px; padding: 6px 10px;
+  }
+
+  .order-card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f0f0;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .view-btn {
+    padding: 8px 20px; background: #f06292; color: #fff;
+    border-radius: 8px; font-size: 13px; font-weight: 700;
+    text-decoration: none; transition: background .2s;
+  }
+  .view-btn:hover { background: #e91e63; }
+  .cancel-tag { font-size: 12px; color: #ef4444; }
+
+  /* empty */
+  .empty-orders { text-align: center; padding: 60px 20px; }
+  .empty-orders .icon { font-size: 4rem; margin-bottom: 16px; }
+  .empty-orders h3 { font-size: 20px; color: #333; margin-bottom: 8px; }
+  .empty-orders p  { font-size: 14px; color: #888; margin-bottom: 22px; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
+  <a href="{% url 'shopcore:home' %}">Home</a>
+  <span class="sep">›</span>
+  <strong>My Orders</strong>
+</div>
+{% endblock %}
+
+{% block filter_sidebar %}{% endblock %}
+
+{% block content %}
+<div class="orders-header">
+  <h2><i class="fa fa-box-open" style="color:#f06292;"></i> My Orders</h2>
+  <form method="get" class="search-bar">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by order ID or product…">
+    <button type="submit"><i class="fa fa-search"></i></button>
+    {% if query %}
+    <a href="{% url 'shopcore:user_order_list' %}" class="clear-btn">✕ Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if not page_obj.object_list %}
+  <div class="empty-orders">
+    <div class="icon">📦</div>
+    <h3>No orders found{% if query %} for "{{ query }}"{% endif %}</h3>
+    <p>{% if query %}Try a different search term.{% else %}You haven't placed any orders yet.{% endif %}</p>
+    <a href="{% url 'products:product_list' %}" style="display:inline-block;padding:10px 24px;background:#f06292;color:#fff;border-radius:8px;font-weight:700;">
+      Start Shopping
+    </a>
+  </div>
+{% else %}
+  {% for order in page_obj.object_list %}
+  <div class="order-card">
+    <div class="order-card-top">
+      <div>
+        <div class="order-id">{{ order.order_id }}</div>
+        <div class="order-date">
+          <i class="fa fa-calendar-alt" style="color:#f06292;"></i>
+          {{ order.order_date|date:"d M Y, g:i A" }}
+        </div>
+      </div>
+      <span class="status-badge status-{{ order.order_status }}">
+        {% if order.order_status == 'DELIVERED' %}✅
+        {% elif order.order_status == 'CANCELLED' %}❌
+        {% elif order.order_status == 'SHIPPED' %}🚚
+        {% else %}📦{% endif %}
+        {{ order.get_order_status_display }}
+      </span>
+      <div class="order-total">₹{{ order.final_amount }}</div>
+    </div>
+
+    <!-- Item previews -->
+    <div class="order-items-preview">
+      {% for oi in order.order_items.all|slice:":4" %}
+        {% with product=oi.variant.product %}
+        <div class="preview-img" title="{{ product.product_name }}">
+          {% with img=product.images.first %}
+            {% if img and img.image1 %}
+              <img src="{{ img.image1.url }}" alt="{{ product.product_name }}" loading="lazy">
+            {% else %}
+              <span>👕</span>
+            {% endif %}
+          {% endwith %}
+        </div>
+        {% endwith %}
+      {% endfor %}
+      {% if order.order_items.count > 4 %}
+      <div class="more-items">+{{ order.order_items.count|add:"-4" }} more</div>
+      {% endif %}
+    </div>
+
+    <div class="order-card-footer">
+      <div style="font-size:13px;color:#888;">
+        {{ order.order_items.count }} item{{ order.order_items.count|pluralize }}
+        &nbsp;·&nbsp; {{ order.get_payment_method_display }}
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        {% if order.order_status in "PENDING,CONFIRMED" %}
+        <span class="cancel-tag">Cancellation available</span>
+        {% endif %}
+        <a href="{% url 'shopcore:user_order_detail' order_id=order.order_id %}" class="view-btn">
+          View Details →
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% include "pagination.html" %}
+{% endif %}
+{% endblock %}

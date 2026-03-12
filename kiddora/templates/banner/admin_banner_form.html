@@ -1,0 +1,223 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}{% if banner %}Edit Banner{% else %}Add Banner{% endif %} – Kiddora Admin{% endblock %}
+
+{% block content %}
+<style>
+  .form-wrap { max-width: 720px; margin: 0 auto; }
+  .form-hdr  { display:flex; align-items:center; gap:14px; margin-bottom:28px; }
+  .form-hdr h2 { font-size:22px; font-weight:800; color:#222; }
+  .back-link { color:#888; font-size:13px; text-decoration:none; display:flex; align-items:center; gap:5px; }
+  .back-link:hover { color:#f06292; }
+
+  .form-card { background:#fff; border:1.5px solid #eee; border-radius:16px; padding:28px; margin-bottom:22px; }
+  .form-card-title { font-size:14px; font-weight:700; color:#444; text-transform:uppercase; letter-spacing:.06em; margin-bottom:20px; padding-bottom:12px; border-bottom:1.5px solid #f5f5f5; display:flex; align-items:center; gap:8px; }
+  .form-card-title i { color:#f06292; }
+
+  .form-row   { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .form-group label { font-size:13px; font-weight:600; color:#444; }
+  .form-group input[type=text],
+  .form-group input[type=url],
+  .form-group input[type=number],
+  .form-group input[type=datetime-local],
+  .form-group select,
+  .form-group textarea {
+    padding:10px 13px; border:1.5px solid #e0e0e0; border-radius:9px;
+    font-size:13px; outline:none; background:#fafafa; transition:border-color .18s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:#f06292; background:#fff; }
+  .form-group .hint { font-size:11px; color:#aaa; }
+
+  /* image upload */
+  .img-upload-area {
+    border: 2px dashed #e0e0e0; border-radius:12px; padding:24px;
+    text-align:center; cursor:pointer; transition:border-color .18s, background .18s;
+    background:#fafafa; position:relative;
+  }
+  .img-upload-area:hover { border-color:#f06292; background:#fff0f5; }
+  .img-upload-area input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .img-upload-area .upload-icon { font-size:2.2rem; color:#f06292; margin-bottom:8px; }
+  .img-upload-area .upload-text { font-size:13px; color:#888; }
+  .img-upload-area .upload-text strong { color:#f06292; }
+  .img-preview { margin-top:14px; border-radius:10px; overflow:hidden; max-height:220px; display:none; }
+  .img-preview img { width:100%; height:220px; object-fit:cover; display:block; }
+  .current-img { margin-bottom:12px; border-radius:10px; overflow:hidden; }
+  .current-img img { width:100%; height:200px; object-fit:cover; border-radius:10px; border:1.5px solid #eee; }
+  .current-img p { font-size:11px; color:#aaa; margin-top:6px; text-align:center; }
+
+  /* color hint for badge */
+  .badge-preview {
+    display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; padding:3px 10px; border-radius:20px;
+    background:#f06292; color:#fff; margin-top:6px;
+  }
+
+  /* actions */
+  .form-actions { display:flex; gap:12px; align-items:center; padding-top:8px; }
+  .btn-save { padding:12px 28px; background:#f06292; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background .18s; }
+  .btn-save:hover { background:#e91e63; }
+  .btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:6px; }
+  .btn-cancel:hover { background:#eee; }
+
+  @media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
+</style>
+
+<div class="form-wrap">
+  <div class="form-hdr">
+    <a href="{% url 'shopcore:admin_banner_list' %}" class="back-link">
+      <i class="fa fa-arrow-left"></i> Banners
+    </a>
+    <h2>{% if banner %}<i class="fa fa-pen" style="color:#f06292;font-size:18px;"></i> Edit Banner{% else %}<i class="fa fa-plus" style="color:#f06292;font-size:18px;"></i> Add Banner{% endif %}</h2>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <!-- IMAGE -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="fa fa-image"></i> Banner Image</div>
+      <p style="font-size:12px;color:#aaa;margin-bottom:14px;">Recommended size: <strong>1400 × 560 px</strong> (landscape). JPEG or PNG, max 5 MB.</p>
+
+      {% if banner and banner.image %}
+      <div class="current-img">
+        <img src="{{ banner.image.url }}" alt="{{ banner.title }}" id="currentImgEl">
+        <p>Current image — upload a new one to replace it</p>
+      </div>
+      {% endif %}
+
+      <div class="img-upload-area" id="uploadArea">
+        <input type="file" name="image" id="imgInput" accept="image/*" onchange="previewImage(this)">
+        <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <div class="upload-text">
+          <strong>Click to upload</strong> or drag and drop<br>
+          PNG, JPG up to 5 MB
+        </div>
+      </div>
+      <div class="img-preview" id="imgPreview">
+        <img id="imgPreviewEl" src="" alt="preview">
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="fa fa-align-left"></i> Content</div>
+
+      <div class="form-group">
+        <label for="id_title">Title <span style="color:#e91e63;">*</span></label>
+        <input type="text" name="title" id="id_title" maxlength="120" required
+               value="{{ banner.title|default:form_data.title|default:'' }}"
+               placeholder="e.g. Summer Collection 2025">
+      </div>
+
+      <div class="form-group">
+        <label for="id_subtitle">Subtitle</label>
+        <input type="text" name="subtitle" id="id_subtitle" maxlength="200"
+               value="{{ banner.subtitle|default:form_data.subtitle|default:'' }}"
+               placeholder="e.g. Up to 40% off on kids' summer wear">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="id_cta_text">CTA Button Text</label>
+          <input type="text" name="cta_text" id="id_cta_text" maxlength="40"
+                 value="{{ banner.cta_text|default:form_data.cta_text|default:'Shop Now' }}"
+                 placeholder="Shop Now">
+        </div>
+        <div class="form-group">
+          <label for="id_cta_url">CTA Link URL</label>
+          <input type="text" name="cta_url" id="id_cta_url" maxlength="300"
+                 value="{{ banner.cta_url|default:form_data.cta_url|default:'/products/user/products/' }}"
+                 placeholder="/products/user/products/">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="id_badge_text">Badge Label <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+        <input type="text" name="badge_text" id="id_badge_text" maxlength="40"
+               value="{{ banner.badge_text|default:form_data.badge_text|default:'' }}"
+               placeholder="e.g. NEW ARRIVAL, SALE, TRENDING"
+               oninput="updateBadgePreview(this.value)">
+        <span class="hint">Short pill shown on the banner image.</span>
+        <span class="badge-preview" id="badgePreview" style="{% if not banner.badge_text %}display:none;{% endif %}">
+          {{ banner.badge_text|default:'' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="form-card">
+      <div class="form-card-title"><i class="fa fa-sliders"></i> Settings</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="id_slot">Slot / Position</label>
+          <select name="slot" id="id_slot">
+            {% for val, label in slot_choices %}
+            <option value="{{ val }}" {% if banner.slot == val or form_data.slot == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <span class="hint">Hero = main full-width carousel. Secondary = smaller accent banners.</span>
+        </div>
+        <div class="form-group">
+          <label for="id_display_order">Display Order</label>
+          <input type="number" name="display_order" id="id_display_order" min="0"
+                 value="{{ banner.display_order|default:form_data.display_order|default:'0' }}"
+                 placeholder="0">
+          <span class="hint">Lower number appears first (0 = top).</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="id_start_date">Schedule Start <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+          <input type="datetime-local" name="start_date" id="id_start_date"
+                 value="{{ banner.start_date|date:'Y-m-d\TH:i'|default:'' }}">
+          <span class="hint">Leave blank to show immediately.</span>
+        </div>
+        <div class="form-group">
+          <label for="id_end_date">Schedule End <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+          <input type="datetime-local" name="end_date" id="id_end_date"
+                 value="{{ banner.end_date|date:'Y-m-d\TH:i'|default:'' }}">
+          <span class="hint">Leave blank to show indefinitely.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-save">
+        <i class="fa fa-check"></i>
+        {% if banner %}Save Changes{% else %}Create Banner{% endif %}
+      </button>
+      <a href="{% url 'shopcore:admin_banner_list' %}" class="btn-cancel">
+        <i class="fa fa-times"></i> Cancel
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('imgPreviewEl').src = e.target.result;
+      document.getElementById('imgPreview').style.display = 'block';
+      const curr = document.getElementById('currentImgEl');
+      if (curr) curr.src = e.target.result;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function updateBadgePreview(val) {
+  const el = document.getElementById('badgePreview');
+  if (val.trim()) {
+    el.textContent = val.toUpperCase();
+    el.style.display = 'inline-block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

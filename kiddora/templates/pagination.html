@@ -1,18 +1,3 @@
-{% comment %} <div class="pagination">
-    {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}">Prev</a>
-    {% endif %}
-    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">Next</a>
-    {% endif %}
-</div> {% endcomment %}
-
-{% comment %}
-Partial: pagination.html
-Requires: page_obj  (Django Page object)
-Preserves ALL existing GET params when navigating pages.
-{% endcomment %}
 {% if page_obj.paginator.num_pages > 1 %}
 <style>
     .pagination {

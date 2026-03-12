@@ -1,0 +1,65 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}Referrals – Kiddora Admin{% endblock %}
+{% block content %}
+<style>
+.page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+.page-hdr h2 { font-size:22px; font-weight:800; color:#222; }
+.toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; align-items:center; }
+.toolbar input { padding:8px 12px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:13px; outline:none; }
+.toolbar input:focus { border-color:#f06292; }
+.btn-sm { padding:8px 14px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+.btn-pink { background:#f06292; color:#fff; } .btn-pink:hover { background:#e91e63; }
+.btn-clear { background:#f5f5f5; color:#555; border:1.5px solid #ddd; text-decoration:none; }
+.data-table { width:100%; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; border:1.5px solid #eee; }
+.data-table th { padding:13px 16px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#888; background:#fafafa; text-align:left; }
+.data-table td { padding:13px 16px; font-size:13px; color:#333; border-top:1px solid #f5f5f5; }
+.data-table tr:hover td { background:#fff9fb; }
+.code-pill { background:#e0e7ff; color:#3730a3; font-size:13px; font-weight:800; font-family:monospace; padding:4px 12px; border-radius:6px; letter-spacing:.06em; }
+.use-count { background:#fce4ec; color:#c2185b; font-size:13px; font-weight:700; padding:3px 10px; border-radius:20px; }
+.btn-view { padding:5px 12px; border-radius:7px; font-size:12px; font-weight:700; background:#e0e7ff; color:#3730a3; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+.btn-view:hover { background:#c7d2fe; }
+.empty-row td { text-align:center; padding:50px; color:#aaa; }
+</style>
+
+<div class="page-hdr">
+  <h2><i class="fa-solid fa-share-nodes" style="color:#f06292;"></i> Referral Codes</h2>
+</div>
+
+<div class="toolbar">
+  <form method="get" style="display:flex;gap:8px;align-items:center;">
+    <input type="text" name="search" value="{{ search }}" placeholder="Email or code…" style="width:220px;">
+    <button type="submit" class="btn-sm btn-pink"><i class="fa fa-search"></i> Search</button>
+    {% if search %}<a href="{% url 'shopcore:admin_referral_list' %}" class="btn-sm btn-clear">✕ Clear</a>{% endif %}
+  </form>
+</div>
+
+<table class="data-table">
+  <thead>
+    <tr><th>#</th><th>User</th><th>Referral Code</th><th>Uses</th><th>Created</th><th>Action</th></tr>
+  </thead>
+  <tbody>
+    {% for rc in page_obj %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>
+        <strong>{{ rc.user.get_full_name|default:rc.user.email }}</strong><br>
+        <small style="color:#888;">{{ rc.user.email }}</small>
+      </td>
+      <td><span class="code-pill">{{ rc.code }}</span></td>
+      <td><span class="use-count">{{ rc.use_count }}</span></td>
+      <td>{{ rc.created_at|date:"d M Y" }}</td>
+      <td>
+        <a href="{% url 'shopcore:admin_referral_uses' referral_id=rc.id %}" class="btn-view">
+          <i class="fa fa-eye"></i> View Uses
+        </a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr class="empty-row"><td colspan="6">No referral codes found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% include "pagination.html" with page_obj=page_obj %}
+{% endblock %}

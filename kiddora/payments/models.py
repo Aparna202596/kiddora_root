@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from shopcore.models import Order
+from accounts.models import CustomUser
 import uuid
 
 class Payment(models.Model):
@@ -58,7 +59,7 @@ class Payment(models.Model):
 
 class PaymentLog(models.Model):
     GATEWAY_CHOICES = (
-        ("RAZORPAY", "Razorpay"),
+        ("PAYPAL", "PAYPAL"),
         ("STRIPE", "Stripe"),
         ("INTERNAL", "Internal"),
     )
@@ -90,4 +91,47 @@ class PaymentLog(models.Model):
             f"PaymentLog {self.log_id} | {self.gateway} | "
             f"{self.event_type} | {self.created_at:%Y-%m-%d %H:%M}"
         )
-    
+
+#  WALLET
+class Wallet(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="wallet")
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Wallet – {self.user.email} (₹{self.balance})"
+
+class WalletTransaction(models.Model):
+    TRANSACTION_TYPE_CHOICES = (
+        ("CREDIT",  "Credit"),
+        ("DEBIT",   "Debit"),
+        ("REFUND",  "Refund"),
+    )
+    REFERENCE_TYPE_CHOICES = (
+        ("ORDER", "Order"),
+        ("RETURN", "Return"),
+        ("REFERRAL", "Referral Reward"),
+        ("COUPON", "Coupon Refund"),
+        ("MANUAL", "Manual Adjustment"),
+    )
+
+    wallet         = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
+    txn_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
+    txn_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    balance_after = models.DecimalField(max_digits=10, decimal_places=2)
+    reference_type = models.CharField(max_length=20, choices=REFERENCE_TYPE_CHOICES, null=True, blank=True)
+    reference_id = models.CharField(max_length=50, null=True, blank=True)
+    description = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.txn_id} | {self.txn_type} {self.amount}"
+
+    @property
+    def txn_id_display(self):
+        """Short display version of the UUID txn_id (first 12 chars, no dashes)."""
+        return str(self.txn_id).replace("-", "").upper()[:12]

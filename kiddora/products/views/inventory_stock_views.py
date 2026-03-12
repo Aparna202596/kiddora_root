@@ -11,26 +11,56 @@ from products.utils.pagination import paginate_queryset
 @never_cache
 @admin_login_required
 def admin_inventory_list(request):
-    search = request.GET.get("search", "")
+    search   = request.GET.get("search", "").strip()
+    sort     = request.GET.get("sort", "-updated")  # default: newest first
+    stock_f  = request.GET.get("stock_filter", "")  # "low" | "out" | ""
 
-    inventories = Inventory.objects.select_related(
-        "variant",
-        "variant__product",
-        "variant__product__subcategory",
-        "variant__product__subcategory__category",
-        "variant__color",
-        "variant__age_group"
-    ).filter(
-    variant__product__is_deleted=False,
-    variant__product__is_active=True,
-    variant__product__subcategory__is_deleted=False,
-    variant__product__subcategory__category__is_deleted=False,
-    ).order_by("-updated_at")
+    # ADD-ON: map URL sort param → ORM order_by expression
+    SORT_MAP = {
+        "product":  "variant__product__product_name",
+        "-product": "-variant__product__product_name",
+        "stock":    "quantity_available",
+        "-stock":   "-quantity_available",
+        "sold":     "quantity_sold",
+        "-sold":    "-quantity_sold",
+        "updated":  "updated_at",
+        "-updated": "-updated_at",
+    }
+    order_field = SORT_MAP.get(sort, "-updated_at")
 
+    inventories = (
+        Inventory.objects.select_related(
+            "variant",
+            "variant__product",
+            "variant__product__subcategory",
+            "variant__product__subcategory__category",
+            "variant__color",
+            "variant__age_group",
+        )
+        .filter(
+            variant__product__is_deleted=False,
+            variant__product__is_active=True,
+            variant__product__subcategory__is_deleted=False,
+            variant__product__subcategory__category__is_deleted=False,
+        )
+        .order_by(order_field)
+    )
+
+    # search — same logic as original
     if search:
-        inventories = inventories.filter(variant__product__product_name__icontains=search) | inventories.filter(
-            variant__sku__icontains=search) | inventories.filter(
-            variant__product__brand__icontains=search)
+        inventories = (
+            inventories.filter(variant__product__product_name__icontains=search)
+            | inventories.filter(variant__sku__icontains=search)
+            | inventories.filter(variant__product__brand__icontains=search)
+        )
+
+    # ADD-ON: filter by stock level when the toolbar dropdown is used
+    if stock_f == "out":
+        inventories = inventories.filter(quantity_available=0)
+    elif stock_f == "low":
+        inventories = inventories.filter(
+            quantity_available__gt=0, quantity_available__lte=5
+        )
 
     page_obj = paginate_queryset(request, inventories, 20)
 
@@ -38,11 +68,15 @@ def admin_inventory_list(request):
         request,
         "products/admin/admin_inventory_list.html",
         {
-            "inventories": page_obj,   # key is now "inventories"
-            "page_obj": page_obj,
-            "search": search,
+            "inventories": page_obj,   # key name unchanged
+            "page_obj":    page_obj,
+            "search":      search,
+            # ADD-ON: pass state back so toolbar stays in sync across pages
+            "sort":        sort,
+            "stock_f":     stock_f,
         },
     )
+
 
 
 @never_cache

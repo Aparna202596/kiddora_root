@@ -1,0 +1,96 @@
+{% extends "base_products.html" %}
+{% load static %}
+
+{% block title %}Order Placed! – Kiddora{% endblock %}
+
+{% block extra_css %}
+<style>
+  .success-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center;
+    padding: 60px 20px; max-width: 560px; margin: 0 auto;
+  }
+  .success-illustration { font-size: 6rem; margin-bottom: 20px; animation: pop .5s ease; }
+  @keyframes pop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    80%  { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .success-wrap h2 {
+    font-size: 28px; font-weight: 800; color: #222; margin-bottom: 10px;
+  }
+  .success-wrap p { font-size: 15px; color: #666; margin-bottom: 6px; line-height: 1.7; }
+  .order-id-box {
+    background: #fff0f5; border: 2px dashed #f06292; border-radius: 12px;
+    padding: 14px 28px; margin: 22px 0; display: inline-block;
+  }
+  .order-id-box span { font-size: 12px; color: #aaa; display: block; }
+  .order-id-box strong { font-size: 20px; color: #f06292; font-family: monospace; }
+
+  .success-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+  .btn-primary {
+    padding: 11px 26px; background: #f06292; color: #fff;
+    border-radius: 8px; font-size: 15px; font-weight: 700;
+    text-decoration: none; transition: background .2s;
+  }
+  .btn-primary:hover { background: #e91e63; }
+  .btn-outline {
+    padding: 11px 26px; background: #fff; color: #f06292;
+    border: 2px solid #f06292; border-radius: 8px; font-size: 15px; font-weight: 700;
+    text-decoration: none; transition: background .2s;
+  }
+  .btn-outline:hover { background: #fff0f5; }
+
+  .whats-next {
+    background: #f9fafb; border-radius: 12px; padding: 20px 24px;
+    margin-top: 28px; width: 100%; text-align: left;
+  }
+  .whats-next h4 { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 12px; }
+  .next-step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #555; margin-bottom: 8px; }
+  .next-step .dot { width: 24px; height: 24px; border-radius: 50%; background: #f06292;
+                    color: #fff; font-size: 12px; font-weight: 700;
+                    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+</style>
+{% endblock %}
+
+{% block filter_sidebar %}{% endblock %}
+
+{% block content %}
+<div class="success-wrap">
+  <div class="success-illustration">🎉</div>
+
+  <h2>Thank You for Your Order!</h2>
+  <p>Your order has been placed successfully. We'll get it ready for you soon!</p>
+  <p style="font-size:13px;color:#aaa;">A confirmation will be available in your order history.</p>
+
+  <div class="order-id-box">
+    <span>Your Order ID</span>
+    <strong>{{ order.order_id }}</strong>
+  </div>
+
+  <div style="font-size:14px;color:#555;margin-bottom:20px;">
+    <i class="fa fa-calendar-alt" style="color:#f06292;"></i>
+    Placed on {{ order.order_date|date:"d M Y, g:i A" }}
+    &nbsp;·&nbsp;
+    <i class="fa fa-truck" style="color:#f06292;"></i>
+    {{ order.get_payment_method_display }}
+  </div>
+
+  <div class="success-actions">
+    <a href="{% url 'shopcore:user_order_detail' order_id=order.order_id %}" class="btn-primary">
+      <i class="fa fa-list-alt"></i> View Order Details
+    </a>
+    <a href="{% url 'products:product_list' %}" class="btn-outline">
+      <i class="fa fa-shopping-bag"></i> Continue Shopping
+    </a>
+  </div>
+
+  <div class="whats-next">
+    <h4>What happens next?</h4>
+    <div class="next-step"><span class="dot">1</span> Your order is confirmed and being prepared.</div>
+    <div class="next-step"><span class="dot">2</span> We'll pack and ship your items shortly.</div>
+    <div class="next-step"><span class="dot">3</span> Track status anytime in your order history.</div>
+    <div class="next-step"><span class="dot">4</span> Pay with cash when your package arrives.</div>
+  </div>
+</div>
+{% endblock %}

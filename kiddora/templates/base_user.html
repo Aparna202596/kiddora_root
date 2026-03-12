@@ -432,62 +432,17 @@
                     </form>
                     <div class="search-dropdown" id="searchDropdown"></div>
                 </div>
-                <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
+                <a href="{% url 'shopcore:wishlist' %}" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
                 <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
                     <i class="fa-regular fa-user"></i>
                 </a>
-                <a href="#" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
+                <a href="{% url 'shopcore:cart' %}" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
             </div>
         </div>
     </header>
 
     <main class="main-content">
         <div class="account-layout">
-
-            <!-- ── SIDEBAR (unchanged) ── -->
-            <aside class="account-sidebar">
-                <div class="sidebar-header">
-                    <i class="fa-regular fa-user sidebar-profile-icon"></i>
-                    <p>Hello, <strong>{{ request.user.full_name }}</strong></p>
-                </div>
-                <ul class="sidebar-menu">
-                    <li>
-                        <a href="{% url 'accounts:user_profile' %}">
-                            <i class="fa-regular fa-id-card"></i> Profile
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#">
-                            <i class="fa-solid fa-box"></i> My Orders
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#">
-                            <i class="fa-solid fa-wallet"></i> Wallet
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'accounts:address_list' %}">
-                            <i class="fa-solid fa-location-dot"></i> Address
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#">
-                            <i class="fa-solid fa-gift"></i> Refer &amp; Earn
-                        </a>
-                    </li>
-                    <li class="danger">
-                        <a href="{% url 'accounts:delete_profile' %}">
-                            <i class="fa-solid fa-trash"></i> Delete Account
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'accounts:logout' %}">
-                            <i class="fa-solid fa-right-from-bracket"></i> Logout
-                        </a>
-                    </li>
-                </ul>
-            </aside>
 
             <section class="account-content">
                 {% block content %}{% endblock %}

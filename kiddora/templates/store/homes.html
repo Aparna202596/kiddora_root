@@ -1,0 +1,623 @@
+{% extends "base_products.html" %}
+{% load static %}
+
+{% block title %}Kiddora — Joyful Kids' Fashion{% endblock %}
+
+{% block filter_sidebar %}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════
+   KIDDORA HOME PAGE
+   Aesthetic: Playful + Editorial — bold shapes,
+   warm pinks, joyful energy, clean type
+══════════════════════════════════════════════ */
+
+:root {
+  --pink:       #f06292;
+  --pink-dark:  #e91e63;
+  --pink-light: #fce4ec;
+  --yellow:     #ffd54f;
+  --teal:       #4dd0e1;
+  --purple:     #ce93d8;
+  --radius-lg:  20px;
+  --radius-md:  12px;
+  --shadow-card: 0 8px 32px rgba(240,98,146,.12);
+}
+
+/* ── HERO CAROUSEL ─────────────────────────── */
+.hero-section {
+  margin-bottom: 52px;
+  position: relative;
+}
+
+.hero-carousel {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(240,98,146,.18);
+  background: var(--pink-light);
+  aspect-ratio: 16/6;
+  min-height: 300px;
+  max-height: 540px;
+}
+
+/* ── SLIDES ── */
+.hero-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity .65s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.hero-slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Background image */
+.slide-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 8s ease;
+}
+.hero-slide.active .slide-bg {
+  transform: scale(1.04);
+}
+
+/* Dark gradient overlay for readability */
+.slide-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(0,0,0,.52) 0%,
+    rgba(0,0,0,.28) 50%,
+    transparent 100%
+  );
+}
+
+/* Slide text content */
+.slide-content {
+  position: relative;
+  z-index: 2;
+  padding: 36px 56px;
+  max-width: 560px;
+  animation: slideIn .55s cubic-bezier(.4,0,.2,1) both;
+}
+.hero-slide.active .slide-content {
+  animation: slideIn .55s .1s cubic-bezier(.4,0,.2,1) both;
+}
+
+@keyframes slideIn {
+  from { opacity:0; transform:translateX(-28px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.slide-badge {
+  display: inline-block;
+  font-family: 'Nunito', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: var(--yellow);
+  color: #4a3000;
+  margin-bottom: 14px;
+}
+
+.slide-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: clamp(26px, 4vw, 52px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+
+.slide-subtitle {
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(13px, 1.6vw, 17px);
+  color: rgba(255,255,255,.88);
+  margin-bottom: 26px;
+  line-height: 1.55;
+  font-weight: 600;
+}
+
+.slide-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 28px;
+  background: var(--pink);
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 50px;
+  text-decoration: none;
+  box-shadow: 0 6px 20px rgba(240,98,146,.4);
+  transition: background .2s, transform .18s, box-shadow .2s;
+}
+.slide-cta:hover {
+  background: var(--pink-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(233,30,99,.38);
+}
+.slide-cta i { font-size: 15px; }
+
+/* fallback when no image */
+.hero-carousel.no-banners {
+  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 40%, #e1f5fe 100%);
+  display: flex; align-items: center; justify-content: center;
+  min-height: 320px;
+}
+.hero-placeholder {
+  text-align: center; padding: 40px;
+}
+.hero-placeholder h2 {
+  font-family: 'Baloo 2', cursive;
+  font-size: 38px; font-weight:800;
+  color: var(--pink-dark); margin-bottom:12px;
+}
+.hero-placeholder p { font-family:'Nunito',sans-serif; color:#888; font-size:16px; }
+
+/* ── CAROUSEL NAV ── */
+.carousel-btn {
+  position: absolute;
+  top: 50%; transform: translateY(-50%);
+  z-index: 10;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,.9);
+  color: #333;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items:center; justify-content:center;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  transition: background .18s, transform .18s;
+  backdrop-filter: blur(8px);
+}
+.carousel-btn:hover {
+  background: #fff;
+  transform: translateY(-50%) scale(1.08);
+}
+.carousel-btn.prev { left: 16px; }
+.carousel-btn.next { right: 16px; }
+
+/* Dot indicators */
+.carousel-dots {
+  position: absolute;
+  bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 7px;
+  z-index: 10;
+}
+.carousel-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.5);
+  border: none; cursor: pointer;
+  transition: background .25s, width .25s;
+  padding: 0;
+}
+.carousel-dot.active {
+  background: #fff;
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* ── SECONDARY BANNERS ─────────────────────── */
+.secondary-section {
+  margin-bottom: 52px;
+}
+
+.secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.secondary-card {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 5/3;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: transform .22s, box-shadow .22s;
+}
+.secondary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 40px rgba(240,98,146,.18);
+}
+
+.secondary-card img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .5s;
+}
+.secondary-card:hover img { transform: scale(1.05); }
+
+.secondary-card-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, transparent 30%, rgba(0,0,0,.55) 100%);
+}
+
+.secondary-card-content {
+  position: absolute;
+  bottom: 16px; left: 18px; right: 18px;
+}
+.secondary-card-content .s-badge {
+  display: inline-block;
+  font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .1em;
+  padding: 3px 10px; border-radius: 20px;
+  background: var(--yellow); color: #4a3000;
+  margin-bottom: 6px;
+}
+.secondary-card-content .s-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: 17px; font-weight: 800;
+  color: #fff; margin-bottom: 8px;
+  text-shadow: 0 1px 6px rgba(0,0,0,.3);
+  line-height: 1.2;
+}
+.secondary-card-content .s-cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 800;
+  color: #fff;
+  border: 1.5px solid rgba(255,255,255,.7);
+  border-radius: 20px;
+  padding: 5px 14px;
+  text-decoration: none;
+  transition: background .18s, color .18s;
+}
+.secondary-card-content .s-cta:hover {
+  background: #fff; color: var(--pink-dark);
+}
+
+/* ── SECTION TITLES ────────────────────────── */
+.section-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px; flex-wrap: wrap; gap: 10px;
+}
+.section-hdr h2 {
+  font-family: 'Baloo 2', cursive;
+  font-size: 26px; font-weight: 800; color: #222;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-hdr h2 .emoji { font-size: 26px; }
+.section-hdr a {
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--pink); text-decoration: none;
+  display: flex; align-items: center; gap: 5px;
+}
+.section-hdr a:hover { color: var(--pink-dark); }
+
+/* Accent underline on section title */
+.section-hdr h2::after {
+  display: none;
+}
+.title-underline {
+  width: 48px; height: 4px;
+  background: linear-gradient(90deg, var(--pink), var(--yellow));
+  border-radius: 2px;
+  margin-top: -8px;
+  margin-bottom: 18px;
+}
+
+/* ── CATEGORY QUICK LINKS ──────────────────── */
+.category-strip {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 52px;
+}
+.cat-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  border-radius: 50px;
+  background: #fff;
+  border: 1.5px solid #eee;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 700; color: #333;
+  text-decoration: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  transition: border-color .18s, background .18s, transform .15s;
+}
+.cat-pill:hover {
+  border-color: var(--pink);
+  background: var(--pink-light);
+  color: var(--pink-dark);
+  transform: translateY(-2px);
+}
+.cat-pill span.pill-icon { font-size: 18px; }
+
+/* ── FEATURES STRIP ────────────────────────── */
+.features-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 52px;
+}
+.feature-tile {
+  background: #fff;
+  border: 1.5px solid #f5f5f5;
+  border-radius: 14px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: box-shadow .2s, border-color .2s;
+}
+.feature-tile:hover {
+  border-color: var(--pink);
+  box-shadow: var(--shadow-card);
+}
+.feature-tile .ft-icon {
+  font-size: 26px; margin-bottom: 10px;
+  display: flex; align-items:center; justify-content:center;
+  width: 50px; height: 50px; border-radius: 50%;
+  background: var(--pink-light);
+  color: var(--pink);
+  margin: 0 auto 10px;
+}
+.feature-tile h4 {
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 800; color: #222; margin-bottom: 4px;
+}
+.feature-tile p { font-size: 12px; color: #888; line-height: 1.5; }
+
+/* ── RESPONSIVE ────────────────────────────── */
+@media (max-width: 768px) {
+  .slide-content { padding: 24px 28px; }
+  .hero-carousel { aspect-ratio: 16/8; }
+  .secondary-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+}
+@media (max-width: 480px) {
+  .slide-content { padding: 18px 20px; }
+  .slide-title { font-size: 22px; }
+  .slide-cta { padding: 10px 20px; font-size: 13px; }
+  .carousel-btn { width: 36px; height: 36px; font-size: 14px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ════════════════════════════════════════════════════════════ #}
+{# HERO CAROUSEL                                                #}
+{# ════════════════════════════════════════════════════════════ #}
+<section class="hero-section">
+  {% if hero_banners %}
+
+  <div class="hero-carousel" id="heroCarousel">
+
+    {% for banner in hero_banners %}
+    <div class="hero-slide {% if forloop.first %}active{% endif %}"
+         data-index="{{ forloop.counter0 }}">
+
+      {# Background image #}
+      <div class="slide-bg"
+           style="background-image: url('{{ banner.image.url }}');"
+           role="img"
+           aria-label="{{ banner.title }}">
+      </div>
+      <div class="slide-overlay"></div>
+
+      {# Text content #}
+      <div class="slide-content">
+        {% if banner.badge_text %}
+        <div class="slide-badge">{{ banner.badge_text }}</div>
+        {% endif %}
+        <h2 class="slide-title">{{ banner.title }}</h2>
+        {% if banner.subtitle %}
+        <p class="slide-subtitle">{{ banner.subtitle }}</p>
+        {% endif %}
+        <a href="{{ banner.cta_url }}" class="slide-cta">
+          {{ banner.cta_text }} <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+
+    </div>
+    {% endfor %}
+
+    {# Navigation arrows (only if more than 1 banner) #}
+    {% if hero_banners|length > 1 %}
+    <button class="carousel-btn prev" onclick="carousel.prev()" aria-label="Previous slide">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button class="carousel-btn next" onclick="carousel.next()" aria-label="Next slide">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+
+    {# Dot indicators #}
+    <div class="carousel-dots" id="carouselDots">
+      {% for banner in hero_banners %}
+      <button class="carousel-dot {% if forloop.first %}active{% endif %}"
+              onclick="carousel.goTo({{ forloop.counter0 }})"
+              aria-label="Slide {{ forloop.counter }}">
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  {% else %}
+  {# Fallback when no banners are configured #}
+  <div class="hero-carousel no-banners">
+    <div class="hero-placeholder">
+      <h2>Welcome to Kiddora 👕</h2>
+      <p>Joyful fashion for little ones — browse our latest collection.</p>
+      <a href="{% url 'products:product_list' %}" class="slide-cta" style="margin-top:18px;display:inline-flex;">
+        Shop Now <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+
+{# ════════════════════════════════════════════════════════════ #}
+{# CATEGORY QUICK LINKS                                         #}
+{# ════════════════════════════════════════════════════════════ #}
+<section style="margin-bottom:48px;">
+  <div class="section-hdr">
+    <h2><span class="emoji">🎨</span> Shop by Category</h2>
+    <a href="{% url 'products:category_list' %}">View All <i class="fa fa-arrow-right"></i></a>
+  </div>
+  <div class="title-underline"></div>
+  <div class="category-strip">
+    <a href="{% url 'products:product_list' %}?gender=B" class="cat-pill">
+      <span class="pill-icon">👦</span> Boys
+    </a>
+    <a href="{% url 'products:product_list' %}?gender=G" class="cat-pill">
+      <span class="pill-icon">👧</span> Girls
+    </a>
+    <a href="{% url 'products:product_list' %}?gender=U" class="cat-pill">
+      <span class="pill-icon">🌟</span> Unisex
+    </a>
+    <a href="{% url 'products:product_list' %}" class="cat-pill">
+      <span class="pill-icon">🧸</span> All Kids
+    </a>
+    <a href="{% url 'products:product_list' %}?sort_by=newest" class="cat-pill">
+      <span class="pill-icon">✨</span> New Arrivals
+    </a>
+    <a href="{% url 'products:product_list' %}?sort_by=highest_discount" class="cat-pill">
+      <span class="pill-icon">🏷️</span> Best Deals
+    </a>
+  </div>
+</section>
+
+
+{# ════════════════════════════════════════════════════════════ #}
+{# SECONDARY BANNERS                                            #}
+{# ════════════════════════════════════════════════════════════ #}
+{% if secondary_banners %}
+<section class="secondary-section">
+  <div class="section-hdr">
+    <h2><span class="emoji">🎁</span> Featured Collections</h2>
+  </div>
+  <div class="title-underline"></div>
+  <div class="secondary-grid">
+    {% for banner in secondary_banners %}
+    <div class="secondary-card">
+      <img src="{{ banner.image.url }}" alt="{{ banner.title }}" loading="lazy">
+      <div class="secondary-card-overlay"></div>
+      <div class="secondary-card-content">
+        {% if banner.badge_text %}
+        <div class="s-badge">{{ banner.badge_text }}</div>
+        {% endif %}
+        <div class="s-title">{{ banner.title }}</div>
+        <a href="{{ banner.cta_url }}" class="s-cta">
+          {{ banner.cta_text }} <i class="fa fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════ #}
+{# FEATURES / TRUST STRIP                                       #}
+{# ════════════════════════════════════════════════════════════ #}
+<section style="margin-bottom:52px;">
+  <div class="features-strip">
+    <div class="feature-tile">
+      <div class="ft-icon"><i class="fa-solid fa-truck"></i></div>
+      <h4>Free Delivery</h4>
+      <p>On orders above ₹499</p>
+    </div>
+    <div class="feature-tile">
+      <div class="ft-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <h4>Safe &amp; Secure</h4>
+      <p>100% secure payments</p>
+    </div>
+    <div class="feature-tile">
+      <div class="ft-icon"><i class="fa-solid fa-rotate-left"></i></div>
+      <h4>Easy Returns</h4>
+      <p>7-day hassle-free returns</p>
+    </div>
+    <div class="feature-tile">
+      <div class="ft-icon"><i class="fa-solid fa-shirt"></i></div>
+      <h4>Quality Fabrics</h4>
+      <p>Soft, skin-friendly materials</p>
+    </div>
+    <div class="feature-tile">
+      <div class="ft-icon"><i class="fa-solid fa-headset"></i></div>
+      <h4>24/7 Support</h4>
+      <p>We're here to help</p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/* ═══════════════════════════════════════════════════
+   HERO CAROUSEL  — vanilla JS, auto-plays every 5s,
+   pauses on hover, touch-swipe enabled.
+═══════════════════════════════════════════════════ */
+(function () {
+  const slides = document.querySelectorAll('.hero-slide');
+  const dots   = document.querySelectorAll('.carousel-dot');
+  if (!slides.length || slides.length < 2) return;
+
+  let current   = 0;
+  let timer     = null;
+  let startX    = 0;
+
+  function goTo(idx) {
+    slides[current].classList.remove('active');
+    if (dots[current]) dots[current].classList.remove('active');
+    current = (idx + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    if (dots[current]) dots[current].classList.add('active');
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  function start() { timer = setInterval(next, 5000); }
+  function stop()  { clearInterval(timer); }
+
+  // Pause on hover
+  const carousel = document.getElementById('heroCarousel');
+  if (carousel) {
+    carousel.addEventListener('mouseenter', stop);
+    carousel.addEventListener('mouseleave', start);
+
+    // Touch swipe
+    carousel.addEventListener('touchstart', e => { startX = e.changedTouches[0].clientX; }, {passive:true});
+    carousel.addEventListener('touchend',   e => {
+      const diff = startX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 40) { stop(); diff > 0 ? next() : prev(); start(); }
+    });
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { stop(); next(); start(); }
+    if (e.key === 'ArrowLeft')  { stop(); prev(); start(); }
+  });
+
+  start();
+
+  // Expose for inline onclick handlers
+  window.carousel = { next, prev, goTo };
+})();
+</script>
+{% endblock %}

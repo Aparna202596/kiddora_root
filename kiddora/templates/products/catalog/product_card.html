@@ -2,7 +2,6 @@
     {% if product.discount_percent %}
     <div class="pc-badge">{{ product.discount_percent }}% OFF</div>
     {% endif %}
-
     <a href="{% url 'products:product_detail' product.id %}" aria-hidden="true" tabindex="-1">
         <div class="pc-img">
             {% with img=product.images.first %}
@@ -14,20 +13,153 @@
             {% endwith %}
         </div>
     </a>
-
     <div class="pc-body">
         <div class="pc-brand">{{ product.brand }}</div>
         <a href="{% url 'products:product_detail' product.id %}">
             <div class="pc-name">{{ product.product_name }}</div>
         </a>
-        <div class="pc-price">
-            {% if product.discount_percent %}
-                <span class="pc-final red">₹{{ product.final_price|floatformat:0 }}</span>
-                <span class="pc-base">₹{{ product.base_price|floatformat:0 }}</span>
-                <span class="pc-off">({{ product.discount_percent }}% off)</span>
-            {% else %}
-                <span class="pc-final black">₹{{ product.final_price|floatformat:0 }}</span>
-            {% endif %}
+        <div class="pc-price-row">
+            <div class="pc-price">
+                {% if product.discount_percent %}
+                    <span class="pc-final red">₹{{ product.final_price|floatformat:0 }}</span>
+                    <span class="pc-base">₹{{ product.base_price|floatformat:0 }}</span>
+                    <span class="pc-off">({{ product.discount_percent }}% off)</span>
+                {% else %}
+                    <span class="pc-final black">₹{{ product.final_price|floatformat:0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="pc-actions">
+                {# ── Wishlist toggle ── #}
+                {% if user.is_authenticated %}
+                <form method="post"
+                        action="#"
+                        class="pc-action-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit"
+                            class="pc-icon-btn pc-wish {% if product.id in wishlist_product_ids %}active{% endif %}"
+                            title="{% if product.id in wishlist_product_ids %}Remove from wishlist{% else %}Add to wishlist{% endif %}"
+                            aria-label="Wishlist">
+                        <i class="fa{% if product.id in wishlist_product_ids %}-solid{% else %}-regular{% endif %} fa-heart"></i>
+                    </button>
+                </form>
+                {% else %}
+                <a href="{% url 'accounts:user_login' %}?next={{ request.get_full_path }}"
+                    class="pc-icon-btn pc-wish"
+                    title="Login to wishlist"
+                    aria-label="Wishlist">
+                    <i class="fa-regular fa-heart"></i>
+                </a>
+                {% endif %}
+
+                {# ── Add to Cart ── #}
+                {% if product.total_stock == 0 %}
+                    {# Fully OOS — show disabled icon #}
+                    <button class="pc-icon-btn pc-cart disabled"
+                            disabled title="Out of stock" aria-label="Out of stock">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </button>
+                {% elif user.is_authenticated %}
+                    {# Redirect to detail page where variant must be selected #}
+                    <a href="{% url 'products:product_detail' product.id %}"
+                        class="pc-icon-btn pc-cart {% if product.id in cart_product_ids %}in-cart{% endif %}"
+                        title="{% if product.id in cart_product_ids %}View in cart{% else %}Add to cart{% endif %}"
+                        aria-label="Add to cart">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'accounts:user_login' %}?next={{ request.get_full_path }}"
+                        class="pc-icon-btn pc-cart"
+                        title="Login to add to cart"
+                        aria-label="Add to cart">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
+
+    <style>
+    /* ── price row: price left, icons right ── */
+    .pc-price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    .pc-price {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* ── action icons container ── */
+    .pc-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .pc-action-form {
+        margin: 0;
+        padding: 0;
+        display: contents;
+    }
+
+    /* ── shared icon button ── */
+    .pc-icon-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1.5px solid #e0e0e0;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        cursor: pointer;
+        transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.15s;
+        text-decoration: none;
+        color: #555;
+        flex-shrink: 0;
+    }
+    .pc-icon-btn:hover {
+        transform: scale(1.12);
+    }
+
+    /* ── wishlist ── */
+    .pc-wish:hover,
+    .pc-wish.active {
+        color: #e91e63;
+        border-color: #e91e63;
+        background: #fff0f5;
+    }
+    .pc-wish.active i {
+        color: #e91e63;
+    }
+
+    /* ── cart ── */
+    .pc-cart:hover {
+        color: #f06292;
+        border-color: #f06292;
+        background: #fff0f5;
+    }
+    .pc-cart.in-cart {
+        color: #f06292;
+        border-color: #f06292;
+        background: #fff0f5;
+    }
+
+    /* ── disabled (OOS) ── */
+    .pc-icon-btn.disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    </style>
 </article>

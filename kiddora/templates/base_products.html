@@ -535,11 +535,9 @@
                     <div class="search-dropdown" id="searchDropdown"></div>
                 </div>
 
-                <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
-                <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
-                    <i class="fa-regular fa-user"></i>
-                </a>
-                <a href="#" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
+                <a href="{% url 'shopcore:wishlist' %}" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
+                <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile"><i class="fa-regular fa-user"></i></a>
+                <a href="{% url 'shopcore:cart' %}" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
             </div>
         </div>
     </header>

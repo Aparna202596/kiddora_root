@@ -55,6 +55,7 @@ class Product(models.Model):
         ("Other", "Other"),
     ]
 
+
     subcategory = models.ForeignKey("SubCategory", on_delete=models.CASCADE, related_name="products")
     product_name = models.CharField(max_length=200)
     brand = models.CharField(max_length=100)
@@ -66,6 +67,7 @@ class Product(models.Model):
     about_product = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
+    average_review = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal("0.00"))
 
     def save(self, *args, **kwargs):
         base = Decimal(self.base_price or 0)

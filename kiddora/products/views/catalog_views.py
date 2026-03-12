@@ -2,8 +2,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib import messages
 from products.models import (Category, SubCategory, Product, ProductVariant, ProductImage, Inventory, Color, AgeGroup)
+from shopcore.models import Review, Offer
 from django.db.models import Q, Min, Max, Count, Sum, Prefetch, Avg
 from django.core.paginator import Paginator
+from django.db.models.functions import Coalesce
+from django.db.models import Value
+from shopcore.models import Cart, CartItem, Wishlist, WishlistItem
 
 #  Build sidebar filter options from a filtered QS
 def get_filter_options(products_qs):
@@ -64,6 +68,38 @@ SORT_MAP = {
     "newest": "-id",
     "oldest": "id",
 }
+
+def _cart_wishlist_ctx(user):
+    """
+    Returns cart_variant_ids (set), wishlist_product_ids (set),
+    and cart_item_count (int) for authenticated users.
+    Safe for anonymous users — returns empty sets and 0.
+    Called by product_list and product_detail_view.
+    """
+    if not user.is_authenticated:
+        return {
+            "cart_variant_ids":     set(),
+            "wishlist_product_ids": set(),
+            "cart_item_count":      0,
+        }
+    try:
+        cart_variant_ids = set(user.cart.items.values_list("variant_id", flat=True))
+        cart_item_count  = user.cart.items.count()
+    except Cart.DoesNotExist:
+        cart_variant_ids = set()
+        cart_item_count  = 0
+    try:
+        wishlist_product_ids = set(
+            user.wishlist.items.values_list("product_id", flat=True)
+        )
+    except Wishlist.DoesNotExist:
+        wishlist_product_ids = set()
+    return {
+        "cart_variant_ids":     cart_variant_ids,
+        "wishlist_product_ids": wishlist_product_ids,
+        "cart_item_count":      cart_item_count,
+    }
+
 
 def _apply_sort(products, sort_by):
     if sort_by == "popularity":
@@ -150,6 +186,15 @@ def product_list(request, category_id=None, subcategory_id=None):
             pass
 
     products = products.distinct()
+    products = products.annotate(
+        total_stock=Coalesce(
+            Sum(
+                "variants__inventory__quantity_available",
+                filter=Q(variants__is_active=True),
+            ),
+            Value(0),
+        )
+    )
 
     # Sort 
     products = _apply_sort(products, sort_by)
@@ -197,6 +242,13 @@ def product_list(request, category_id=None, subcategory_id=None):
         "current_category": current_category,
         "current_subcategory": current_subcategory,
     }
+    uw = _cart_wishlist_ctx(request.user)
+    context.update({
+        "cart_variant_ids": uw["cart_variant_ids"],
+        "wishlist_product_ids":uw["wishlist_product_ids"],
+        "cart_item_count": uw["cart_item_count"],
+        "MAX_QTY": CartItem.MAX_QTY_PER_PRODUCT,
+    })
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return render(
@@ -260,34 +312,37 @@ def search_products(request):
 
 def product_detail_view(request, product_id):
     try:
-        product = Product.objects.select_related("subcategory", "subcategory__category").get(id=product_id)
+        product = Product.objects.select_related(
+            "subcategory", "subcategory__category"
+        ).get(id=product_id)
     except Product.DoesNotExist:
         messages.error(request, "Product not found.")
         return redirect("/products/user/products/")
 
     if (
-    not product.is_active
-    or product.is_deleted
-    or not product.subcategory.is_active
-    or product.subcategory.is_deleted 
-    or not product.subcategory.category.is_active
-    or product.subcategory.category.is_deleted
+        not product.is_active
+        or product.is_deleted
+        or not product.subcategory.is_active
+        or product.subcategory.is_deleted
+        or not product.subcategory.category.is_active
+        or product.subcategory.category.is_deleted
     ):
         messages.warning(
             request,
-            "This product is currently unavailable. "
-            "Browse our other products below."
+            "This product is currently unavailable. Browse our other products below.",
         )
         return redirect("/products/user/products/")
 
-    # Variants 
-    variants_qs = (ProductVariant.objects.filter(product=product, is_active=True)
-                        .select_related("color", "age_group", "inventory")
-                        .order_by("color__color", "age_group__age"))
+    # ── Variants ─────────────────────────────────────────────
+    variants_qs = (
+        ProductVariant.objects.filter(product=product, is_active=True)
+        .select_related("color", "age_group", "inventory")
+        .order_by("color__color", "age_group__age")
+    )
 
-    variant_data = []
-    total_stock = 0
-    any_in_stock = False
+    variant_data     = []
+    total_stock      = 0
+    any_in_stock     = False
     all_out_of_stock = True
 
     for v in variants_qs:
@@ -295,23 +350,23 @@ def product_detail_view(request, product_id):
             qty = v.inventory.quantity_available
         except Exception:
             qty = 0
-
         total_stock += qty
         if qty > 0:
-            any_in_stock = True
+            any_in_stock     = True
             all_out_of_stock = False
-
         variant_data.append({
-            "id": v.id,
-            "color_id": v.color.id,
-            "color_name": v.color.color, 
-            "age": v.age_group.age,
-            "sku": v.sku,
-            "qty": qty,
-            "is_oos": qty == 0,
+            "id":           v.id,
+            "color_id":     v.color.id,
+            "color_name":   v.color.color,
+            "age":          v.age_group.age,
+            "sku":          v.sku,
+            "qty":          qty,
+            "is_oos":       qty == 0,
+            "max_cart_qty": min(CartItem.MAX_QTY_PER_PRODUCT, qty) if qty > 0 else 0,
+            "in_cart":      False,   # stamped below after cart ctx resolves
         })
 
-    # Product images
+    # ── Images ───────────────────────────────────────────────
     image_urls = []
     for img_obj in product.images.all():
         for field in ("image1", "image2", "image3", "image4", "image5"):
@@ -319,31 +374,110 @@ def product_detail_view(request, product_id):
             if val:
                 image_urls.append(val.url)
 
-    # Related products
+    # ── Related products ─────────────────────────────────────
     related_products = (
-        Product.objects.filter(subcategory=product.subcategory, is_active=True, subcategory__category__is_active=True)
-                                            .exclude(id=product.id).prefetch_related("images")[:6])
+        Product.objects.filter(
+            subcategory=product.subcategory,
+            is_active=True,
+            is_deleted=False,
+            subcategory__category__is_active=True,
+        )
+        .exclude(id=product.id)
+        .prefetch_related("images")[:6]
+    )
 
-    # Coupons
-    available_coupons = []
-    # available_coupons = Coupon.objects.filter(is_active=True)
+    # ── Cart & Wishlist context ───────────────────────────────
+    uw = _cart_wishlist_ctx(request.user)
+    for vd in variant_data:
+        vd["in_cart"] = vd["id"] in uw["cart_variant_ids"]
 
-    reviews  = []
-    average_rating = None
-    review_count = 0
+    # ── Reviews ──────────────────────────────────────────────
+    reviews_qs = (
+        Review.objects.filter(product=product, is_approved=True)
+        .select_related("user")
+        .order_by("-created_at")
+    )
+    review_list   = list(reviews_qs[:20])     # latest 20 approved reviews
+    review_count  = reviews_qs.count()
+    avg_data      = reviews_qs.aggregate(avg=Avg("rating"))
+    average_rating = round(avg_data["avg"], 1) if avg_data["avg"] else None
+
+    # Has the current user already reviewed this product?
+    user_review      = None
+    user_can_review  = False
+    user_has_reviewed = False
+    if request.user.is_authenticated:
+        user_review = Review.objects.filter(
+            user=request.user, product=product
+        ).first()
+        user_has_reviewed = user_review is not None
+        if not user_has_reviewed:
+            # Only allow review if they've bought & received it
+            from shopcore.models import Order
+            user_can_review = Order.objects.filter(
+                user=request.user,
+                order_status="DELIVERED",
+                order_items__variant__product=product,
+            ).exists()
+
+    # ── Active Offers ─────────────────────────────────────────
+    from django.utils import timezone
+    now = timezone.now()
+
+    product_offers  = [
+        o for o in Offer.objects.filter(
+            offer_type="PRODUCT",
+            product=product,
+            is_active=True,
+            is_deleted=False,
+            start_date__lte=now,
+        )
+        if o.is_valid()
+    ]
+
+    category_offers = [
+        o for o in Offer.objects.filter(
+            offer_type="CATEGORY",
+            category=product.subcategory.category,
+            is_active=True,
+            is_deleted=False,
+            start_date__lte=now,
+        )
+        if o.is_valid()
+    ]
+
+    # Best offer = highest discount among product + category offers
+    all_offers       = product_offers + category_offers
+    best_offer       = max(all_offers, key=lambda o: o.discount_percent) if all_offers else None
 
     context = {
-        "product": product,
-        "variant_data": variant_data,
-        "image_urls": image_urls,
-        "total_stock": total_stock,
-        "any_in_stock": any_in_stock,
-        "all_out_of_stock": all_out_of_stock,
-        "related_products": related_products,
-        "reviews": reviews,
-        "average_rating": average_rating,
-        "review_count": review_count,
-        "available_coupons": available_coupons,
+        # ── product core ─────────────────────────────────────
+        "product":           product,
+        "variant_data":      variant_data,
+        "image_urls":        image_urls,
+        "total_stock":       total_stock,
+        "any_in_stock":      any_in_stock,
+        "all_out_of_stock":  all_out_of_stock,
+        "related_products":  related_products,
+        # ── cart / wishlist ───────────────────────────────────
+        "cart_variant_ids":     uw["cart_variant_ids"],
+        "wishlist_product_ids": uw["wishlist_product_ids"],
+        "cart_item_count":      uw["cart_item_count"],
+        "product_in_wishlist":  product.id in uw["wishlist_product_ids"],
+        "MAX_QTY":              CartItem.MAX_QTY_PER_PRODUCT,
+        "add_to_cart_url_base": "/shop/cart/add/",
+        # ── reviews ───────────────────────────────────────────
+        "reviews":            review_list,
+        "review_count":       review_count,
+        "average_rating":     average_rating,
+        "user_review":        user_review,
+        "user_has_reviewed":  user_has_reviewed,
+        "user_can_review":    user_can_review,
+        # ── offers ────────────────────────────────────────────
+        "product_offers":    product_offers,
+        "category_offers":   category_offers,
+        "all_offers":        all_offers,
+        "best_offer":        best_offer,
     }
     return render(request, "products/catalog/product_detail.html", context)
 
@@ -355,39 +489,51 @@ def ajax_variant_info(request):
         return JsonResponse({"error": "variant_id is required"}, status=400)
 
     try:
-        variant = ProductVariant.objects.select_related("inventory", "product", "color", "age_group").get(id=variant_id, is_active=True)
+        variant = ProductVariant.objects.select_related(
+            "inventory", "product", "color", "age_group"
+        ).get(id=variant_id, is_active=True)
     except ProductVariant.DoesNotExist:
         return JsonResponse({"error": "Variant not found or inactive"}, status=404)
 
     inventory = getattr(variant, "inventory", None)
-    qty = inventory.quantity_available if inventory else 0
+    qty       = inventory.quantity_available if inventory else 0
 
-    # Determine stock status label for the frontend
     if qty == 0:
-        stock_status = "out_of_stock"
-        stock_label = "Out of Stock"
+        stock_status, stock_label = "out_of_stock", "Out of Stock"
     elif qty <= 5:
-        stock_status = "low_stock"
-        stock_label = f"Only {qty} left!"
+        stock_status, stock_label = "low_stock", f"Only {qty} left!"
     else:
-        stock_status = "in_stock"
-        stock_label = f"In Stock ({qty} available)"
+        stock_status, stock_label = "in_stock", f"In Stock ({qty} available)"
+
+    # ADD-ON: is this variant already in the user's cart?
+    in_cart = False
+    if request.user.is_authenticated:
+        try:
+            in_cart = CartItem.objects.filter(
+                cart=request.user.cart, variant=variant
+            ).exists()
+        except Cart.DoesNotExist:
+            pass
 
     data = {
-        "variant_id": variant.id,
-        "sku": variant.sku,
-        "color": str(variant.color),
-        "age_group": str(variant.age_group),
+        # ── original keys (unchanged) ─────────────────────────
+        "variant_id":         variant.id,
+        "sku":                variant.sku,
+        "color":              str(variant.color),
+        "age_group":          str(variant.age_group),
         "quantity_available": qty,
-        "stock_status": stock_status,
-        "stock_label": stock_label,
-        # price fields 
-        "base_price": str(variant.product.base_price),
-        "final_price": str(variant.product.final_price),
-        "discount_percent": variant.product.discount_percent,
+        "stock_status":       stock_status,
+        "stock_label":        stock_label,
+        "base_price":         str(variant.product.base_price),
+        "final_price":        str(variant.product.final_price),
+        "discount_percent":   variant.product.discount_percent,
+        # ── ADD-ON keys ───────────────────────────────────────
+        # Used by the product-detail page JS to update button state
+        "in_cart":         in_cart,
+        "max_cart_qty":    min(CartItem.MAX_QTY_PER_PRODUCT, qty),
+        "add_to_cart_url": f"/shop/cart/add/{variant.id}/",
     }
     return JsonResponse(data)
-
 #  VIEW: AJAX – partial product grid 
 
 def ajax_product_grid(request, category_id=None, subcategory_id=None):

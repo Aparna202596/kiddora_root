@@ -1,0 +1,103 @@
+{% extends "base_products.html" %}
+{% load static %}
+{% block title %}My Reviews – Kiddora{% endblock %}
+{% block filter_sidebar %}{% endblock %}
+
+{% block content %}
+<style>
+.page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:10px; }
+.page-hdr h2 { font-size:22px; font-weight:800; color:#222; display:flex; align-items:center; gap:10px; }
+.page-hdr h2 i { color:#f06292; }
+
+.rev-list { display:flex; flex-direction:column; gap:14px; }
+.rev-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:18px 22px; display:flex; gap:18px; align-items:flex-start; transition:border-color .2s; }
+.rev-card:hover { border-color:#f06292; }
+.rev-product-img { width:64px; height:64px; border-radius:10px; object-fit:cover; flex-shrink:0; background:#f5f5f5; }
+.rev-body { flex:1; }
+.rev-product-name { font-size:14px; font-weight:700; color:#222; margin-bottom:4px; }
+.rev-product-name a { color:#222; text-decoration:none; }
+.rev-product-name a:hover { color:#f06292; }
+.stars { color:#ffd54f; font-size:16px; margin-bottom:6px; }
+.rev-comment { font-size:13px; color:#555; line-height:1.6; margin-bottom:8px; }
+.rev-meta { font-size:11px; color:#aaa; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.rev-badge { font-size:11px; font-weight:700; padding:2px 9px; border-radius:20px; }
+.approved { background:#dcfce7; color:#15803d; }
+.pending  { background:#fef9c3; color:#854d0e; }
+
+.rev-actions { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+.btn-sm { padding:7px 14px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; border:none; text-decoration:none; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+.btn-edit { background:#e0e7ff; color:#3730a3; }
+.btn-edit:hover { background:#c7d2fe; }
+.btn-del  { background:#fee2e2; color:#991b1b; }
+.btn-del:hover { background:#fca5a5; }
+
+.empty-state { text-align:center; padding:60px 20px; color:#aaa; }
+.empty-state i { font-size:3rem; margin-bottom:12px; display:block; color:#fce4ec; }
+</style>
+
+<div class="page-hdr">
+  <h2><i class="fa-solid fa-star"></i> My Reviews</h2>
+</div>
+
+{% if page_obj.object_list %}
+<div class="rev-list">
+  {% for review in page_obj %}
+  <div class="rev-card">
+    <a href="{% url 'products:product_detail' product_id=review.product.id %}">
+      {% with img=review.product.images.first %}
+      {% if img and img.image1 %}
+        <img src="{{ img.image1.url }}" class="rev-product-img" alt="{{ review.product.product_name }}">
+      {% else %}
+        <div class="rev-product-img" style="display:flex;align-items:center;justify-content:center;font-size:1.8rem;">🧸</div>
+      {% endif %}
+      {% endwith %}
+    </a>
+
+    <div class="rev-body">
+      <div class="rev-product-name">
+        <a href="{% url 'products:product_detail' product_id=review.product.id %}">{{ review.product.product_name }}</a>
+      </div>
+      <div class="stars">
+        {% for i in "12345" %}
+          {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
+        {% endfor %}
+      </div>
+      <div class="rev-comment">{{ review.comment }}</div>
+      <div class="rev-meta">
+        <span>{{ review.created_at|date:"d M Y" }}</span>
+        {% if review.is_approved %}
+          <span class="rev-badge approved"><i class="fa fa-check"></i> Approved</span>
+        {% else %}
+          <span class="rev-badge pending"><i class="fa fa-clock"></i> Pending Approval</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="rev-actions">
+      <a href="{% url 'shopcore:submit_review' product_id=review.product.id %}" class="btn-sm btn-edit">
+        <i class="fa fa-pen"></i> Edit
+      </a>
+      <form method="post" action="{% url 'shopcore:delete_review' review_id=review.id %}"
+            onsubmit="return openConfirmModal('Delete this review?', function(){ document.getElementById('del-rev-{{ review.id }}').submit(); }), false;"
+            id="del-rev-{{ review.id }}">
+        {% csrf_token %}
+        <button type="button" class="btn-sm btn-del"
+          onclick="openConfirmModal('Delete your review for {{ review.product.product_name|escapejs }}?', function(){ document.getElementById('del-rev-{{ review.id }}').submit(); })">
+          <i class="fa fa-trash"></i> Delete
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% include "pagination.html" with page_obj=page_obj %}
+
+{% else %}
+<div class="empty-state">
+  <i class="fa-regular fa-star"></i>
+  <p>You haven't reviewed any products yet.</p>
+  <a href="{% url 'products:product_list' %}" style="color:#f06292;font-weight:700;">Browse Products</a>
+</div>
+{% endif %}
+{% endblock %}

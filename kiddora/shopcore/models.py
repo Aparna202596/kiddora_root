@@ -261,57 +261,12 @@ class Review(models.Model):
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         unique_together = ("user", "product")
         ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.user.email} → {self.product.product_name} ({self.rating}★)"
-
-#  WALLET
-class Wallet(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="wallet")
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"Wallet – {self.user.email} (₹{self.balance})"
-
-class WalletTransaction(models.Model):
-    TRANSACTION_TYPE_CHOICES = (
-        ("CREDIT",  "Credit"),
-        ("DEBIT",   "Debit"),
-        ("REFUND",  "Refund"),
-    )
-    REFERENCE_TYPE_CHOICES = (
-        ("ORDER", "Order"),
-        ("RETURN", "Return"),
-        ("REFERRAL", "Referral Reward"),
-        ("COUPON", "Coupon Refund"),
-        ("MANUAL", "Manual Adjustment"),
-    )
-
-    wallet         = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
-    txn_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
-    txn_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    balance_after = models.DecimalField(max_digits=10, decimal_places=2)
-    reference_type = models.CharField(max_length=20, choices=REFERENCE_TYPE_CHOICES, null=True, blank=True)
-    reference_id = models.CharField(max_length=50, null=True, blank=True)
-    description = models.CharField(max_length=200, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.txn_id} | {self.txn_type} {self.amount}"
-
-    @property
-    def txn_id_display(self):
-        """Short display version of the UUID txn_id (first 12 chars, no dashes)."""
-        return str(self.txn_id).replace("-", "").upper()[:12]
 
 #  WISHLIST
 # Per-user wishlist of products. One Wishlist per user, multiple WishlistItems per wishlist.
@@ -331,3 +286,42 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return f"{self.wishlist.user.email} - {self.product.product_name}"
+
+class Banner(models.Model):
+
+    SLOT_CHOICES = (
+        ("HERO", "Hero Carousel"),
+        ("SECONDARY", "Secondary Banner"),
+    )
+
+    title = models.CharField(max_length=120)
+    subtitle = models.CharField(max_length=200, blank=True)
+    image = models.ImageField(upload_to="banners/")
+    cta_text = models.CharField(max_length=40, default="Shop Now")
+    cta_url = models.CharField(max_length=300, default="/products/user/products/")
+    badge_text = models.CharField(max_length=40, blank=True)
+    slot = models.CharField(max_length=20, choices=SLOT_CHOICES, default="HERO")
+    display_order = models.PositiveIntegerField(default=0,validators=[MinValueValidator(0)])
+    is_active = models.BooleanField(default=True)
+    start_date = models.DateTimeField(null=True, blank=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["display_order", "-created_at"]
+        verbose_name = "Banner"
+        verbose_name_plural = "Banners"
+
+    def is_live(self):
+        
+        now = timezone.now()
+        if not self.is_active:
+            return False
+        if self.start_date and now < self.start_date:
+            return False
+        if self.end_date and now > self.end_date:
+            return False
+        return True
+
+    def __str__(self):
+        return f"[{self.slot}] {self.title} (order={self.display_order})"

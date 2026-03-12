@@ -1,58 +1,276 @@
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<tr id="cart-item-{{ item.id }}">
-    <td>{{ item.variant.product.product_name }}</td>
-    <td>{{ item.variant.color }} / {{ item.variant.size }}</td>
-    <td>
-        <button class="decrease-qty-btn" data-item-id="{{ item.id }}">-</button>
-        <span class="quantity">{{ item.quantity }}</span>
-        <button class="increase-qty-btn" data-item-id="{{ item.id }}">+</button>
-    </td>
-    <td>
-        <input type="number" class="cart-quantity-input" data-item-id="{{ item.id }}" value="{{ item.quantity }}">
-    </td>
-    <td>
-        <button class="remove-cart-btn" data-item-id="{{ item.id }}">Remove</button>
-    </td>
-    <button id="place-order">Place Order</button>
-</tr> 
-<script>
-document.getElementById("place-order").addEventListener("click", function () {
-    fetch("{% url 'cart:checkout' %}", {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": csrftoken,
-            "X-Requested-With": "XMLHttpRequest"
-        }
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (!data.success) {
-            alert(data.message);
-            if (data.invalid_items) {
-                data.invalid_items.forEach(id => {
-                    const el = document.getElementById(`item-${id}`);
-                    if (el) el.style.opacity = "0.5";
-                });
-            }
-        } else {
-            window.location.href = "/orders/confirm/";
-        }
+{% extends "base_products.html" %}
+{% load static %}
+
+{% block title %}Checkout – Kiddora{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-layout { display: flex; gap: 28px; align-items: flex-start; }
+    .checkout-left   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+    .checkout-right  { width: 340px; flex-shrink: 0; position: sticky; top: 20px; }
+
+    /* ── SECTION CARDS ── */
+    .ck-card {
+        background: #fff; border: 1.5px solid #eee; border-radius: 14px; padding: 22px;
+    }
+    .ck-card-title {
+        font-size: 16px; font-weight: 700; color: #222;
+        margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+        border-bottom: 1.5px solid #f5f5f5; padding-bottom: 12px;
+    }
+    .ck-card-title i { color: #f06292; }
+
+    /* ── ADDRESS ── */
+    .address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .address-card {
+        border: 2px solid #eee; border-radius: 10px; padding: 14px;
+        cursor: pointer; position: relative; transition: border-color .2s, box-shadow .2s;
+    }
+    .address-card:hover { border-color: #f06292; box-shadow: 0 3px 12px rgba(240,98,146,.1); }
+    .address-card input[type=radio] { position: absolute; top: 12px; right: 12px; accent-color: #f06292; width: 16px; height: 16px; }
+    .address-card.selected { border-color: #f06292; background: #fff8fb; }
+    .addr-name  { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 4px; }
+    .addr-line  { font-size: 13px; color: #666; line-height: 1.5; }
+    .addr-phone { font-size: 12px; color: #888; margin-top: 6px; }
+    .default-badge {
+        display: inline-block; font-size: 10px; font-weight: 700;
+        background: #f06292; color: #fff; border-radius: 20px;
+        padding: 2px 8px; margin-top: 6px;
+    }
+
+    .add-address-btn {
+        border: 2px dashed #f06292; border-radius: 10px; padding: 14px;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        font-size: 14px; font-weight: 600; color: #f06292;
+        cursor: pointer; background: #fff; transition: background .15s;
+        text-decoration: none;
+    }
+    .add-address-btn:hover { background: #fff0f5; }
+
+    /* ── ITEM LIST ── */
+    .ck-item { display: flex; gap: 14px; align-items: center; padding: 10px 0;
+                border-bottom: 1px solid #f5f5f5; }
+    .ck-item:last-child { border-bottom: none; }
+    .ck-img {
+        width: 64px; height: 78px; border-radius: 8px; overflow: hidden;
+        background: #f8f8f8; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .ck-img img { width: 100%; height: 100%; object-fit: cover; }
+    .ck-img span { font-size: 1.5rem; color: #ddd; }
+    .ck-info { flex: 1; min-width: 0; }
+    .ck-name { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 3px; }
+    .ck-meta { font-size: 12px; color: #888; }
+    .ck-price { font-size: 15px; font-weight: 700; color: #222; text-align: right; white-space: nowrap; }
+    .ck-qty   { font-size: 12px; color: #888; text-align: right; }
+
+    /* ── SUMMARY ── */
+    .summary-card { background: #fff; border: 1.5px solid #eee; border-radius: 14px; padding: 24px; }
+    .summary-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 18px; color: #222; }
+    .sum-row {
+        display: flex; justify-content: space-between;
+        font-size: 14px; color: #555; margin-bottom: 10px;
+    }
+    .sum-row.total { font-size: 17px; font-weight: 700; color: #222;
+                    border-top: 1.5px solid #eee; padding-top: 12px; margin-top: 4px; }
+    .sum-row .free { color: #16a34a; font-weight: 600; }
+
+    .place-order-btn {
+        display: block; width: 100%; padding: 14px; margin-top: 20px;
+        background: #f06292; color: #fff; border: none; border-radius: 10px;
+        font-size: 16px; font-weight: 700; cursor: pointer; transition: background .2s; text-align:center;
+    }
+    .place-order-btn:hover { background: #e91e63; }
+
+    /* ── PAYMENT ── */
+    .payment-option {
+        display: flex; align-items: center; gap: 12px;
+        border: 2px solid #eee; border-radius: 10px; padding: 14px 16px;
+        cursor: pointer; transition: border-color .2s;
+    }
+    .payment-option:hover { border-color: #f06292; }
+    .payment-option input[type=radio] { accent-color: #f06292; width: 16px; height: 16px; }
+    .payment-option label { font-size: 14px; font-weight: 600; cursor: pointer; }
+    .payment-option .pay-icon { font-size: 20px; }
+    .cod-badge {
+        display: inline-block; font-size: 11px; background: #dcfce7; color: #15803d;
+        border-radius: 20px; padding: 2px 8px; margin-left: 8px;
+    }
+
+    @media (max-width: 900px) {
+        .checkout-layout  { flex-direction: column; }
+        .checkout-right   { width: 100%; position: static; }
+        .address-grid     { grid-template-columns: 1fr; }
+    }
+    </style>
+    {% endblock %}
+
+    {% block breadcrumb %}
+    <div class="breadcrumb-bar">
+    <a href="{% url 'shopcore:home' %}">Home</a>
+    <span class="sep">›</span>
+    <a href="{% url 'shopcore:cart' %}">Cart</a>
+    <span class="sep">›</span>
+    <strong>Checkout</strong>
+    </div>
+    {% endblock %}
+
+    {% block filter_sidebar %}{% endblock %}
+
+    {% block content %}
+    <div class="ck-card-title" style="margin-bottom:24px;border:none;padding-bottom:0;">
+    <i class="fa fa-lock" style="color:#f06292;font-size:20px;"></i>
+    <span style="font-size:22px;font-weight:800;color:#222;">Secure Checkout</span>
+    </div>
+
+    <form method="post" action="{% url 'shopcore:place_order' %}" id="checkoutForm">
+    {% csrf_token %}
+
+    <div class="checkout-layout">
+    <!-- ── LEFT ── -->
+    <div class="checkout-left">
+
+        <!-- DELIVERY ADDRESS -->
+        <div class="ck-card">
+        <div class="ck-card-title">
+            <i class="fa fa-map-marker-alt"></i> Delivery Address
+        </div>
+
+        <div class="address-grid">
+            {% for addr in addresses %}
+            <label class="address-card {% if addr == default_address %}selected{% endif %}"
+                for="addr_{{ addr.id }}"
+                onclick="selectAddress(this)">
+            <input type="radio" name="address_id" id="addr_{{ addr.id }}" value="{{ addr.id }}"
+                    {% if addr == default_address %}checked{% endif %}>
+            <div class="addr-name">{{ addr.full_name }}</div>
+            <div class="addr-line">
+                {{ addr.address_line1 }}<br>
+                {% if addr.address_line2 %}{{ addr.address_line2 }}<br>{% endif %}
+                {{ addr.city }}, {{ addr.state }} – {{ addr.pincode }}
+            </div>
+            <div class="addr-phone"><i class="fa fa-phone" style="color:#f06292;"></i> {{ addr.phone }}</div>
+            {% if addr.is_default %}<span class="default-badge">Default</span>{% endif %}
+            </label>
+            {% empty %}
+            <div style="grid-column:1/-1;text-align:center;color:#888;padding:20px 0;">
+            No saved addresses. Please add one.
+            </div>
+            {% endfor %}
+
+            <a href="{% url 'accounts:add_address' %}?next={% url 'shopcore:checkout' %}" class="add-address-btn">
+            <i class="fa fa-plus-circle"></i> Add New Address
+            </a>
+        </div>
+        </div>
+
+        <!-- ORDER ITEMS -->
+        <div class="ck-card">
+        <div class="ck-card-title">
+            <i class="fa fa-box"></i> Order Items ({{ checkout_items|length }})
+        </div>
+        {% for d in checkout_items %}
+        <div class="ck-item">
+            <div class="ck-img">
+            {% if d.img_url %}
+                <img src="{{ d.img_url }}" alt="{{ d.product.product_name }}" loading="lazy">
+            {% else %}
+                <span>👕</span>
+            {% endif %}
+            </div>
+            <div class="ck-info">
+            <div class="ck-name">{{ d.product.product_name }}</div>
+            <div class="ck-meta">
+                {{ d.variant.color }} · {{ d.variant.age_group }}
+                {% if d.product.discount_percent > 0 %}
+                · <span style="color:#f06292;">{{ d.product.discount_percent }}% off</span>
+                {% endif %}
+            </div>
+            </div>
+            <div>
+            <div class="ck-qty">Qty: {{ d.item.quantity }}</div>
+            <div class="ck-price">₹{{ d.item_total }}</div>
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+
+        <!-- PAYMENT METHOD -->
+        <div class="ck-card">
+        <div class="ck-card-title">
+            <i class="fa fa-credit-card"></i> Payment Method
+        </div>
+        <div class="payment-option">
+            <input type="radio" name="payment_method" id="cod" value="COD" checked>
+            <span class="pay-icon">💵</span>
+            <label for="cod">
+            Cash on Delivery <span class="cod-badge">Available</span>
+            </label>
+        </div>
+        </div>
+    </div>
+
+    <!-- ── RIGHT: SUMMARY ── -->
+    <div class="checkout-right">
+        <div class="summary-card">
+        <h3><i class="fa fa-receipt" style="color:#f06292;"></i> Price Details</h3>
+
+        {% for d in checkout_items %}
+        <div class="sum-row" style="font-size:13px;color:#888;">
+            <span>{{ d.product.product_name }} × {{ d.item.quantity }}</span>
+            <span>₹{{ d.item_total }}</span>
+        </div>
+        {% endfor %}
+
+        <div class="sum-row" style="margin-top:10px;">
+            <span>Subtotal</span><span>₹{{ subtotal }}</span>
+        </div>
+        {% if coupon_discount > 0 %}
+        <div class="sum-row" style="color:#16a34a;">
+            <span>Coupon Discount</span><span>−₹{{ coupon_discount }}</span>
+        </div>
+        {% endif %}
+        <div class="sum-row">
+            <span>Shipping</span>
+            <span class="free">{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
+        </div>
+        <div class="sum-row total">
+            <span>Total Payable</span><span>₹{{ grand_total }}</span>
+        </div>
+
+        {% if not addresses %}
+            <div style="background:#fef2f2;border-radius:8px;padding:10px 12px;font-size:13px;color:#991b1b;margin-top:12px;">
+            ⚠️ Please add a delivery address first.
+            </div>
+            <button class="place-order-btn" type="button" disabled style="background:#d1d5db;cursor:not-allowed;">
+            Place Order (COD)
+            </button>
+        {% else %}
+            <button class="place-order-btn" type="submit" id="placeOrderBtn">
+            <i class="fa fa-check-circle"></i> Place Order (COD)
+            </button>
+        {% endif %}
+
+        <div style="margin-top:14px;font-size:12px;color:#aaa;text-align:center;">
+            <i class="fa fa-shield-alt" style="color:#f06292;"></i>
+            Secure &amp; encrypted checkout
+        </div>
+        </div>
+    </div>
+    </div>
+    </form>
+
+    <script>
+    function selectAddress(el) {
+    document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    }
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+    var checked = document.querySelector('input[name=address_id]:checked');
+    if (!checked) {
+        e.preventDefault();
+        alert('Please select a delivery address.');
+    }
     });
-});
-</script>
-<form method="post" action="{% url 'cart:place_order' %}">
-  {% csrf_token %}
-
-  <h3>Select Delivery Address</h3>
-
-  {% for address in addresses %}
-    <label>
-      <input type="radio" name="address_id" value="{{ address.id }}" required>
-      {{ address.address_line1 }}, {{ address.city }} - {{ address.pincode }}
-      {% if address.is_default %}(Default){% endif %}
-    </label><br>
-  {% endfor %}
-
-  <a href="{% url 'accounts:address_add' %}?next=cart:checkout">+ Add New Address</a>
-
-  <hr>
+    </script>
+    {% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base_products.html" %}
+{% load static %}
+{% block title %}{% if existing %}Edit Review{% else %}Write a Review{% endif %} – Kiddora{% endblock %}
+{% block filter_sidebar %}{% endblock %}
+
+{% block content %}
+<style>
+.rev-wrap { max-width:620px; margin:0 auto; }
+.rev-hdr  { margin-bottom:28px; }
+.rev-hdr h2 { font-size:22px; font-weight:800; color:#222; margin-bottom:6px; }
+.rev-hdr .rev-product { font-size:14px; color:#888; }
+.rev-hdr .rev-product a { color:#f06292; font-weight:700; text-decoration:none; }
+
+.rev-card { background:#fff; border:1.5px solid #eee; border-radius:16px; padding:28px; }
+
+/* Star rating selector */
+.star-group { display:flex; flex-direction:row-reverse; gap:6px; margin-bottom:20px; }
+.star-group input[type=radio] { display:none; }
+.star-group label {
+  font-size:32px; color:#e0e0e0; cursor:pointer;
+  transition:color .15s; line-height:1;
+}
+.star-group input[type=radio]:checked ~ label,
+.star-group label:hover,
+.star-group label:hover ~ label { color:#ffd54f; }
+
+.form-group { margin-bottom:18px; }
+.form-group label { display:block; font-size:13px; font-weight:700; color:#444; margin-bottom:7px; }
+.form-group textarea {
+  width:100%; padding:12px 14px; border:1.5px solid #e0e0e0; border-radius:10px;
+  font-size:14px; resize:vertical; min-height:120px; outline:none;
+  transition:border-color .18s;
+}
+.form-group textarea:focus { border-color:#f06292; }
+
+.rev-actions { display:flex; gap:12px; margin-top:20px; }
+.btn-submit { padding:12px 28px; background:#f06292; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; }
+.btn-submit:hover { background:#e91e63; }
+.btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:6px; }
+.btn-cancel:hover { background:#eee; }
+
+.existing-badge { display:inline-flex; align-items:center; gap:6px; background:#e0e7ff; color:#3730a3; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:16px; }
+</style>
+
+<div class="rev-wrap">
+  <div class="rev-hdr">
+    <h2>{% if existing %}Edit Your Review{% else %}Write a Review{% endif %}</h2>
+    <div class="rev-product">
+      For: <a href="{% url 'products:product_detail' product_id=product.id %}">{{ product.product_name }}</a>
+    </div>
+  </div>
+
+  {% if existing %}
+  <div class="existing-badge"><i class="fa fa-edit"></i> You've reviewed this product before. Update below.</div>
+  {% endif %}
+
+  <div class="rev-card">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label>Your Rating <span style="color:#e91e63;">*</span></label>
+        <div class="star-group">
+          {% for i in "54321" %}
+          {% with star=i|add:"0" %}
+          <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
+            {% if existing and existing.rating == i|add:0 %}checked
+            {% elif form_data.rating == i %}checked{% endif %}>
+          <label for="star{{ i }}" title="{{ i }} star{{ i|pluralize }}">&#9733;</label>
+          {% endwith %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="id_comment">Your Review <span style="color:#e91e63;">*</span></label>
+        <textarea name="comment" id="id_comment" placeholder="Share your experience with this product…">{{ existing.comment|default:form_data.comment|default:'' }}</textarea>
+      </div>
+
+      <div class="rev-actions">
+        <button type="submit" class="btn-submit">
+          <i class="fa fa-check"></i> {% if existing %}Update Review{% else %}Submit Review{% endif %}
+        </button>
+        <a href="{% url 'products:product_detail' product_id=product.id %}" class="btn-cancel">
+          <i class="fa fa-times"></i> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* make stars clickable and highlight properly */
+document.querySelectorAll('.star-group label').forEach(label => {
+  label.addEventListener('click', function() {
+    const radio = document.getElementById(this.getAttribute('for'));
+    if (radio) radio.checked = true;
+  });
+});
+</script>
+{% endblock %}

@@ -1,106 +1,329 @@
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+{% extends "base_products.html" %}
+{% load static %}
+
+{% block title %}My Cart – Kiddora{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── PAGE LAYOUT ── */
+    .cart-page { display: flex; gap: 28px; align-items: flex-start; }
+    .cart-left  { flex: 1; min-width: 0; }
+    .cart-right { width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+
+    /* ── SECTION HEADER ── */
+    .section-title {
+        font-size: 20px; font-weight: 700; color: #222;
+        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
     }
-    return cookieValue;
-}
-const csrftoken = getCookie('csrftoken');
-</script>
+    .section-title span { font-size: 14px; font-weight: 500; color: #888; }
 
-<button class="add-to-cart" data-url="{% url 'cart:add_to_cart' variant.id %}">Add</button>
+    /* ── CART ITEM CARD ── */
+    .cart-item {
+        display: flex; gap: 16px; align-items: flex-start;
+        background: #fff; border: 1.5px solid #eee; border-radius: 12px;
+        padding: 16px; margin-bottom: 14px;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .cart-item:hover { border-color: #f06292; box-shadow: 0 4px 16px rgba(240,98,146,.08); }
+    .cart-item.unavailable { border-color: #fca5a5; background: #fff5f5; opacity: .85; }
+    .cart-item.out-of-stock { border-color: #fcd34d; background: #fffbeb; }
 
-<button class="qty-plus" data-id="{{ item.id }}">+</button>
-<span id="qty-{{ item.id }}">{{ item.quantity }}</span>
-<button class="qty-minus" data-id="{{ item.id }}">-</button>
+    .item-img {
+        width: 90px; height: 110px; border-radius: 8px; overflow: hidden;
+        flex-shrink: 0; background: #f8f8f8;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .item-img img { width: 100%; height: 100%; object-fit: cover; }
+    .item-img .placeholder { font-size: 2.2rem; color: #ddd; }
 
-<button class="remove-item" data-id="{{ item.id }}">Remove</button>
+    .item-body { flex: 1; min-width: 0; }
+    .item-name  { font-size: 15px; font-weight: 700; color: #222; margin-bottom: 4px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta  { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .item-meta span { margin-right: 10px; }
 
-<script>
-/* ADD TO CART */
-document.querySelectorAll(".add-to-cart").forEach(btn => {
-    btn.addEventListener("click", function () {
-        fetch(this.dataset.url, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrftoken,
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-            if (data.success) location.reload();
-        });
+    .item-price-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .item-price     { font-size: 17px; font-weight: 700; color: #222; }
+    .item-discount  { font-size: 12px; color: #f06292; background: #fdeef4; padding: 2px 7px; border-radius: 20px; }
+
+    /* qty controls */
+    .qty-row { display: flex; align-items: center; gap: 12px; }
+    .qty-box  { display: flex; align-items: center; border: 1.5px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .qty-btn  {
+        width: 32px; height: 32px; border: none; background: #f9f9f9;
+        font-size: 16px; cursor: pointer; color: #555;
+        transition: background .15s, color .15s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .qty-btn:hover:not(:disabled) { background: #f06292; color: #fff; }
+    .qty-btn:disabled { color: #ccc; cursor: not-allowed; }
+    .qty-num  { width: 36px; text-align: center; font-size: 14px; font-weight: 600; color: #333; }
+
+    .remove-btn {
+        font-size: 12px; color: #ef4444; background: none; border: none;
+        cursor: pointer; display: flex; align-items: center; gap: 4px;
+        padding: 6px 10px; border-radius: 6px; transition: background .15s;
+    }
+    .remove-btn:hover { background: #fee2e2; }
+
+    .item-total { text-align: right; }
+    .item-total-label { font-size: 11px; color: #aaa; }
+    .item-total-val   { font-size: 16px; font-weight: 700; color: #222; }
+
+    /* badges */
+    .badge-warn { font-size: 11px; color: #b45309; background: #fef3c7;
+                    padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block; }
+    .badge-err  { font-size: 11px; color: #991b1b; background: #fee2e2;
+                    padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block; }
+
+    /* ── EMPTY STATE ── */
+    .cart-empty { text-align: center; padding: 60px 20px; }
+    .cart-empty .empty-icon { font-size: 4rem; margin-bottom: 16px; }
+    .cart-empty h3 { font-size: 20px; color: #333; margin-bottom: 8px; }
+    .cart-empty p  { font-size: 14px; color: #888; margin-bottom: 24px; }
+    .shop-btn {
+        display: inline-block; padding: 11px 28px; background: #f06292;
+        color: #fff; border-radius: 8px; font-size: 15px; font-weight: 600;
+        transition: background .2s;
+    }
+    .shop-btn:hover { background: #e91e63; }
+
+    /* ── ORDER SUMMARY ── */
+    .summary-card {
+        background: #fff; border: 1.5px solid #eee; border-radius: 14px; padding: 24px;
+    }
+    .summary-card h3 { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 18px; }
+    .summary-row {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 14px; color: #555; margin-bottom: 10px;
+    }
+    .summary-row.total { font-size: 17px; font-weight: 700; color: #222;
+                            border-top: 1.5px solid #eee; padding-top: 14px; margin-top: 4px; }
+    .summary-row .free { color: #16a34a; font-weight: 600; }
+
+    .checkout-btn {
+        display: block; width: 100%; padding: 13px;
+        background: #f06292; color: #fff; border: none; border-radius: 10px;
+        font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px;
+        text-align: center; text-decoration: none; transition: background .2s;
+    }
+    .checkout-btn:hover:not(.disabled) { background: #e91e63; }
+    .checkout-btn.disabled {
+        background: #d1d5db; color: #9ca3af; cursor: not-allowed; pointer-events: none;
+    }
+
+    .clear-cart-btn {
+        display: block; width: 100%; padding: 9px;
+        background: #fff; color: #ef4444; border: 1.5px solid #fca5a5;
+        border-radius: 8px; font-size: 14px; font-weight: 600;
+        cursor: pointer; margin-top: 10px; text-align: center;
+        transition: background .15s;
+    }
+    .clear-cart-btn:hover { background: #fee2e2; }
+
+    .blocked-notice {
+        background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
+        padding: 10px 14px; font-size: 13px; color: #991b1b;
+        margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+
+    @media (max-width: 900px) {
+        .cart-page   { flex-direction: column; }
+        .cart-right  { width: 100%; position: static; }
+    }
+    </style>
+    {% endblock %}
+
+    {% block breadcrumb %}
+    <div class="breadcrumb-bar">
+    <a href="{% url 'shopcore:home' %}">Home</a>
+    <span class="sep">›</span>
+    <strong>Shopping Cart</strong>
+    </div>
+    {% endblock %}
+
+    {% block filter_sidebar %}{% endblock %}
+
+    {% block content %}
+    <div class="section-title">
+    <i class="fa fa-shopping-cart" style="color:#f06292;"></i>
+    Shopping Cart
+    {% if cart_data %}<span>({{ cart_data|length }} item{{ cart_data|length|pluralize }})</span>{% endif %}
+    </div>
+
+    {% if not cart_data %}
+    <div class="cart-empty">
+        <div class="empty-icon">🛒</div>
+        <h3>Your cart is empty</h3>
+        <p>Looks like you haven't added anything yet. Start shopping!</p>
+        <a href="{% url 'products:product_list' %}" class="shop-btn">
+        <i class="fa fa-arrow-left"></i> Continue Shopping
+        </a>
+    </div>
+
+    {% else %}
+    <div class="cart-page">
+    <!-- ── LEFT: ITEMS ── -->
+    <div class="cart-left">
+
+        {% if any_unavailable %}
+        <div class="blocked-notice">
+        ⚠️ Some items are no longer available. Remove them to proceed to checkout.
+        </div>
+        {% endif %}
+
+        {% for d in cart_data %}
+        {% with item=d.item variant=d.variant product=d.product %}
+        <div class="cart-item {% if not d.available %}unavailable{% elif d.stock == 0 %}out-of-stock{% endif %}">
+
+        <!-- Image -->
+        <div class="item-img">
+            {% if d.img_url %}
+            <img src="{{ d.img_url }}" alt="{{ product.product_name }}" loading="lazy">
+            {% else %}
+            <span class="placeholder">👕</span>
+            {% endif %}
+        </div>
+
+        <!-- Body -->
+        <div class="item-body">
+            <div class="item-name">
+            <a href="{% url 'products:product_detail' product_id=product.id %}" style="color:inherit;">
+                {{ product.product_name }}
+            </a>
+            </div>
+            <div class="item-meta">
+            <span><i class="fa fa-palette" style="color:#f06292;"></i> {{ variant.color }}</span>
+            <span><i class="fa fa-child" style="color:#f06292;"></i> {{ variant.age_group }}</span>
+            <span style="color:#aaa;">SKU: {{ variant.sku }}</span>
+            </div>
+
+            <div class="item-price-row">
+            <span class="item-price">₹{{ product.final_price }}</span>
+            {% if product.discount_percent > 0 %}
+            <span class="item-discount">{{ product.discount_percent }}% off</span>
+            {% endif %}
+            </div>
+
+            {% if not d.available %}
+            <span class="badge-err">❌ This product is no longer available</span>
+            {% elif d.stock == 0 %}
+            <span class="badge-err">❌ Out of stock</span>
+            {% elif d.exceeds_stock %}
+            <span class="badge-warn">⚠️ Only {{ d.stock }} available</span>
+            {% endif %}
+
+            <!-- Qty + Remove -->
+            <div class="qty-row" style="margin-top:10px;">
+            {% if d.available and d.stock > 0 %}
+            <div class="qty-box">
+                <form method="post" action="{% url 'shopcore:update_cart_quantity' item_id=item.id %}" style="display:contents;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="decrement">
+                <button class="qty-btn" type="submit"
+                    {% if item.quantity <= 1 %}disabled{% endif %}>−</button>
+                </form>
+                <span class="qty-num">{{ item.quantity }}</span>
+                <form method="post" action="{% url 'shopcore:update_cart_quantity' item_id=item.id %}" style="display:contents;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="increment">
+                <button class="qty-btn" type="submit"
+                    {% if item.quantity >= d.max_qty %}disabled{% endif %}>+</button>
+                </form>
+            </div>
+            <span style="font-size:11px;color:#aaa;">Max {{ MAX_QTY }}</span>
+            {% endif %}
+
+            <form method="post"
+                    action="{% url 'shopcore:remove_from_cart' item_id=item.id %}"
+                    onsubmit="return confirmRemove(event, '{{ product.product_name|escapejs }}')"
+                    style="margin-left:auto;">
+                {% csrf_token %}
+                <button class="remove-btn" type="submit">
+                <i class="fa fa-trash-alt"></i> Remove
+                </button>
+            </form>
+            </div>
+        </div>
+
+        <!-- Total -->
+        <div class="item-total">
+            <div class="item-total-label">Item Total</div>
+            <div class="item-total-val">₹{{ d.item_total }}</div>
+        </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+
+    <!-- ── RIGHT: SUMMARY ── -->
+    <div class="cart-right">
+        <div class="summary-card">
+        <h3><i class="fa fa-receipt" style="color:#f06292;"></i> Order Summary</h3>
+
+        {% for d in cart_data %}
+        {% if d.available %}
+        <div class="summary-row" style="font-size:13px;color:#888;">
+            <span>{{ d.product.product_name }} × {{ d.item.quantity }}</span>
+            <span>₹{{ d.item_total }}</span>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <div class="summary-row" style="margin-top:10px;">
+            <span>Subtotal</span><span>₹{{ subtotal }}</span>
+        </div>
+        <div class="summary-row">
+            <span>Shipping</span>
+            <span class="free">{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
+        </div>
+        <div class="summary-row total">
+            <span>Grand Total</span><span>₹{{ grand_total }}</span>
+        </div>
+
+        {% if checkout_blocked %}
+            <div class="blocked-notice" style="margin-top:14px;">
+            ⚠️ Resolve issues above before checkout.
+            </div>
+            <span class="checkout-btn disabled">Proceed to Checkout</span>
+        {% else %}
+            <a href="{% url 'shopcore:checkout' %}" class="checkout-btn">
+            Proceed to Checkout →
+            </a>
+        {% endif %}
+
+        <form method="post" action="{% url 'shopcore:clear_cart' %}"
+                onsubmit="return confirmClear(event)">
+            {% csrf_token %}
+            <button class="clear-cart-btn" type="submit">
+            <i class="fa fa-trash"></i> Clear Cart
+            </button>
+        </form>
+        </div>
+
+        <div style="margin-top:14px;text-align:center;">
+        <a href="{% url 'products:product_list' %}" style="font-size:13px;color:#f06292;">
+            <i class="fa fa-arrow-left"></i> Continue Shopping
+        </a>
+        </div>
+    </div>
+    </div>
+    {% endif %}
+
+    <script>
+    function confirmRemove(e, name) {
+    e.preventDefault();
+    openConfirmModal('Remove "' + name + '" from your cart?', function () {
+        e.target.submit();
     });
-});
-
-/* INCREASE QTY */
-document.querySelectorAll(".qty-plus").forEach(btn => {
-    btn.addEventListener("click", function () {
-        fetch(`/cart/increase/${this.dataset.id}/`, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrftoken,
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById(`qty-${this.dataset.id}`).innerText = data.quantity;
-            } else {
-                alert(data.message);
-            }
-        });
+    return false;
+    }
+    function confirmClear(e) {
+    e.preventDefault();
+    openConfirmModal('Clear your entire cart? This cannot be undone.', function () {
+        e.target.submit();
     });
-});
-
-/* DECREASE QTY */
-document.querySelectorAll(".qty-minus").forEach(btn => {
-    btn.addEventListener("click", function () {
-        fetch(`/cart/decrease/${this.dataset.id}/`, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrftoken,
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.quantity === 0) {
-                location.reload();
-            } else {
-                document.getElementById(`qty-${this.dataset.id}`).innerText = data.quantity;
-            }
-        });
-    });
-});
-
-/* REMOVE ITEM */
-document.querySelectorAll(".remove-item").forEach(btn => {
-    btn.addEventListener("click", function () {
-        fetch(`/cart/remove/${this.dataset.id}/`, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrftoken,
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            alert(data.message);
-            if (data.success) location.reload();
-        });
-    });
-});
-</script>
+    return false;
+    }
+    </script>
+    {% endblock %}

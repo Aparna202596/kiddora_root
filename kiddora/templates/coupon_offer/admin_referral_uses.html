@@ -1,0 +1,52 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}Referral Uses – {{ referral_code.code }} – Admin{% endblock %}
+{% block content %}
+<style>
+.back-link { color:#888; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-bottom:18px; }
+.back-link:hover { color:#f06292; }
+.page-hdr { margin-bottom:22px; }
+.page-hdr h2 { font-size:22px; font-weight:800; color:#222; margin-bottom:4px; }
+.page-hdr p  { font-size:13px; color:#888; }
+.code-pill { background:#e0e7ff; color:#3730a3; font-size:16px; font-weight:900; font-family:monospace; padding:5px 16px; border-radius:8px; letter-spacing:.08em; }
+.data-table { width:100%; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; border:1.5px solid #eee; }
+.data-table th { padding:13px 16px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#888; background:#fafafa; text-align:left; }
+.data-table td { padding:13px 16px; font-size:13px; color:#333; border-top:1px solid #f5f5f5; }
+.data-table tr:hover td { background:#fff9fb; }
+.coupon-pill { background:#dcfce7; color:#15803d; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; }
+.empty-row td { text-align:center; padding:50px; color:#aaa; }
+</style>
+
+<a href="{% url 'shopcore:admin_referral_list' %}" class="back-link"><i class="fa fa-arrow-left"></i> All Referrals</a>
+
+<div class="page-hdr">
+  <h2><span class="code-pill">{{ referral_code.code }}</span> — Referral Uses</h2>
+  <p>Owner: <strong>{{ referral_code.user.get_full_name|default:referral_code.user.email }}</strong>
+     ({{ referral_code.user.email }}) &nbsp;·&nbsp; Created {{ referral_code.created_at|date:"d M Y" }}</p>
+</div>
+
+<table class="data-table">
+  <thead>
+    <tr><th>#</th><th>Friend Email</th><th>Friend Name</th><th>Coupon Awarded</th><th>Date Used</th></tr>
+  </thead>
+  <tbody>
+    {% for use in page_obj %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ use.referred_user.email }}</td>
+      <td>{{ use.referred_user.get_full_name|default:"—" }}</td>
+      <td>
+        {% if use.coupon_awarded %}
+          <span class="coupon-pill">{{ use.coupon_awarded.code }}</span>
+        {% else %}—{% endif %}
+      </td>
+      <td>{{ use.created_at|date:"d M Y, H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr class="empty-row"><td colspan="5">This referral code hasn't been used yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% include "pagination.html" with page_obj=page_obj %}
+{% endblock %}
