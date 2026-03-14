@@ -6,6 +6,7 @@ import uuid
 
 class Category(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
+    category_image = models.ImageField(upload_to="category_images/",blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -20,6 +21,7 @@ class Category(models.Model):
 class SubCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
     subcategory_name = models.CharField(max_length=100)
+    subcategory_image = models.ImageField(upload_to="subcategory_images/",blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

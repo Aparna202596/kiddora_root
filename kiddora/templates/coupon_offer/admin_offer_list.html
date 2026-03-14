@@ -25,7 +25,8 @@
 
     <!-- Filter toolbar -->
     <form method="get" class="search-box">
-        <input type="text" name="search" value="{{ search }}" placeholder="Search product / category…" style="width:220px;">
+        <input type="text" name="search" value="{{ search }}"
+               placeholder="Search product / category…" style="width:220px;">
         <select name="type" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
             <option value="">All Types</option>
             {% for val, label in offer_types %}
@@ -48,7 +49,7 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th>Id</th>
                     <th>Type</th>
                     <th>Target</th>
                     <th>Discount</th>
@@ -107,31 +108,42 @@
                     </td>
                     <td>
                         <div class="tbl-actions">
+
                             <!-- Edit -->
                             <a href="{% url 'shopcore:admin_edit_offer' offer_id=offer.id %}"
                                class="icon-edit" title="Edit">✏️</a>
 
-                            <!-- Toggle -->
-                            <form method="post"
-                                  action="{% url 'shopcore:admin_toggle_offer' offer_id=offer.id %}"
-                                  style="display:contents;">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="act-btn {% if offer.is_active %}act-toggle-off{% else %}act-toggle-on{% endif %}"
-                                        title="{% if offer.is_active %}Deactivate{% else %}Activate{% endif %}">
-                                    <i class="fa {% if offer.is_active %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
-                                </button>
-                            </form>
+                            <!-- Block / Unblock (GET → confirm page) -->
+                            {% if offer.is_active %}
+                                <a href="{% url 'shopcore:admin_block_offer' offer_id=offer.id %}"
+                                   class="action-block"
+                                   title="Block Offer">
+                                    <i class="fa-solid fa-ban"></i>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'shopcore:admin_unblock_offer' offer_id=offer.id %}"
+                                   class="action-unblock"
+                                   title="Unblock Offer">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </a>
+                            {% endif %}
 
-                            <!-- Delete -->
-                            <button type="button" class="icon-delete" style="background:transparent;border:none;cursor:pointer;font-size:15px;"
-                                onclick="openConfirmModal('Delete this offer? This cannot be undone.', function(){ document.getElementById('del-offer-{{ offer.id }}').submit(); })"
-                                title="Delete">🗑️</button>
-                            <form id="del-offer-{{ offer.id }}" method="post"
+                            <!-- Delete via confirm modal -->
+                            <button type="button"
+                                    class="icon-delete"
+                                    style="background:transparent;border:none;cursor:pointer;font-size:15px;"
+                                    onclick="openConfirmModal(
+                                        'Delete this offer? This cannot be undone.',
+                                        function(){ document.getElementById('del-offer-{{ offer.id }}').submit(); }
+                                    )"
+                                    title="Delete">🗑️</button>
+                            <form id="del-offer-{{ offer.id }}"
+                                  method="post"
                                   action="{% url 'shopcore:admin_delete_offer' offer_id=offer.id %}"
                                   style="display:none;">
                                 {% csrf_token %}
                             </form>
+
                         </div>
                     </td>
                 </tr>

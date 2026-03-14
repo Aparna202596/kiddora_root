@@ -1,6 +1,8 @@
 {% extends "base_admin.html" %}
 {% load static %}
 {% block content %}
+<!-- Cropper CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <style>
 .form-box {
     width: 50%;
@@ -10,80 +12,100 @@
     border-radius: 16px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-label {
-    display: block;
-    margin-top: 12px;
-    font-weight: 500;
-}
+h2 { text-align: center; margin-bottom: 20px; }
+label { display: block; margin-top: 12px; font-weight: 500; }
 input[type="text"] {
-    width: 100%;
-    padding: 8px;
-    margin-top: 6px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+    width: 100%; padding: 8px; margin-top: 6px;
+    border-radius: 6px; border: 1px solid #ccc;
 }
-.form-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 25px;
+/* ── ADD-ON: file input styling ── */
+input[type="file"] {
+    width: 100%; padding: 6px; margin-top: 6px;
+    border-radius: 6px; border: 1px solid #ccc;
+    background: #fff;
 }
+/* ── ADD-ON: current image thumb ── */
+.current-image-wrap {
+    margin-top: 8px; display: flex; align-items: center; gap: 12px;
+}
+.current-image-wrap img {
+    width: 80px; height: 80px; object-fit: cover;
+    border-radius: 8px; border: 2px solid #e0e0e0;
+}
+.current-image-wrap span { font-size: 13px; color: #888; }
+/* ── ADD-ON: cropped preview ── */
+.preview-container { margin-top: 8px; }
+.preview-container img {
+    max-width: 120px; border: 2px solid #28a745;
+    border-radius: 6px; margin-top: 6px;
+}
+.preview-container p { font-size: 13px; color: #28a745; margin-top: 4px; }
+/* ── existing ── */
+.form-actions { display: flex; justify-content: space-between; margin-top: 25px; }
 .btn-custom {
-    padding: 8px 18px;
-    background: #f06292;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    text-decoration: none;
-    text-align: center;
+    padding: 8px 18px; background: #f06292; color: white;
+    border: none; border-radius: 6px; cursor: pointer;
+    text-decoration: none; text-align: center;
 }
-.btn-custom:hover {
-    background: #f42f71;
-}
+.btn-custom:hover { background: #f42f71; }
 /* ── MESSAGES ── */
-    .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-    .message {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
-    }
-    .message button {
-        background: none; border: none; cursor: pointer;
-        font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
-    }
-    .message button:hover { opacity: 1; }
-    .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
-    .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
-    .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
-    .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
+.messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.message {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.message button {
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
+}
+.message button:hover { opacity: 1; }
+.message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+.message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+.message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+.message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 </style>
+
 <div class="form-box">
     <h2>{% if category %}Edit Category{% else %}Add Category{% endif %}</h2>
+
     {% if messages %}
-            <div class="messages" id="msgContainer">
-                {% for message in messages %}
-                <div class="message {{ message.tags }}">
-                    <span>{{ message }}</span>
-                    <button type="button" onclick="this.parentElement.remove()">×</button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-    <form id="categoryForm" method="post">
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ADD-ON: enctype="multipart/form-data" required for file upload -->
+    <form id="categoryForm" method="post" enctype="multipart/form-data">
         {% csrf_token %}
+
         <label>Category Name</label>
         <input type="text"
-                name="category_name"
-                value="{{ category.category_name|default:'' }}"
-                required>
-        {% comment %} <label>
-            <input type="checkbox" name="is_active"
-                    {% if category and category.is_active %}checked{% endif %}>
-            Active
-        </label> {% endcomment %}
+               name="category_name"
+               value="{{ category.category_name|default:'' }}"
+               required>
+
+        <!-- ── ADD-ON: category image upload with cropper ── -->
+        <label>Category Image <small style="font-weight:400;color:#888;">(optional — square crop)</small></label>
+
+        {% if category.category_image %}
+        <div class="current-image-wrap">
+            <img src="{{ category.category_image.url }}" alt="Current image">
+            <span>Current image — upload a new one to replace it.</span>
+        </div>
+        {% endif %}
+
+        <input type="file"
+               id="categoryImageInput"
+               name="category_image"
+               accept="image/*">
+        <div id="categoryImagePreview" class="preview-container"></div>
+        <!-- ─────────────────────────────────────────────── -->
+
         <div class="form-actions">
             {% if category %}
             <button type="button" class="btn-custom" onclick="confirmUpdate('categoryForm')">Save</button>
@@ -95,19 +117,195 @@ input[type="text"] {
     </form>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     CROPPER MODAL  (identical pattern to admin_product_form.html)
+══════════════════════════════════════════════ -->
+<div id="cropperModal"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.8); z-index:99999;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+                background:#fff; border-radius:10px; width:90%; max-width:800px;
+                height:90%; max-height:600px; display:flex; flex-direction:column;">
+        <!-- Header -->
+        <div style="padding:15px 20px; border-bottom:1px solid #ddd; display:flex;
+                    justify-content:space-between; align-items:center;
+                    background:#f8f9fa; border-radius:10px 10px 0 0;">
+            <h3 style="margin:0; color:#333;">Crop Category Image</h3>
+            <button onclick="closeCropPopup()"
+                    style="background:none; border:none; font-size:24px; cursor:pointer; color:#666;">
+                &times;
+            </button>
+        </div>
+        <!-- Cropper area -->
+        <div id="cropper-container"
+             style="flex:1; padding:20px; position:relative; overflow:hidden;">
+            <img id="cropperImage"
+                 style="max-width:100%; max-height:100%; display:block; margin:0 auto;">
+        </div>
+        <!-- Footer -->
+        <div style="padding:15px 20px; border-top:1px solid #ddd; display:flex;
+                    justify-content:flex-end; gap:10px;
+                    background:#f8f9fa; border-radius:0 0 10px 10px;">
+            <button onclick="closeCropPopup()"
+                    style="padding:8px 16px; background:#6c757d; color:#fff;
+                           border:none; border-radius:4px; cursor:pointer;">
+                Cancel
+            </button>
+            <button id="cropSaveBtn" onclick="cropImage()" disabled
+                    style="padding:8px 16px; background:#007bff; color:#fff;
+                           border:none; border-radius:4px; cursor:pointer;">
+                Loading...
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cropper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   CROPPER  — same pattern as admin_product_form.html
+   aspectRatio: 1/1  (square for category image)
+══════════════════════════════════════════════ */
+let cropper        = null;
+let currentInput   = null;
+let currentPreview = null;
+let originalFile   = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('categoryImageInput')
+        .addEventListener('change', handleImageSelect);
+});
+
+function handleImageSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+        alert('Please select a valid image file (JPEG, JPG, or PNG)');
+        e.target.value = '';
+        return;
+    }
+    currentInput   = e.target;
+    originalFile   = file;
+    currentPreview = document.getElementById('categoryImagePreview');
+
+    const reader = new FileReader();
+    reader.onload = ev => showCropModal(ev.target.result);
+    reader.readAsDataURL(file);
+}
+
+function showCropModal(imageSrc) {
+    const modal        = document.getElementById('cropperModal');
+    const cropperImage = document.getElementById('cropperImage');
+    const cropBtn      = document.getElementById('cropSaveBtn');
+
+    if (cropper) { cropper.destroy(); cropper = null; }
+
+    modal.style.display          = 'block';
+    document.body.style.overflow = 'hidden';
+    cropBtn.disabled             = true;
+    cropBtn.textContent          = 'Loading...';
+    cropBtn.style.background     = '#007bff';
+
+    cropperImage.src = imageSrc;
+    cropperImage.onload = () => setTimeout(initCropper, 200);
+}
+
+function initCropper() {
+    const cropperImage = document.getElementById('cropperImage');
+    const cropBtn      = document.getElementById('cropSaveBtn');
+    try {
+        if (typeof Cropper !== 'function') throw new Error('Cropper not loaded.');
+        cropper = new Cropper(cropperImage, {
+            aspectRatio: 3 / 4,            
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.8,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            ready() {
+                cropBtn.disabled    = false;
+                cropBtn.textContent = 'Crop & Save';
+                cropBtn.style.background = '#28a745';
+            }
+        });
+    } catch (err) {
+        console.error('Cropper init error:', err);
+        alert('Failed to initialize cropper: ' + err.message);
+    }
+}
+
+function closeCropPopup() {
+    document.getElementById('cropperModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    if (cropper) { cropper.destroy(); cropper = null; }
+    currentInput = currentPreview = originalFile = null;
+}
+
+function cropImage() {
+    if (!cropper) { alert('Cropper not ready'); return; }
+    const cropBtn = document.getElementById('cropSaveBtn');
+    cropBtn.disabled    = true;
+    cropBtn.textContent = 'Processing...';
+
+    try {
+        const canvas = cropper.getCroppedCanvas({
+            width: 600, height: 600,          // square output
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+        canvas.toBlob(blob => {
+            if (!blob) {
+                alert('Failed to process image');
+                cropBtn.disabled    = false;
+                cropBtn.textContent = 'Crop & Save';
+                return;
+            }
+            const fileName    = originalFile.name.replace(/\.[^/.]+$/, '') + '_cropped.jpg';
+            const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
+
+            const dt = new DataTransfer();
+            dt.items.add(croppedFile);
+            currentInput.files = dt.files;
+
+            if (currentPreview) {
+                currentPreview.innerHTML = '';
+                const img = document.createElement('img');
+                img.src   = canvas.toDataURL('image/jpeg', 0.8);
+                const ok  = document.createElement('p');
+                ok.textContent = '✓ Image cropped successfully!';
+                currentPreview.appendChild(img);
+                currentPreview.appendChild(ok);
+            }
+            closeCropPopup();
+        }, 'image/jpeg', 0.85);
+    } catch (err) {
+        console.error('Crop error:', err);
+        alert('Failed to crop image: ' + err.message);
+        cropBtn.disabled    = false;
+        cropBtn.textContent = 'Crop & Save';
+    }
+}
+</script>
+
 {% include "confirm_modal.html" %}
 <script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
 /* ── Auto-dismiss messages after 15 seconds ── */
-    const msgContainer = document.getElementById("msgContainer");
-    if (msgContainer) {
-        setTimeout(() => {
-            msgContainer.querySelectorAll(".message").forEach(msg => {
-                msg.style.transition = "opacity 0.5s";
-                msg.style.opacity = "0";
-                setTimeout(() => msg.remove(), 500);
-            });
-        }, 15000);
-    }
+const msgContainer = document.getElementById("msgContainer");
+if (msgContainer) {
+    setTimeout(() => {
+        msgContainer.querySelectorAll(".message").forEach(msg => {
+            msg.style.transition = "opacity 0.5s";
+            msg.style.opacity    = "0";
+            setTimeout(() => msg.remove(), 500);
+        });
+    }, 15000);
+}
 </script>
 {% endblock %}

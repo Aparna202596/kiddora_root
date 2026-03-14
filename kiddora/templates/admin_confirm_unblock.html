@@ -78,7 +78,7 @@
             ✅ This variant will become visible to customers again.
         </div>
 
-    <!-- ── COUPON (add-on — does not touch existing blocks) ─ -->
+    <!-- ── COUPON (add-on) ──────────────────────────────── -->
     {% elif coupon %}
         <h2>Unblock Coupon?</h2>
         <p>You are about to unblock:</p>
@@ -89,6 +89,25 @@
         </p>
         <div class="info-note">
             ✅ Customers will be able to apply this coupon again.
+        </div>
+
+    <!-- ── OFFER (add-on) ───────────────────────────────── -->
+    {% elif offer %}
+        <h2>Unblock Offer?</h2>
+        <p>You are about to unblock:</p>
+        <p><strong>{{ offer.get_offer_type_display }}</strong></p>
+        <p style="font-size:13px; color:#888;">
+            {% if offer.offer_type == "PRODUCT" and offer.product %}
+                {{ offer.product.product_name }}
+            {% elif offer.offer_type == "CATEGORY" and offer.category %}
+                {{ offer.category.category_name }}
+            {% elif offer.offer_type == "REFERRAL" and offer.referral_coupon %}
+                Coupon: {{ offer.referral_coupon.code }}
+            {% endif %}
+            — {{ offer.discount_percent }}% off
+        </p>
+        <div class="info-note">
+            ✅ This offer will be applied to matching products / categories again.
         </div>
     {% endif %}
 
@@ -108,6 +127,8 @@
                 <a href="{% url 'products:admin_product_details' product_id %}" class="btn-cancel">Cancel</a>
             {% elif coupon %}
                 <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel">Cancel</a>
+            {% elif offer %}
+                <a href="{% url 'shopcore:admin_offer_list' %}" class="btn-cancel">Cancel</a>
             {% endif %}
         </div>
     </form>

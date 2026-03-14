@@ -1,8 +1,3 @@
-# ============================================================
-# shopcore/views/banner_views.py
-# Admin CRUD for Banner model + home page view that passes banners
-# ============================================================
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
@@ -11,11 +6,7 @@ from types import SimpleNamespace
 from accounts.decorators import admin_login_required
 from shopcore.models import Banner
 
-
-# ─────────────────────────────────────────────────────────────
 # HOME PAGE VIEW  (user-facing)
-# Passes live HERO and SECONDARY banners to the home template.
-# ─────────────────────────────────────────────────────────────
 
 def home_view(request):
     """

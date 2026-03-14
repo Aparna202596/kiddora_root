@@ -27,6 +27,13 @@ urlpatterns = [
     # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     # BANNER HOME (public)
     path('homes/', banner_views.home_view, name='banner_home'),
+
+    # ADMIN BANNER MANAGEMENT
+    path("admin/banners/", banner_views.admin_banner_list, name="admin_banner_list"),
+    path("admin/banners/add/", banner_views.admin_add_banner, name="admin_add_banner"),
+    path("admin/banners/<int:banner_id>/edit/", banner_views.admin_edit_banner, name="admin_edit_banner"),
+    path("admin/banners/<int:banner_id>/delete/", banner_views.admin_delete_banner, name="admin_delete_banner"),
+    path("admin/banners/<int:banner_id>/toggle/", banner_views.admin_toggle_banner, name="admin_toggle_banner"),
     # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     # COUPON
     # ADMIN
@@ -34,7 +41,6 @@ urlpatterns = [
     path("admin/coupons/add/", coupon_views.admin_add_coupon, name="admin_add_coupon"),
     path("admin/coupons/<int:coupon_id>/edit/", coupon_views.admin_edit_coupon, name="admin_edit_coupon"),
     path("admin/coupons/<int:coupon_id>/delete/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
-
     # Legacy toggle – keep to avoid 404s on any bookmarked / cached link
     path("admin/coupons/<int:coupon_id>/toggle/", coupon_views.admin_toggle_coupon, name="admin_toggle_coupon"),
     # New: separate block / unblock (GET → confirm page, POST → action)
@@ -44,6 +50,17 @@ urlpatterns = [
     # USER
     path("cart/coupon/apply/", coupon_views.apply_coupon, name="apply_coupon"),
     path("cart/coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"),
+    # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    # Offer admin
+    path("admin/offers/", offer_views.admin_offer_list, name="admin_offer_list"),
+    path("admin/offers/add/", offer_views.admin_add_offer, name="admin_add_offer"),
+    path("admin/offers/<int:offer_id>/edit/", offer_views.admin_edit_offer, name="admin_edit_offer"),
+    path("admin/offers/<int:offer_id>/delete/", offer_views.admin_delete_offer, name="admin_delete_offer"),
+    # Legacy toggle – keep to avoid 404s on any bookmarked / cached link
+    path("admin/offers/<int:offer_id>/toggle/", offer_views.admin_toggle_offer, name="admin_toggle_offer"),
+    # New: separate block / unblock (GET → confirm page, POST → action)
+    path("admin/offers/<int:offer_id>/block/", offer_views.admin_block_offer, name="admin_block_offer"),
+    path("admin/offers/<int:offer_id>/unblock/", offer_views.admin_unblock_offer,name="admin_unblock_offer"),
     # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     # CART (user)
     path("cart/", cart_views.cart_view, name="cart"),
@@ -90,22 +107,8 @@ urlpatterns = [
     path("admin/returns/<int:return_id>/approve/", return_views.admin_approve_return, name="admin_approve_return"),
     path("admin/returns/<int:return_id>/reject/", return_views.admin_reject_return, name="admin_reject_return"),
 
-    # ADMIN BANNER MANAGEMENT
-    path("admin/banners/", banner_views.admin_banner_list, name="admin_banner_list"),
-    path("admin/banners/add/", banner_views.admin_add_banner, name="admin_add_banner"),
-    path("admin/banners/<int:banner_id>/edit/", banner_views.admin_edit_banner, name="admin_edit_banner"),
-    path("admin/banners/<int:banner_id>/delete/", banner_views.admin_delete_banner, name="admin_delete_banner"),
-    path("admin/banners/<int:banner_id>/toggle/", banner_views.admin_toggle_banner, name="admin_toggle_banner"),
-
     # ADMIN REVIEW MANAGEMENT
     path("admin/reviews/", review_views.admin_review_list, name="admin_review_list"),
     path("admin/reviews/<int:review_id>/approve/", review_views.admin_approve_review, name="admin_approve_review"),
     path("admin/reviews/<int:review_id>/reject/", review_views.admin_reject_review, name="admin_reject_review"),
-
-    # ADMIN OFFER MANAGEMENT
-    path("admin/offers/", offer_views.admin_offer_list, name="admin_offer_list"),
-    path("admin/offers/add/", offer_views.admin_add_offer, name="admin_add_offer"),
-    path("admin/offers/<int:offer_id>/edit/", offer_views.admin_edit_offer, name="admin_edit_offer"),
-    path("admin/offers/<int:offer_id>/delete/", offer_views.admin_delete_offer, name="admin_delete_offer"),
-    path("admin/offers/<int:offer_id>/toggle/", offer_views.admin_toggle_offer, name="admin_toggle_offer"),
 ]

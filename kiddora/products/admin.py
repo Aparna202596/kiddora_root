@@ -1,16 +1,29 @@
 from django.contrib import admin
 from django.db.models import Sum
-from .models import *
+from django.utils.html import format_html
+from .models import Category, SubCategory, Product, Color, AgeGroup, ProductImage, ProductVariant, Inventory
+
+# CATEGORY
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-
-    list_display = ("category_name", "is_active")
+    list_display  = ("category_name", "image_preview", "is_active")
     search_fields = ("category_name",)
-    list_filter = ("is_active",)
-    ordering = ("-id",)
+    list_filter   = ("is_active",)
+    ordering      = ("-id",)
     list_per_page = 20
+    fields        = ("category_name", "category_image", "is_active", "is_deleted")
     actions = ["soft_delete", "restore_category"]
+
+    def image_preview(self, obj):
+        if obj.category_image:
+            return format_html(
+                '<img src="{}" style="height:40px;width:40px;'
+                'object-fit:cover;border-radius:6px;" />',
+                obj.category_image.url,
+            )
+        return "—"
+    image_preview.short_description = "Image"
 
     def soft_delete(self, request, queryset):
         queryset.update(is_active=False)
@@ -22,13 +35,23 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(SubCategory)
 class SubCategoryAdmin(admin.ModelAdmin):
-
-    list_display = ("subcategory_name", "category")
+    list_display  = ("subcategory_name", "category", "image_preview")
     search_fields = ("subcategory_name", "category__category_name")
-    list_filter = ("category",)
-    ordering = ("-id",)
+    list_filter   = ("category",)
+    ordering      = ("-id",)
     list_per_page = 20
 
+    fields        = ("category", "subcategory_name", "subcategory_image", "is_active", "is_deleted")
+
+    def image_preview(self, obj):
+        if obj.subcategory_image:
+            return format_html(
+                '<img src="{}" style="height:40px;width:40px;'
+                'object-fit:cover;border-radius:6px;" />',
+                obj.subcategory_image.url,
+            )
+        return "—"
+    image_preview.short_description = "Image"
 
 class ProductImageInline(admin.StackedInline):
     model = ProductImage
@@ -45,41 +68,23 @@ class InventoryInline(admin.StackedInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-
     list_display = (
-        "product_name",
-        "subcategory",
-        "brand",
-        "base_price",
-        "final_price",
-        "is_active",
-        "total_stock",
+        "product_name", "subcategory", "brand",
+        "base_price", "final_price", "is_active", "total_stock",
     )
-
     search_fields = (
-        "product_name",
-        "brand",
+        "product_name", "brand",
         "subcategory__subcategory_name",
         "subcategory__category__category_name",
     )
-
     list_filter = (
-        "is_active",
-        "gender",
-        "fabric",
-        "subcategory__category",
-        "subcategory",
+        "is_active", "gender", "fabric",
+        "subcategory__category", "subcategory",
     )
-
-    ordering = ("-id",)
+    ordering      = ("-id",)
     list_per_page = 20
-
-    inlines = [
-        ProductVariantInline,
-        ProductImageInline,
-    ]
-
-    actions = ["soft_delete", "restore_product"]
+    inlines       = [ProductVariantInline, ProductImageInline]
+    actions       = ["soft_delete", "restore_product"]
 
     def total_stock(self, obj):
         return (
@@ -99,66 +104,46 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-
     list_display = (
-        "product",
-        "color",
-        "age_group",
-        "sku",
-        "barcode",
-        "is_active",
-        "stock",
+        "product", "color", "age_group",
+        "sku", "barcode", "is_active", "stock",
     )
-
-    search_fields = (
-        "product__product_name",
-        "sku",
-        "barcode",
-    )
-
-    list_filter = (
-        "color",
-        "age_group",
-        "is_active",
-    )
-
-    ordering = ("-id",)
+    search_fields = ("product__product_name", "sku", "barcode")
+    list_filter   = ("color", "age_group", "is_active")
+    ordering      = ("-id",)
     list_per_page = 20
-
-    inlines = [InventoryInline]
+    inlines       = [InventoryInline]
 
     def stock(self, obj):
         return getattr(obj.inventory, "quantity_available", 0)
-    
+
+
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
-
-    list_display = ("product", "is_default")
+    list_display  = ("product", "is_default")
     search_fields = ("product__product_name",)
-    list_filter = ("is_default",)
+    list_filter   = ("is_default",)
+
 
 @admin.register(Inventory)
 class InventoryAdmin(admin.ModelAdmin):
-
     list_display = (
-        "variant",
-        "quantity_available",
-        "quantity_reserved",
-        "quantity_sold",
-        "updated_at",
+        "variant", "quantity_available",
+        "quantity_reserved", "quantity_sold", "updated_at",
     )
-
     search_fields = ("variant__product__product_name", "variant__sku")
-    list_filter = ("updated_at",)
-    ordering = ("-updated_at",)
+    list_filter   = ("updated_at",)
+    ordering      = ("-updated_at",)
     list_per_page = 20
+
 
 @admin.register(Color)
 class ColorAdmin(admin.ModelAdmin):
     search_fields = ("color",)
-    ordering = ("color",)
+    ordering      = ("color",)
+
 
 @admin.register(AgeGroup)
 class AgeGroupAdmin(admin.ModelAdmin):
     search_fields = ("age",)
-    ordering = ("age",)
+    ordering      = ("age",)

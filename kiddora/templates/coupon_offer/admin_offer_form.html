@@ -13,7 +13,8 @@
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-size:13px; font-weight:700; color:#444; margin-bottom:7px; }
 .form-group input, .form-group select {
-  width:100%; padding:10px 13px; border:1.5px solid #e0e0e0; border-radius:9px; font-size:13px; outline:none; background:#fafafa;
+    width:100%; padding:10px 13px; border:1.5px solid #e0e0e0;
+    border-radius:9px; font-size:13px; outline:none; background:#fafafa;
 }
 .form-group input:focus, .form-group select:focus { border-color:#f06292; background:#fff; }
 .form-group .hint { font-size:11px; color:#aaa; margin-top:5px; }
@@ -25,117 +26,176 @@
 .btn-save:hover { background:#e91e63; }
 .btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; }
 .btn-cancel:hover { background:#eee; }
+
+/* ── flash messages ── */
+.messages { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+.message { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:8px; font-size:14px; font-weight:500; }
+.message button { background:none; border:none; cursor:pointer; font-size:18px; padding:0 0 0 10px; color:inherit; opacity:.7; }
+.message button:hover { opacity:1; }
+.message.success { background:#e6f9f0; color:#1a7a4a; border:1px solid #a3e0c1; }
+.message.error   { background:#fdecea; color:#c0392b; border:1px solid #f5a9a4; }
+.message.warning { background:#fff8e1; color:#b07d00; border:1px solid #ffe082; }
+.message.info    { background:#e8f4fd; color:#1565c0; border:1px solid #90caf9; }
+
 @media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
 
 <div class="form-wrap">
-  <a href="{% url 'shopcore:admin_offer_list' %}" class="back-link"><i class="fa fa-arrow-left"></i> Offers</a>
-  <div class="form-hdr"><h2>{{ action }} Offer</h2></div>
+    <a href="{% url 'shopcore:admin_offer_list' %}" class="back-link">
+        <i class="fa fa-arrow-left"></i> Offers
+    </a>
 
-  <form method="post">
-    {% csrf_token %}
-
-    <div class="form-card">
-      <div class="card-title">Offer Configuration</div>
-      <div class="form-group">
-        <label>Offer Type <span style="color:#e91e63;">*</span></label>
-        <select name="offer_type" id="offerType" onchange="toggleTargets()">
-          {% for val, label in offer_types %}
-          <option value="{{ val }}"
-            {% if offer.offer_type == val or form_data.offer_type == val %}selected{% endif %}>
-            {{ label }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group conditional-field" id="productField">
-        <label>Product</label>
-        <select name="product_id">
-          <option value="">— Select Product —</option>
-          {% for p in products %}
-          <option value="{{ p.id }}"
-            {% if offer.product_id == p.id or form_data.product_id == p.id|stringformat:"s" %}selected{% endif %}>
-            {{ p.product_name }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group conditional-field" id="categoryField">
-        <label>Category</label>
-        <select name="category_id">
-          <option value="">— Select Category —</option>
-          {% for c in categories %}
-          <option value="{{ c.id }}"
-            {% if offer.category_id == c.id or form_data.category_id == c.id|stringformat:"s" %}selected{% endif %}>
-            {{ c.category_name }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group conditional-field" id="referralField">
-        <label>Referral Coupon <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-        <select name="referral_coupon_id">
-          <option value="">— None —</option>
-          {% for coupon in coupons %}
-          <option value="{{ coupon.id }}"
-            {% if offer.referral_coupon_id == coupon.id %}selected{% endif %}>
-            {{ coupon.code }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Discount % <span style="color:#e91e63;">*</span></label>
-        <input type="number" name="discount_percent" min="1" max="100"
-               value="{{ offer.discount_percent|default:form_data.discount_percent|default:'' }}"
-               placeholder="1 – 100" required>
-      </div>
-    </div>
-
-    <div class="form-card">
-      <div class="card-title">Schedule</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Start Date <span style="color:#e91e63;">*</span></label>
-          <input type="datetime-local" name="start_date"
-                 value="{{ offer.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}" required>
+    {% if messages %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
         </div>
-        <div class="form-group">
-          <label>End Date <span style="color:#aaa;font-weight:400;">(optional)</span></label>
-          <input type="datetime-local" name="end_date"
-                 value="{{ offer.end_date|date:'Y-m-d\TH:i'|default:form_data.end_date|default:'' }}">
-          <div class="hint">Leave blank to run indefinitely.</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="form-hdr"><h2>{{ action }} Offer</h2></div>
+
+    <form method="post" id="offerForm">
+        {% csrf_token %}
+
+        <div class="form-card">
+            <div class="card-title">Offer Configuration</div>
+            <div class="form-group">
+                <label>Offer Type <span style="color:#e91e63;">*</span></label>
+                <select name="offer_type" id="offerType" onchange="toggleTargets()">
+                    {% for val, label in offer_types %}
+                    <option value="{{ val }}"
+                        {% if offer.offer_type == val or form_data.offer_type == val %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group conditional-field" id="productField">
+                <label>Product</label>
+                <select name="product_id">
+                    <option value="">— Select Product —</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}"
+                        {% if offer.product_id == p.id or form_data.product_id == p.id|stringformat:"s" %}selected{% endif %}>
+                        {{ p.product_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group conditional-field" id="categoryField">
+                <label>Category</label>
+                <select name="category_id">
+                    <option value="">— Select Category —</option>
+                    {% for c in categories %}
+                    <option value="{{ c.id }}"
+                        {% if offer.category_id == c.id or form_data.category_id == c.id|stringformat:"s" %}selected{% endif %}>
+                        {{ c.category_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group conditional-field" id="referralField">
+                <label>Referral Coupon <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+                <select name="referral_coupon_id">
+                    <option value="">— None —</option>
+                    {% for coupon in coupons %}
+                    <option value="{{ coupon.id }}"
+                        {% if offer.referral_coupon_id == coupon.id %}selected{% endif %}>
+                        {{ coupon.code }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Discount % <span style="color:#e91e63;">*</span></label>
+                <input type="number" name="discount_percent" min="1" max="100"
+                       value="{{ offer.discount_percent|default:form_data.discount_percent|default:'' }}"
+                       placeholder="1 – 100" required>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <div class="form-card">
-      <div class="card-title">Status</div>
-      <div class="toggle-row">
-        <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
-               {% if offer.is_active or not offer %}checked{% endif %}>
-        <label for="isActive">Active</label>
-      </div>
-    </div>
+        <div class="form-card">
+            <div class="card-title">Schedule</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date <span style="color:#e91e63;">*</span></label>
+                    <input type="datetime-local" name="start_date"
+                           value="{{ offer.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label>End Date <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                    <input type="datetime-local" name="end_date"
+                           value="{{ offer.end_date|date:'Y-m-d\TH:i'|default:form_data.end_date|default:'' }}">
+                    <div class="hint">Leave blank to run indefinitely.</div>
+                </div>
+            </div>
+        </div>
 
-    <div class="form-actions">
-      <button type="submit" class="btn-save"><i class="fa fa-check"></i> {{ action }} Offer</button>
-      <a href="{% url 'shopcore:admin_offer_list' %}" class="btn-cancel"><i class="fa fa-times"></i> Cancel</a>
-    </div>
-  </form>
+        <div class="form-card">
+            <div class="card-title">Status</div>
+            <div class="toggle-row">
+                <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
+                       {% if offer.is_active or not offer %}checked{% endif %}>
+                <label for="isActive">Active</label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <!--
+              Visible trigger button → opens confirm modal.
+              Hidden real submit → fired by modal callback.
+            -->
+            <button type="button" class="btn-save" id="btnSaveTrigger">
+                <i class="fa fa-check"></i> {{ action }} Offer
+            </button>
+            <button type="submit" id="btnRealSubmit" style="display:none;"></button>
+
+            <a href="{% url 'shopcore:admin_offer_list' %}" class="btn-cancel">
+                <i class="fa fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
 </div>
 
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
+/* ── conditional field visibility ── */
 function toggleTargets() {
-  const type = document.getElementById('offerType').value;
-  document.getElementById('productField').style.display  = type === 'PRODUCT'   ? 'block' : 'none';
-  document.getElementById('categoryField').style.display = type === 'CATEGORY'  ? 'block' : 'none';
-  document.getElementById('referralField').style.display = type === 'REFERRAL'  ? 'block' : 'none';
+    var type = document.getElementById('offerType').value;
+    document.getElementById('productField').style.display  = type === 'PRODUCT'  ? 'block' : 'none';
+    document.getElementById('categoryField').style.display = type === 'CATEGORY' ? 'block' : 'none';
+    document.getElementById('referralField').style.display = type === 'REFERRAL' ? 'block' : 'none';
 }
 toggleTargets();
+
+/* ── confirm modal before saving ── */
+document.getElementById('btnSaveTrigger').addEventListener('click', function () {
+    var action = '{{ action|escapejs }}';
+    var msg = action === 'Edit'
+        ? 'Save changes to this offer?'
+        : 'Create this new offer?';
+    openConfirmModal(msg, function () {
+        document.getElementById('btnRealSubmit').click();
+    });
+});
+
+/* ── auto-dismiss messages ── */
+(function () {
+    var mc = document.getElementById('msgContainer');
+    if (!mc) return;
+    setTimeout(function () {
+        mc.querySelectorAll('.message').forEach(function (m) {
+            m.style.transition = 'opacity 0.5s';
+            m.style.opacity = '0';
+            setTimeout(function () { m.remove(); }, 500);
+        });
+    }, 15000);
+})();
 </script>
 {% endblock %}
