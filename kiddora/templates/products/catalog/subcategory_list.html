@@ -15,12 +15,56 @@
 <style>
 .page-heading { margin-bottom: 24px; }
 .page-heading h1 { font-size: 22px; font-weight: 700; color: #222; }
-.sub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
-.sub-card { border: 1px solid #eee; border-radius: 10px; padding: 20px 14px; text-align: center; background: #fff; transition: box-shadow .22s, transform .22s; }
-.sub-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.09); transform: translateY(-3px); }
-.sub-card .sc-icon { font-size: 2.2rem; margin-bottom: 8px; }
-.sub-card h2 { font-size: 14px; font-weight: 700; color: #222; }
-.sub-card .sc-link { color: #f06292; font-size: 12px; font-weight: 600; margin-top: 6px; display: inline-block; }
+
+.sub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+}
+.sub-card {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    text-align: center;
+    transition: box-shadow .22s, transform .22s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.sub-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,.09);
+    transform: translateY(-3px);
+}
+
+/* ── ADD-ON: image area  ── */
+.sub-img {
+    height: 350px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #fff5f9, #ffe0ee);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sub-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .45s ease;
+    display: block;
+}
+.sub-card:hover .sub-img img { transform: scale(1.06); }
+/* emoji fallback — shown only when no image */
+.sub-img .sub-emoji { font-size: 3.4rem; line-height: 1; }
+/* ─────────────────────────────────────────── */
+
+.sub-body { padding: 12px 14px 16px; }
+.sub-body h2  { font-size: 15px; font-weight: 700; color: #222; }
+.sub-body .sc-link {
+    color: #f06292; font-size: 13px; font-weight: 600;
+    margin-top: 6px; display: inline-block;
+}
+
 .empty-state { text-align: center; padding: 60px 20px; color: #aaa; }
 </style>
 {% endblock %}
@@ -29,19 +73,36 @@
 <div class="page-heading">
     <h1>{{ category.category_name }}</h1>
 </div>
+
 {% if subcategories %}
 <div class="sub-grid">
     {% for sub in subcategories %}
     <a href="{% url 'products:product_list_by_subcategory' sub.id %}" class="sub-card">
-        <div class="sc-icon">👕</div>
-        <h2>{{ sub.subcategory_name }}</h2>
-        <span class="sc-link">Shop now →</span>
+
+        <!-- ── ADD-ON: show real image; fall back to emoji if none ── -->
+        <div class="sub-img">
+            {% if sub.subcategory_image %}
+                <img src="{{ sub.subcategory_image.url }}"
+                     alt="{{ sub.subcategory_name }}"
+                     loading="lazy">
+            {% else %}
+                <span class="sub-emoji">👕</span>
+            {% endif %}
+        </div>
+        <!-- ─────────────────────────────────────────────────────── -->
+
+        <div class="sub-body">
+            <h2>{{ sub.subcategory_name }}</h2>
+            <span class="sc-link">Shop now →</span>
+        </div>
     </a>
     {% endfor %}
 </div>
 {% else %}
 <div class="empty-state">
-    <p>No subcategories found. <a href="{% url 'products:category_list' %}" style="color:#f06292">Browse categories →</a></p>
+    <p>No subcategories found.
+       <a href="{% url 'products:category_list' %}" style="color:#f06292">Browse categories →</a>
+    </p>
 </div>
 {% endif %}
 {% endblock %}
