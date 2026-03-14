@@ -1,175 +1,93 @@
 {% extends "base_admin.html" %}
 {% load static %}
-
 {% block title %}Orders – Kiddora Admin{% endblock %}
-
 {% block content %}
-<style>
-  .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:14px; }
-  .page-header h2 { font-size:22px; font-weight:800; color:#222; }
+{% include "admin_list_style.html" %}
 
-  /* toolbar */
-  .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
-  .toolbar form { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .toolbar input[type=text], .toolbar select {
-    padding:8px 12px; border:1.5px solid #e0e0e0; border-radius:8px;
-    font-size:13px; outline:none; transition:border-color .2s;
-  }
-  .toolbar input[type=text]:focus, .toolbar select:focus { border-color:#f06292; }
-  .toolbar .btn {
-    padding:8px 16px; border:none; border-radius:8px; font-size:13px; font-weight:600;
-    cursor:pointer; display:flex; align-items:center; gap:6px;
-  }
-  .btn-pink  { background:#f06292; color:#fff; }
-  .btn-pink:hover { background:#e91e63; }
-  .btn-clear { background:#f5f5f5; color:#555; border:1.5px solid #ddd; text-decoration:none; }
-  .btn-clear:hover { background:#eee; }
+<div class="container">
+    <div class="page-hdr">
+        <h2><i class="fa-solid fa-bag-shopping" style="color:#f06292;"></i> Orders</h2>
+    </div>
 
-  /* sort links */
-  .sort-link { color:#555; text-decoration:none; font-size:12px; }
-  .sort-link:hover { color:#f06292; }
-  .sort-link.active { color:#f06292; font-weight:700; }
-
-  /* table */
-  .data-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .data-table th {
-    background:#fdf4f8; color:#555; font-size:12px; font-weight:700;
-    padding:10px 14px; text-align:left; border-bottom:2px solid #f0e0e8;
-    white-space:nowrap;
-  }
-  .data-table td { padding:12px 14px; border-bottom:1px solid #f5f5f5; vertical-align:middle; }
-  .data-table tr:hover td { background:#fff8fb; }
-
-  .order-id-cell { font-family:monospace; font-weight:700; color:#222; font-size:13px; }
-  .user-info { font-size:12px; }
-  .user-info .name  { font-weight:600; color:#222; }
-  .user-info .email { color:#888; }
-
-  /* status badge */
-  .status-badge {
-    display:inline-flex; align-items:center; gap:4px;
-    font-size:11px; font-weight:700; border-radius:20px; padding:3px 10px;
-  }
-  .status-PENDING          { background:#fef9c3; color:#854d0e; }
-  .status-CONFIRMED        { background:#dbeafe; color:#1e40af; }
-  .status-SHIPPED          { background:#e0e7ff; color:#4338ca; }
-  .status-OUT_FOR_DELIVERY { background:#ede9fe; color:#6d28d9; }
-  .status-DELIVERED        { background:#dcfce7; color:#15803d; }
-  .status-CANCELLED        { background:#fee2e2; color:#991b1b; }
-
-  .amount-cell { font-weight:700; color:#222; }
-
-  .view-btn {
-    padding:6px 14px; background:#f06292; color:#fff; border-radius:6px;
-    font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap;
-    transition:background .15s;
-  }
-  .view-btn:hover { background:#e91e63; }
-
-  /* stats */
-  .stats-row { display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap; }
-  .stat-card {
-    flex:1; min-width:130px; background:#fff; border:1.5px solid #eee;
-    border-radius:10px; padding:14px 18px;
-  }
-  .stat-card .label { font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:.05em; }
-  .stat-card .value { font-size:22px; font-weight:800; color:#222; margin-top:4px; }
-  .stat-card.pink .value { color:#f06292; }
-
-  .table-wrap { overflow-x:auto; }
-  .empty-row td { text-align:center; color:#aaa; padding:40px; font-size:14px; }
-</style>
-
-<!-- PAGE HEADER -->
-<div class="page-header">
-  <h2><i class="fa fa-bag-shopping" style="color:#f06292;"></i> Order Management</h2>
-</div>
-
-<!-- TOOLBAR -->
-<div class="toolbar">
-  <form method="get">
-    <input type="text" name="search" value="{{ search }}" placeholder="Search order ID, email…" style="width:220px;">
-
-    <select name="status">
-      <option value="">All Statuses</option>
-      {% for val, label in status_choices %}
-      <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-
-    <select name="sort">
-      <option value="order_date" {% if sort == 'order_date' %}selected{% endif %}>Sort: Date</option>
-      <option value="final_amount" {% if sort == 'final_amount' %}selected{% endif %}>Sort: Amount</option>
-      <option value="order_status" {% if sort == 'order_status' %}selected{% endif %}>Sort: Status</option>
-      <option value="user" {% if sort == 'user' %}selected{% endif %}>Sort: User</option>
-    </select>
-
-    <select name="dir">
-      <option value="desc" {% if dir == 'desc' %}selected{% endif %}>↓ Descending</option>
-      <option value="asc"  {% if dir == 'asc'  %}selected{% endif %}>↑ Ascending</option>
-    </select>
-
-    <button type="submit" class="btn btn-pink"><i class="fa fa-search"></i> Search</button>
-    {% if search or status_f %}
-    <a href="{% url 'shopcore:admin_order_list' %}" class="btn btn-clear">✕ Clear</a>
+    {% if messages %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
     {% endif %}
-  </form>
-</div>
 
-<!-- TABLE -->
-<div class="table-wrap">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Order ID</th>
-        <th>Date</th>
-        <th>Customer</th>
-        <th>Items</th>
-        <th>Amount</th>
-        <th>Status</th>
-        <th>Payment</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for order in page_obj.object_list %}
-      <tr>
-        <td style="color:#aaa;">{{ forloop.counter }}</td>
-        <td class="order-id-cell">{{ order.order_id }}</td>
-        <td style="color:#666;white-space:nowrap;">
-          {{ order.order_date|date:"d M Y" }}<br>
-          <span style="font-size:11px;color:#aaa;">{{ order.order_date|date:"g:i A" }}</span>
-        </td>
-        <td class="user-info">
-          <div class="name">{{ order.user.get_full_name|default:order.user.email }}</div>
-          <div class="email">{{ order.user.email }}</div>
-        </td>
-        <td style="color:#555;">{{ order.order_items.count }} item{{ order.order_items.count|pluralize }}</td>
-        <td class="amount-cell">₹{{ order.final_amount }}</td>
-        <td>
-          <span class="status-badge status-{{ order.order_status }}">
-            {{ order.get_order_status_display }}
-          </span>
-        </td>
-        <td style="color:#666;font-size:12px;">{{ order.get_payment_method_display }}</td>
-        <td>
-          <a href="{% url 'shopcore:admin_order_detail' order_id=order.order_id %}" class="view-btn">
-            View →
-          </a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr class="empty-row">
-        <td colspan="9">
-          <i class="fa fa-inbox" style="font-size:2rem;color:#ddd;display:block;margin-bottom:8px;"></i>
-          No orders found{% if search or status_f %} matching your filters{% endif %}.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+    <!-- Filter toolbar -->
+    <form method="get" class="search-box">
+        <input type="text" name="search" value="{{ search }}" placeholder="Order ID, email, product…">
+        <select name="status" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+            <option value="">All Statuses</option>
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="search-btn"><i class="fa fa-search"></i> Filter</button>
+        {% if search or status_f %}
+        <a href="{% url 'shopcore:admin_order_list' %}" class="search-btn">Clear</a>
+        {% endif %}
+    </form>
 
-{% include "pagination.html" %}
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for order in page_obj %}
+                <tr>
+                    <td style="color:#aaa;">{{ forloop.counter }}</td>
+                    <td style="font-family:monospace;font-weight:700;color:#222;">{{ order.order_id }}</td>
+                    <td style="font-size:12px;">
+                        <div style="font-weight:600;color:#222;">{{ order.user.get_full_name|default:order.user.email }}</div>
+                        <div style="color:#888;">{{ order.user.email }}</div>
+                    </td>
+                    <td style="font-weight:700;">₹{{ order.total_price }}</td>
+                    <td>
+                        <span class="badge
+                            {% if order.status == 'DELIVERED' %}badge-active
+                            {% elif order.status == 'CANCELLED' %}badge-inactive
+                            {% elif order.status == 'PENDING' %}badge-flat
+                            {% else %}badge-percent{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </td>
+                    <td style="color:#888;font-size:12px;white-space:nowrap;">
+                        {{ order.created_at|date:"d M Y" }}
+                    </td>
+                    <td class="action-icons">
+                        <a href="{% url 'shopcore:admin_order_detail' order_id=order.order_id %}"
+                           class="view-btn" title="View Order">View →</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <i class="fa fa-box-open" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+                        No orders found.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "pagination.html" with page_obj=page_obj %}
+</div>
 {% endblock %}

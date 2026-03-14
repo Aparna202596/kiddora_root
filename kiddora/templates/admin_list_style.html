@@ -1,25 +1,65 @@
-{# admin_list_style.html — {% include "admin_list_style.html" %} inside every admin list page #}
+{% comment %}
+  admin_list_style.html
+  ─────────────────────────────────────────────
+  Include this file at the TOP of every admin
+  list page's {% block content %} block:
+
+      {% include "admin_list_style.html" %}
+
+  It provides all shared CSS for:
+    • Layout / container
+    • Page header + top-links
+    • Search / filter toolbar
+    • Table wrapper, th/td, hover
+    • Action icons  ✏️ 🗑️ fa-ban fa-circle-check
+    • Status badges
+    • Stock badges
+    • Flash messages  (success / error / warning / info)
+    • Empty-state row
+    • Confirm-modal animation (used by confirm_modal.html)
+  ─────────────────────────────────────────────
+{% endcomment %}
 <style>
-/* ══════════════════════════════════════════════════
-   KIDDORA ADMIN — SHARED LIST STYLES
-   ══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   0. RESET / BASE
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
 
-/* ---------- Layout ---------- */
-.container { padding: 25px; }
-h2 { text-align: center; margin-bottom: 10px; }
+/* ═══════════════════════════════════════════
+   1. CONTAINER / LAYOUT
+═══════════════════════════════════════════ */
+.container {
+    padding: 25px;
+}
+.container h2 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #222;
+}
 
-/* ---------- Page Header row (icon + title + add-btn) ---------- */
+/* ═══════════════════════════════════════════
+   2. PAGE HEADER  (flex row: title + add-btn)
+═══════════════════════════════════════════ */
 .page-hdr {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
     flex-wrap: wrap;
     gap: 12px;
 }
-.page-hdr h2 { font-size: 22px; font-weight: 800; color: #222; margin: 0; text-align: left; }
+.page-hdr h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #222;
+    margin: 0;
+}
 
-/* ---------- Top Links (pill buttons) ---------- */
+/* ═══════════════════════════════════════════
+   3. TOP LINKS  (+ Add … / nav links)
+═══════════════════════════════════════════ */
 .top-links {
     display: flex;
     justify-content: flex-end;
@@ -35,264 +75,375 @@ h2 { text-align: center; margin-bottom: 10px; }
     text-decoration: none;
     font-size: 14px;
     font-weight: 600;
+    border: none;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.25s;
 }
 .top-links a:hover,
-.btn-add:hover { background: #e91e63; }
+.btn-add:hover {
+    background: #e91e63;
+    color: #fff;
+}
 
-/* ---------- Search / Toolbar ---------- */
+/* ═══════════════════════════════════════════
+   4. SEARCH / FILTER TOOLBAR
+═══════════════════════════════════════════ */
 .search-box,
 .toolbar {
     display: flex;
     gap: 10px;
-    margin-bottom: 22px;
+    margin-bottom: 25px;
     flex-wrap: wrap;
     align-items: center;
 }
 .search-box input,
 .toolbar input,
 .toolbar select {
-    padding: 9px 14px;
+    padding: 9px 13px;
     border-radius: 25px;
-    border: 1px solid #ccc;
+    border: 1.5px solid #e0e0e0;
     outline: none;
-    font-size: 14px;
+    font-size: 13px;
     transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fff;
 }
-.search-box input { flex: 1; min-width: 160px; }
-.toolbar input    { min-width: 160px; }
+.search-box input { flex: 1; }
 .search-box input:focus,
 .toolbar input:focus,
 .toolbar select:focus {
     border-color: #f06292;
-    box-shadow: 0 0 0 2px rgba(240, 98, 146, 0.15);
+    box-shadow: 0 0 0 3px rgba(240,98,146,.12);
 }
+/* generic small buttons inside toolbar */
 .search-btn,
 .btn-sm {
-    padding: 9px 18px;
+    padding: 8px 18px;
     border-radius: 25px;
+    background: #333;
+    color: #fff;
     border: none;
+    cursor: pointer;
+    text-decoration: none;
     font-size: 13px;
     font-weight: 600;
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    text-decoration: none;
     transition: background 0.2s;
-    white-space: nowrap;
 }
-.search-btn,
-.btn-pink { background: #333; color: #fff; }
 .search-btn:hover,
-.btn-pink:hover { background: #000; }
-
+.btn-sm:hover { background: #000; color: #fff; }
+.btn-pink { background: #f06292 !important; }
+.btn-pink:hover { background: #e91e63 !important; }
 .btn-clear {
-    background: #f5f5f5;
-    color: #555;
-    border: 1.5px solid #ddd;
+    background: #f5f5f5 !important;
+    color: #555 !important;
+    border: 1.5px solid #ddd !important;
 }
-.btn-clear:hover { background: #ebebeb; }
+.btn-clear:hover { background: #e8e8e8 !important; }
 
-/* ---------- Table Wrapper ---------- */
-.table-wrapper {
+/* ═══════════════════════════════════════════
+   5. TABLE WRAPPER
+═══════════════════════════════════════════ */
+.table-wrapper,
+.table-wrap {
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-    margin-bottom: 4px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+    margin-bottom: 10px;
 }
-table, .data-table {
+
+/* ═══════════════════════════════════════════
+   6. TABLE  (th / td / hover)
+═══════════════════════════════════════════ */
+.data-table,
+table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
 }
-
-/* ---------- Table Head ---------- */
-th {
-    background: #000;
-    color: #fff;
-    padding: 13px 14px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-th a { color: #fff; text-decoration: none; display: inline-block; width: 100%; }
-th a:hover, th a:focus, th a:visited { color: #fff; text-decoration: none; }
-
-/* ---------- Table Body ---------- */
-td {
+th, td {
     padding: 12px 14px;
     text-align: center;
-    font-size: 13px;
-    color: #333;
-    border-top: 1px solid #f5f5f5;
+    vertical-align: middle;
 }
-tr { transition: background 0.15s; }
-tbody tr:hover td { background: #f9f0f6; }
+/* left-align for name/email cols – apply .text-left on td if needed */
+td.text-left { text-align: left; }
+th {
+    background: #111;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    white-space: nowrap;
+}
+th a {
+    color: #fff;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+}
+th a:hover, th a:focus, th a:visited { color: #fff; text-decoration: none; }
+tbody tr {
+    border-top: 1px solid #f5f5f5;
+    transition: background 0.15s;
+}
+tbody tr:hover { background: #fff4f7; }
+.empty-row td,
+td[colspan] {
+    text-align: center;
+    padding: 50px 20px;
+    color: #aaa;
+    font-size: 14px;
+}
 
-/* ══════════════════════════════════════════════════
-   ACTION ICONS — uniform across ALL pages
-   ══════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   7. ACTION ICONS  — uniform across all pages
+   Uses emoji + FontAwesome icons matching
+   admin_subcategory_list.html style.
+═══════════════════════════════════════════ */
 .action-icons {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    flex-wrap: nowrap;
 }
-/* Base for all icon-only square buttons */
+/* base icon link */
 .action-icons a,
-.icon-edit, .icon-delete, .icon-block, .icon-unblock, .icon-add,
-.act-btn {
+.act-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 15px;
     text-decoration: none;
+    transition: opacity 0.18s, transform 0.15s;
     border: none;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.15s;
-    flex-shrink: 0;
+    background: transparent;
+    padding: 0;
 }
 .action-icons a:hover,
-.act-btn:hover { opacity: 0.82; transform: translateY(-1px); }
+.act-icon:hover {
+    opacity: 0.75;
+    transform: translateY(-1px);
+}
 
-/* Edit — neutral dark */
-.icon-edit, .act-edit { background: #e8e8e8; color: #222; }
-.icon-edit:hover, .act-edit:hover { background: #d4d4d4; }
+/* ── edit ── */
+.icon-edit { color: #222; }
+/* ── delete ── */
+.icon-delete { color: #dc3545; }
 
-/* Delete — red */
-.icon-delete, .act-del { background: #fee2e2; color: #991b1b; }
-.icon-delete:hover, .act-del:hover { background: #fca5a5; }
-
-/* Block — soft red */
-.icon-block, .action-block { background: #fff0f0; color: #e74c3c; }
-.icon-block:hover, .action-block:hover { background: #fca5a5; transform: translateY(-1px); }
-
-/* Unblock — green */
-.icon-unblock, .action-unblock { background: #dcfce7; color: #15803d; }
-.icon-unblock:hover, .action-unblock:hover { background: #bbf7d0; transform: translateY(-1px); }
-
-/* Toggle-off (deactivate/hide) — amber */
-.act-toggle-off { background: #fef9c3; color: #854d0e; }
-.act-toggle-off:hover { background: #fde68a; }
-
-/* Toggle-on (activate/show) — green */
-.act-toggle-on { background: #dcfce7; color: #15803d; }
-.act-toggle-on:hover { background: #bbf7d0; }
-
-/* View / detail — indigo */
-.act-view, .view-btn {
+/* ── block (fa-ban) ── */
+.icon-block,
+.action-block {
+    color: #e74c3c;
+    font-size: 16px;
+    text-decoration: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 32px;
-    padding: 0 12px;
-    width: auto;
+    width: 32px; height: 32px;
     border-radius: 8px;
-    background: #e0e7ff;
-    color: #3730a3;
-    font-size: 13px;
-    font-weight: 600;
+    transition: opacity 0.18s, transform 0.15s;
+}
+.icon-block:hover, .action-block:hover {
+    opacity: 0.75; transform: translateY(-1px);
+}
+
+/* ── unblock (fa-circle-check) ── */
+.icon-unblock,
+.action-unblock {
+    color: #2ecc71;
+    font-size: 16px;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    transition: opacity 0.18s, transform 0.15s;
+}
+.icon-unblock:hover, .action-unblock:hover {
+    opacity: 0.75; transform: translateY(-1px);
+}
+
+/* ── view / detail link ── */
+.view-btn,
+.icon-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: #f3f4f6;
+    color: #333;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+.view-btn:hover, .icon-view:hover {
+    background: #f06292;
+    color: #fff;
+}
+
+/* ── approve ── */
+.act-approve {
+    background: #dcfce7;
+    color: #15803d;
     border: none;
     cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s, transform 0.15s;
-}
-.act-view:hover, .view-btn:hover { background: #c7d2fe; transform: translateY(-1px); }
-
-/* Add SubCategory shortcut — teal */
-.icon-add { background: #e0f7f4; color: #00796b; }
-.icon-add:hover { background: #b2dfdb; transform: translateY(-1px); }
-
-/* Approve — green pill */
-.act-approve {
-    display: inline-flex; align-items: center; gap: 5px;
-    height: 32px; padding: 0 12px; width: auto;
-    border-radius: 8px; background: #dcfce7; color: #15803d;
-    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
-    white-space: nowrap; transition: background 0.2s;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
 }
 .act-approve:hover { background: #bbf7d0; }
 
-/* Reject / Delete labelled — red pill */
-.act-reject {
-    display: inline-flex; align-items: center; gap: 5px;
-    height: 32px; padding: 0 12px; width: auto;
-    border-radius: 8px; background: #fee2e2; color: #991b1b;
-    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
-    white-space: nowrap; transition: background 0.2s;
+/* ── reject / delete ── */
+.act-reject, .act-del {
+    background: #fee2e2;
+    color: #991b1b;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
 }
-.act-reject:hover { background: #fca5a5; }
+.act-reject:hover, .act-del:hover { background: #fca5a5; }
 
-/* ---------- Status Badges ---------- */
-.badge {
-    font-size: 11px; font-weight: 700; padding: 3px 9px;
-    border-radius: 20px; display: inline-block; white-space: nowrap;
+/* ── toggle on/off ── */
+.act-toggle-on {
+    background: #dcfce7; color: #15803d;
+    border: none; cursor: pointer; border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: background 0.2s;
 }
+.act-toggle-on:hover { background: #bbf7d0; }
+.act-toggle-off {
+    background: #fef9c3; color: #854d0e;
+    border: none; cursor: pointer; border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: background 0.2s;
+}
+.act-toggle-off:hover { background: #fde68a; }
+
+/* ── edit pill (coupon/offer style) ── */
+.act-edit {
+    background: #e0e7ff; color: #3730a3;
+    border: none; cursor: pointer; border-radius: 8px;
+    padding: 5px 10px; font-size: 12px; font-weight: 700;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: background 0.2s;
+}
+.act-edit:hover { background: #c7d2fe; }
+
+/* tbl-actions flex row */
+.tbl-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex-wrap: nowrap;
+}
+
+/* ═══════════════════════════════════════════
+   8. STATUS BADGES
+═══════════════════════════════════════════ */
+.badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    white-space: nowrap;
+}
+/* generic */
 .badge-active   { background: #dcfce7; color: #15803d; }
 .badge-inactive { background: #fee2e2; color: #991b1b; }
 .badge-expired  { background: #f5f5f5; color: #888; }
 .badge-percent  { background: #e0e7ff; color: #3730a3; }
 .badge-flat     { background: #fef9c3; color: #854d0e; }
-.badge-product  { background: #dbeafe; color: #1d4ed8; }
-.badge-category { background: #f3e8ff; color: #6b21a8; }
-.badge-referral { background: #fce7f3; color: #9d174d; }
+/* offer types */
+.badge-product  { background: #e0f2fe; color: #0369a1; }
+.badge-category { background: #f3e8ff; color: #7c3aed; }
+.badge-referral { background: #fef9c3; color: #854d0e; }
+/* review */
 .badge-approved { background: #dcfce7; color: #15803d; }
-.badge-pending  { background: #fff7ed; color: #c2410c; }
+.badge-pending  { background: #fef9c3; color: #854d0e; }
 
-/* Inline status text */
-.status-active  { color: #15803d; font-weight: 700; }
-.status-blocked { color: #991b1b; font-weight: 700; }
+/* customer / user inline status */
+.status-active  { background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.status-blocked { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 
-/* Stock badges */
+/* return status */
+.status-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+.status-PENDING   { background: #fef9c3; color: #854d0e; }
+.status-APPROVED  { background: #dcfce7; color: #15803d; }
+.status-REJECTED  { background: #fee2e2; color: #991b1b; }
+.status-REFUNDED  { background: #e0f2fe; color: #0369a1; }
+
+/* ═══════════════════════════════════════════
+   9. INVENTORY STOCK BADGES
+═══════════════════════════════════════════ */
 .stock-badge {
-    display: inline-block; padding: 3px 10px;
-    border-radius: 20px; font-size: 12px; font-weight: 700;
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
 }
 .stock-low    { background: #fee2e2; color: #991b1b; }
 .stock-medium { background: #fef9c3; color: #854d0e; }
 .stock-high   { background: #dcfce7; color: #15803d; }
 
-/* Return / order status */
-.status-badge {
-    font-size: 11px; font-weight: 700; padding: 3px 9px;
-    border-radius: 20px; display: inline-block; white-space: nowrap;
-    background: #f5f5f5; color: #555;
+/* ═══════════════════════════════════════════
+   10. FLASH MESSAGES
+═══════════════════════════════════════════ */
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
 }
-.status-PENDING, .status-pending         { background: #fff7ed; color: #c2410c; }
-.status-APPROVED, .status-approved       { background: #dcfce7; color: #15803d; }
-.status-REJECTED, .status-rejected       { background: #fee2e2; color: #991b1b; }
-.status-COMPLETED, .status-completed     { background: #dbeafe; color: #1d4ed8; }
-.status-PROCESSING, .status-processing   { background: #e0e7ff; color: #3730a3; }
-.status-SHIPPED, .status-shipped         { background: #f0fdf4; color: #166534; }
-.status-DELIVERED, .status-delivered     { background: #dcfce7; color: #14532d; }
-.status-CANCELLED, .status-cancelled     { background: #fee2e2; color: #7f1d1d; }
-.status-REFUNDED, .status-refunded       { background: #fce7f3; color: #9d174d; }
-
-/* ---------- Empty Row ---------- */
-.empty-row td, tbody tr td[colspan] {
-    text-align: center; padding: 50px 20px; color: #aaa; font-size: 14px;
-}
-
-/* ---------- Messages ---------- */
-.messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .message {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
 }
 .message button {
-    background: none; border: none; cursor: pointer;
-    font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7; line-height: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0 0 0 10px;
+    color: inherit;
+    opacity: 0.7;
+    line-height: 1;
 }
 .message button:hover { opacity: 1; }
 .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
@@ -300,66 +451,124 @@ tbody tr:hover td { background: #f9f0f6; }
 .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
 .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
 
-/* ---------- Review Cards ---------- */
-.rev-list { display: flex; flex-direction: column; gap: 14px; }
+/* ═══════════════════════════════════════════
+   11. REVIEW CARDS  (admin_review_list)
+═══════════════════════════════════════════ */
+.rev-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
 .rev-card {
-    background: #fff; border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid #f0f0f0;
+    box-shadow: 0 3px 10px rgba(0,0,0,.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
     padding: 18px 20px;
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 16px; flex-wrap: wrap;
+    transition: box-shadow 0.2s;
 }
-.rev-body { flex: 1; min-width: 200px; }
-.rev-top {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
-}
+.rev-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.09); }
+.rev-body { flex: 1; }
+.rev-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
 .rev-user { font-weight: 700; color: #222; font-size: 14px; }
-.rev-user small { font-weight: 400; color: #888; }
-.stars { color: #f59e0b; font-size: 15px; letter-spacing: 1px; }
-.rev-product { font-size: 12px; color: #555; margin-bottom: 6px; }
+.rev-user small { font-weight: 400; color: #888; font-size: 12px; }
+.stars { color: #f59e0b; font-size: 16px; letter-spacing: 1px; margin-top: 2px; }
+.rev-product { font-size: 12px; color: #888; margin-bottom: 6px; }
 .rev-product a { color: #f06292; text-decoration: none; }
-.rev-product a:hover { text-decoration: underline; }
-.rev-comment { font-size: 13px; color: #444; margin-bottom: 6px; line-height: 1.5; }
-.rev-date { font-size: 11px; color: #aaa; }
-.rev-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rev-comment { font-size: 13px; color: #444; line-height: 1.6; margin-bottom: 6px; }
+.rev-date { font-size: 11px; color: #bbb; }
+.rev-actions { display: flex; flex-direction: column; gap: 7px; min-width: 110px; align-items: flex-end; }
 
-/* ---------- Inventory Update Form ---------- */
-.update-form { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; }
-.update-form input[type="number"] {
-    width: 70px; padding: 6px 8px; border-radius: 8px;
-    border: 1px solid #ccc; font-size: 13px; text-align: center;
+/* ═══════════════════════════════════════════
+   12. EMPTY STATE (review / standalone)
+═══════════════════════════════════════════ */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #bbb;
+    font-size: 15px;
 }
+
+/* ═══════════════════════════════════════════
+   13. INVENTORY UPDATE FORM (inline)
+═══════════════════════════════════════════ */
+.update-form {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.update-form input[type="number"] {
+    width: 70px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    font-size: 13px;
+    outline: none;
+}
+.update-form input[type="number"]:focus { border-color: #f06292; }
 .update-form select {
-    padding: 6px 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    font-size: 13px;
 }
 .update-btn {
-    padding: 6px 12px; border-radius: 8px; background: #f06292; color: #fff;
-    border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: #f06292;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 0.2s;
 }
-.update-btn:hover { background: #e91e63; }
+.update-btn:hover { background: #000; }
 
-/* ---------- Empty State (standalone) ---------- */
-.empty-state { text-align: center; padding: 60px 20px; color: #aaa; font-size: 15px; }
+/* ═══════════════════════════════════════════
+   14. CONFIRM MODAL ANIMATION
+═══════════════════════════════════════════ */
+@keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
 
-/* ---------- Banner Thumbnail ---------- */
+/* ═══════════════════════════════════════════
+   15. BANNER IMAGE THUMB
+═══════════════════════════════════════════ */
 .banner-thumb {
-    width: 100px; height: 48px; object-fit: cover;
-    border-radius: 6px; border: 1px solid #eee;
+    width: 90px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1.5px solid #f0f0f0;
+    display: block;
+    margin: 0 auto;
 }
 </style>
 
+{% comment %}
+  ── Shared auto-dismiss JS ──
+  Included once here so individual pages don't repeat it.
+  Works for any element with id="msgContainer".
+{% endcomment %}
 <script>
-/* ── Auto-dismiss messages after 15 s ── */
 (function () {
-    const container = document.getElementById("msgContainer");
-    if (!container) return;
-    setTimeout(function () {
-        container.querySelectorAll(".message").forEach(function (msg) {
-            msg.style.transition = "opacity 0.5s";
-            msg.style.opacity = "0";
-            setTimeout(function () { msg.remove(); }, 500);
-        });
-    }, 15000);
-}());
+    var mc = document.getElementById("msgContainer");
+    if (!mc) { document.addEventListener("DOMContentLoaded", function () {
+        mc = document.getElementById("msgContainer"); init(mc);
+    }); } else { init(mc); }
+    function init(container) {
+        if (!container) return;
+        setTimeout(function () {
+            container.querySelectorAll(".message").forEach(function (msg) {
+                msg.style.transition = "opacity 0.5s";
+                msg.style.opacity = "0";
+                setTimeout(function () { msg.remove(); }, 500);
+            });
+        }, 15000);
+    }
+})();
 </script>

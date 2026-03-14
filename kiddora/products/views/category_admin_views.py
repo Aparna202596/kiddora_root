@@ -110,7 +110,7 @@ def admin_block_category(request, category_id):
         
         messages.success(request, f"{category.category_name} and its subcategories have been blocked.")
         return redirect("products:admin_category_list")
-    return render(request, "products/admin/admin_confirm_block.html", {"category": category})
+    return render(request, "admin_confirm_block.html", {"category": category})
 
 # UNBLOCK CATEGORY
 @never_cache
@@ -127,7 +127,7 @@ def admin_unblock_category(request, category_id):
         
         messages.success(request, f"{category.category_name} and all its children have been unblocked.")
         return redirect("products:admin_category_list")
-    return render(request, "products/admin/admin_confirm_unblock.html", {"category": category})
+    return render(request, "admin_confirm_unblock.html", {"category": category})
 
 # SUBCATEGORY MANAGEMENT
 @never_cache
@@ -229,7 +229,7 @@ def admin_block_subcategory(request, subcategory_id):
         ProductVariant.objects.filter(product__subcategory=subcategory).update(is_active=False)
         messages.success(request, f"{subcategory.subcategory_name} and its products have been blocked.")
         return redirect("products:admin_subcategory_list")
-    return render(request, "products/admin/admin_confirm_block.html", {"subcategory": subcategory})
+    return render(request, "admin_confirm_block.html", {"subcategory": subcategory})
 
 # UNBLOCK SUBCATEGORY — Unblocks the subcategory and all its products, but only if the parent category is active
 @never_cache
@@ -250,4 +250,4 @@ def admin_unblock_subcategory(request, subcategory_id):
         ProductVariant.objects.filter(product__subcategory=subcategory, product__is_deleted=False).update(is_active=True)
         messages.success(request, f"{subcategory.subcategory_name} and its products have been unblocked.")
         return redirect("products:admin_subcategory_list")
-    return render(request, "products/admin/admin_confirm_unblock.html", {"subcategory": subcategory})
+    return render(request, "admin_confirm_unblock.html", {"subcategory": subcategory})

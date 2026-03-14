@@ -2,122 +2,113 @@
 {% load static %}
 {% block title %}Reviews – Kiddora Admin{% endblock %}
 {% block content %}
-<style>
-.page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
-.page-hdr h2 { font-size:22px; font-weight:800; color:#222; }
-.toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; align-items:center; }
-.toolbar input, .toolbar select { padding:8px 12px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:13px; outline:none; }
-.toolbar input:focus, .toolbar select:focus { border-color:#f06292; }
-.btn-sm { padding:8px 14px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
-.btn-pink { background:#f06292; color:#fff; } .btn-pink:hover { background:#e91e63; }
-.btn-clear { background:#f5f5f5; color:#555; border:1.5px solid #ddd; text-decoration:none; }
+{% include "admin_list_style.html" %}
 
-.rev-list { display:flex; flex-direction:column; gap:12px; }
-.rev-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:18px 22px; display:flex; gap:18px; align-items:flex-start; }
-.rev-card:hover { border-color:#f06292; }
-.rev-body { flex:1; }
-.rev-top { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:6px; }
-.rev-user { font-size:13px; font-weight:700; color:#222; }
-.rev-user small { font-weight:400; color:#888; }
-.stars { color:#ffd54f; font-size:15px; }
-.rev-product { font-size:12px; color:#888; margin-bottom:6px; }
-.rev-product a { color:#f06292; }
-.rev-comment { font-size:13px; color:#555; line-height:1.6; }
-.rev-date { font-size:11px; color:#aaa; margin-top:6px; }
-.badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-block; }
-.badge-approved { background:#dcfce7; color:#15803d; }
-.badge-pending  { background:#fef9c3; color:#854d0e; }
-.rev-actions { display:flex; flex-direction:column; gap:7px; flex-shrink:0; }
-.act-btn { padding:6px 14px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
-.act-approve { background:#dcfce7; color:#15803d; } .act-approve:hover { background:#bbf7d0; }
-.act-reject  { background:#fee2e2; color:#991b1b; } .act-reject:hover  { background:#fca5a5; }
-.empty-state { text-align:center; padding:60px; color:#aaa; }
-</style>
+<div class="container">
+    <div class="page-hdr">
+        <h2><i class="fa-solid fa-star" style="color:#f06292;"></i> Product Reviews</h2>
+    </div>
 
-<div class="page-hdr">
-  <h2><i class="fa-solid fa-star" style="color:#f06292;"></i> Product Reviews</h2>
-</div>
-
-<div class="toolbar">
-  <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-    <input type="text" name="search" value="{{ search }}" placeholder="Email, product, comment…" style="width:220px;">
-    <select name="status">
-      <option value="">All Status</option>
-      <option value="approved" {% if status_f == "approved" %}selected{% endif %}>Approved</option>
-      <option value="pending"  {% if status_f == "pending"  %}selected{% endif %}>Pending</option>
-    </select>
-    <select name="rating">
-      <option value="">All Ratings</option>
-      {% for r in ratings %}
-      <option value="{{ r }}" {% if rating_f == r|stringformat:"s" %}selected{% endif %}>{{ r }} ★</option>
-      {% endfor %}
-    </select>
-    <button type="submit" class="btn-sm btn-pink"><i class="fa fa-search"></i> Filter</button>
-    {% if search or status_f or rating_f %}
-    <a href="{% url 'shopcore:admin_review_list' %}" class="btn-sm btn-clear">✕ Clear</a>
+    {% if messages %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
     {% endif %}
-  </form>
-</div>
 
-{% if page_obj.object_list %}
-<div class="rev-list">
-  {% for review in page_obj %}
-  <div class="rev-card">
-    <div class="rev-body">
-      <div class="rev-top">
-        <div>
-          <div class="rev-user">
-            {{ review.user.email }}
-            <small>— {{ review.user.get_full_name|default:review.user.email }}</small>
-          </div>
-          <div class="stars">
-            {% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
-            <span style="font-size:12px;color:#888;margin-left:4px;">{{ review.rating }}/5</span>
-          </div>
+    <!-- Filter toolbar -->
+    <form method="get" class="search-box">
+        <input type="text" name="search" value="{{ search }}" placeholder="Email, product, comment…" style="width:220px;">
+        <select name="status" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+            <option value="">All Status</option>
+            <option value="approved" {% if status_f == "approved" %}selected{% endif %}>Approved</option>
+            <option value="pending"  {% if status_f == "pending"  %}selected{% endif %}>Pending</option>
+        </select>
+        <select name="rating" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+            <option value="">All Ratings</option>
+            {% for r in ratings %}
+            <option value="{{ r }}" {% if rating_f == r|stringformat:"s" %}selected{% endif %}>{{ r }} ★</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="search-btn"><i class="fa fa-search"></i> Filter</button>
+        {% if search or status_f or rating_f %}
+        <a href="{% url 'shopcore:admin_review_list' %}" class="search-btn">Clear</a>
+        {% endif %}
+    </form>
+
+    {% if page_obj.object_list %}
+    <!-- Review cards -->
+    <div class="rev-list">
+        {% for review in page_obj %}
+        <div class="rev-card">
+            <div class="rev-body">
+                <div class="rev-top">
+                    <div>
+                        <div class="rev-user">
+                            {{ review.user.email }}
+                            <small>— {{ review.user.get_full_name|default:review.user.email }}</small>
+                        </div>
+                        <div class="stars">
+                            {% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+                            <span style="font-size:12px;color:#888;margin-left:4px;">{{ review.rating }}/5</span>
+                        </div>
+                    </div>
+                    <div>
+                        {% if review.is_approved %}
+                            <span class="badge badge-approved"><i class="fa fa-check"></i> Approved</span>
+                        {% else %}
+                            <span class="badge badge-pending"><i class="fa fa-clock"></i> Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="rev-product">
+                    <i class="fa fa-tag"></i>
+                    <a href="{% url 'products:product_detail' product_id=review.product.id %}" target="_blank">
+                        {{ review.product.product_name }}
+                    </a>
+                </div>
+                <div class="rev-comment">{{ review.comment }}</div>
+                <div class="rev-date">{{ review.created_at|date:"d M Y, H:i" }}</div>
+            </div>
+            <div class="rev-actions">
+                {% if not review.is_approved %}
+                <form method="post" action="{% url 'shopcore:admin_approve_review' review_id=review.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="act-approve">
+                        <i class="fa fa-check"></i> Approve
+                    </button>
+                </form>
+                {% endif %}
+
+                <!-- Delete (confirm modal) -->
+                <form id="del-rev-{{ review.id }}" method="post"
+                      action="{% url 'shopcore:admin_reject_review' review_id=review.id %}"
+                      style="display:none;">
+                    {% csrf_token %}
+                </form>
+                <button type="button" class="act-reject"
+                    onclick="openConfirmModal('Delete this review by {{ review.user.email|escapejs }}? This cannot be undone.', function(){ document.getElementById('del-rev-{{ review.id }}').submit(); })">
+                    <i class="fa fa-trash"></i> Delete
+                </button>
+            </div>
         </div>
-        <div>
-          {% if review.is_approved %}
-            <span class="badge badge-approved"><i class="fa fa-check"></i> Approved</span>
-          {% else %}
-            <span class="badge badge-pending"><i class="fa fa-clock"></i> Pending</span>
-          {% endif %}
-        </div>
-      </div>
-      <div class="rev-product">
-        <i class="fa fa-tag"></i>
-        <a href="{% url 'products:product_detail' product_id=review.product.id %}" target="_blank">
-          {{ review.product.product_name }}
-        </a>
-      </div>
-      <div class="rev-comment">{{ review.comment }}</div>
-      <div class="rev-date">{{ review.created_at|date:"d M Y, H:i" }}</div>
+        {% endfor %}
     </div>
 
-    <div class="rev-actions">
-      {% if not review.is_approved %}
-      <form method="post" action="{% url 'shopcore:admin_approve_review' review_id=review.id %}">
-        {% csrf_token %}
-        <button type="submit" class="act-btn act-approve"><i class="fa fa-check"></i> Approve</button>
-      </form>
-      {% endif %}
-      <form id="del-rev-{{ review.id }}" method="post" action="{% url 'shopcore:admin_reject_review' review_id=review.id %}" style="display:none;">
-        {% csrf_token %}
-      </form>
-      <button type="button" class="act-btn act-reject"
-        onclick="openConfirmModal('Delete this review by {{ review.user.email|escapejs }}?', function(){ document.getElementById('del-rev-{{ review.id }}').submit(); })">
-        <i class="fa fa-trash"></i> Delete
-      </button>
+    {% include "pagination.html" with page_obj=page_obj %}
+
+    {% else %}
+    <div class="empty-state">
+        <i class="fa-regular fa-star" style="font-size:2.5rem;display:block;margin-bottom:10px;"></i>
+        No reviews found{% if search or status_f or rating_f %} matching your filters{% endif %}.
     </div>
-  </div>
-  {% endfor %}
+    {% endif %}
 </div>
 
-{% include "pagination.html" with page_obj=page_obj %}
-
-{% else %}
-<div class="empty-state">
-  <i class="fa-regular fa-star" style="font-size:2.5rem;display:block;margin-bottom:10px;"></i>
-  No reviews found{% if search or status_f or rating_f %} matching your filters{% endif %}.
-</div>
-{% endif %}
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
 {% endblock %}

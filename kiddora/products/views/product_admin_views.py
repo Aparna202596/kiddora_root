@@ -286,7 +286,7 @@ def admin_block_product(request, product_id):
         ProductVariant.objects.filter(product=product).update(is_active=False)
         messages.success(request, f"{product.product_name} and its variants have been blocked.")
         return redirect("products:admin_product_list")
-    return render(request, "products/admin/admin_confirm_block.html", {"product": product})
+    return render(request, "admin_confirm_block.html", {"product": product})
 
 
 @never_cache
@@ -316,7 +316,7 @@ def admin_unblock_product(request, product_id):
         ProductVariant.objects.filter(product=product).update(is_active=True)
         messages.success(request, f"{product.product_name} and its variants have been unblocked.")
         return redirect("products:admin_product_list")
-    return render(request, "products/admin/admin_confirm_unblock.html", {"product": product})
+    return render(request, "admin_confirm_unblock.html", {"product": product})
 
 # VARIANT MANAGEMENT
 
@@ -397,7 +397,7 @@ def admin_block_variant(request, product_id, variant_id):
         variant.save()
         messages.success(request, f"Variant has been blocked.")
         return redirect("products:admin_product_details", product_id=product_id)
-    return render(request, "products/admin/admin_confirm_block.html", {"variant": variant, "product_id": product_id})
+    return render(request, "admin_confirm_block.html", {"variant": variant, "product_id": product_id})
 
 
 @never_cache
@@ -433,4 +433,4 @@ def admin_unblock_variant(request, product_id, variant_id):
         variant.save()
         messages.success(request, "Variant has been unblocked.")
         return redirect("products:admin_product_details", product_id=product_id)
-    return render(request, "products/admin/admin_confirm_unblock.html", {"variant": variant, "product_id": product_id})
+    return render(request, "admin_confirm_unblock.html", {"variant": variant, "product_id": product_id})

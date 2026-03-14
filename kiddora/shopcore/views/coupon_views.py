@@ -1,24 +1,15 @@
-# shopcore/views/coupon_views.py
-# User : apply / remove coupon on cart
-# Admin: list, add, edit, soft-delete, toggle
-
-from decimal import Decimal
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator
+from accounts.decorators import admin_login_required, user_login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-from django.views.decorators.cache import never_cache
-from types import SimpleNamespace
-from accounts.decorators import admin_login_required
 from shopcore.models import Cart, Coupon
+from django.contrib import messages
+from django.utils import timezone
+from decimal import Decimal
+from types import SimpleNamespace
 
-
-# ─────────────────────────────────────────────────────────────
 # HELPER
-# ─────────────────────────────────────────────────────────────
-
 def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
     """Return discount amount. Exported so checkout / order views can reuse it."""
     if coupon.discount_type == "PERCENT":
@@ -29,20 +20,17 @@ def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
         discount = coupon.discount_value
     return min(discount, subtotal)
 
-
-# ─────────────────────────────────────────────────────────────
 # USER: APPLY COUPON
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 def apply_coupon(request):
     if request.method != "POST":
         return redirect("shopcore:cart")
 
     code = request.POST.get("coupon_code", "").strip().upper()
     if not code:
-        messages.error(request, "Please enter a coupon code.")
+        messages.error(request, "Please enter a coupon code!")
         return redirect("shopcore:cart")
 
     try:
@@ -52,26 +40,25 @@ def apply_coupon(request):
         return redirect("shopcore:cart")
 
     if not coupon.is_valid():
-        messages.error(request, f'Coupon "{code}" is expired or inactive.')
+        messages.error(request, f'Sorry!!, Coupon "{code}" is expired or inactive.')
         return redirect("shopcore:cart")
 
     if coupon.used_by.filter(id=request.user.id).exists():
-        messages.error(request, "You have already used this coupon.")
+        messages.error(request, "Oops!, You have already used this coupon.")
         return redirect("shopcore:cart")
 
     if coupon.used_count >= coupon.usage_limit:
-        messages.error(request, "This coupon has reached its usage limit.")
+        messages.error(request, "Oops, This coupon has reached its usage limit.")
         return redirect("shopcore:cart")
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
-    subtotal = sum(
-        item.variant.product.final_price * item.quantity
-        for item in cart.items.select_related("variant__product").all()
-    )
+    subtotal = sum(item.variant.product.final_price * item.quantity
+        for item in cart.items.select_related("variant__product").all())
+    
     if subtotal < coupon.min_order_amount:
         messages.error(
             request,
-            f"Minimum order of ₹{coupon.min_order_amount:.0f} required "
+            f"Minimum order of ₹{coupon.min_order_amount:.0f} required!! "
             f"(your cart: ₹{subtotal:.0f})."
         )
         return redirect("shopcore:cart")
@@ -82,13 +69,10 @@ def apply_coupon(request):
     messages.success(request, f'Coupon "{code}" applied — you save ₹{discount:.0f}!')
     return redirect("shopcore:cart")
 
-
-# ─────────────────────────────────────────────────────────────
 # USER: REMOVE COUPON
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 def remove_coupon(request):
     if request.method != "POST":
         return redirect("shopcore:cart")
@@ -101,16 +85,13 @@ def remove_coupon(request):
         pass
     return redirect("shopcore:cart")
 
-
-# ─────────────────────────────────────────────────────────────
 # ADMIN: LIST
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
 def admin_coupon_list(request):
-    search   = request.GET.get("search", "").strip()
-    type_f   = request.GET.get("type", "")
+    search = request.GET.get("search", "").strip()
+    type_f = request.GET.get("type", "")
     status_f = request.GET.get("status", "")
 
     qs = Coupon.objects.filter(is_deleted=False)
@@ -128,17 +109,14 @@ def admin_coupon_list(request):
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
     return render(request, "coupon_offer/admin_coupon_list.html", {
         "page_obj": page_obj,
-        "search":   search,
-        "type_f":   type_f,
+        "search": search,
+        "type_f": type_f,
         "status_f": status_f,
-        "now":      timezone.now(),
+        "now": timezone.now(),
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: ADD
-# ─────────────────────────────────────────────────────────────
+# ADMIN: ADD COUPON
 
 @never_cache
 @admin_login_required
@@ -156,10 +134,7 @@ def admin_add_coupon(request):
         ),
     })
 
-
-# ─────────────────────────────────────────────────────────────
 # ADMIN: EDIT
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
@@ -168,8 +143,8 @@ def admin_edit_coupon(request, coupon_id):
     if request.method == "POST":
         return _save_coupon(request, instance=coupon)
     return render(request, "coupon_offer/admin_coupon_form.html", {
-        "action":           "Edit",
-        "coupon":           coupon,
+        "action": "Edit",
+        "coupon": coupon,
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
         "form_data": SimpleNamespace(
             code="", discount_type="", discount_value="",
@@ -178,17 +153,15 @@ def admin_edit_coupon(request, coupon_id):
         ),
     })
 
-
 def _save_coupon(request, instance):
-    code          = request.POST.get("code", "").strip().upper()
+    code = request.POST.get("code", "").strip().upper()
     discount_type = request.POST.get("discount_type", "PERCENT")
-    discount_val  = request.POST.get("discount_value", "")
-    max_discount  = request.POST.get("max_discount", "") or None
-    min_order     = request.POST.get("min_order_amount", "0") or "0"
-    start_date    = request.POST.get("start_date", "")
-    expiry_date   = request.POST.get("expiry_date", "")
-    usage_limit   = request.POST.get("usage_limit", "1") or "1"
-    is_active     = bool(request.POST.get("is_active"))
+    discount_val = request.POST.get("discount_value", "")
+    max_discount = request.POST.get("max_discount", "") or None
+    min_order = request.POST.get("min_order_amount", "0") or "0"
+    start_date = request.POST.get("start_date", "")
+    expiry_date = request.POST.get("expiry_date", "")
+    usage_limit = request.POST.get("usage_limit", "1") or "1"
 
     errors = []
     if not code:
@@ -218,24 +191,20 @@ def _save_coupon(request, instance):
         return render(request, "coupon_offer/admin_coupon_form.html", ctx)
 
     obj = instance or Coupon()
-    obj.code             = code
-    obj.discount_type    = discount_type
-    obj.discount_value   = Decimal(discount_val)
-    obj.max_discount     = Decimal(max_discount) if max_discount else None
+    obj.code  = code
+    obj.discount_type = discount_type
+    obj.discount_value = Decimal(discount_val)
+    obj.max_discount = Decimal(max_discount) if max_discount else None
     obj.min_order_amount = Decimal(min_order)
-    obj.start_date       = start_date
-    obj.expiry_date      = expiry_date
-    obj.usage_limit      = int(usage_limit)
-    obj.is_active        = is_active
+    obj.start_date = start_date
+    obj.expiry_date = expiry_date
+    obj.usage_limit = int(usage_limit)
     obj.save()
 
     messages.success(request, f'Coupon "{obj.code}" {"updated" if instance else "created"}.')
     return redirect("shopcore:admin_coupon_list")
 
-
-# ─────────────────────────────────────────────────────────────
 # ADMIN: SOFT DELETE
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
@@ -247,13 +216,9 @@ def admin_delete_coupon(request, coupon_id):
         coupon.save(update_fields=["is_deleted", "is_active"])
         messages.success(request, f'Coupon "{coupon.code}" deleted.')
         return redirect("shopcore:admin_coupon_list")
-    # GET - handled via confirm_modal.html in the list template
     return redirect("shopcore:admin_coupon_list")
 
-
-# ─────────────────────────────────────────────────────────────
 # ADMIN: TOGGLE ACTIVE
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required

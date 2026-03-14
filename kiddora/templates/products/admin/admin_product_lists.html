@@ -1,102 +1,36 @@
 {% extends "base_admin.html" %}
 {% load static %}
 {% block content %}
-<style>
-.container { padding: 25px; }
-h2 { text-align: center; margin-bottom: 10px; }
-/* Top Links */
-.top-links {
-    display: flex; justify-content: flex-end;
-    gap: 12px; margin-bottom: 20px;
-}
-.top-links a {
-    padding: 6px 14px; border-radius: 20px;
-    background: #f06292; color: #fff;
-    text-decoration: none; font-size: 14px; transition: 0.3s;
-}
-.top-links a:hover { background: #f42f71; }
-/* Search */
-.search-box { display: flex; gap: 10px; margin-bottom: 25px; }
-.search-box input {
-    flex: 1; padding: 10px; border-radius: 25px;
-    border: 1px solid #ccc; outline: none; transition: 0.2s;
-}
-.search-box input:focus {
-    border-color: #333;
-    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
-}
-.search-btn {
-    padding: 8px 18px; border-radius: 25px;
-    background: #333; color: #fff;
-    border: none; cursor: pointer; text-decoration: none;
-}
-.search-btn:hover { background: #000; }
-/* Table */
-.table-wrapper {
-    border-radius: 14px; overflow: hidden;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-}
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px; text-align: center; }
-/* ── single th rule (removed duplicate) ── */
-th { background: #000; color: #fff; cursor: pointer; }
-th a {
-    color: #fff; text-decoration: none;
-    display: inline-block; width: 100%; height: 100%;
-}
-th a:hover, th a:focus, th a:visited {
-    color: #fff; text-decoration: none;
-}
-tr { transition: 0.2s; }
-tbody tr:hover { background: #f9f0f6; }
-/* Action Icons */
-.action-icons a { margin: 0 6px; font-size: 16px; text-decoration: none; }
-.icon-edit { color: #000; }
-.icon-delete { color: #dc3545; }
-.icon-edit:hover, .icon-delete:hover { opacity: 0.7; }
-.action-block   { color: #e74c3c; }
-.action-unblock { color: #2ecc71; }
-/* ── MESSAGES ── */
-    .messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-    .message {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
-    }
-    .message button {
-        background: none; border: none; cursor: pointer;
-        font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7;
-    }
-    .message button:hover { opacity: 1; }
-    .message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
-    .message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
-    .message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
-    .message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
-</style>
+{% include "admin_list_style.html" %}
+
 <div class="container">
     <h2>Product Management</h2>
+
     {% if messages %}
-            <div class="messages" id="msgContainer">
-                {% for message in messages %}
-                <div class="message {{ message.tags }}">
-                    <span>{{ message }}</span>
-                    <button type="button" onclick="this.parentElement.remove()">×</button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Top Links -->
     <div class="top-links">
         <a href="{% url 'products:admin_add_product' %}">+ Add Product</a>
     </div>
+
     <!-- Search -->
     <form method="get" class="search-box">
-        <input type="text" name="search" placeholder="Search products..."
-                value="{{ search }}">
-        <!--  preserve sort state across search -->
+        <input type="text" name="search" placeholder="Search products..." value="{{ search }}">
         {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
-        {% if dir %}<input type="hidden" name="dir"  value="{{ dir }}">{% endif %}
+        {% if dir  %}<input type="hidden" name="dir"  value="{{ dir  }}">{% endif %}
         <button type="submit" class="search-btn">Search</button>
         <a href="{% url 'products:admin_product_list' %}" class="search-btn">Clear</a>
     </form>
+
     <!-- Table -->
     <div class="table-wrapper">
         <table id="productTable">
@@ -139,7 +73,8 @@ tbody tr:hover { background: #f9f0f6; }
             {% for prod in page_obj %}
                 <tr>
                     <td>
-                        <a href="{% url 'products:admin_product_details' prod.id %}">
+                        <a href="{% url 'products:admin_product_details' prod.id %}"
+                           style="color:#f06292;font-weight:600;text-decoration:none;">
                             {{ prod.product_name }}
                         </a>
                     </td>
@@ -147,7 +82,7 @@ tbody tr:hover { background: #f9f0f6; }
                     <td>
                         ₹{{ prod.final_price }}
                         {% if prod.discount_percent > 0 %}
-                        (<small>{{ prod.discount_percent }}% off</small>)
+                        <small style="color:#aaa;">({{ prod.discount_percent }}% off)</small>
                         {% endif %}
                     </td>
                     <td>{{ prod.subcategory.subcategory_name }}</td>
@@ -155,64 +90,48 @@ tbody tr:hover { background: #f9f0f6; }
                     <td>{{ prod.get_gender_display }}</td>
                     <td class="action-icons">
                         <a class="icon-edit"
-                            href="{% url 'products:admin_edit_product' prod.id %}"
-                            title="Edit">✏️</a>
+                           href="{% url 'products:admin_edit_product' prod.id %}"
+                           title="Edit">✏️</a>
                         <a class="icon-delete"
-                            href="{% url 'products:admin_delete_product' prod.id %}"
-                            onclick="confirmDelete(event, this.href, '{{ prod.product_name }}')"
-                            title="Delete">🗑️</a>
-
+                           href="{% url 'products:admin_delete_product' prod.id %}"
+                           onclick="confirmDelete(event, this.href, '{{ prod.product_name|escapejs }}')"
+                           title="Delete">🗑️</a>
                         {% if prod.is_active %}
                             <a href="{% url 'products:admin_block_product' prod.id %}"
-                            class="action-block"
-                            title="Block Product">
-                            <i class="fa-solid fa-ban"></i>
+                               class="action-block"
+                               title="Block Product">
+                                <i class="fa-solid fa-ban"></i>
                             </a>
                         {% else %}
                             <a href="{% url 'products:admin_unblock_product' prod.id %}"
-                            class="action-unblock"
-                            title="Unblock Product">
-                            <i class="fa-solid fa-circle-check"></i>
+                               class="action-unblock"
+                               title="Unblock Product">
+                                <i class="fa-solid fa-circle-check"></i>
                             </a>
-    {% endif %}
-                        
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7">No products found</td> 
+                    <td colspan="7">No products found</td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
+
     {% include "pagination.html" %}
 </div>
 
 {% include "confirm_modal.html" %}
 <script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
-function confirmDelete(e, url) {
+function confirmDelete(e, url, name) {
     e.preventDefault();
     openConfirmModal(
-        'Are you sure you want to delete this product? This cannot be undone.',
-        function () {
-            window.location.href = url;
-        }
+        'Are you sure you want to delete "' + name + '"? This cannot be undone.',
+        function () { window.location.href = url; }
     );
 }
-</script>
-<script>
-/* ── Auto-dismiss messages after 15 seconds ── */
-    const msgContainer = document.getElementById("msgContainer");
-    if (msgContainer) {
-        setTimeout(() => {
-            msgContainer.querySelectorAll(".message").forEach(msg => {
-                msg.style.transition = "opacity 0.5s";
-                msg.style.opacity = "0";
-                setTimeout(() => msg.remove(), 500);
-            });
-        }, 15000);
-    }
 </script>
 {% endblock %}

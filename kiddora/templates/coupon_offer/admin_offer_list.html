@@ -2,170 +2,154 @@
 {% load static %}
 {% block title %}Offers – Kiddora Admin{% endblock %}
 {% block content %}
-<style>
-.page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
-.page-hdr h2 { font-size:22px; font-weight:800; color:#222; }
-.btn-add { padding:9px 20px; background:#f06292; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:7px; }
-.btn-add:hover { background:#e91e63; }
-.toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; align-items:center; }
-.toolbar input, .toolbar select { padding:8px 12px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:13px; outline:none; }
-.toolbar input:focus, .toolbar select:focus { border-color:#f06292; }
-.btn-sm { padding:8px 14px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
-.btn-pink { background:#f06292; color:#fff; } .btn-pink:hover { background:#e91e63; }
-.btn-clear { background:#f5f5f5; color:#555; border:1.5px solid #ddd; text-decoration:none; }
-.data-table { width:100%; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; border:1.5px solid #eee; }
-.data-table th { padding:13px 16px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#888; background:#fafafa; text-align:left; }
-.data-table td { padding:13px 16px; font-size:13px; color:#333; border-top:1px solid #f5f5f5; }
-.data-table tr:hover td { background:#fff9fb; }
-.badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-block; }
-.badge-active   { background:#dcfce7; color:#15803d; }
-.badge-inactive { background:#fee2e2; color:#991b1b; }
-.badge-expired  { background:#f5f5f5; color:#888; }
-.badge-product  { background:#e0e7ff; color:#3730a3; }
-.badge-category { background:#fce7f3; color:#9d174d; }
-.badge-referral { background:#fef9c3; color:#854d0e; }
-.tbl-actions { display:flex; gap:6px; }
-.act-btn { padding:5px 10px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:4px; }
-.act-edit       { background:#e0e7ff; color:#3730a3; } .act-edit:hover { background:#c7d2fe; }
-.act-toggle-on  { background:#dcfce7; color:#15803d; } .act-toggle-on:hover { background:#bbf7d0; }
-.act-toggle-off { background:#fef9c3; color:#854d0e; } .act-toggle-off:hover { background:#fde68a; }
-.act-del        { background:#fee2e2; color:#991b1b; } .act-del:hover { background:#fca5a5; }
-.empty-row td   { text-align:center; padding:50px; color:#aaa; }
-</style>
+{% include "admin_list_style.html" %}
 
-<div class="page-hdr">
-  <h2><i class="fa-solid fa-percent" style="color:#f06292;"></i> Offers</h2>
-  <a href="{% url 'shopcore:admin_add_offer' %}" class="btn-add"><i class="fa fa-plus"></i> Add Offer</a>
-</div>
+<div class="container">
+    <div class="page-hdr">
+        <h2><i class="fa-solid fa-percent" style="color:#f06292;"></i> Offers</h2>
+        <a href="{% url 'shopcore:admin_add_offer' %}" class="btn-add">
+            <i class="fa fa-plus"></i> Add Offer
+        </a>
+    </div>
 
-<div class="toolbar">
-  <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-    <input type="text" name="search" value="{{ search }}" placeholder="Search product / category…" style="width:220px;">
-    <select name="type">
-      <option value="">All Types</option>
-      {% for val, label in offer_types %}
-      <option value="{{ val }}" {% if type_f == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-    <select name="status">
-      <option value="">All Status</option>
-      <option value="active"   {% if status_f == "active"   %}selected{% endif %}>Active</option>
-      <option value="inactive" {% if status_f == "inactive" %}selected{% endif %}>Inactive</option>
-    </select>
-    <button type="submit" class="btn-sm btn-pink"><i class="fa fa-search"></i> Filter</button>
-    {% if search or type_f or status_f %}
-    <a href="{% url 'shopcore:admin_offer_list' %}" class="btn-sm btn-clear">✕ Clear</a>
-    {% endif %}
-  </form>
-</div>
-
-<table class="data-table">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Type</th>
-      <th>Target</th>
-      <th>Discount</th>
-      <th>Start Date</th>
-      <th>End Date</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for offer in page_obj %}
-    <tr>
-      <td>{{ forloop.counter }}</td>
-
-      <!-- TYPE -->
-      <td>
-        {% if offer.offer_type == "PRODUCT" %}
-          <span class="badge badge-product">Product</span>
-        {% elif offer.offer_type == "CATEGORY" %}
-          <span class="badge badge-category">Category</span>
-        {% elif offer.offer_type == "REFERRAL" %}
-          <span class="badge badge-referral">Referral</span>
-        {% else %}
-          <span class="badge badge-expired">{{ offer.offer_type }}</span>
-        {% endif %}
-      </td>
-
-      <!-- TARGET -->
-      <td>
-        {% if offer.offer_type == "PRODUCT" and offer.product %}
-          {{ offer.product.product_name }}
-        {% elif offer.offer_type == "CATEGORY" and offer.category %}
-          {{ offer.category.category_name }}
-        {% elif offer.offer_type == "REFERRAL" and offer.referral_coupon %}
-          Coupon: <strong>{{ offer.referral_coupon.code }}</strong>
-        {% else %}
-          <span style="color:#aaa;">—</span>
-        {% endif %}
-      </td>
-
-      <!-- DISCOUNT -->
-      <td><strong>{{ offer.discount_percent }}%</strong></td>
-
-      <!-- START DATE -->
-      <td>{{ offer.start_date|date:"d M Y" }}</td>
-
-      <!-- END DATE -->
-      <td>
-        {% if offer.end_date %}
-          {{ offer.end_date|date:"d M Y" }}
-          {% if offer.end_date < now %}
-            <br><small style="color:#dc2626;">Expired</small>
-          {% endif %}
-        {% else %}
-          <span style="color:#aaa;">No expiry</span>
-        {% endif %}
-      </td>
-
-      <!-- STATUS -->
-      <td>
-        {% if offer.end_date and offer.end_date < now %}
-          <span class="badge badge-expired">Expired</span>
-        {% elif offer.is_active %}
-          <span class="badge badge-active">Active</span>
-        {% else %}
-          <span class="badge badge-inactive">Inactive</span>
-        {% endif %}
-      </td>
-
-      <!-- ACTIONS -->
-      <td>
-        <div class="tbl-actions">
-          <a href="{% url 'shopcore:admin_edit_offer' offer_id=offer.id %}" class="act-btn act-edit">
-            <i class="fa fa-pen"></i>
-          </a>
-          <form method="post" action="{% url 'shopcore:admin_toggle_offer' offer_id=offer.id %}" style="display:contents;">
-            {% csrf_token %}
-            <button type="submit" class="act-btn {% if offer.is_active %}act-toggle-off{% else %}act-toggle-on{% endif %}">
-              <i class="fa {% if offer.is_active %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
-            </button>
-          </form>
-          <button type="button" class="act-btn act-del"
-            onclick="openConfirmModal('Delete this offer? This cannot be undone.', function(){ document.getElementById('del-offer-{{ offer.id }}').submit(); })">
-            <i class="fa fa-trash"></i>
-          </button>
-          <form id="del-offer-{{ offer.id }}" method="post"
-                action="{% url 'shopcore:admin_delete_offer' offer_id=offer.id %}" style="display:none;">
-            {% csrf_token %}
-          </form>
+    {% if messages %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
         </div>
-      </td>
-    </tr>
-    {% empty %}
-    <tr class="empty-row">
-      <td colspan="8">
-        <i class="fa fa-percent" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
-        No offers found.
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-{% include "pagination.html" with page_obj=page_obj %}
+    <!-- Filter toolbar -->
+    <form method="get" class="search-box">
+        <input type="text" name="search" value="{{ search }}" placeholder="Search product / category…" style="width:220px;">
+        <select name="type" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+            <option value="">All Types</option>
+            {% for val, label in offer_types %}
+            <option value="{{ val }}" {% if type_f == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="status" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+            <option value="">All Status</option>
+            <option value="active"   {% if status_f == "active"   %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if status_f == "inactive" %}selected{% endif %}>Inactive</option>
+        </select>
+        <button type="submit" class="search-btn"><i class="fa fa-search"></i> Filter</button>
+        {% if search or type_f or status_f %}
+        <a href="{% url 'shopcore:admin_offer_list' %}" class="search-btn">Clear</a>
+        {% endif %}
+    </form>
 
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>Target</th>
+                    <th>Discount</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for offer in page_obj %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        {% if offer.offer_type == "PRODUCT" %}
+                            <span class="badge badge-product">Product</span>
+                        {% elif offer.offer_type == "CATEGORY" %}
+                            <span class="badge badge-category">Category</span>
+                        {% elif offer.offer_type == "REFERRAL" %}
+                            <span class="badge badge-referral">Referral</span>
+                        {% else %}
+                            <span class="badge badge-expired">{{ offer.offer_type }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if offer.offer_type == "PRODUCT" and offer.product %}
+                            {{ offer.product.product_name }}
+                        {% elif offer.offer_type == "CATEGORY" and offer.category %}
+                            {{ offer.category.category_name }}
+                        {% elif offer.offer_type == "REFERRAL" and offer.referral_coupon %}
+                            Coupon: <strong>{{ offer.referral_coupon.code }}</strong>
+                        {% else %}
+                            <span style="color:#aaa;">—</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ offer.discount_percent }}%</strong></td>
+                    <td>{{ offer.start_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if offer.end_date %}
+                            {{ offer.end_date|date:"d M Y" }}
+                            {% if offer.end_date < now %}
+                            <br><small style="color:#dc2626;">Expired</small>
+                            {% endif %}
+                        {% else %}
+                            <span style="color:#aaa;">No expiry</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if offer.end_date and offer.end_date < now %}
+                            <span class="badge badge-expired">Expired</span>
+                        {% elif offer.is_active %}
+                            <span class="badge badge-active">Active</span>
+                        {% else %}
+                            <span class="badge badge-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="tbl-actions">
+                            <!-- Edit -->
+                            <a href="{% url 'shopcore:admin_edit_offer' offer_id=offer.id %}"
+                               class="icon-edit" title="Edit">✏️</a>
+
+                            <!-- Toggle -->
+                            <form method="post"
+                                  action="{% url 'shopcore:admin_toggle_offer' offer_id=offer.id %}"
+                                  style="display:contents;">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="act-btn {% if offer.is_active %}act-toggle-off{% else %}act-toggle-on{% endif %}"
+                                        title="{% if offer.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                    <i class="fa {% if offer.is_active %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                </button>
+                            </form>
+
+                            <!-- Delete -->
+                            <button type="button" class="icon-delete" style="background:transparent;border:none;cursor:pointer;font-size:15px;"
+                                onclick="openConfirmModal('Delete this offer? This cannot be undone.', function(){ document.getElementById('del-offer-{{ offer.id }}').submit(); })"
+                                title="Delete">🗑️</button>
+                            <form id="del-offer-{{ offer.id }}" method="post"
+                                  action="{% url 'shopcore:admin_delete_offer' offer_id=offer.id %}"
+                                  style="display:none;">
+                                {% csrf_token %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <i class="fa fa-percent" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+                        No offers found.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include "pagination.html" with page_obj=page_obj %}
+</div>
+
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
 {% endblock %}
