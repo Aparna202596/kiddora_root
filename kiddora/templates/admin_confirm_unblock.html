@@ -35,12 +35,12 @@
 }
 .btn-cancel:hover { background: #e0e0e0; }
 </style>
-
 <div class="confirm-container">
     <div class="confirm-icon">
         <i class="fa-solid fa-circle-check"></i>
     </div>
 
+    <!-- ── CATEGORY (unchanged) ─────────────────────────── -->
     {% if category %}
         <h2>Unblock Category?</h2>
         <p>You are about to unblock:</p>
@@ -48,6 +48,8 @@
         <div class="info-note">
             ✅ All subcategories under this category will also be unblocked.
         </div>
+
+    <!-- ── SUBCATEGORY (unchanged) ──────────────────────── -->
     {% elif subcategory %}
         <h2>Unblock SubCategory?</h2>
         <p>You are about to unblock:</p>
@@ -56,6 +58,8 @@
         <div class="info-note">
             ✅ This subcategory will become active again.
         </div>
+
+    <!-- ── PRODUCT (unchanged) ──────────────────────────── -->
     {% elif product %}
         <h2>Unblock Product?</h2>
         <p>You are about to unblock:</p>
@@ -63,6 +67,8 @@
         <div class="info-note">
             ✅ All variants of this product will also be unblocked.
         </div>
+
+    <!-- ── VARIANT (unchanged) ──────────────────────────── -->
     {% elif variant %}
         <h2>Unblock Variant?</h2>
         <p>You are about to unblock the variant:</p>
@@ -71,6 +77,19 @@
         <div class="info-note">
             ✅ This variant will become visible to customers again.
         </div>
+
+    <!-- ── COUPON (add-on — does not touch existing blocks) ─ -->
+    {% elif coupon %}
+        <h2>Unblock Coupon?</h2>
+        <p>You are about to unblock:</p>
+        <p><strong>{{ coupon.code }}</strong></p>
+        <p style="font-size:13px; color:#888;">
+            {{ coupon.get_discount_type_display }} —
+            {% if coupon.discount_type == "PERCENT" %}{{ coupon.discount_value }}%{% else %}₹{{ coupon.discount_value }}{% endif %}
+        </p>
+        <div class="info-note">
+            ✅ Customers will be able to apply this coupon again.
+        </div>
     {% endif %}
 
     <form method="post">
@@ -78,6 +97,7 @@
         <div class="btn-row">
             <button type="submit" class="btn-confirm">Yes, Unblock</button>
 
+            <!-- CANCEL REDIRECT based on context -->
             {% if category %}
                 <a href="{% url 'products:admin_category_list' %}" class="btn-cancel">Cancel</a>
             {% elif subcategory %}
@@ -86,6 +106,8 @@
                 <a href="{% url 'products:admin_product_list' %}" class="btn-cancel">Cancel</a>
             {% elif variant %}
                 <a href="{% url 'products:admin_product_details' product_id %}" class="btn-cancel">Cancel</a>
+            {% elif coupon %}
+                <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel">Cancel</a>
             {% endif %}
         </div>
     </form>

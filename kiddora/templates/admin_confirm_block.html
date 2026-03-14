@@ -35,13 +35,12 @@
 }
 .btn-cancel:hover { background: #e0e0e0; }
 </style>
-
 <div class="confirm-container">
     <div class="confirm-icon">
         <i class="fa-solid fa-ban"></i>
     </div>
 
-    <!-- HEADING -->
+    <!-- ── CATEGORY (unchanged) ─────────────────────────── -->
     {% if category %}
         <h2>Block Category?</h2>
         <p>You are about to block:</p>
@@ -49,6 +48,8 @@
         <div class="warning-note">
             ⚠️ All subcategories and products under this category will also be blocked.
         </div>
+
+    <!-- ── SUBCATEGORY (unchanged) ──────────────────────── -->
     {% elif subcategory %}
         <h2>Block SubCategory?</h2>
         <p>You are about to block:</p>
@@ -57,6 +58,8 @@
         <div class="warning-note">
             ⚠️ All products under this subcategory will also be blocked.
         </div>
+
+    <!-- ── PRODUCT (unchanged) ──────────────────────────── -->
     {% elif product %}
         <h2>Block Product?</h2>
         <p>You are about to block:</p>
@@ -64,6 +67,8 @@
         <div class="warning-note">
             ⚠️ All variants of this product will also be blocked.
         </div>
+
+    <!-- ── VARIANT (unchanged) ──────────────────────────── -->
     {% elif variant %}
         <h2>Block Variant?</h2>
         <p>You are about to block the variant:</p>
@@ -71,6 +76,19 @@
         <p style="font-size:13px; color:#888;">SKU: {{ variant.sku }}</p>
         <div class="warning-note">
             ⚠️ This variant will no longer be visible to customers.
+        </div>
+
+    <!-- ── COUPON (add-on — does not touch existing blocks) ─ -->
+    {% elif coupon %}
+        <h2>Block Coupon?</h2>
+        <p>You are about to block:</p>
+        <p><strong>{{ coupon.code }}</strong></p>
+        <p style="font-size:13px; color:#888;">
+            {{ coupon.get_discount_type_display }} —
+            {% if coupon.discount_type == "PERCENT" %}{{ coupon.discount_value }}%{% else %}₹{{ coupon.discount_value }}{% endif %}
+        </p>
+        <div class="warning-note">
+            ⚠️ Customers will no longer be able to apply this coupon.
         </div>
     {% endif %}
 
@@ -88,6 +106,8 @@
                 <a href="{% url 'products:admin_product_list' %}" class="btn-cancel">Cancel</a>
             {% elif variant %}
                 <a href="{% url 'products:admin_product_details' product_id %}" class="btn-cancel">Cancel</a>
+            {% elif coupon %}
+                <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel">Cancel</a>
             {% endif %}
         </div>
     </form>

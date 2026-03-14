@@ -25,100 +25,168 @@
 .btn-save:hover { background:#e91e63; }
 .btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; }
 .btn-cancel:hover { background:#eee; }
+
+/* ── flash messages (reuse shared pattern) ── */
+.messages { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+.message { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:8px; font-size:14px; font-weight:500; }
+.message button { background:none; border:none; cursor:pointer; font-size:18px; padding:0 0 0 10px; color:inherit; opacity:.7; }
+.message button:hover { opacity:1; }
+.message.success { background:#e6f9f0; color:#1a7a4a; border:1px solid #a3e0c1; }
+.message.error   { background:#fdecea; color:#c0392b; border:1px solid #f5a9a4; }
+.message.warning { background:#fff8e1; color:#b07d00; border:1px solid #ffe082; }
+.message.info    { background:#e8f4fd; color:#1565c0; border:1px solid #90caf9; }
+
 @media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
 
 <div class="form-wrap">
-  <a href="{% url 'shopcore:admin_coupon_list' %}" class="back-link"><i class="fa fa-arrow-left"></i> Coupons</a>
-  <div class="form-hdr"><h2>{{ action }} Coupon</h2></div>
+    <a href="{% url 'shopcore:admin_coupon_list' %}" class="back-link">
+        <i class="fa fa-arrow-left"></i> Coupons
+    </a>
 
-  <form method="post">
-    {% csrf_token %}
-
-    <div class="form-card">
-      <div class="card-title">Coupon Details</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Code <span style="color:#e91e63;">*</span></label>
-          <input type="text" name="code" maxlength="20" style="text-transform:uppercase;"
-                 value="{{ coupon.code|default:form_data.code|default:'' }}"
-                 placeholder="e.g. SAVE20" required>
-          <div class="hint">Uppercase alphanumeric, max 20 chars.</div>
+    {% if messages %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
         </div>
-        <div class="form-group">
-          <label>Discount Type <span style="color:#e91e63;">*</span></label>
-          <select name="discount_type" id="discountType" onchange="toggleMaxDiscount()">
-            {% for val, label in discount_choices %}
-            <option value="{{ val }}" {% if coupon.discount_type == val or form_data.discount_type == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Discount Value <span style="color:#e91e63;">*</span></label>
-          <input type="number" name="discount_value" min="1" step="0.01"
-                 value="{{ coupon.discount_value|default:form_data.discount_value|default:'' }}"
-                 placeholder="e.g. 20 (for 20% or ₹20 off)" required>
-        </div>
-        <div class="form-group" id="maxDiscountGroup">
-          <label>Max Discount (₹) <span style="color:#aaa;font-weight:400;">(optional)</span></label>
-          <input type="number" name="max_discount" min="1" step="0.01"
-                 value="{{ coupon.max_discount|default:form_data.max_discount|default:'' }}"
-                 placeholder="Only for PERCENT type">
-          <div class="hint">Cap the discount for percentage coupons.</div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Minimum Order Amount (₹)</label>
-        <input type="number" name="min_order_amount" min="0" step="0.01"
-               value="{{ coupon.min_order_amount|default:form_data.min_order_amount|default:'0' }}">
-      </div>
+        {% endfor %}
     </div>
+    {% endif %}
 
-    <div class="form-card">
-      <div class="card-title">Validity & Limits</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Start Date <span style="color:#e91e63;">*</span></label>
-          <input type="datetime-local" name="start_date"
-                 value="{{ coupon.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}" required>
+    <div class="form-hdr"><h2>{{ action }} Coupon</h2></div>
+
+    <form method="post" id="couponForm">
+        {% csrf_token %}
+
+        <div class="form-card">
+            <div class="card-title">Coupon Details</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Code <span style="color:#e91e63;">*</span></label>
+                    <input type="text" name="code" maxlength="20" style="text-transform:uppercase;"
+                           value="{{ coupon.code|default:form_data.code|default:'' }}"
+                           placeholder="e.g. SAVE20" required>
+                    <div class="hint">Uppercase alphanumeric, max 20 chars.</div>
+                </div>
+                <div class="form-group">
+                    <label>Discount Type <span style="color:#e91e63;">*</span></label>
+                    <select name="discount_type" id="discountType" onchange="toggleMaxDiscount()">
+                        {% for val, label in discount_choices %}
+                        <option value="{{ val }}"
+                            {% if coupon.discount_type == val or form_data.discount_type == val %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Discount Value <span style="color:#e91e63;">*</span></label>
+                    <input type="number" name="discount_value" min="1" step="0.01"
+                           value="{{ coupon.discount_value|default:form_data.discount_value|default:'' }}"
+                           placeholder="e.g. 20 (for 20% or ₹20 off)" required>
+                </div>
+                <div class="form-group" id="maxDiscountGroup">
+                    <label>Max Discount (₹) <span style="color:#aaa;font-weight:400;">(optional)</span></label>
+                    <input type="number" name="max_discount" min="1" step="0.01"
+                           value="{{ coupon.max_discount|default:form_data.max_discount|default:'' }}"
+                           placeholder="Only for PERCENT type">
+                    <div class="hint">Cap the discount for percentage coupons.</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Minimum Order Amount (₹)</label>
+                <input type="number" name="min_order_amount" min="0" step="0.01"
+                       value="{{ coupon.min_order_amount|default:form_data.min_order_amount|default:'0' }}">
+            </div>
         </div>
-        <div class="form-group">
-          <label>Expiry Date <span style="color:#e91e63;">*</span></label>
-          <input type="datetime-local" name="expiry_date"
-                 value="{{ coupon.expiry_date|date:'Y-m-d\TH:i'|default:form_data.expiry_date|default:'' }}" required>
+
+        <div class="form-card">
+            <div class="card-title">Validity &amp; Limits</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date <span style="color:#e91e63;">*</span></label>
+                    <input type="datetime-local" name="start_date"
+                           value="{{ coupon.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label>Expiry Date <span style="color:#e91e63;">*</span></label>
+                    <input type="datetime-local" name="expiry_date"
+                           value="{{ coupon.expiry_date|date:'Y-m-d\TH:i'|default:form_data.expiry_date|default:'' }}"
+                           required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Usage Limit</label>
+                <input type="number" name="usage_limit" min="1"
+                       value="{{ coupon.usage_limit|default:form_data.usage_limit|default:'1' }}">
+                <div class="hint">Total number of times this coupon can be used across all users.</div>
+            </div>
         </div>
-      </div>
-      <div class="form-group">
-        <label>Usage Limit</label>
-        <input type="number" name="usage_limit" min="1"
-               value="{{ coupon.usage_limit|default:form_data.usage_limit|default:'1' }}">
-        <div class="hint">Total number of times this coupon can be used across all users.</div>
-      </div>
-    </div>
 
-    <div class="form-card">
-      <div class="card-title">Status</div>
-      <div class="toggle-row">
-        <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
-               {% if coupon.is_active or not coupon %}checked{% endif %}>
-        <label for="isActive">Active (visible & usable by customers)</label>
-      </div>
-    </div>
+        {% comment %} <div class="form-card">
+            <div class="card-title">Status</div>
+            <div class="toggle-row">
+                <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
+                       {% if coupon.is_active or not coupon %}checked{% endif %}>
+                <label for="isActive">Active (visible &amp; usable by customers)</label>
+            </div>
+        </div> {% endcomment %}
 
-    <div class="form-actions">
-      <button type="submit" class="btn-save"><i class="fa fa-check"></i> {{ action }} Coupon</button>
-      <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel"><i class="fa fa-times"></i> Cancel</a>
-    </div>
-  </form>
+        <div class="form-actions">
+            <!--
+              The save button triggers a confirm modal first.
+              On confirmation the hidden submit button fires the form.
+            -->
+            <button type="button" class="btn-save" id="btnSaveTrigger">
+                <i class="fa fa-check"></i> {{ action }} Coupon
+            </button>
+            <!-- hidden real submit — called by modal callback -->
+            <button type="submit" id="btnRealSubmit" style="display:none;"></button>
+
+            <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel">
+                <i class="fa fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
 </div>
 
+{% include "confirm_modal.html" %}
+<script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
+/* ── max-discount visibility ── */
 function toggleMaxDiscount() {
-  const type = document.getElementById('discountType').value;
-  document.getElementById('maxDiscountGroup').style.opacity = type === 'PERCENT' ? '1' : '0.4';
+    var type = document.getElementById('discountType').value;
+    document.getElementById('maxDiscountGroup').style.opacity = type === 'PERCENT' ? '1' : '0.4';
 }
 toggleMaxDiscount();
+
+/* ── Confirm modal before saving ── */
+document.getElementById('btnSaveTrigger').addEventListener('click', function () {
+    var action = '{{ action|escapejs }}';
+    var msg = action === 'Edit'
+        ? 'Save changes to this coupon?'
+        : 'Create this new coupon?';
+    openConfirmModal(msg, function () {
+        document.getElementById('btnRealSubmit').click();
+    });
+});
+
+/* ── Auto-dismiss messages ── */
+(function () {
+    var mc = document.getElementById('msgContainer');
+    if (!mc) return;
+    setTimeout(function () {
+        mc.querySelectorAll('.message').forEach(function (m) {
+            m.style.transition = 'opacity 0.5s';
+            m.style.opacity = '0';
+            setTimeout(function () { m.remove(); }, 500);
+        });
+    }, 15000);
+})();
 </script>
 {% endblock %}

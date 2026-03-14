@@ -69,18 +69,18 @@
                         {% if coupon.discount_type == "PERCENT" %}
                             <span class="badge badge-percent">%</span>
                         {% else %}
-                            <span class="badge badge-flat">₹</span>
+                            <span class="badge badge-flat">&#8377;</span>
                         {% endif %}
                         {{ coupon.get_discount_type_display }}
                     </td>
                     <td>
                         {% if coupon.discount_type == "PERCENT" %}{{ coupon.discount_value }}%
-                        {% else %}₹{{ coupon.discount_value }}{% endif %}
+                        {% else %}&#8377;{{ coupon.discount_value }}{% endif %}
                         {% if coupon.max_discount %}
-                        <br><small style="color:#aaa;">max ₹{{ coupon.max_discount }}</small>
+                        <br><small style="color:#aaa;">max &#8377;{{ coupon.max_discount }}</small>
                         {% endif %}
                     </td>
-                    <td>₹{{ coupon.min_order_amount }}</td>
+                    <td>&#8377;{{ coupon.min_order_amount }}</td>
                     <td>{{ coupon.used_count }} / {{ coupon.usage_limit }}</td>
                     <td>
                         {{ coupon.expiry_date|date:"d M Y" }}
@@ -99,31 +99,42 @@
                     </td>
                     <td>
                         <div class="tbl-actions">
+
                             <!-- Edit -->
                             <a href="{% url 'shopcore:admin_edit_coupon' coupon_id=coupon.id %}"
-                               class="icon-edit" title="Edit">✏️</a>
+                               class="icon-edit" title="Edit">&#9999;&#65039;</a>
 
-                            <!-- Toggle active -->
-                            <form method="post"
-                                  action="{% url 'shopcore:admin_toggle_coupon' coupon_id=coupon.id %}"
-                                  style="display:contents;">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="act-btn {% if coupon.is_active %}act-toggle-off{% else %}act-toggle-on{% endif %}"
-                                        title="{% if coupon.is_active %}Block{% else %}Unblock{% endif %}">
-                                    <i class="fa {% if coupon.is_active %}fa-solid fa-ban{% else %}fa-solid fa-circle-check{% endif %}"></i>
-                                </button>
-                            </form>
+                            <!-- Block / Unblock (GET goes to confirm page) -->
+                            {% if coupon.is_active %}
+                                <a href="{% url 'shopcore:admin_block_coupon' coupon_id=coupon.id %}"
+                                   class="action-block"
+                                   title="Block Coupon">
+                                    <i class="fa-solid fa-ban"></i>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'shopcore:admin_unblock_coupon' coupon_id=coupon.id %}"
+                                   class="action-unblock"
+                                   title="Unblock Coupon">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </a>
+                            {% endif %}
 
-                            <!-- Delete -->
-                            <button type="button" class="icon-delete" style="background:transparent;border:none;cursor:pointer;font-size:15px;"
-                                onclick="openConfirmModal('Delete coupon &quot;{{ coupon.code|escapejs }}&quot;? This cannot be undone.', function(){ document.getElementById('del-coupon-{{ coupon.id }}').submit(); })"
-                                title="Delete">🗑️</button>
-                            <form id="del-coupon-{{ coupon.id }}" method="post"
+                            <!-- Delete via confirm modal -->
+                            <button type="button"
+                                    class="icon-delete"
+                                    style="background:transparent;border:none;cursor:pointer;font-size:15px;"
+                                    onclick="openConfirmModal(
+                                        'Delete coupon &quot;{{ coupon.code|escapejs }}&quot;? This cannot be undone.',
+                                        function(){ document.getElementById('del-coupon-{{ coupon.id }}').submit(); }
+                                    )"
+                                    title="Delete">&#128465;&#65039;</button>
+                            <form id="del-coupon-{{ coupon.id }}"
+                                  method="post"
                                   action="{% url 'shopcore:admin_delete_coupon' coupon_id=coupon.id %}"
                                   style="display:none;">
                                 {% csrf_token %}
                             </form>
+
                         </div>
                     </td>
                 </tr>
@@ -144,4 +155,4 @@
 
 {% include "confirm_modal.html" %}
 <script src="{% static 'js/ui-utils.js' %}"></script>
-{% endblock %}
+{% endblock %}cd 

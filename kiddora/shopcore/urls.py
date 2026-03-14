@@ -1,17 +1,18 @@
 from django.urls import path
 from shopcore.views import store_views
+from shopcore.views import coupon_views
 from shopcore.views import cart_views
 from shopcore.views import order_views
 from shopcore.views import return_views
 from shopcore.views import banner_views
 from shopcore.views import wishlist_views
 from shopcore.views import review_views
-from shopcore.views import coupon_views
 from shopcore.views import offer_views
 
 app_name = 'shopcore'
 
 urlpatterns = [
+    # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     # STORE (public)
     path('', store_views.anonymous_home, name='anonymous_home'),
     path('user/home/', store_views.home, name='home'),
@@ -23,10 +24,27 @@ urlpatterns = [
     path('blog/', store_views.blog_view, name='blog'),
     path('terms-conditions/', store_views.terms_conditions_view, name='terms_conditions'),
     path('size-chart/', store_views.size_chart, name='size_chart'),
-
+    # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     # BANNER HOME (public)
     path('homes/', banner_views.home_view, name='banner_home'),
+    # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    # COUPON
+    # ADMIN
+    path("admin/coupons/", coupon_views.admin_coupon_list,name="admin_coupon_list"),
+    path("admin/coupons/add/", coupon_views.admin_add_coupon, name="admin_add_coupon"),
+    path("admin/coupons/<int:coupon_id>/edit/", coupon_views.admin_edit_coupon, name="admin_edit_coupon"),
+    path("admin/coupons/<int:coupon_id>/delete/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
 
+    # Legacy toggle – keep to avoid 404s on any bookmarked / cached link
+    path("admin/coupons/<int:coupon_id>/toggle/", coupon_views.admin_toggle_coupon, name="admin_toggle_coupon"),
+    # New: separate block / unblock (GET → confirm page, POST → action)
+    path("admin/coupons/<int:coupon_id>/block/", coupon_views.admin_block_coupon,  name="admin_block_coupon"),
+    path("admin/coupons/<int:coupon_id>/unblock/", coupon_views.admin_unblock_coupon,name="admin_unblock_coupon"),
+    
+    # USER
+    path("cart/coupon/apply/", coupon_views.apply_coupon, name="apply_coupon"),
+    path("cart/coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"),
+    # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     # CART (user)
     path("cart/", cart_views.cart_view, name="cart"),
     path("cart/add/<int:variant_id>/", cart_views.add_to_cart, name="add_to_cart"),
@@ -40,9 +58,6 @@ urlpatterns = [
     path("wishlist/remove/<int:product_id>/", wishlist_views.remove_from_wishlist, name="remove_from_wishlist"),
     path("wishlist/move-to-cart/<int:product_id>/", wishlist_views.move_to_cart, name="move_to_cart"),
 
-    # COUPON (user)
-    path("cart/coupon/apply/", coupon_views.apply_coupon, name="apply_coupon"),
-    path("cart/coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"),
 
     # CHECKOUT / ORDER PLACEMENT (user)
     path("checkout/", order_views.checkout, name="checkout"),
@@ -86,13 +101,6 @@ urlpatterns = [
     path("admin/reviews/", review_views.admin_review_list, name="admin_review_list"),
     path("admin/reviews/<int:review_id>/approve/", review_views.admin_approve_review, name="admin_approve_review"),
     path("admin/reviews/<int:review_id>/reject/", review_views.admin_reject_review, name="admin_reject_review"),
-
-    # ADMIN COUPON MANAGEMENT
-    path("admin/coupons/", coupon_views.admin_coupon_list, name="admin_coupon_list"),
-    path("admin/coupons/add/", coupon_views.admin_add_coupon, name="admin_add_coupon"),
-    path("admin/coupons/<int:coupon_id>/edit/", coupon_views.admin_edit_coupon, name="admin_edit_coupon"),
-    path("admin/coupons/<int:coupon_id>/delete/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
-    path("admin/coupons/<int:coupon_id>/toggle/", coupon_views.admin_toggle_coupon, name="admin_toggle_coupon"),
 
     # ADMIN OFFER MANAGEMENT
     path("admin/offers/", offer_views.admin_offer_list, name="admin_offer_list"),
