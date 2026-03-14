@@ -6,7 +6,6 @@ from django.utils import timezone
 
 from .models import (
     Coupon, Offer,
-    ReferralCode, ReferralUse,
     Cart, CartItem,
     Order, OrderItem,
     Return,
@@ -78,27 +77,6 @@ class OfferAdmin(admin.ModelAdmin):
             "fields": ("created_at",),
         }),
     )
-
-
-# ═══════════════════════════════════════════════════════════════
-#  REFERRAL
-# ═══════════════════════════════════════════════════════════════
-
-@admin.register(ReferralCode)
-class ReferralCodeAdmin(admin.ModelAdmin):
-    list_display  = ("user", "code", "created_at")
-    search_fields = ("user__email", "code")
-    readonly_fields = ("code", "created_at")
-    ordering = ("-created_at",)
-
-
-@admin.register(ReferralUse)
-class ReferralUseAdmin(admin.ModelAdmin):
-    list_display  = ("referral_code", "referred_user", "coupon_awarded", "created_at")
-    search_fields = ("referral_code__user__email", "referred_user__email")
-    readonly_fields = ("created_at",)
-    ordering = ("-created_at",)
-
 
 # ═══════════════════════════════════════════════════════════════
 #  CART

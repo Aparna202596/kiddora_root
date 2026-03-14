@@ -85,33 +85,6 @@ class Offer(models.Model):
         target = self.product or self.category or "Referral"
         return f"{self.get_offer_type_display()} – {self.discount_percent}% on {target}"
 
-class ReferralCode(models.Model):
-    """One per user; generated at signup and never changes."""
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referral_code")
-    code = models.CharField(max_length=20, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        if not self.code:
-
-            while True:
-                code = f"KIDREF{uuid.uuid4().hex[:7].upper()}"
-                if not ReferralCode.objects.filter(code=code).exists():
-                    self.code = code
-                    break
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.user.email} → {self.code}"
-
-class ReferralUse(models.Model):
-    referral_code = models.ForeignKey(ReferralCode, on_delete=models.CASCADE, related_name="uses",)
-    referred_user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referred_by")
-    coupon_awarded = models.ForeignKey(Coupon, on_delete=models.SET_NULL,null=True, blank=True, related_name="referral_uses")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.referral_code.user.email} referred {self.referred_user.email}"
 
 #  CART
 class Cart(models.Model):
@@ -157,8 +130,8 @@ class Order(models.Model):
     )
     PAYMENT_METHOD_CHOICES = (
         ("COD", "Cash on Delivery"),
-        ("RAZORPAY", "Razorpay"),
-        ("STRIPE", "Stripe"),
+        ("RAZORPAY","Razorpay"),
+        ("PAYPAL","Paypal"),
         ("WALLET", "Wallet"),
     )
     PAYMENT_STATUS_CHOICES = (
@@ -259,6 +232,8 @@ class Review(models.Model):
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     comment = models.TextField()
     is_approved = models.BooleanField(default=False)
+    admin_reply = models.TextField(blank=True, null=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:

@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
-
+from types import SimpleNamespace
 from accounts.decorators import admin_login_required
 from shopcore.models import Cart, Coupon
 
@@ -147,7 +147,13 @@ def admin_add_coupon(request):
         return _save_coupon(request, instance=None)
     return render(request, "coupon_offer/admin_coupon_form.html", {
         "action": "Add",
-        "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+        "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,      
+        "coupon": None,
+        "form_data": SimpleNamespace(
+            code="", discount_type="", discount_value="",
+            max_discount="", min_order_amount="", start_date="",
+            expiry_date="", usage_limit="", is_active=False,
+        ),
     })
 
 
@@ -165,6 +171,11 @@ def admin_edit_coupon(request, coupon_id):
         "action":           "Edit",
         "coupon":           coupon,
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+        "form_data": SimpleNamespace(
+            code="", discount_type="", discount_value="",
+            max_discount="", min_order_amount="", start_date="",
+            expiry_date="", usage_limit="", is_active=False,
+        ),
     })
 
 

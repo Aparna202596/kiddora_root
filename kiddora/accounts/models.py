@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.db import models
+import uuid
 
 class CustomUser(AbstractUser):
     ROLE_ADMIN = "ADMIN"
@@ -59,6 +60,10 @@ class CustomUser(AbstractUser):
     
     timezone = models.CharField(max_length=50,default="UTC",help_text="timezone Asia/Kolkata, Asia/Dubai")
 
+    referral_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    
+    referred_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='referred_users')
+    
     # Authentication settings
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
@@ -67,6 +72,14 @@ class CustomUser(AbstractUser):
         # Ensure superusers always have admin role
         if self.is_superuser:
             self.role = self.ROLE_ADMIN
+
+        # Generate referral code once
+        if not self.referral_code:
+            while True:
+                code = f"KIDDREF-{uuid.uuid4().hex[:8].upper()}"
+                if not CustomUser.objects.filter(referral_code=code).exists():
+                    self.referral_code = code
+                    break
 
         # Delete old profile image if replaced
         if self.pk:
@@ -90,6 +103,7 @@ class UserAddress(models.Model):
     ADDRESS_TYPE_CHOICES = ((ADDRESS_HOME, "Home"),(ADDRESS_WORK, "Work"),(ADDRESS_OTHER, "Other"),)
 
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="addresses")
+    
     id = models.BigAutoField(primary_key=True)
     
     address_line1 = models.CharField(max_length=200)

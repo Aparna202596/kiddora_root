@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
-
+from types import SimpleNamespace
 from accounts.decorators import admin_login_required
 from shopcore.models import Banner
 
@@ -20,8 +20,8 @@ from shopcore.models import Banner
 def home_view(request):
     """
     Public home page.  Passes:
-      hero_banners      — up to 6 live HERO banners for the carousel
-      secondary_banners — up to 4 live SECONDARY banners for the grid
+        hero_banners      — up to 6 live HERO banners for the carousel
+        secondary_banners — up to 4 live SECONDARY banners for the grid
     """
     live_banners = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
 
@@ -81,12 +81,14 @@ def admin_add_banner(request):
             messages.error(request, "Title is required.")
             return render(request, "banner/admin_banner_form.html", {
                 "slot_choices": Banner.SLOT_CHOICES,
+                "banner":       None,
                 "form_data": request.POST,
             })
         if not image:
             messages.error(request, "Banner image is required.")
             return render(request, "banner/admin_banner_form.html", {
                 "slot_choices": Banner.SLOT_CHOICES,
+                "banner":       None,
                 "form_data": request.POST,
             })
 
@@ -108,6 +110,12 @@ def admin_add_banner(request):
 
     return render(request, "banner/admin_banner_form.html", {
         "slot_choices": Banner.SLOT_CHOICES,
+        "banner":       None,
+        "form_data":  SimpleNamespace(
+            title="", subtitle="", cta_text="Shop Now",
+            cta_url="/products/user/products/", badge_text="",
+            slot="HERO", display_order=0, start_date="", end_date="",
+        ),
     })
 
 
@@ -148,6 +156,7 @@ def admin_edit_banner(request, banner_id):
             return render(request, "banner/admin_banner_form.html", {
                 "banner":       banner,
                 "slot_choices": Banner.SLOT_CHOICES,
+                "form_data":    request.POST,
             })
 
         banner.save()
@@ -157,6 +166,11 @@ def admin_edit_banner(request, banner_id):
     return render(request, "banner/admin_banner_form.html", {
         "banner":       banner,
         "slot_choices": Banner.SLOT_CHOICES,
+        "form_data":  SimpleNamespace(
+        title="", subtitle="", cta_text="Shop Now",
+            cta_url="/products/user/products/", badge_text="",
+            slot="HERO", display_order=0, start_date="", end_date="",
+        ),
     })
 
 

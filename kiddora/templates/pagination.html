@@ -1,146 +1,142 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <style>
-    .pagination {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: .4rem;
-        margin-top: 2.8rem;
-        padding: .5rem 0;
-        font-family: 'DM Sans', sans-serif;
-    }
-    .pagination .pg-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 38px;
-        height: 38px;
-        padding: 0 .75rem;
-        border-radius: 8px;
-        font-size: .85rem;
-        font-weight: 600;
-        text-decoration: none;
-        border: 1.5px solid #EAE7E4;
-        background: #FFFFFF;
-        color: #3D3835;
-        transition: border-color .18s, color .18s, background .18s, transform .15s;
-        cursor: pointer;
-    }
-    .pagination .pg-btn:hover {
-        border-color: #E8441A;
-        color: #E8441A;
-        background: #fff0ec;
-        transform: translateY(-1px);
-    }
-    .pagination .pg-current {
-        min-width: 38px;
-        height: 38px;
-        padding: 0 .75rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        font-size: .85rem;
-        font-weight: 700;
-        background: #E8441A;
-        color: #fff;
-        border: 1.5px solid #E8441A;
-        box-shadow: 0 3px 10px rgba(232,68,26,.28);
-    }
-    .pagination .pg-disabled {
-        min-width: 38px;
-        height: 38px;
-        padding: 0 .75rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        font-size: .85rem;
-        font-weight: 600;
-        background: #F9F7F5;
-        color: #C8C4C0;
-        border: 1.5px solid #EAE7E4;
-        cursor: not-allowed;
-    }
-    .pagination .pg-dots {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 30px;
-        height: 38px;
-        color: #888580;
-        font-size: .85rem;
-        letter-spacing: .1em;
-    }
-    .pagination .pg-nav {
-        padding: 0 1rem;
-        font-size: .82rem;
-        letter-spacing: .02em;
-    }
-    .pg-summary {
-        width: 100%;
-        text-align: center;
-        font-size: .8rem;
-        color: #888580;
-        margin-top: .6rem;
-        font-family: 'DM Sans', sans-serif;
-    }
+.pagination-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 28px;
+    gap: 10px;
+}
+.pagination {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.pg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1.5px solid #e8e8e8;
+    background: #fff;
+    color: #444;
+    transition: all 0.18s ease;
+    cursor: pointer;
+}
+.pg-btn:hover {
+    border-color: #f06292;
+    color: #f06292;
+    background: #fff5f8;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(240,98,146,0.15);
+}
+.pg-current {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f06292, #e91e63);
+    color: #fff;
+    border: 1.5px solid #e91e63;
+    box-shadow: 0 4px 12px rgba(240,98,146,0.35);
+}
+.pg-disabled {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #fafafa;
+    color: #ccc;
+    border: 1.5px solid #efefef;
+    cursor: not-allowed;
+}
+.pg-dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 36px;
+    color: #bbb;
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+.pg-nav { padding: 0 14px; }
+.pg-summary {
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 500;
+}
+.pg-summary span { color: #f06292; font-weight: 700; }
 </style>
 
-<nav class="pagination" aria-label="Pagination">
-
-    {% comment %} ── Prev button ── {% endcomment %}
-    {% if page_obj.has_previous %}
-        <a href="?{% querystring request.GET page=page_obj.previous_page_number %}"
-           class="pg-btn pg-nav" aria-label="Previous page">← Prev</a>
-    {% else %}
-        <span class="pg-disabled pg-nav" aria-disabled="true">← Prev</span>
-    {% endif %}
-
-    {% comment %} ── Page numbers with ellipsis ── {% endcomment %}
-    {% with cur=page_obj.number total=page_obj.paginator.num_pages %}
-    {% for i in page_obj.paginator.page_range %}
-
-        {% if i == 1 or i == total %}
-            {% if i == cur %}
-                <span class="pg-current" aria-current="page">{{ i }}</span>
-            {% else %}
-                <a href="?{% querystring request.GET page=i %}" class="pg-btn" aria-label="Page {{ i }}">{{ i }}</a>
-            {% endif %}
-            {% if i == 1 and cur > 4 %}
-                <span class="pg-dots">…</span>
-            {% endif %}
-            {% if i == total and cur < total|add:"-3" %}
-                {# leading ellipsis already rendered before window #}
-            {% endif %}
-
-        {% elif i >= cur|add:"-2" and i <= cur|add:"2" %}
-            {% if i == cur %}
-                <span class="pg-current" aria-current="page">{{ i }}</span>
-            {% else %}
-                <a href="?{% querystring request.GET page=i %}" class="pg-btn" aria-label="Page {{ i }}">{{ i }}</a>
-            {% endif %}
-
-        {% elif i == cur|add:"-3" or i == cur|add:"3" %}
-            <span class="pg-dots">…</span>
+<div class="pagination-wrap">
+    <nav class="pagination" aria-label="Pagination">
+        {% if page_obj.has_previous %}
+            <a href="?{% querystring request.GET page=page_obj.previous_page_number %}"
+               class="pg-btn pg-nav" aria-label="Previous page">
+               <i class="fa-solid fa-chevron-left" style="font-size:11px; margin-right:4px;"></i> Prev
+            </a>
+        {% else %}
+            <span class="pg-disabled pg-nav" aria-disabled="true">
+                <i class="fa-solid fa-chevron-left" style="font-size:11px; margin-right:4px;"></i> Prev
+            </span>
         {% endif %}
 
-    {% endfor %}
-    {% endwith %}
+        {% with cur=page_obj.number total=page_obj.paginator.num_pages %}
+        {% for i in page_obj.paginator.page_range %}
+            {% if i == 1 or i == total %}
+                {% if i == cur %}
+                    <span class="pg-current" aria-current="page">{{ i }}</span>
+                {% else %}
+                    <a href="?{% querystring request.GET page=i %}" class="pg-btn" aria-label="Page {{ i }}">{{ i }}</a>
+                {% endif %}
+                {% if i == 1 and cur > 4 %}
+                    <span class="pg-dots">…</span>
+                {% endif %}
+            {% elif i >= cur|add:"-2" and i <= cur|add:"2" %}
+                {% if i == cur %}
+                    <span class="pg-current" aria-current="page">{{ i }}</span>
+                {% else %}
+                    <a href="?{% querystring request.GET page=i %}" class="pg-btn" aria-label="Page {{ i }}">{{ i }}</a>
+                {% endif %}
+            {% elif i == cur|add:"-3" or i == cur|add:"3" %}
+                <span class="pg-dots">…</span>
+            {% endif %}
+        {% endfor %}
+        {% endwith %}
 
-    {% comment %} ── Next button ── {% endcomment %}
-    {% if page_obj.has_next %}
-        <a href="?{% querystring request.GET page=page_obj.next_page_number %}"
-           class="pg-btn pg-nav" aria-label="Next page">Next →</a>
-    {% else %}
-        <span class="pg-disabled pg-nav" aria-disabled="true">Next →</span>
-    {% endif %}
-
-</nav>
-<p class="pg-summary">
-    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-    &nbsp;·&nbsp;
-    {{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }} total
-</p>
+        {% if page_obj.has_next %}
+            <a href="?{% querystring request.GET page=page_obj.next_page_number %}"
+               class="pg-btn pg-nav" aria-label="Next page">
+               Next <i class="fa-solid fa-chevron-right" style="font-size:11px; margin-left:4px;"></i>
+            </a>
+        {% else %}
+            <span class="pg-disabled pg-nav" aria-disabled="true">
+               Next <i class="fa-solid fa-chevron-right" style="font-size:11px; margin-left:4px;"></i>
+            </span>
+        {% endif %}
+    </nav>
+    <p class="pg-summary">
+        Page <span>{{ page_obj.number }}</span> of <span>{{ page_obj.paginator.num_pages }}</span>
+        &nbsp;·&nbsp;
+        <span>{{ page_obj.paginator.count }}</span> item{{ page_obj.paginator.count|pluralize }} total
+    </p>
+</div>
 {% endif %}

@@ -8,6 +8,11 @@ class Category(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.category_name
@@ -17,9 +22,11 @@ class SubCategory(models.Model):
     subcategory_name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
-
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         unique_together = ("category", "subcategory_name")
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.subcategory_name
@@ -65,10 +72,17 @@ class Product(models.Model):
     discount_percent = models.PositiveIntegerField(default=0)
     final_price = models.DecimalField(max_digits=10,decimal_places=2,editable=False)
     about_product = models.TextField(blank=True)
+    is_featured = models.BooleanField(default=False)          # for "Featured" sort
+    specifications = models.JSONField(default=dict, blank=True)  # highlights/specs
+    average_review = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal("0.00"))
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
-    average_review = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal("0.00"))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ["-created_at"]
+        
     def save(self, *args, **kwargs):
         base = Decimal(self.base_price or 0)
         discount = Decimal(self.discount_percent or 0)
@@ -174,7 +188,26 @@ class AgeGroup(models.Model):
 
     def __str__(self):
         return self.age
+class ProductImage(models.Model):
 
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
+
+    image1 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+    image2 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+    image3 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+    image4 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+    image5 = models.ImageField(upload_to="product_images/",blank=True, null=True)
+
+    is_default = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            ProductImage.objects.filter(product=self.product, is_default=True
+                ).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product.product_name} Images"
 class ProductVariant(models.Model):
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
@@ -214,26 +247,7 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product.product_name} | {self.color} | {self.age_group}"
 
-class ProductImage(models.Model):
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
-
-    image1 = models.ImageField(upload_to="product_images/",blank=True, null=True)
-    image2 = models.ImageField(upload_to="product_images/",blank=True, null=True)
-    image3 = models.ImageField(upload_to="product_images/",blank=True, null=True)
-    image4 = models.ImageField(upload_to="product_images/",blank=True, null=True)
-    image5 = models.ImageField(upload_to="product_images/",blank=True, null=True)
-
-    is_default = models.BooleanField(default=False)
-
-    def save(self, *args, **kwargs):
-        if self.is_default:
-            ProductImage.objects.filter(product=self.product, is_default=True
-                ).update(is_default=False)
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.product.product_name} Images"
 
 class Inventory(models.Model):
 

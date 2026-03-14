@@ -60,7 +60,7 @@ def submit_review(request, product_id):
         if errors:
             for e in errors:
                 messages.error(request, e)
-            return render(request, "review/submit_review.html", {
+            return render(request, "reviews/submit_review.html", {
                 "product":  product,
                 "existing": existing,
                 "form_data": request.POST,
@@ -84,7 +84,7 @@ def submit_review(request, product_id):
 
         return redirect("products:product_detail", product_id=product_id)
 
-    return render(request, "review/submit_review.html", {
+    return render(request, "reviews/submit_review.html", {
         "product":  product,
         "existing": existing,
     })
@@ -114,7 +114,7 @@ def delete_review(request, review_id):
 def my_reviews(request):
     reviews  = Review.objects.filter(user=request.user).select_related("product").order_by("-created_at")
     page_obj = Paginator(reviews, 10).get_page(request.GET.get("page"))
-    return render(request, "review/my_reviews.html", {"page_obj": page_obj})
+    return render(request, "reviews/my_reviews.html", {"page_obj": page_obj})
 
 
 # ─────────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ def admin_review_list(request):
         qs = qs.filter(rating=int(rating_f))
 
     page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
-    return render(request, "review/admin_review_list.html", {
+    return render(request, "reviews/admin_review_list.html", {
         "page_obj": page_obj,
         "search":   search,
         "status_f": status_f,

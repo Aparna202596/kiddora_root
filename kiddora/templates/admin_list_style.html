@@ -1,0 +1,365 @@
+{# admin_list_style.html — {% include "admin_list_style.html" %} inside every admin list page #}
+<style>
+/* ══════════════════════════════════════════════════
+   KIDDORA ADMIN — SHARED LIST STYLES
+   ══════════════════════════════════════════════════ */
+
+/* ---------- Layout ---------- */
+.container { padding: 25px; }
+h2 { text-align: center; margin-bottom: 10px; }
+
+/* ---------- Page Header row (icon + title + add-btn) ---------- */
+.page-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.page-hdr h2 { font-size: 22px; font-weight: 800; color: #222; margin: 0; text-align: left; }
+
+/* ---------- Top Links (pill buttons) ---------- */
+.top-links {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.top-links a,
+.btn-add {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: #f06292;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.top-links a:hover,
+.btn-add:hover { background: #e91e63; }
+
+/* ---------- Search / Toolbar ---------- */
+.search-box,
+.toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.search-box input,
+.toolbar input,
+.toolbar select {
+    padding: 9px 14px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-box input { flex: 1; min-width: 160px; }
+.toolbar input    { min-width: 160px; }
+.search-box input:focus,
+.toolbar input:focus,
+.toolbar select:focus {
+    border-color: #f06292;
+    box-shadow: 0 0 0 2px rgba(240, 98, 146, 0.15);
+}
+.search-btn,
+.btn-sm {
+    padding: 9px 18px;
+    border-radius: 25px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+.search-btn,
+.btn-pink { background: #333; color: #fff; }
+.search-btn:hover,
+.btn-pink:hover { background: #000; }
+
+.btn-clear {
+    background: #f5f5f5;
+    color: #555;
+    border: 1.5px solid #ddd;
+}
+.btn-clear:hover { background: #ebebeb; }
+
+/* ---------- Table Wrapper ---------- */
+.table-wrapper {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 4px;
+}
+table, .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+/* ---------- Table Head ---------- */
+th {
+    background: #000;
+    color: #fff;
+    padding: 13px 14px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+th a { color: #fff; text-decoration: none; display: inline-block; width: 100%; }
+th a:hover, th a:focus, th a:visited { color: #fff; text-decoration: none; }
+
+/* ---------- Table Body ---------- */
+td {
+    padding: 12px 14px;
+    text-align: center;
+    font-size: 13px;
+    color: #333;
+    border-top: 1px solid #f5f5f5;
+}
+tr { transition: background 0.15s; }
+tbody tr:hover td { background: #f9f0f6; }
+
+/* ══════════════════════════════════════════════════
+   ACTION ICONS — uniform across ALL pages
+   ══════════════════════════════════════════════════ */
+.action-icons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+/* Base for all icon-only square buttons */
+.action-icons a,
+.icon-edit, .icon-delete, .icon-block, .icon-unblock, .icon-add,
+.act-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    flex-shrink: 0;
+}
+.action-icons a:hover,
+.act-btn:hover { opacity: 0.82; transform: translateY(-1px); }
+
+/* Edit — neutral dark */
+.icon-edit, .act-edit { background: #e8e8e8; color: #222; }
+.icon-edit:hover, .act-edit:hover { background: #d4d4d4; }
+
+/* Delete — red */
+.icon-delete, .act-del { background: #fee2e2; color: #991b1b; }
+.icon-delete:hover, .act-del:hover { background: #fca5a5; }
+
+/* Block — soft red */
+.icon-block, .action-block { background: #fff0f0; color: #e74c3c; }
+.icon-block:hover, .action-block:hover { background: #fca5a5; transform: translateY(-1px); }
+
+/* Unblock — green */
+.icon-unblock, .action-unblock { background: #dcfce7; color: #15803d; }
+.icon-unblock:hover, .action-unblock:hover { background: #bbf7d0; transform: translateY(-1px); }
+
+/* Toggle-off (deactivate/hide) — amber */
+.act-toggle-off { background: #fef9c3; color: #854d0e; }
+.act-toggle-off:hover { background: #fde68a; }
+
+/* Toggle-on (activate/show) — green */
+.act-toggle-on { background: #dcfce7; color: #15803d; }
+.act-toggle-on:hover { background: #bbf7d0; }
+
+/* View / detail — indigo */
+.act-view, .view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 0 12px;
+    width: auto;
+    border-radius: 8px;
+    background: #e0e7ff;
+    color: #3730a3;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.15s;
+}
+.act-view:hover, .view-btn:hover { background: #c7d2fe; transform: translateY(-1px); }
+
+/* Add SubCategory shortcut — teal */
+.icon-add { background: #e0f7f4; color: #00796b; }
+.icon-add:hover { background: #b2dfdb; transform: translateY(-1px); }
+
+/* Approve — green pill */
+.act-approve {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 32px; padding: 0 12px; width: auto;
+    border-radius: 8px; background: #dcfce7; color: #15803d;
+    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+    white-space: nowrap; transition: background 0.2s;
+}
+.act-approve:hover { background: #bbf7d0; }
+
+/* Reject / Delete labelled — red pill */
+.act-reject {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 32px; padding: 0 12px; width: auto;
+    border-radius: 8px; background: #fee2e2; color: #991b1b;
+    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+    white-space: nowrap; transition: background 0.2s;
+}
+.act-reject:hover { background: #fca5a5; }
+
+/* ---------- Status Badges ---------- */
+.badge {
+    font-size: 11px; font-weight: 700; padding: 3px 9px;
+    border-radius: 20px; display: inline-block; white-space: nowrap;
+}
+.badge-active   { background: #dcfce7; color: #15803d; }
+.badge-inactive { background: #fee2e2; color: #991b1b; }
+.badge-expired  { background: #f5f5f5; color: #888; }
+.badge-percent  { background: #e0e7ff; color: #3730a3; }
+.badge-flat     { background: #fef9c3; color: #854d0e; }
+.badge-product  { background: #dbeafe; color: #1d4ed8; }
+.badge-category { background: #f3e8ff; color: #6b21a8; }
+.badge-referral { background: #fce7f3; color: #9d174d; }
+.badge-approved { background: #dcfce7; color: #15803d; }
+.badge-pending  { background: #fff7ed; color: #c2410c; }
+
+/* Inline status text */
+.status-active  { color: #15803d; font-weight: 700; }
+.status-blocked { color: #991b1b; font-weight: 700; }
+
+/* Stock badges */
+.stock-badge {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 20px; font-size: 12px; font-weight: 700;
+}
+.stock-low    { background: #fee2e2; color: #991b1b; }
+.stock-medium { background: #fef9c3; color: #854d0e; }
+.stock-high   { background: #dcfce7; color: #15803d; }
+
+/* Return / order status */
+.status-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 9px;
+    border-radius: 20px; display: inline-block; white-space: nowrap;
+    background: #f5f5f5; color: #555;
+}
+.status-PENDING, .status-pending         { background: #fff7ed; color: #c2410c; }
+.status-APPROVED, .status-approved       { background: #dcfce7; color: #15803d; }
+.status-REJECTED, .status-rejected       { background: #fee2e2; color: #991b1b; }
+.status-COMPLETED, .status-completed     { background: #dbeafe; color: #1d4ed8; }
+.status-PROCESSING, .status-processing   { background: #e0e7ff; color: #3730a3; }
+.status-SHIPPED, .status-shipped         { background: #f0fdf4; color: #166534; }
+.status-DELIVERED, .status-delivered     { background: #dcfce7; color: #14532d; }
+.status-CANCELLED, .status-cancelled     { background: #fee2e2; color: #7f1d1d; }
+.status-REFUNDED, .status-refunded       { background: #fce7f3; color: #9d174d; }
+
+/* ---------- Empty Row ---------- */
+.empty-row td, tbody tr td[colspan] {
+    text-align: center; padding: 50px 20px; color: #aaa; font-size: 14px;
+}
+
+/* ---------- Messages ---------- */
+.messages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.message {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.message button {
+    background: none; border: none; cursor: pointer;
+    font-size: 18px; padding: 0 0 0 10px; color: inherit; opacity: 0.7; line-height: 1;
+}
+.message button:hover { opacity: 1; }
+.message.success { background: #e6f9f0; color: #1a7a4a; border: 1px solid #a3e0c1; }
+.message.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5a9a4; }
+.message.warning { background: #fff8e1; color: #b07d00; border: 1px solid #ffe082; }
+.message.info    { background: #e8f4fd; color: #1565c0; border: 1px solid #90caf9; }
+
+/* ---------- Review Cards ---------- */
+.rev-list { display: flex; flex-direction: column; gap: 14px; }
+.rev-card {
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    padding: 18px 20px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+}
+.rev-body { flex: 1; min-width: 200px; }
+.rev-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
+}
+.rev-user { font-weight: 700; color: #222; font-size: 14px; }
+.rev-user small { font-weight: 400; color: #888; }
+.stars { color: #f59e0b; font-size: 15px; letter-spacing: 1px; }
+.rev-product { font-size: 12px; color: #555; margin-bottom: 6px; }
+.rev-product a { color: #f06292; text-decoration: none; }
+.rev-product a:hover { text-decoration: underline; }
+.rev-comment { font-size: 13px; color: #444; margin-bottom: 6px; line-height: 1.5; }
+.rev-date { font-size: 11px; color: #aaa; }
+.rev-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ---------- Inventory Update Form ---------- */
+.update-form { display: flex; gap: 5px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.update-form input[type="number"] {
+    width: 70px; padding: 6px 8px; border-radius: 8px;
+    border: 1px solid #ccc; font-size: 13px; text-align: center;
+}
+.update-form select {
+    padding: 6px 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 13px;
+}
+.update-btn {
+    padding: 6px 12px; border-radius: 8px; background: #f06292; color: #fff;
+    border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+}
+.update-btn:hover { background: #e91e63; }
+
+/* ---------- Empty State (standalone) ---------- */
+.empty-state { text-align: center; padding: 60px 20px; color: #aaa; font-size: 15px; }
+
+/* ---------- Banner Thumbnail ---------- */
+.banner-thumb {
+    width: 100px; height: 48px; object-fit: cover;
+    border-radius: 6px; border: 1px solid #eee;
+}
+</style>
+
+<script>
+/* ── Auto-dismiss messages after 15 s ── */
+(function () {
+    const container = document.getElementById("msgContainer");
+    if (!container) return;
+    setTimeout(function () {
+        container.querySelectorAll(".message").forEach(function (msg) {
+            msg.style.transition = "opacity 0.5s";
+            msg.style.opacity = "0";
+            setTimeout(function () { msg.remove(); }, 500);
+        });
+    }, 15000);
+}());
+</script>

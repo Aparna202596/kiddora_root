@@ -134,6 +134,7 @@ th {
         <div class="detail-row"><span class="detail-label">Username:</span> {{ user.username|default:"—" }}</div>
         <div class="detail-row"><span class="detail-label">Email:</span> {{ user.email }}</div>
         <div class="detail-row"><span class="detail-label">Phone Number:</span> {{ user.phone|default:"—" }}</div>
+        <div class="detail-row"><span class="detail-label">Referral Code:</span>{{ user.referral_code|default:"—" }}</div>
         <div class="detail-row">
             <span class="detail-label">Email Verified:</span>
             {% if user.email_verified %}

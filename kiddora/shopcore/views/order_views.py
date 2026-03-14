@@ -1,8 +1,3 @@
-# shopcore/views/order_views.py
-# Handles: checkout, place order (COD), order success, user order list/detail,
-#          cancel order/item, and admin order list/detail/status-change.
-# Invoice PDF download lives in a separate helper at the bottom.
-
 from __future__ import annotations
 
 import io

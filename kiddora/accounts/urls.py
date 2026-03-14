@@ -62,6 +62,7 @@ urlpatterns = [
     path("user/addresses/add/", address_views.address_add, name="address_add"),
     path("user/addresses/edit/<int:address_id>", address_views.address_edit, name="address_edit"),
     path("user/addresses/delete/<int:address_id>", address_views.address_delete, name="address_delete"),
+
     #ERROR
     path('errors/403/',error_views.handler403,name='403'),
     path('errors/404/',error_views.handler404,name='404'),

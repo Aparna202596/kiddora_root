@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
-
+from types import SimpleNamespace
 from accounts.decorators import admin_login_required
 from products.models import Product, Category
 from shopcore.models import Coupon, Offer
@@ -62,10 +62,16 @@ def admin_add_offer(request):
         return _save_offer(request, instance=None)
     return render(request, "coupon_offer/admin_offer_form.html", {
         "action":      "Add",
+        "offer":       None,
         "offer_types": Offer.OFFER_TYPE_CHOICES,
         "products":    Product.objects.filter(is_active=True, is_deleted=False).order_by("product_name"),
         "categories":  Category.objects.filter(is_active=True, is_deleted=False).order_by("category_name"),
         "coupons":     Coupon.objects.filter(is_active=True, is_deleted=False).order_by("code"),
+        "form_data":SimpleNamespace(
+            offer_type="", product_id="", category_id="",
+            referral_coupon_id="", discount_percent="",
+            start_date="", end_date="", is_active=False,
+        ),
     })
 
 
@@ -86,6 +92,11 @@ def admin_edit_offer(request, offer_id):
         "products":    Product.objects.filter(is_active=True, is_deleted=False).order_by("product_name"),
         "categories":  Category.objects.filter(is_active=True, is_deleted=False).order_by("category_name"),
         "coupons":     Coupon.objects.filter(is_active=True, is_deleted=False).order_by("code"),
+        "form_data":SimpleNamespace(
+            offer_type="", product_id="", category_id="",
+            referral_coupon_id="", discount_percent="",
+            start_date="", end_date="", is_active=False,
+        ),
     })
 
 

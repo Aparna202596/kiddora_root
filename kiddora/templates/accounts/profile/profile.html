@@ -203,7 +203,12 @@
                     <input type="text" name="phone" placeholder="Phone Number" value="{{ request.user.phone |default:'' }}" disabled>
                 </div>
             </div>
-
+            <div class="profile-field">
+                <label>Referral Code</label>
+                <div class="input-wrapper">
+                    <input type="text" value="{{ request.user.referral_code|default:'—' }}" disabled readonly>
+                </div>
+            </div>
             <div class="profile-field">
                 <label>Gender</label>
                 <div class="gender-options">
@@ -219,7 +224,7 @@
                     </label>
                 </div>
             </div>
-
+            
             <div class="profile-actions">
                 <a href="{% url 'accounts:change_email' %}" class="change-email">Change Email</a>
                 <a href="{% url 'accounts:change_password' %}" class="change-password">Change password</a>

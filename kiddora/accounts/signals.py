@@ -1,8 +1,9 @@
 from allauth.socialaccount.signals import social_account_added
 from django.db.models.signals import post_save
-from shopcore.models import *
+from shopcore.models import Cart, Wishlist
 from django.dispatch import receiver
-from accounts.models import *
+from accounts.models import CustomUser
+from payments.models import Wallet
 
 @receiver(post_save, sender=CustomUser)
 
