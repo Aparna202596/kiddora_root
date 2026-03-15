@@ -3,7 +3,6 @@
 {% block title %}Orders – Kiddora Admin{% endblock %}
 {% block content %}
 {% include "admin_list_style.html" %}
-
 <div class="container">
     <div class="page-hdr">
         <h2><i class="fa-solid fa-bag-shopping" style="color:#f06292;"></i> Orders</h2>
@@ -20,10 +19,11 @@
     </div>
     {% endif %}
 
-    <!-- Filter toolbar -->
     <form method="get" class="search-box">
-        <input type="text" name="search" value="{{ search }}" placeholder="Order ID, email, product…">
-        <select name="status" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+        <input type="text" name="search" value="{{ search }}"
+               placeholder="Order ID, email, name…">
+        <select name="status"
+                style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
             <option value="">All Statuses</option>
             {% for val, label in status_choices %}
             <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ label }}</option>
@@ -35,7 +35,6 @@
         {% endif %}
     </form>
 
-    <!-- Table -->
     <div class="table-wrapper">
         <table class="data-table">
             <thead>
@@ -58,18 +57,22 @@
                         <div style="font-weight:600;color:#222;">{{ order.user.get_full_name|default:order.user.email }}</div>
                         <div style="color:#888;">{{ order.user.email }}</div>
                     </td>
-                    <td style="font-weight:700;">₹{{ order.total_price }}</td>
+                    {# FIXED: was order.total_price — model field is final_amount #}
+                    <td style="font-weight:700;">₹{{ order.final_amount }}</td>
                     <td>
+                        {# FIXED: was order.status — model field is order_status #}
                         <span class="badge
-                            {% if order.status == 'DELIVERED' %}badge-active
-                            {% elif order.status == 'CANCELLED' %}badge-inactive
-                            {% elif order.status == 'PENDING' %}badge-flat
+                            {% if order.order_status == 'DELIVERED' %}badge-active
+                            {% elif order.order_status == 'CANCELLED' %}badge-inactive
+                            {% elif order.order_status == 'PENDING'   %}badge-flat
                             {% else %}badge-percent{% endif %}">
-                            {{ order.get_status_display }}
+                            {# FIXED: was get_status_display — correct is get_order_status_display #}
+                            {{ order.get_order_status_display }}
                         </span>
                     </td>
+                    {# FIXED: was order.created_at — model field is order_date #}
                     <td style="color:#888;font-size:12px;white-space:nowrap;">
-                        {{ order.created_at|date:"d M Y" }}
+                        {{ order.order_date|date:"d M Y" }}
                     </td>
                     <td class="action-icons">
                         <a href="{% url 'shopcore:admin_order_detail' order_id=order.order_id %}"

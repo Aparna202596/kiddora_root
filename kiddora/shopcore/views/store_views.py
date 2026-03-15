@@ -40,6 +40,7 @@ def anonymous_home(request):
         "new_arrivals":         new_arrivals,
         "cart_variant_ids":     uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
+        "wishlist_product_ids": set(uw["wishlist_product_ids"]),
         "cart_item_count":      uw["cart_item_count"],
     })
 
@@ -114,6 +115,7 @@ def home(request):
         "new_arrivals":         new_arrivals,
         "cart_variant_ids":     uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
+        "wishlist_product_ids": set(uw["wishlist_product_ids"]),
         "cart_item_count":      uw["cart_item_count"],
     })
 

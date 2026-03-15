@@ -1,0 +1,53 @@
+<h3>Order Summary</h3>
+<table>
+  <tr>
+    <th>Product</th>
+    <th>Qty</th>
+    <th>Total</th>
+  </tr>
+  {% for item in cart_items %}
+  <tr>
+    <td>
+      {# FIXED: variant.product.image does not exist; images is a related manager #}
+      {% with img=item.variant.product.images.first %}
+      {% if img and img.image1 %}
+        <img src="{{ img.image1.url }}" width="50" style="border-radius:6px;">
+      {% else %}
+        <span style="font-size:1.4rem;">👕</span>
+      {% endif %}
+      {% endwith %}
+      {{ item.variant.product.product_name }}
+    </td>
+    <td>{{ item.quantity }}</td>
+    <td>₹{{ item.variant.product.final_price|floatformat:2 }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p>Subtotal: ₹{{ subtotal }}</p>
+<p>Discount: -₹{{ discount }}</p>
+<p>Delivery Charge: ₹{{ delivery_charge }}</p>
+<h4>Final Total: ₹{{ final_total }}</h4>
+
+{% if coupon %}
+  <p>Coupon Applied: {{ coupon.code }}</p>
+  {# FIXED: was {% url 'cart:remove_coupon' %} — correct namespace is 'shopcore:' #}
+  <a href="{% url 'shopcore:remove_coupon' %}">Remove Coupon</a>
+{% else %}
+  {# FIXED: was {% url 'cart:apply_coupon' %} — correct namespace is 'shopcore:' #}
+  <form method="post" action="{% url 'shopcore:apply_coupon' %}">
+    {% csrf_token %}
+    <input type="text" name="coupon_code" placeholder="Enter coupon code">
+    <button type="submit">Apply</button>
+  </form>
+{% endif %}
+
+<h3>Payment Method</h3>
+<form method="post">
+  {% csrf_token %}
+  <label>
+    <input type="radio" name="payment_method" value="COD" checked>
+    Cash on Delivery
+  </label>
+  <button type="submit">Place Order</button>
+</form>

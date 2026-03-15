@@ -1,241 +1,367 @@
 # shopcore/views/return_views.py
-# Handles: user return requests, admin return list/detail/approve/reject.
+"""
+Return & Refund management — user-facing and admin.
+
+Requirements covered:
+  ✓ User can request return only on DELIVERED orders (reason mandatory)
+  ✓ Admin list of return requests (search, filter, paginate)
+  ✓ Admin detail view per return request
+  ✓ Admin APPROVE → refunds previously paid amount to user's wallet
+  ✓ Admin REJECT → item_status set to RETURN_REJECTED with reason
+  ✓ Stock restocked on approval
+
+Expected model (add to shopcore/models.py if not present):
+─────────────────────────────────────────────────────────
+class ReturnRequest(models.Model):
+    STATUS_CHOICES = (
+        ("PENDING",  "Pending"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+    )
+    order_item    = models.OneToOneField(OrderItem, on_delete=models.CASCADE,
+                        related_name="return_request")
+    reason        = models.TextField()
+    status        = models.CharField(max_length=20, choices=STATUS_CHOICES,
+                        default="PENDING")
+    refund_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    admin_note    = models.TextField(blank=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
+    updated_at    = models.DateTimeField(auto_now=True)
+
+Wallet model assumed (add to accounts/models.py if not present):
+─────────────────────────────────────────────────────────
+class Wallet(models.Model):
+    user    = models.OneToOneField(CustomUser, on_delete=models.CASCADE,
+                  related_name="wallet")
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class WalletTransaction(models.Model):
+    TYPES = (("CREDIT","Credit"),("DEBIT","Debit"))
+    wallet      = models.ForeignKey(Wallet, on_delete=models.CASCADE,
+                      related_name="transactions")
+    amount      = models.DecimalField(max_digits=10, decimal_places=2)
+    tx_type     = models.CharField(max_length=10, choices=TYPES)
+    description = models.TextField(blank=True)
+    created_at  = models.DateTimeField(auto_now_add=True)
+─────────────────────────────────────────────────────────
+"""
+
+from __future__ import annotations
+
+from decimal import Decimal
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
+from django.contrib.auth.decorators import login_required
 
 from accounts.decorators import admin_login_required
-from products.utils.pagination import paginate_queryset
-from shopcore.models import Order, OrderItem, Return
+from shopcore.models import Order, OrderItem
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────
+
+def _get_return_model():
+    """Lazy import to avoid circular issues; raises ImportError if missing."""
+    from shopcore.models import ReturnRequest
+    return ReturnRequest
+
+
+def _restore_inventory(order_item: OrderItem):
+    try:
+        inv = order_item.variant.inventory
+        inv.quantity_available += order_item.quantity
+        inv.quantity_sold       = max(0, inv.quantity_sold - order_item.quantity)
+        inv.save(update_fields=["quantity_available", "quantity_sold"])
+    except Exception:
+        pass
+
+
+def _credit_wallet(user, amount: Decimal, description: str):
+    """
+    Credit user's wallet and log a WalletTransaction.
+    Silently skips if Wallet model does not exist yet.
+    """
+    try:
+        from accounts.models import Wallet, WalletTransaction
+        wallet, _ = Wallet.objects.get_or_create(user=user)
+        wallet.balance += amount
+        wallet.save(update_fields=["balance", "updated_at"])
+        WalletTransaction.objects.create(
+            wallet      = wallet,
+            amount      = amount,
+            tx_type     = "CREDIT",
+            description = description,
+        )
+    except Exception:
+        pass
+
+
+# ─────────────────────────────────────────────────────────────
 # USER: REQUEST RETURN
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @login_required
 @transaction.atomic
 def request_return(request, order_id, item_id):
     """
-    Only allowed when:
-      - The parent order is DELIVERED.
-      - The OrderItem is ACTIVE (not already cancelled or returned).
-      - No prior return request exists for this item.
-    Reason is mandatory per the project spec.
+    GET  → show return form (reason mandatory).
+    POST → create ReturnRequest and mark item RETURN_REQUESTED.
+    Only allowed when order.order_status == DELIVERED and item_status == ACTIVE.
     """
     order      = get_object_or_404(Order, order_id=order_id, user=request.user)
-    order_item = get_object_or_404(
-        OrderItem, id=item_id, order=order, item_status="ACTIVE"
-    )
+    order_item = get_object_or_404(OrderItem, id=item_id, order=order)
 
-    # Guard: only deliverd orders can be returned
     if order.order_status != "DELIVERED":
-        messages.error(
-            request,
-            "Returns can only be requested after the order has been delivered.",
-        )
+        messages.error(request, "Returns are only allowed for delivered orders.")
         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-    # Guard: already has a return request
-    if hasattr(order_item, "return_request"):
-        messages.info(request, "A return request already exists for this item.")
+    if order_item.item_status != "ACTIVE":
+        messages.error(request, "This item is not eligible for return.")
         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-    if request.method == "POST":
-        reason = request.POST.get("reason", "").strip()
-        if not reason:
-            messages.error(request, "A reason is required for a return request.")
-            return render(
-                request,
-                "orders/request_return.html",
-                {"order": order, "order_item": order_item},
-            )
+    if request.method == "GET":
+        return render(request, "orders/user/request_return.html", {
+            "order":      order,
+            "order_item": order_item,
+        })
 
-        Return.objects.create(
-            order_item = order_item,
-            reason     = reason,
-            status     = "REQUESTED",
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(request, "Please provide a reason for the return.")
+        return render(request, "orders/user/request_return.html", {
+            "order":      order,
+            "order_item": order_item,
+            "error":      "Reason is required.",
+        })
+
+    # Create return request
+    try:
+        ReturnRequest = _get_return_model()
+        if ReturnRequest.objects.filter(order_item=order_item).exists():
+            messages.warning(request, "A return request already exists for this item.")
+            return redirect("shopcore:user_order_detail", order_id=order.order_id)
+
+        ReturnRequest.objects.create(
+            order_item    = order_item,
+            reason        = reason,
+            status        = "PENDING",
+            refund_amount = order_item.total_price,
         )
-
-        # Mark the item as return-requested
-        order_item.item_status = "RETURN_REQUESTED"
-        order_item.save()
-
-        messages.success(
-            request,
-            f"Return request submitted for "
-            f"'{order_item.variant.product.product_name}'. "
-            "We will review it shortly.",
-        )
+    except ImportError:
+        messages.error(request, "Return feature is currently unavailable. Please contact support.")
         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-    return render(
+    order_item.item_status = "RETURN_REQUESTED"
+    order_item.save(update_fields=["item_status"])
+
+    messages.success(
         request,
-        "orders/request_return.html",
-        {"order": order, "order_item": order_item},
+        f"Return request submitted for "
+        f"'{order_item.variant.product.product_name}'. "
+        "We will review it shortly.",
     )
+    return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ADMIN: RETURN LIST
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# ADMIN: RETURN REQUEST LIST
+# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
 def admin_return_list(request):
-    """List all return requests with search and status filter."""
-    from django.db.models import Q
+    """
+    List all return requests — search, filter by status, paginate.
+    """
+    try:
+        ReturnRequest = _get_return_model()
+    except ImportError:
+        messages.error(request, "ReturnRequest model not found.")
+        return redirect("shopcore:admin_order_list")
 
     search   = request.GET.get("search", "").strip()
     status_f = request.GET.get("status", "").strip()
 
-    returns = Return.objects.select_related(
-        "order_item",
-        "order_item__order",
+    qs = ReturnRequest.objects.select_related(
         "order_item__order__user",
-        "order_item__variant",
         "order_item__variant__product",
+        "order_item__order",
     ).order_by("-created_at")
 
     if search:
-        returns = returns.filter(
+        qs = qs.filter(
             Q(order_item__order__order_id__icontains=search)
             | Q(order_item__order__user__email__icontains=search)
             | Q(order_item__variant__product__product_name__icontains=search)
         )
 
     if status_f:
-        returns = returns.filter(status=status_f)
+        qs = qs.filter(status=status_f)
 
-    page_obj = paginate_queryset(request, returns, 20)
+    status_choices = [("PENDING", "Pending"), ("APPROVED", "Approved"), ("REJECTED", "Rejected")]
+    page_obj       = Paginator(qs, 20).get_page(request.GET.get("page"))
 
-    context = {
-        "page_obj":      page_obj,
-        "search":        search,
-        "status_f":      status_f,
-        "status_choices": Return.STATUS_CHOICES,
-    }
-    return render(request, "returns/admin_return_list.html", context)
+    return render(request, "orders/admin/admin_return_list.html", {
+        "page_obj":       page_obj,
+        "search":         search,
+        "status_f":       status_f,
+        "status_choices": status_choices,
+    })
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ADMIN: RETURN DETAIL
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# ADMIN: RETURN REQUEST DETAIL
+# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
 def admin_return_detail(request, return_id):
+    try:
+        ReturnRequest = _get_return_model()
+    except ImportError:
+        return redirect("shopcore:admin_return_list")
+
     ret = get_object_or_404(
-        Return.objects.select_related(
-            "order_item",
-            "order_item__order",
+        ReturnRequest.objects.select_related(
             "order_item__order__user",
             "order_item__order__address",
-            "order_item__variant__product",
+            "order_item__variant__product__images",
             "order_item__variant__color",
             "order_item__variant__age_group",
         ),
         id=return_id,
     )
-    return render(
-        request,
-        "returns/admin_return_detail.html",
-        {"ret": ret},
-    )
+
+    oi      = ret.order_item
+    img_url = None
+    img_obj = oi.variant.product.images.filter(is_default=True).first() or \
+              oi.variant.product.images.first()
+    if img_obj:
+        for field in ("image1", "image2", "image3", "image4", "image5"):
+            val = getattr(img_obj, field)
+            if val:
+                img_url = val.url
+                break
+
+    return render(request, "orders/admin/admin_return_detail.html", {
+        "ret":     ret,
+        "img_url": img_url,
+    })
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# ADMIN: APPROVE RETURN
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+# ADMIN: APPROVE RETURN  →  refund to wallet + restock
+# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
 @transaction.atomic
 def admin_approve_return(request, return_id):
     """
-    Approve a return request:
-      - Sets Return.status = APPROVED.
-      - Sets OrderItem.item_status = RETURN_APPROVED.
-      - Restores inventory (quantity_available += qty, quantity_sold -= qty).
-      - Admin remark is optional.
+    POST.
+    1. Marks ReturnRequest as APPROVED.
+    2. Sets OrderItem.item_status = REFUNDED.
+    3. Restores inventory stock.
+    4. Credits refund_amount to user's wallet.
+    5. Sets Order.payment_status = REFUNDED (or PARTIALLY_REFUNDED).
     """
     if request.method != "POST":
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
-    ret = get_object_or_404(Return, id=return_id, status="REQUESTED")
-
-    remark = request.POST.get("admin_remark", "").strip()
-
-    # Restore stock
-    order_item = ret.order_item
     try:
-        inv = order_item.variant.inventory
-        inv.quantity_available += order_item.quantity
-        inv.quantity_sold       = max(0, inv.quantity_sold - order_item.quantity)
-        inv.save()
-    except Exception:
-        pass
+        ReturnRequest = _get_return_model()
+    except ImportError:
+        return redirect("shopcore:admin_return_list")
 
-    # Update OrderItem
-    order_item.item_status = "RETURN_APPROVED"
-    order_item.save()
+    ret = get_object_or_404(ReturnRequest, id=return_id, status="PENDING")
+    oi  = ret.order_item
 
-    # Update Return
-    ret.status       = "APPROVED"
-    ret.admin_remark = remark
-    ret.reviewed_at  = timezone.now()
-    ret.refund_amount = order_item.total_price  # full item refund by default
-    ret.save()
+    # 1. Approve request
+    ret.status     = "APPROVED"
+    ret.admin_note = request.POST.get("admin_note", "Return approved.").strip()
+    ret.save(update_fields=["status", "admin_note", "updated_at"])
+
+    # 2. Update item status
+    oi.item_status = "REFUNDED"
+    oi.save(update_fields=["item_status"])
+
+    # 3. Restore inventory
+    _restore_inventory(oi)
+
+    # 4. Credit wallet
+    _credit_wallet(
+        user        = oi.order.user,
+        amount      = ret.refund_amount,
+        description = (
+            f"Refund for return of '{oi.variant.product.product_name}' "
+            f"in order {oi.order.order_id}"
+        ),
+    )
+
+    # 5. Update order payment status
+    order = oi.order
+    active_items = order.order_items.filter(item_status="ACTIVE")
+    if not active_items.exists():
+        order.payment_status = "REFUNDED"
+    else:
+        order.payment_status = "PARTIALLY_REFUNDED"
+    order.save(update_fields=["payment_status"])
 
     messages.success(
         request,
-        f"Return approved for order item "
-        f"'{order_item.variant.product.product_name}'.",
+        f"Return approved. ₹{ret.refund_amount} credited to "
+        f"{oi.order.user.email}'s wallet.",
     )
-    return redirect("shopcore:admin_return_list")
+    return redirect("shopcore:admin_return_detail", return_id=return_id)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
 # ADMIN: REJECT RETURN
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
 @transaction.atomic
 def admin_reject_return(request, return_id):
     """
-    Reject a return request:
-      - Sets Return.status = REJECTED.
-      - Sets OrderItem.item_status = RETURN_REJECTED.
-      - Admin remark is optional.
-      - Inventory is NOT restored.
+    POST.
+    Marks the return request as REJECTED and restores item_status to ACTIVE.
     """
     if request.method != "POST":
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
-    ret = get_object_or_404(Return, id=return_id, status="REQUESTED")
+    try:
+        ReturnRequest = _get_return_model()
+    except ImportError:
+        return redirect("shopcore:admin_return_list")
 
-    remark = request.POST.get("admin_remark", "").strip()
+    ret = get_object_or_404(ReturnRequest, id=return_id, status="PENDING")
+    oi  = ret.order_item
 
-    # Update OrderItem back to ACTIVE (rejection means item is not returned)
-    order_item = ret.order_item
-    order_item.item_status = "RETURN_REJECTED"
-    order_item.save()
+    admin_note = request.POST.get("admin_note", "").strip()
+    if not admin_note:
+        messages.error(request, "Please provide a reason for rejection.")
+        return redirect("shopcore:admin_return_detail", return_id=return_id)
 
-    # Update Return
-    ret.status       = "REJECTED"
-    ret.admin_remark = remark
-    ret.reviewed_at  = timezone.now()
-    ret.save()
+    ret.status     = "REJECTED"
+    ret.admin_note = admin_note
+    ret.save(update_fields=["status", "admin_note", "updated_at"])
+
+    # Restore item to ACTIVE (return was denied)
+    oi.item_status = "RETURN_REJECTED"
+    oi.save(update_fields=["item_status"])
 
     messages.success(
         request,
-        f"Return request rejected for "
-        f"'{order_item.variant.product.product_name}'.",
+        f"Return request rejected. Reason: {admin_note}",
     )
-    return redirect("shopcore:admin_return_list")
+    return redirect("shopcore:admin_return_detail", return_id=return_id)

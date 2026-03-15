@@ -178,6 +178,17 @@
             border-bottom: 1px solid #fdf0f5;
             transition: background .15s;
         }
+
+            /* auth buttons */
+            .auth-btn {
+                padding: 7px 18px; border-radius: 20px; font-size: 14px;
+                font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+                transition: background .2s, transform .15s;
+                background: #f06292; color: #fff; border: 1.5px solid #f06292;
+            }
+            .auth-btn:hover { background: #e91e63; border-color: #e91e63; transform: translateY(-1px); }
+            .auth-btn.outline { background: #fff; color: #f06292; }
+            .auth-btn.outline:hover { background: #fff0f5; transform: translateY(-1px); }
         .sd-item:last-child { border-bottom: none; }
         .sd-item:hover { background: #fff5f9; }
         .sd-img {
@@ -437,6 +448,7 @@
                 <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
                     <i class="fa-regular fa-user"></i>
                 </a>
+                <a href="{% url 'accounts:logout' %}" class="auth-btn outline">Logout</a>
             </div>
         </div>
     </header>

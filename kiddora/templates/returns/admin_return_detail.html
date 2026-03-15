@@ -1,18 +1,15 @@
 {% extends "base_admin.html" %}
 {% load static %}
 {% block title %}Return #{{ ret.id }} – Admin{% endblock %}
-
 {% block content %}
 <style>
   .rd-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:24px; }
   .rd-header h2 { font-size:20px; font-weight:800; color:#222; }
   .back-link { font-size:13px; color:#f06292; text-decoration:none; display:flex; align-items:center; gap:6px; }
   .back-link:hover { text-decoration:underline; }
-
   .rd-layout { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap; }
   .rd-main { flex:1; min-width:0; }
   .rd-side { width:300px; flex-shrink:0; }
-
   .rd-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:22px; margin-bottom:18px; }
   .rd-card-title {
     font-size:15px; font-weight:700; color:#222;
@@ -20,29 +17,20 @@
     display:flex; align-items:center; gap:8px;
   }
   .rd-card-title i { color:#f06292; }
-
-  .status-badge {
-    display:inline-flex; align-items:center; gap:5px;
-    font-size:13px; font-weight:700; border-radius:20px; padding:5px 14px;
-  }
-  .status-REQUESTED { background:#fef9c3; color:#854d0e; }
-  .status-APPROVED  { background:#dcfce7; color:#15803d; }
-  .status-REJECTED  { background:#fee2e2; color:#991b1b; }
-  .status-REFUNDED  { background:#dbeafe; color:#1e40af; }
-
+  .status-badge { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:700; border-radius:20px; padding:5px 14px; }
+  {# FIXED: status values are PENDING/APPROVED/REJECTED, not REQUESTED/APPROVED/REJECTED #}
+  .status-PENDING  { background:#fef9c3; color:#854d0e; }
+  .status-APPROVED { background:#dcfce7; color:#15803d; }
+  .status-REJECTED { background:#fee2e2; color:#991b1b; }
   .info-row { display:flex; justify-content:space-between; font-size:13px; color:#555; margin-bottom:8px; }
   .info-row .lbl { color:#aaa; }
-
   .item-card { display:flex; gap:14px; align-items:center; background:#f9f9f9; border-radius:10px; padding:14px; }
   .item-img { width:72px; height:88px; border-radius:8px; overflow:hidden; background:#eee; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
   .item-img img { width:100%; height:100%; object-fit:cover; }
   .item-name  { font-size:14px; font-weight:700; color:#222; }
   .item-meta  { font-size:12px; color:#888; margin-top:4px; }
   .item-price { font-size:15px; font-weight:700; color:#f06292; margin-top:6px; }
-
   .reason-box { background:#fff8fb; border:1px solid #f0c8d8; border-radius:8px; padding:14px; font-size:13px; color:#444; line-height:1.6; }
-
-  /* action forms */
   .action-forms { display:flex; flex-direction:column; gap:14px; }
   .action-form-card { border:1.5px solid #eee; border-radius:10px; padding:16px; }
   .action-form-card h4 { font-size:13px; font-weight:700; margin-bottom:12px; }
@@ -55,7 +43,6 @@
   .btn-approve:hover { background:#15803d; }
   .btn-reject  { width:100%; padding:10px; background:#ef4444; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; margin-top:10px; }
   .btn-reject:hover { background:#dc2626; }
-
   .locked-msg { background:#f9fafb; border-radius:10px; padding:16px; font-size:13px; color:#888; text-align:center; }
 </style>
 
@@ -67,6 +54,7 @@
     </div>
   </div>
   <div style="display:flex;gap:12px;align-items:center;">
+    {# ret.status values: PENDING / APPROVED / REJECTED #}
     <span class="status-badge status-{{ ret.status }}">{{ ret.get_status_display }}</span>
     <a href="{% url 'shopcore:admin_return_list' %}" class="back-link">
       <i class="fa fa-arrow-left"></i> Back
@@ -76,12 +64,17 @@
 
 <div class="rd-layout">
   <div class="rd-main">
-
     <!-- ITEM -->
     <div class="rd-card">
       <div class="rd-card-title"><i class="fa fa-box"></i> Returned Item</div>
       <div class="item-card">
-        <div class="item-img"><span>👕</span></div>
+        <div class="item-img">
+          {% if img_url %}
+            <img src="{{ img_url }}" alt="{{ ret.order_item.variant.product.product_name }}" loading="lazy">
+          {% else %}
+            <span>👕</span>
+          {% endif %}
+        </div>
         <div>
           <div class="item-name">{{ ret.order_item.variant.product.product_name }}</div>
           <div class="item-meta">
@@ -104,7 +97,8 @@
       <div class="rd-card-title"><i class="fa fa-bag-shopping"></i> Order Info</div>
       <div class="info-row">
         <span class="lbl">Order ID</span>
-        <a href="{% url 'shopcore:admin_order_detail' order_id=ret.order_item.order.order_id %}" style="color:#f06292;font-family:monospace;font-weight:700;">
+        <a href="{% url 'shopcore:admin_order_detail' order_id=ret.order_item.order.order_id %}"
+           style="color:#f06292;font-family:monospace;font-weight:700;">
           {{ ret.order_item.order.order_id }}
         </a>
       </div>
@@ -120,16 +114,14 @@
         <span class="lbl">Order Date</span>
         <span>{{ ret.order_item.order.order_date|date:"d M Y" }}</span>
       </div>
-      {% if ret.admin_remark %}
+
+      {# FIXED: was ret.admin_remark — view field is admin_note #}
+      {% if ret.admin_note %}
       <div style="margin-top:12px;background:#f0fdf4;border-radius:8px;padding:12px 14px;font-size:13px;color:#15803d;">
-        <strong>Admin Remark:</strong> {{ ret.admin_remark }}
+        <strong>Admin Note:</strong> {{ ret.admin_note }}
       </div>
       {% endif %}
-      {% if ret.reviewed_at %}
-      <div style="margin-top:8px;font-size:12px;color:#aaa;">
-        Reviewed: {{ ret.reviewed_at|date:"d M Y, g:i A" }}
-      </div>
-      {% endif %}
+      {# FIXED: removed ret.reviewed_at — field does not exist in the ReturnRequest model #}
     </div>
   </div>
 
@@ -138,18 +130,23 @@
     <div class="rd-card">
       <div class="rd-card-title"><i class="fa fa-gavel"></i> Review Request</div>
 
-      {% if ret.status == 'REQUESTED' %}
+      {# FIXED: was ret.status == 'REQUESTED' — correct value is 'PENDING' #}
+      {% if ret.status == 'PENDING' %}
       <div class="action-forms">
+
         <!-- APPROVE -->
         <div class="action-form-card" style="border-color:#86efac;">
           <h4 style="color:#15803d;">✅ Approve Return</h4>
           <p style="font-size:12px;color:#888;margin-bottom:10px;">
-            Stock will be restored. Refund amount: <strong>₹{{ ret.order_item.total_price }}</strong>
+            Stock will be restored. Refund amount:
+            <strong>₹{{ ret.refund_amount }}</strong> → credited to wallet.
           </p>
-          <form method="post" action="{% url 'shopcore:admin_approve_return' return_id=ret.id %}"
+          <form method="post"
+                action="{% url 'shopcore:admin_approve_return' return_id=ret.id %}"
                 onsubmit="return confirmApprove(event)">
             {% csrf_token %}
-            <textarea name="admin_remark" placeholder="Optional remark to customer…"></textarea>
+            {# FIXED: was name="admin_remark" — view reads request.POST.get("admin_note") #}
+            <textarea name="admin_note" placeholder="Optional note to customer…"></textarea>
             <button type="submit" class="btn-approve">
               <i class="fa fa-check"></i> Approve Return
             </button>
@@ -160,12 +157,16 @@
         <div class="action-form-card" style="border-color:#fca5a5;">
           <h4 style="color:#991b1b;">❌ Reject Return</h4>
           <p style="font-size:12px;color:#888;margin-bottom:10px;">
-            Stock will not be restored. Customer will be notified.
+            Stock will not be restored. Customer will see the rejection reason.
           </p>
-          <form method="post" action="{% url 'shopcore:admin_reject_return' return_id=ret.id %}"
+          <form method="post"
+                action="{% url 'shopcore:admin_reject_return' return_id=ret.id %}"
                 onsubmit="return confirmReject(event)">
             {% csrf_token %}
-            <textarea name="admin_remark" placeholder="Reason for rejection…"></textarea>
+            {# FIXED: was name="admin_remark" — view reads request.POST.get("admin_note") #}
+            <textarea name="admin_note"
+                      placeholder="Reason for rejection (required)…"
+                      required></textarea>
             <button type="submit" class="btn-reject">
               <i class="fa fa-times"></i> Reject Return
             </button>
@@ -176,9 +177,12 @@
       {% else %}
       <div class="locked-msg">
         <i class="fa fa-lock" style="font-size:1.5rem;color:#ddd;display:block;margin-bottom:8px;"></i>
-        This return has been <strong>{{ ret.get_status_display }}</strong> and requires no further action.
+        This return has been <strong>{{ ret.get_status_display }}</strong>
+        and requires no further action.
         {% if ret.refund_amount %}
-        <div style="margin-top:10px;color:#15803d;font-weight:700;">Refund: ₹{{ ret.refund_amount }}</div>
+        <div style="margin-top:10px;color:#15803d;font-weight:700;">
+          Refund: ₹{{ ret.refund_amount }}
+        </div>
         {% endif %}
       </div>
       {% endif %}
@@ -189,7 +193,10 @@
 <script>
 function confirmApprove(e) {
   e.preventDefault();
-  openConfirmModal('Approve this return and restore inventory?', function () { e.target.submit(); });
+  openConfirmModal(
+    'Approve this return? ₹{{ ret.refund_amount }} will be credited to the customer\'s wallet.',
+    function () { e.target.submit(); }
+  );
   return false;
 }
 function confirmReject(e) {
