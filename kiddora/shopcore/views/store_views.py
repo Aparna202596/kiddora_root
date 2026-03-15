@@ -1,30 +1,271 @@
-
-from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django.views.decorators.cache import never_cache
 from accounts.decorators import user_login_required
+from products.models import Category, Product
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.views.decorators.cache import never_cache
+from django.db.models import Sum, Avg, Count
+from django.db.models.functions import Coalesce
+from django.db.models import Value
+from types import SimpleNamespace
+
+from accounts.decorators import admin_login_required, user_login_required
+from shopcore.models import Banner, Cart, CartItem, Wishlist, Review
 from products.models import Category, Product
 
 User = get_user_model()
 
 def anonymous_home(request):
-    categories = Category.objects.filter(is_active=True)
-    products = Product.objects.filter(is_active=True).order_by('-id')[:8]
-    return render(request, 'store/anonymous_home.html', {
-        'categories': categories,
-        'products': products
+    live_banners      = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
+    hero_banners      = [b for b in live_banners if b.slot == "HERO"][:6]
+    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
+
+    categories   = Category.objects.filter(is_active=True).order_by("category_name")[:6]
+    top_products = list(
+        _active_products()
+        .annotate(total_sold=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0)))
+        .order_by("-total_sold")[:6]
+    )
+    _attach_reviews(top_products)
+    new_arrivals = list(_active_products().order_by("-id")[:6])
+    _attach_reviews(new_arrivals)
+
+    uw = _cart_wishlist_ctx(request.user)
+    return render(request, "store/home.html", {
+        "hero_banners":         hero_banners,
+        "secondary_banners":    secondary_banners,
+        "categories":           categories,
+        "top_products":         top_products,
+        "new_arrivals":         new_arrivals,
+        "cart_variant_ids":     uw["cart_variant_ids"],
+        "wishlist_product_ids": uw["wishlist_product_ids"],
+        "cart_item_count":      uw["cart_item_count"],
     })
-@never_cache
+
+
+# HELPERS
+
+def _cart_wishlist_ctx(user):
+    if not user.is_authenticated:
+        return {"cart_variant_ids": set(), "wishlist_product_ids": set(), "cart_item_count": 0}
+    try:
+        cart_variant_ids = set(user.cart.items.values_list("variant_id", flat=True))
+        cart_item_count  = user.cart.items.count()
+    except Cart.DoesNotExist:
+        cart_variant_ids = set()
+        cart_item_count  = 0
+    try:
+        wishlist_product_ids = set(user.wishlist.items.values_list("product_id", flat=True))
+    except Wishlist.DoesNotExist:
+        wishlist_product_ids = set()
+    return {
+        "cart_variant_ids":     cart_variant_ids,
+        "wishlist_product_ids": wishlist_product_ids,
+        "cart_item_count":      cart_item_count,
+    }
+
+
+def _active_products():
+    return Product.objects.filter(
+        is_active=True, is_deleted=False,
+        subcategory__is_active=True, subcategory__is_deleted=False,
+        subcategory__category__is_active=True, subcategory__category__is_deleted=False,
+    ).select_related("subcategory", "subcategory__category").prefetch_related("images")
+
+
+def _attach_reviews(product_list):
+    pids = [p.id for p in product_list]
+    review_map = {
+        r["product_id"]: r
+        for r in Review.objects.filter(product_id__in=pids, is_approved=True)
+                                .values("product_id")
+                                .annotate(avg=Avg("rating"), cnt=Count("id"))
+    }
+    for p in product_list:
+        rd = review_map.get(p.id, {})
+        p.avg_rating   = round(rd.get("avg") or 0, 1)
+        p.review_count = rd.get("cnt", 0)
+    return product_list
+
+# HOME PAGE VIEW  (user-facing)
 @user_login_required
 def home(request):
-    categories = Category.objects.filter(is_active=True)
-    products = Product.objects.filter(
-        is_active=True,
-        subcategory__category__is_active=True,).order_by('-id')[:12]
-    return render(request, 'store/home.html', {
-        'categories': categories,
-        'products': products
+    live_banners      = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
+    hero_banners      = [b for b in live_banners if b.slot == "HERO"][:6]
+    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
+
+    categories   = Category.objects.filter(is_active=True).order_by("category_name")[:6]
+    top_products = list(
+        _active_products()
+        .annotate(total_sold=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0)))
+        .order_by("-total_sold")[:6]
+    )
+    _attach_reviews(top_products)
+    new_arrivals = list(_active_products().order_by("-id")[:6])
+    _attach_reviews(new_arrivals)
+
+    uw = _cart_wishlist_ctx(request.user)
+    return render(request, "store/home.html", {
+        "hero_banners":         hero_banners,
+        "secondary_banners":    secondary_banners,
+        "categories":           categories,
+        "top_products":         top_products,
+        "new_arrivals":         new_arrivals,
+        "cart_variant_ids":     uw["cart_variant_ids"],
+        "wishlist_product_ids": uw["wishlist_product_ids"],
+        "cart_item_count":      uw["cart_item_count"],
     })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN — LIST
+# ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_banner_list(request):
+    search = request.GET.get("search", "").strip()
+    slot_f = request.GET.get("slot", "")
+    banners = Banner.objects.all()
+    if search:
+        banners = banners.filter(title__icontains=search)
+    if slot_f:
+        banners = banners.filter(slot=slot_f)
+    return render(request, "banner/admin_banner_list.html", {
+        "banners": banners, "search": search, "slot_f": slot_f,
+        "slot_choices": Banner.SLOT_CHOICES,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN — ADD
+# ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_add_banner(request):
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        subtitle = request.POST.get("subtitle", "").strip()
+        cta_text = request.POST.get("cta_text", "Shop Now").strip()
+        cta_url = request.POST.get("cta_url", "/products/user/products/").strip()
+        badge_text = request.POST.get("badge_text", "").strip()
+        slot = request.POST.get("slot", "HERO")
+        display_order = request.POST.get("display_order", 0)
+        start_date = request.POST.get("start_date") or None
+        end_date = request.POST.get("end_date") or None
+        image = request.FILES.get("image")
+        if not title:
+            messages.error(request, "Title is required.")
+            return render(request, "banner/admin_banner_form.html", {
+                "slot_choices": Banner.SLOT_CHOICES, "banner": None, "form_data": request.POST,
+            })
+        if not image:
+            messages.error(request, "Banner image is required.")
+            return render(request, "banner/admin_banner_form.html", {
+                "slot_choices": Banner.SLOT_CHOICES, "banner": None, "form_data": request.POST,
+            })
+        Banner.objects.create(
+            title=title, subtitle=subtitle, image=image, cta_text=cta_text,
+            cta_url=cta_url, badge_text=badge_text, slot=slot,
+            display_order=int(display_order), start_date=start_date,
+            end_date=end_date, is_active=True,
+        )
+        messages.success(request, f'Banner "{title}" created.')
+        return redirect("shopcore:admin_banner_list")
+    return render(request, "banner/admin_banner_form.html", {
+        "slot_choices": Banner.SLOT_CHOICES, "banner": None,
+        "form_data": SimpleNamespace(
+            title="", subtitle="", cta_text="Shop Now",
+            cta_url="/products/user/products/", badge_text="",
+            slot="HERO", display_order=0, start_date="", end_date="",
+        ),
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN — EDIT
+# ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_edit_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id)
+    if request.method == "POST":
+        banner.title = request.POST.get("title", banner.title).strip()
+        banner.subtitle = request.POST.get("subtitle", "").strip()
+        banner.cta_text = request.POST.get("cta_text", "Shop Now").strip()
+        banner.cta_url = request.POST.get("cta_url", "/products/user/products/").strip()
+        banner.badge_text = request.POST.get("badge_text", "").strip()
+        banner.slot = request.POST.get("slot", banner.slot)
+        banner.display_order = int(request.POST.get("display_order", banner.display_order))
+        banner.start_date = request.POST.get("start_date") or None
+        banner.end_date = request.POST.get("end_date") or None
+        new_image = request.FILES.get("image")
+        if new_image:
+            if banner.image:
+                try:
+                    import os
+                    if os.path.isfile(banner.image.path):
+                        os.remove(banner.image.path)
+                except Exception:
+                    pass
+            banner.image = new_image
+        if not banner.title:
+            messages.error(request, "Title is required.")
+            return render(request, "banner/admin_banner_form.html", {
+                "banner": banner, "slot_choices": Banner.SLOT_CHOICES, "form_data": request.POST,
+            })
+        banner.save()
+        messages.success(request, f'Banner "{banner.title}" updated.')
+        return redirect("shopcore:admin_banner_list")
+    return render(request, "banner/admin_banner_form.html", {
+        "banner": banner, "slot_choices": Banner.SLOT_CHOICES,
+        "form_data": SimpleNamespace(
+            title="", subtitle="", cta_text="Shop Now",
+            cta_url="/products/user/products/", badge_text="",
+            slot="HERO", display_order=0, start_date="", end_date="",
+        ),
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN — DELETE
+# ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_delete_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id)
+    if request.method == "POST":
+        title = banner.title
+        if banner.image:
+            try:
+                import os
+                if os.path.isfile(banner.image.path):
+                    os.remove(banner.image.path)
+            except Exception:
+                pass
+        banner.delete()
+        messages.success(request, f'Banner "{title}" deleted.')
+        return redirect("shopcore:admin_banner_list")
+    return render(request, "banner/admin_banner_list.html", {
+        "banners": Banner.objects.all(), "slot_choices": Banner.SLOT_CHOICES,
+        "delete_target": banner,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN — TOGGLE ACTIVE
+# ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_toggle_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id)
+    if request.method == "POST":
+        banner.is_active = not banner.is_active
+        banner.save()
+        state = "activated" if banner.is_active else "deactivated"
+        messages.success(request, f'Banner "{banner.title}" {state}.')
+    return redirect("shopcore:admin_banner_list")
+
 def size_chart(request):
     return render(request, 'products/catalog/kids_size_chart.html')
 

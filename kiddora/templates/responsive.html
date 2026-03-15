@@ -1,0 +1,828 @@
+{% comment %}
+╔══════════════════════════════════════════════════════════════════════╗
+║  responsive.html  —  Kiddora Universal Responsive Layer              ║
+║  ──────────────────────────────────────────────────────────────────  ║
+║  Include at the TOP of every template's {% block extra_css %} block  ║
+║  (or anywhere in <head> before page-specific styles):                ║
+║                                                                      ║
+║      {% include "responsive.html" %}                                 ║
+║                                                                      ║
+║  What it covers (user + admin, existing + future pages):             ║
+║    1.  CSS custom properties  (shared tokens)                        ║
+║    2.  Global reset & base                                           ║
+║    3.  Viewport meta guard  (injected once via JS)                   ║
+║    4.  Typography scale                                              ║
+║    5.  Layout helpers  (.container, .kd-home, .form-box, etc.)       ║
+║    6.  Header / navbar                                               ║
+║    7.  Sidebar + product list grid (catalog)                         ║
+║    8.  Product cards  (.kd-product-card, .product-card, .pc-*)       ║
+║    9.  Category & subcategory grids                                  ║
+║   10.  Home page sections  (.kd-cat-grid, .kd-trend-grid, carousel)  ║
+║   11.  Admin tables & list pages                                     ║
+║   12.  Admin forms  (.form-box, .form-wrap, .form-card)              ║
+║   13.  Admin confirm pages                                           ║
+║   14.  Modals  (confirm_modal, cropper modal)                        ║
+║   15.  Pagination                                                    ║
+║   16.  Flash messages                                                ║
+║   17.  Footer                                                        ║
+║   18.  Utility helpers  (hide/show, flex, gap, text-align)           ║
+║   19.  Print basics                                                  ║
+║                                                                      ║
+║  Breakpoints used throughout the project:                            ║
+║    --bp-xl   : 1280px   (large desktops)                             ║
+║    --bp-lg   : 1024px   (laptops / small desktops)                   ║
+║    --bp-md   :  768px   (tablets)                                    ║
+║    --bp-sm   :  640px   (large phones / landscape)                   ║
+║    --bp-xs   :  480px   (phones)                                     ║
+║    --bp-xxs  :  360px   (small phones)                               ║
+╚══════════════════════════════════════════════════════════════════════╝
+{% endcomment %}
+<style>
+    /* ════════════════════════════════════════════════════════════
+    §1  CSS CUSTOM PROPERTIES
+    ════════════════════════════════════════════════════════════ */
+    :root {
+    /* Brand colours */
+    --pink:        #f06292;
+    --pink-dark:   #e91e63;
+    --pink-light:  #fce4ec;
+    --yellow:      #ffd54f;
+    --green:       #66bb6a;
+    --teal:        #4dd0e1;
+    --blue:        #4a90e2;
+    --orange:      #ff9800;
+    --red:         #e53935;
+
+    /* Neutral palette */
+    --text-primary:   #222;
+    --text-secondary: #555;
+    --text-muted:     #888;
+    --text-disabled:  #bbb;
+    --border-light:   #f0f0f0;
+    --border-mid:     #e0e0e0;
+    --bg-page:        #fff;
+    --bg-subtle:      #fafafa;
+    --bg-card:        #fff;
+
+    /* Shadows */
+    --shadow-xs:   0 2px  8px rgba(0,0,0,.06);
+    --shadow-sm:   0 4px 14px rgba(0,0,0,.08);
+    --shadow-md:   0 6px 24px rgba(240,98,146,.10);
+    --shadow-lg:   0 14px 40px rgba(240,98,146,.18);
+    --shadow-card: 0 6px 24px rgba(240,98,146,.10);
+
+    /* Border radius */
+    --r-xs:  4px;
+    --r-sm:  8px;
+    --r-md:  12px;
+    --r-lg:  16px;
+    --r-xl:  20px;
+    --r-pill:50px;
+
+    /* Spacing scale (used for gap/padding) */
+    --sp-1:  4px;
+    --sp-2:  8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 20px;
+    --sp-6: 24px;
+    --sp-8: 32px;
+
+    /* Transition */
+    --tr-fast: .15s ease;
+    --tr-base: .22s ease;
+    --tr-slow: .4s  ease;
+
+    /* Max content widths */
+    --max-site:  1340px;
+    --max-admin: 1400px;
+    --max-form:   680px;
+    --max-confirm:480px;
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §2  GLOBAL RESET & BASE
+    ════════════════════════════════════════════════════════════ */
+    *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    }
+    html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    }
+    body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    line-height: 1.5;
+    overflow-x: hidden;          /* prevent horizontal scroll on all pages */
+    }
+    img, video, iframe {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    }
+    table { border-collapse: collapse; }
+    button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    }
+    a { color: inherit; }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §3  VIEWPORT META GUARD
+    Injects <meta name="viewport"> once if the base template
+    hasn't already included it (safety net).
+    ════════════════════════════════════════════════════════════ */
+    </style>
+    <script>
+    (function(){
+    if (!document.querySelector('meta[name="viewport"]')) {
+        var m = document.createElement('meta');
+        m.name    = 'viewport';
+        m.content = 'width=device-width, initial-scale=1.0';
+        document.head.insertBefore(m, document.head.firstChild);
+    }
+    })();
+    </script>
+    <style>
+
+    /* ════════════════════════════════════════════════════════════
+    §4  TYPOGRAPHY SCALE
+    ════════════════════════════════════════════════════════════ */
+    h1 { font-size: clamp(20px, 3.5vw, 32px); font-weight: 700; line-height: 1.2; margin: 0 0 .5em; }
+    h2 { font-size: clamp(17px, 2.8vw, 26px); font-weight: 700; line-height: 1.25; margin: 0 0 .5em; }
+    h3 { font-size: clamp(15px, 2.2vw, 22px); font-weight: 700; line-height: 1.3;  margin: 0 0 .5em; }
+    h4 { font-size: clamp(13px, 1.8vw, 17px); font-weight: 600; line-height: 1.35; margin: 0 0 .4em; }
+    p  { margin: 0 0 1em; }
+    small { font-size: .85em; }
+
+    @media (max-width: 480px) {
+    h1 { font-size: 18px; }
+    h2 { font-size: 16px; }
+    h3 { font-size: 14px; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §5  LAYOUT HELPERS
+    ════════════════════════════════════════════════════════════ */
+
+    /* ── Site-wide content container ── */
+    .container,
+    .kd-home,
+    .home-container {
+    width: 100%;
+    max-width: var(--max-site);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left:  clamp(12px, 3vw, 28px);
+    padding-right: clamp(12px, 3vw, 28px);
+    }
+
+    /* ── Admin container (slightly wider) ── */
+    .admin-container,
+    .header-container,
+    .footer-container {
+    width: 100%;
+    max-width: var(--max-admin);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left:  clamp(12px, 2.5vw, 32px);
+    padding-right: clamp(12px, 2.5vw, 32px);
+    }
+
+    /* ── Admin form wrappers ── */
+    .form-box,
+    .form-wrap {
+    width: 100%;
+    max-width: var(--max-form);
+    margin-left: auto;
+    margin-right: auto;
+    padding: clamp(16px, 3vw, 28px);
+    }
+
+    /* Generic two-column form row */
+    .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+    }
+    @media (max-width: 640px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-box,
+    .form-wrap { width: 100%; padding: 16px; }
+    }
+
+    /* Admin confirm page */
+    .confirm-container {
+    max-width: var(--max-confirm);
+    width: 90%;
+    margin: clamp(30px, 8vw, 80px) auto;
+    padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 36px);
+    }
+
+    /* Page header flex row (admin list pages) */
+    .page-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    margin-bottom: 22px;
+    }
+    @media (max-width: 480px) {
+    .page-hdr { flex-direction: column; align-items: flex-start; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §6  HEADER / NAVBAR
+    ════════════════════════════════════════════════════════════ */
+    .site-header {
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    }
+
+    /* Horizontal nav — hide on tablet/mobile */
+    .main-nav { display: flex; }
+    @media (max-width: 1024px) { .main-nav { display: none; } }
+
+    /* Search input — shrink gracefully */
+    .search-form input[type="text"] { width: clamp(100px, 18vw, 200px); }
+    @media (max-width: 640px) {
+    .search-form input[type="text"] { width: 110px; }
+    }
+    @media (max-width: 360px) {
+    .search-form input[type="text"] { width: 80px; }
+    }
+
+    /* Header actions — reduce gap on small screens */
+    .header-actions { gap: clamp(6px, 1.5vw, 14px); }
+    @media (max-width: 480px) {
+    .header-container { padding: 10px 12px; }
+    .logout-btn { padding: 6px 12px; font-size: 12px; }
+    }
+
+    /* Search dropdown — full-width on small screens */
+    .search-dropdown { min-width: min(320px, 90vw); }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §7  CATALOG: SIDEBAR + PRODUCT LIST GRID
+    ════════════════════════════════════════════════════════════ */
+
+    /* Catalog page wrapper (sidebar + main) */
+    .catalog-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: var(--sp-6);
+    align-items: start;
+    }
+    @media (max-width: 1024px) {
+    .catalog-layout { grid-template-columns: 200px 1fr; }
+    }
+    @media (max-width: 768px) {
+    .catalog-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Filter sidebar — collapse to hidden drawer on mobile */
+    .filter-sidebar { width: 100%; }
+    @media (max-width: 768px) {
+    .filter-sidebar {
+        position: fixed;
+        top: 0; left: -100%;
+        width: min(320px, 85vw);
+        height: 100vh;
+        overflow-y: auto;
+        background: #fff;
+        z-index: 200;
+        box-shadow: 4px 0 20px rgba(0,0,0,.12);
+        transition: left .28s ease;
+        padding: 20px 16px;
+    }
+    .filter-sidebar.open { left: 0; }
+    }
+
+    /* Catalog product grid */
+    .product-grid-catalog,
+    .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px;
+    }
+    @media (max-width: 900px) {
+    .product-grid-catalog,
+    .product-grid { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
+    }
+    @media (max-width: 480px) {
+    .product-grid-catalog,
+    .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    }
+    @media (max-width: 320px) {
+    .product-grid-catalog,
+    .product-grid { grid-template-columns: 1fr; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §8  PRODUCT CARDS  (.product-card / .kd-product-card)
+    ════════════════════════════════════════════════════════════ */
+
+    /* Shared card shell */
+    .product-card,
+    .kd-product-card {
+    width: 100%;
+    min-width: 0;             /* prevents overflow in grid */
+    overflow: hidden;
+    }
+
+    /* Truncate long product names */
+    .pc-name,
+    .kd-prod-name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    }
+
+    /* Price row — allow wrap on very narrow cards */
+    .pc-price-row { flex-wrap: wrap; row-gap: 3px; }
+
+    /* Actions row — shrink text on tiny cards */
+    .pc-cart-btn { font-size: clamp(11px, 1.5vw, 13px); }
+
+    @media (max-width: 480px) {
+    .pc-info { padding: 8px 10px 10px; }
+    .pc-price { font-size: 13px; }
+    .pc-stars .star { font-size: 11px; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §9  CATEGORY & SUBCATEGORY GRIDS  (catalog pages)
+    ════════════════════════════════════════════════════════════ */
+
+    .cat-grid,
+    .sub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 18px;
+    }
+    @media (max-width: 768px) {
+    .cat-grid,
+    .sub-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    }
+    @media (max-width: 480px) {
+    .cat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .sub-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    }
+
+    /* Prevent image overflow in category cards */
+    .cat-img,
+    .sub-img,
+    .cat-card-img {
+    width: 100%;
+    overflow: hidden;
+    }
+    .cat-img img,
+    .sub-img img,
+    .cat-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §10  HOME PAGE SECTIONS
+    ════════════════════════════════════════════════════════════ */
+
+    /* ── Hero carousel ── */
+    .kd-carousel,
+    .hero-carousel {
+    width: 100%;
+    overflow: hidden;
+    }
+    .kd-carousel { aspect-ratio: 16/5; min-height: 140px; max-height: 260px; }
+    .hero-carousel { aspect-ratio: 16/6; min-height: 240px; max-height: 520px; }
+
+    @media (max-width: 768px) {
+    .kd-carousel  { aspect-ratio: 16/6; }
+    .hero-carousel{ aspect-ratio: 16/7; }
+    .slide-content { padding: 20px 22px; }
+    .slide-title   { font-size: clamp(18px, 5vw, 32px); }
+    .slide-cta     { padding: 10px 20px; font-size: 13px; }
+    }
+    @media (max-width: 480px) {
+    .kd-carousel  { aspect-ratio: 4/3; max-height: 220px; }
+    .hero-carousel{ aspect-ratio: 4/3; }
+    .carousel-btn,
+    .kd-carousel-btn { width: 30px; height: 30px; font-size: 12px; }
+    .slide-content { padding: 14px 16px; max-width: 100%; }
+    }
+
+    /* ── Home category grid (kd-cat-grid) ── */
+    .kd-cat-grid,
+    .category-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    }
+    @media (max-width: 1024px) {
+    .kd-cat-grid,
+    .category-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 640px) {
+    .kd-cat-grid,
+    .category-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    }
+    @media (max-width: 360px) {
+    .kd-cat-grid,
+    .category-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    }
+
+    /* ── Top Trends grid (kd-trend-grid) ── */
+    .kd-trend-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    }
+    @media (max-width: 1024px) { .kd-trend-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 640px)  { .kd-trend-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; } }
+    @media (max-width: 360px)  { .kd-trend-grid { grid-template-columns: repeat(2, 1fr); gap: 8px;  } }
+
+    /* ── New Arrivals / product grid ── */
+    .kd-product-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    }
+    @media (max-width: 1024px) { .kd-product-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 640px)  { .kd-product-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; } }
+    @media (max-width: 420px)  { .kd-product-grid { grid-template-columns: repeat(2, 1fr); gap: 8px;  } }
+
+    /* ── Demo / legacy card-grid ── */
+    .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    }
+    @media (max-width: 640px) { .card-grid { gap: 12px; } }
+    @media (max-width: 420px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ── Section headers ── */
+    .section-hdr,
+    .kd-section-title {
+    word-break: break-word;
+    }
+    .section-hdr { flex-wrap: wrap; }
+
+    /* ── Tabs (Top Trends) ── */
+    .trend-tabs,
+    .kd-tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+    }
+    @media (max-width: 360px) {
+    .trend-tab,
+    .kd-tab { padding: 7px 14px; font-size: 12px; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §11  ADMIN TABLES
+    ════════════════════════════════════════════════════════════ */
+
+    /* Scrollable table wrapper on small screens */
+    .table-wrapper,
+    .table-wrap {
+    width: 100%;
+    overflow-x: auto;          /* horizontal scroll on mobile */
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--r-lg);
+    }
+    table {
+    width: 100%;
+    min-width: 480px;          /* prevents extreme column crush */
+    }
+    th, td {
+    white-space: nowrap;
+    padding: clamp(8px, 1.2vw, 12px) clamp(8px, 1.5vw, 14px);
+    }
+    /* Allow text wrapping for wider data columns */
+    td.wrap,
+    td.text-left { white-space: normal; }
+
+    /* Action icon buttons — tighten spacing on small screens */
+    .tbl-actions { flex-wrap: nowrap; gap: 4px; }
+
+    @media (max-width: 640px) {
+    th { font-size: 10px; }
+    td { font-size: 12px; }
+    }
+
+    /* ── Search / filter toolbar ── */
+    .search-box,
+    .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    }
+    .search-box input,
+    .toolbar input,
+    .toolbar select {
+    min-width: 0;
+    flex: 1 1 140px;           /* shrink and grow */
+    }
+    @media (max-width: 480px) {
+    .search-box { flex-direction: column; }
+    .search-box input { width: 100%; flex: none; }
+    .search-btn,
+    .btn-sm { width: 100%; justify-content: center; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §12  ADMIN FORMS
+    ════════════════════════════════════════════════════════════ */
+
+    /* Generic form group */
+    .form-group label { display: block; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+    width: 100%;
+    min-width: 0;
+    }
+
+    /* Form actions row */
+    .form-actions,
+    .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    }
+    @media (max-width: 480px) {
+    .form-actions,
+    .actions {
+        flex-direction: column;
+    }
+    .form-actions a,
+    .form-actions button,
+    .actions a,
+    .actions button {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+    }
+
+    /* Admin product form — form-box width */
+    @media (max-width: 900px)  { .form-box { width: 80%; } }
+    @media (max-width: 640px)  { .form-box { width: 100%; } }
+
+    /* Image preview thumbnails — don't overflow */
+    .preview-container img,
+    .current-image-wrap img,
+    .banner-thumb { max-width: 100%; }
+
+    /* Custom select dropdowns — full width on mobile */
+    .custom-select,
+    .options-container { max-width: 100%; }
+
+    /* Inventory update form */
+    .update-form {
+    flex-wrap: wrap;
+    justify-content: center;
+    }
+    .update-form input[type="number"] {
+    max-width: 80px;
+    min-width: 50px;
+    }
+    @media (max-width: 640px) {
+    .update-form { gap: 4px; }
+    .update-form input[type="number"] { width: 60px; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §13  ADMIN CONFIRM PAGES
+    ════════════════════════════════════════════════════════════ */
+    .confirm-container {
+    border-radius: clamp(10px, 2vw, 14px);
+    }
+    .btn-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    }
+    @media (max-width: 400px) {
+    .btn-row { flex-direction: column; align-items: center; }
+    .btn-confirm,
+    .btn-cancel { width: 100%; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §14  MODALS  (confirm_modal.html, cropper modal)
+    ════════════════════════════════════════════════════════════ */
+
+    /* Confirm modal inner box */
+    #confirmModal > div {
+    width: min(90%, 420px) !important;
+    }
+
+    /* Cropper modal — stack on very narrow screens */
+    #cropperModal > div {
+    width: min(92%, 800px) !important;
+    max-height: min(90vh, 600px) !important;
+    }
+    @media (max-width: 480px) {
+    #cropperModal > div {
+        width: 96% !important;
+        max-height: 88vh !important;
+    }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §15  PAGINATION
+    ════════════════════════════════════════════════════════════ */
+    .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    padding: .5rem;
+    }
+    .pg-btn, .pg-current, .pg-disabled {
+    min-width: 34px;
+    height: 34px;
+    }
+    .pg-nav { padding: 0 .6rem; font-size: .78rem; }
+
+    /* Legacy pagination (customer_list.html style) */
+    .pagination a,
+    .pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    border-radius: var(--r-sm);
+    padding: 0 8px;
+    }
+
+    @media (max-width: 360px) {
+    .pg-btn, .pg-current, .pg-disabled {
+        min-width: 28px;
+        height: 28px;
+        font-size: .75rem;
+    }
+    .pg-nav { display: none; }     /* hide Prev/Next text, keep arrows */
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §16  FLASH MESSAGES
+    ════════════════════════════════════════════════════════════ */
+    .messages {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    }
+    .message {
+    flex-wrap: wrap;
+    word-break: break-word;
+    gap: 6px;
+    }
+    .message button {
+    flex-shrink: 0;
+    align-self: flex-start;
+    }
+    @media (max-width: 480px) {
+    .message { font-size: 13px; padding: 8px 12px; }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §17  FOOTER
+    ════════════════════════════════════════════════════════════ */
+
+    /* Four-column footer grid */
+    .footer-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    }
+    @media (max-width: 1024px) {
+    .footer-container { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+    .footer-container { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    }
+    @media (max-width: 480px) {
+    .footer-container { grid-template-columns: 1fr; gap: 16px; }
+    }
+
+    /* Social icons wrap */
+    .social-icons { flex-wrap: wrap; }
+
+    /* Admin footer */
+    .admin-footer { text-align: center; padding: 12px 16px; font-size: 13px; }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §18  UTILITY HELPERS
+    ════════════════════════════════════════════════════════════ */
+
+    /* Responsive hide / show */
+    .hide-xs  { display: none !important; }
+    .hide-sm  { display: initial; }
+    .hide-md  { display: initial; }
+
+    @media (min-width: 361px) { .hide-xs  { display: initial !important; } }
+    @media (max-width: 480px) { .hide-sm  { display: none !important; } }
+    @media (max-width: 768px) { .hide-md  { display: none !important; } }
+    @media (min-width: 769px) { .show-mobile { display: none !important; } }
+
+    /* Flex shortcuts */
+    .d-flex       { display: flex; }
+    .flex-wrap    { flex-wrap: wrap; }
+    .flex-column  { flex-direction: column; }
+    .align-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-center  { justify-content: center; }
+    .gap-1 { gap: var(--sp-1); }
+    .gap-2 { gap: var(--sp-2); }
+    .gap-3 { gap: var(--sp-3); }
+    .gap-4 { gap: var(--sp-4); }
+
+    /* Text */
+    .text-center  { text-align: center; }
+    .text-left    { text-align: left;   }
+    .text-right   { text-align: right;  }
+    .text-pink    { color: var(--pink);      }
+    .text-muted   { color: var(--text-muted);}
+    .text-truncate {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+    }
+
+    /* Spacing */
+    .mt-0  { margin-top: 0; }
+    .mb-0  { margin-bottom: 0; }
+    .mt-2  { margin-top: var(--sp-2); }
+    .mb-2  { margin-bottom: var(--sp-2); }
+    .mt-4  { margin-top: var(--sp-4); }
+    .mb-4  { margin-bottom: var(--sp-4); }
+    .p-4   { padding: var(--sp-4); }
+
+    /* Full-width on mobile */
+    .w-full-mobile {
+    width: auto;
+    }
+    @media (max-width: 480px) {
+    .w-full-mobile { width: 100% !important; }
+    }
+
+    /* Overflow helpers */
+    .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    }
+    .overflow-hidden { overflow: hidden; }
+
+
+    /* ════════════════════════════════════════════════════════════
+    §19  PRINT BASICS
+    ════════════════════════════════════════════════════════════ */
+    @media print {
+    .site-header,
+    .filter-sidebar,
+    .pagination,
+    .search-box,
+    .toolbar,
+    .kd-tabs,
+    .trend-tabs,
+    .carousel-btn,
+    .kd-carousel-btn,
+    .carousel-dots,
+    .kd-carousel-dots,
+    .btn-add,
+    .btn-save,
+    .top-links { display: none !important; }
+
+    body          { color: #000; background: #fff; }
+    a             { text-decoration: underline; color: #000; }
+    table         { border: 1px solid #ccc; }
+    th, td        { border: 1px solid #ccc; padding: 6px 8px; }
+    .table-wrapper { overflow: visible; }
+    .product-card,
+    .kd-product-card { break-inside: avoid; }
+    }
+</style>

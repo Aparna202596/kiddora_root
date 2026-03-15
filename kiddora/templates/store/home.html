@@ -1,770 +1,579 @@
+{% extends "base_products.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Home | Kiddora</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Kiddora — Joyful Kids' Fashion{% endblock %}
+{% block filter_sidebar %}{% endblock %}
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+{% block extra_css %}
+{% include "responsive.html" %}
+<style>
 
-    <style>
-        /* ── RESET ── */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #333; }
-        a { text-decoration: none; color: inherit; }
-        ul { list-style: none; }
+/* ── page wrapper ── */
+.kd-home {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+}
 
-        /* ── LOADER ── */
-        #global-loader {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(3px);
-            z-index: 999999;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            pointer-events: all !important;
-        }
-        #global-loader.active { display: flex; }
-        .loader-spinner {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            border: 5px solid #f3d6ed;
-            border-top-color: #f062c0;
-            animation: spin 0.75s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loader-label {
-            font-size: 15px;
-            font-weight: 600;
-            color: #444;
-            letter-spacing: 0.3px;
-        }
-        body.loading * { pointer-events: none !important; }
-        body.loading #global-loader { pointer-events: all !important; }
+/* ════════════════════════════════
+  BANNER  (full-width image)
+════════════════════════════════ */
+.kd-banner {
+    margin-bottom: 48px;
+}
+.kd-banner img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 14px;
+    display: block;
+}
+/* carousel variant */
+.kd-carousel {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    background: #fce4ec;
+    aspect-ratio: 16/5;
+    min-height: 160px;
+    max-height: 240px;
+}
+.kd-slide {
+    position: absolute; inset: 0;
+    opacity: 0; transition: opacity .6s ease;
+    pointer-events: none;
+}
+.kd-slide.active { opacity: 1; pointer-events: auto; }
+.kd-slide img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+}
+.kd-carousel.no-banner {
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg,#fce4ec,#f8bbd9 50%,#e1f5fe);
+    min-height: 160px;
+}
+.kd-carousel.no-banner p {
+    font-size: 20px; font-weight: 700; color: #e91e63;
+}
+/* prev / next */
+.kd-carousel-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 36px; height: 36px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,.85);
+    color: #333; font-size: 14px; cursor: pointer; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    transition: background .18s;
+}
+.kd-carousel-btn:hover { background: #fff; }
+.kd-carousel-btn.prev { left: 12px; }
+.kd-carousel-btn.next { right: 12px; }
+/* dots */
+.kd-carousel-dots {
+    position: absolute; bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 5;
+}
+.kd-carousel-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(255,255,255,.55); border: none; cursor: pointer; padding: 0;
+    transition: background .22s, width .22s;
+}
+.kd-carousel-dot.active {
+    background: #fff; width: 20px; border-radius: 4px;
+}
 
-        /* ══════════════════════════════════════
-           ── HEADER (base_user style) ──
-        ══════════════════════════════════════ */
-        .site-header {
-            width: 100%;
-            background: #fff;
-            border-bottom: 2px solid #f06292;
-            box-shadow: 0 2px 8px rgba(240, 98, 146, 0.08);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .header-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 14px 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-        }
-        .logo img { height: 42px; }
+/* ════════════════════════════════
+  SECTION TITLE  (centered, bold)
+════════════════════════════════ */
+.kd-section-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: #222;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+}
+.kd-section { margin-bottom: 52px; }
 
-        /* Nav */
-        .main-nav ul { display: flex; gap: 24px; align-items: center; }
-        .main-nav ul li a {
-            font-size: 15px;
-            font-weight: 500;
-            color: #444;
-            position: relative;
-            padding-bottom: 3px;
-            transition: color 0.2s;
-        }
-        .main-nav ul li a::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0;
-            width: 0; height: 2px;
-            background: #f06292;
-            border-radius: 2px;
-            transition: width 0.2s;
-        }
-        .main-nav ul li a:hover { color: #f06292; }
-        .main-nav ul li a:hover::after { width: 100%; }
+/* ════════════════════════════════
+  SHOP BY CATEGORY
+  — portrait image cards, name below
+════════════════════════════════ */
+.kd-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 18px;
+}
+.kd-cat-card {
+    text-decoration: none; color: #222;
+    text-align: center;
+    transition: transform .2s;
+}
+.kd-cat-card:hover { transform: translateY(-4px); }
+.kd-cat-img {
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 2 / 3;
+    background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+}
+.kd-cat-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform .4s;
+}
+.kd-cat-card:hover .kd-cat-img img { transform: scale(1.05); }
+.kd-cat-img .kd-cat-emoji { font-size: 40px; }
+.kd-cat-name {
+    font-size: 13px; font-weight: 600; color: #333;
+}
 
-        /* Header actions */
-        .header-actions { display: flex; align-items: center; gap: 14px; }
+/* ════════════════════════════════
+   TOP TRENDS
+   — gender tabs + square image cards with name
+════════════════════════════════ */
+.kd-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 24px;
+}
+.kd-tab {
+    padding: 8px 26px;
+    border-radius: 25px;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s, transform .15s;
+}
+.kd-tab:hover { opacity: .88; transform: translateY(-1px); }
+.kd-tab-girls  { background: #f06292; }
+.kd-tab-boys   { background: #4a90e2; }
+.kd-tab-kids   { background: #ff9800; }
 
-        /* Search form — base_user style */
-        .search-form {
-            position: relative;
-            display: flex;
-            align-items: center;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 22px;
-            overflow: hidden;
-            background: #fafafa;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .search-form:focus-within {
-            border-color: #f06292;
-            box-shadow: 0 0 0 3px rgba(240, 98, 146, 0.12);
-            background: #fff;
-        }
-        .search-form input[type="text"] {
-            width: 180px;
-            height: 36px;
-            padding: 0 8px 0 14px;
-            border: none;
-            outline: none;
-            background: transparent;
-            font-size: 14px;
-            color: #333;
-        }
-        .search-form .sf-clear {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0 5px;
-            color: #bbb;
-            font-size: 13px;
-            line-height: 1;
-            display: none;
-            align-items: center;
-        }
-        .search-form .sf-clear.show { display: flex; }
-        .search-form .sf-clear:hover { color: #f06292; }
-        .search-form .sf-submit {
-            border: none;
-            background: #f06292;
-            color: #fff;
-            height: 36px;
-            padding: 0 14px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-            flex-shrink: 0;
-        }
-        .search-form .sf-submit:hover { background: #e91e63; }
-        /* ── SEARCH DROPDOWN ── */
-        .search-wrap { position: relative; }
-        .search-dropdown {
-            display: none;
-            position: absolute;
-            top: calc(100% + 6px);
-            left: 0;
-            width: 100%;
-            min-width: 320px;
-            background: #fff;
-            border: 1.5px solid #f0c8d8;
-            border-radius: 12px;
-            box-shadow: 0 8px 28px rgba(240,98,146,0.13);
-            z-index: 9999;
-            overflow: hidden;
-            max-height: 420px;
-            overflow-y: auto;
-        }
-        .search-dropdown.open { display: block; }
-        .sd-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 9px 14px;
-            text-decoration: none;
-            color: #333;
-            border-bottom: 1px solid #fdf0f5;
-            transition: background .15s;
-        }
-        .sd-item:last-child { border-bottom: none; }
-        .sd-item:hover { background: #fff5f9; }
-        .sd-img {
-            width: 42px;
-            height: 52px;
-            flex-shrink: 0;
-            border-radius: 6px;
-            overflow: hidden;
-            background: #fafafa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-        .sd-img img { width: 100%; height: 100%; object-fit: cover; }
-        .sd-info { flex: 1; min-width: 0; }
-        .sd-name { font-size: 13px; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sd-brand { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: .06em; }
-        .sd-price { font-size: 13px; font-weight: 700; white-space: nowrap; }
-        .sd-price.red { color: #e91e63; }
-        .sd-price.black { color: #222; }
-        .sd-footer {
-            padding: 9px 14px;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 600;
-            color: #f06292;
-            border-top: 1px solid #fde;
-            cursor: pointer;
-            transition: background .15s;
-        }
-        .sd-footer:hover { background: #fff5f9; }
-        .sd-empty { padding: 20px 14px; text-align: center; font-size: 13px; color: #bbb; }
-        .sd-loading { padding: 14px; text-align: center; font-size: 13px; color: #ccc; }
-        /* Icon buttons */
-        .icon-btn {
-            font-size: 18px;
-            color: #555;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            transition: color 0.2s, background 0.2s;
-        }
-        .icon-btn:hover { color: #f06292; background: rgba(240, 98, 146, 0.08); }
-        .icon-btn.profile {
-            border: 1.5px solid #e0e0e0;
-            transition: border-color 0.2s, color 0.2s, background 0.2s;
-        }
-        .icon-btn.profile:hover { border-color: #f06292; }
+/* trend panels */
+.kd-trend-panel { display: none; }
+.kd-trend-panel.active { display: block; }
 
-        /* Logout button */
-        .logout-btn {
-            padding: 7px 18px;
-            border-radius: 20px;
-            font-size: 14px;
-            background: #f06292;
-            color: #fff;
-            border: 1px solid #f06292;
-            transition: background 0.2s;
-            white-space: nowrap;
-        }
-        .logout-btn:hover { background: #e91e63; }
+.kd-trend-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 18px;
+}
+.kd-trend-card {
+    text-align: center;
+    text-decoration: none; color: #222;
+    transition: transform .2s;
+}
+.kd-trend-card:hover { transform: translateY(-4px); }
+.kd-trend-img {
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+}
+.kd-trend-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform .4s;
+}
+.kd-trend-card:hover .kd-trend-img img { transform: scale(1.05); }
+.kd-trend-img .kd-no-img { font-size: 40px; }
+.kd-trend-name { font-size: 13px; font-weight: 600; color: #333; }
 
-        /* ══════════════════════════════════════
-           ── HOME PAGE CONTENT ──
-        ══════════════════════════════════════ */
-        .home-container {
-            max-width: 1400px;
-            margin: auto;
-            padding: 30px 20px;
-        }
+/* ════════════════════════════════
+   NEW ARRIVALS
+   — product cards: image, name, price,
+     stars, cart icon + heart icon
+════════════════════════════════ */
+.kd-product-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 18px;
+}
+.kd-product-card {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+    text-align: center;
+    transition: transform .2s, box-shadow .2s;
+    position: relative;
+}
+.kd-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.09);
+}
+/* discount badge */
+.kd-disc-badge {
+    position: absolute; top: 8px; left: 8px; z-index: 3;
+    background: #e91e63; color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+}
+/* image */
+.kd-prod-img {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #fafafa;
+    display: flex; align-items: center; justify-content: center;
+}
+.kd-prod-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .45s;
+}
+.kd-product-card:hover .kd-prod-img img { transform: scale(1.06); }
+.kd-prod-img .kd-no-img { font-size: 36px; color: #ddd; }
+/* info */
+.kd-prod-info {
+    padding: 10px 10px 12px;
+}
+.kd-prod-name {
+    font-size: 13px; font-weight: 600; color: #222;
+    margin-bottom: 5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; line-height: 1.35;
+    text-decoration: none;
+}
+.kd-prod-name:hover { color: #f06292; }
+.kd-prod-price {
+    font-size: 14px; font-weight: 700; color: #222;
+    margin-bottom: 5px;
+}
+.kd-prod-price .kd-base {
+    font-size: 11px; font-weight: 500; color: #bbb;
+    text-decoration: line-through; margin-left: 5px;
+}
+/* stars */
+.kd-stars {
+    display: flex; align-items: center; justify-content: center;
+    gap: 1px; margin-bottom: 10px;
+}
+.kd-star { font-size: 13px; color: #e0e0e0; }
+.kd-star.on { color: #ffb300; }
+/* action row: cart + heart */
+.kd-prod-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+}
+.kd-cart-icon {
+    font-size: 17px; color: #f06292; cursor: pointer;
+    text-decoration: none;
+    transition: color .18s, transform .15s;
+}
+.kd-cart-icon:hover { color: #e91e63; transform: scale(1.15); }
+.kd-heart-icon {
+    font-size: 16px; cursor: pointer;
+    text-decoration: none;
+    transition: color .18s, transform .15s;
+}
+.kd-heart-icon { color: #ccc; }
+.kd-heart-icon.wishlisted { color: #f06292; }
+.kd-heart-icon:hover { color: #f06292; transform: scale(1.15); }
 
-        /* Banner */
-        .banner img {
-            width: 100%;
-            max-height: 500px;
-            object-fit: cover;
-            border-radius: 18px;
-            margin-bottom: 50px;
-        }
+/* ── View All link ── */
+.kd-view-all {
+    text-align: center;
+    margin-top: 28px;
+}
+.kd-view-all a {
+    font-size: 14px; font-weight: 600; color: #f06292;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color .18s;
+}
+.kd-view-all a:hover { border-bottom-color: #f06292; }
 
-        /* Section */
-        .category-section { margin-bottom: 90px; }
-        .section-title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 600;
-            margin: 60px 0 45px;
-            letter-spacing: 0.5px;
-        }
+/* ════════════════════════════════
+   RESPONSIVE
+════════════════════════════════ */
+@media (max-width: 1024px) {
+    .kd-cat-grid,
+    .kd-trend-grid,
+    .kd-product-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 700px) {
+    .kd-cat-grid     { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .kd-trend-grid,
+    .kd-product-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .kd-carousel     { aspect-ratio: 16/7; }
+}
+@media (max-width: 480px) {
+    .kd-cat-grid     { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .kd-trend-grid,
+    .kd-product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
 
-        /* Grid */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 30px;
-        }
-        .card {
-            text-align: center;
-            background: #fff;
-            border-radius: 18px;
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
-        }
-        .card img {
-            width: 100%;
-            aspect-ratio: 2 / 2;
-            object-fit: cover;
-            border-radius: 16px;
-        }
-        .shop-by-category .card img { aspect-ratio: 2 / 3; }
-        .card h4 {
-            padding: 14px 0;
-            font-size: 15px;
-        }
+{% block content %}
+<div class="kd-home">
 
-        /* Tabs */
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 18px;
-            margin-bottom: 45px;
-        }
-        .tabs button {
-            padding: 10px 30px;
-            border-radius: 25px;
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .tabs button:hover { opacity: 0.85; }
-        .tab-girls { background: #f06292; }
-        .tab-boys  { background: #4a90e2; }
-        .tab-kids  { background: #ff9800; }
-
-        /* Product card */
-        .product-info { padding: 16px; }
-        .price { font-weight: 600; margin: 6px 0; }
-        .rating { color: #ffb400; font-size: 14px; margin-bottom: 10px; }
-        .product-actions { display: flex; justify-content: center; gap: 18px; }
-        .cart-icon,
-        .product-actions .icon-btn {
-            font-size: 18px;
-            cursor: pointer;
-            color: #f06292;
-            width: auto;
-            height: auto;
-            border-radius: 0;
-            background: none;
-        }
-        .product-actions .icon-btn:hover { background: none; color: #e91e63; }
-
-        /* View All */
-        .view-all { text-align: center; margin-top: 45px; }
-        .view-all a { font-weight: 500; color: #f06292; border-bottom: 1px solid transparent; }
-        .view-all a:hover { border-bottom: 1px solid #f06292; }
-
-        /* ══════════════════════════════════════
-           ── FOOTER (base_user style) ──
-        ══════════════════════════════════════ */
-        .site-footer {
-            background: #fafafa;
-            padding-top: 48px;
-            border-top: 2px solid #f06292;
-            margin-top: 40px;
-        }
-        .footer-container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 30px;
-        }
-        .footer-logo img { height: 50px; }
-        .footer-column h4 {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            color: #222;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #f06292;
-            display: inline-block;
-        }
-        .footer-column ul li { margin-bottom: 9px; }
-        .footer-column ul li a {
-            font-size: 14px;
-            color: #666;
-            transition: color 0.2s, padding-left 0.2s;
-            display: inline-block;
-        }
-        .footer-column ul li a:hover { color: #f06292; padding-left: 4px; }
-        .footer-column form { display: flex; flex-direction: column; gap: 10px; }
-        .footer-column input[type="email"] {
-            padding: 9px 12px;
-            border: 1.5px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .footer-column input[type="email"]:focus { border-color: #f06292; }
-        .footer-column button {
-            padding: 9px 12px;
-            border: none;
-            background: #f06292;
-            color: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        .footer-column button:hover { background: #e91e63; }
-        .social-icons { margin-top: 16px; display: flex; gap: 12px; }
-        .social-icons a {
-            font-size: 18px;
-            color: #555;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 1.5px solid #e0e0e0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.2s, border-color 0.2s, background 0.2s;
-        }
-        .social-icons a:hover {
-            color: #f06292;
-            border-color: #f06292;
-            background: rgba(240, 98, 146, 0.06);
-        }
-        .footer-bottom {
-            text-align: center;
-            padding: 16px 0;
-            margin-top: 36px;
-            font-size: 13px;
-            color: #888;
-            border-top: 1px solid #eaeaea;
-            background: #fff;
-        }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 992px) {
-            .main-nav { display: none; }
-            .footer-container { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 576px) {
-            .footer-container { grid-template-columns: 1fr; }
-            .search-form input[type="text"] { width: 130px; }
-            .header-container { padding: 12px 16px; }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Loader -->
-    <div id="global-loader">
-        <div class="loader-spinner"></div>
-        <div class="loader-label" id="loader-label">Loading...</div>
+{% if hero_banners %}
+  <div class="kd-carousel" id="kdCarousel">
+    {% for banner in hero_banners %}
+    <div class="kd-slide {% if forloop.first %}active{% endif %}">
+      <img src="{{ banner.image.url }}" alt="{{ banner.title }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
     </div>
+    {% endfor %}
 
-    <!-- ══ HEADER ══ -->
-    <header class="site-header">
-        <div class="header-container">
-            <div class="logo">
-                <a href="{% url 'shopcore:anonymous_home' %}">
-                    <img src="{% static 'images/kiddora_logo.PNG' %}">
-                </a>
-            </div>
-            <nav class="main-nav">
-                <ul>
-                    <li><a href="{% url 'shopcore:home' %}">Home</a></li>
-                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
-                    <li><a href="{% url 'products:category_list' %}">Categories</a></li>
-                    <li><a href="{% url 'products:product_list' %}">Shop</a></li>
-                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
-                </ul>
-            </nav>
-            <div class="header-actions">
-                <div class="search-wrap" id="searchWrap">
-                    <form method="get" action="/products/user/products/" class="search-form" role="search">
-                        <input type="text" name="q" id="headerSearchQ"
-                                placeholder="Search products..."
-                                value="{{ request.GET.q|default:'' }}"
-                                autocomplete="off" aria-label="Search products">
-                        <button type="button" class="sf-clear {% if request.GET.q %}show{% endif %}"
-                                id="headerSearchClear" aria-label="Clear search">✕</button>
-                        <button type="submit" class="sf-submit" aria-label="Search">
-                            <i class="fa fa-search"></i>
-                        </button>
-                    </form>
-                    <div class="search-dropdown" id="searchDropdown"></div>
-                </div>
-                <a href="#" class="icon-btn"><i class="fa-regular fa-heart"></i></a>
-                <a href="{% url 'accounts:user_profile' %}" class="icon-btn profile">
-                    <i class="fa-regular fa-user"></i>
-                </a>
-                <a href="{% url 'shopcore:cart' %}" class="icon-btn"><i class="fa fa-shopping-cart"></i></a>
-                <a href="{% url 'accounts:logout' %}" class="logout-btn">Logout</a>
-            </div>
+    {% if hero_banners|length > 1 %}
+    <button class="kd-carousel-btn prev" onclick="kdCar.prev()" aria-label="Previous">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button class="kd-carousel-btn next" onclick="kdCar.next()" aria-label="Next">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    <div class="kd-carousel-dots">
+      {% for banner in hero_banners %}
+      <button class="kd-carousel-dot {% if forloop.first %}active{% endif %}"
+              onclick="kdCar.goTo({{ forloop.counter0 }})" aria-label="Slide {{ forloop.counter }}">
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="kd-carousel no-banner">
+    <p>Welcome to Kiddora 👕 — Shop Joyful Kids' Fashion</p>
+  </div>
+{% endif %}
+
+<section class="kd-section">
+  <h3 class="kd-section-title">SHOP BY CATEGORY</h3>
+  <div class="kd-cat-grid">
+    {% for cat in categories %}
+    <a href="{% url 'products:product_list_by_category' category_id=cat.id %}" class="kd-cat-card">
+      <div class="kd-cat-img">
+        {% if cat.category_image %}
+          <img src="{{ cat.category_image.url }}" alt="{{ cat.category_name }}" loading="lazy">
+        {% else %}
+          {# emoji fallback cycle #}
+          <span class="kd-cat-emoji">
+            {% with i=forloop.counter0 %}
+              {% if i == 0 %}👶{% elif i == 1 %}👦{% elif i == 2 %}👧
+              {% elif i == 3 %}🧥{% elif i == 4 %}👗{% else %}🎉{% endif %}
+            {% endwith %}
+          </span>
+        {% endif %}
+      </div>
+      <div class="kd-cat-name">{{ cat.category_name }}</div>
+    </a>
+    {% empty %}
+    {# static fallbacks if no DB categories #}
+    <a href="{% url 'products:product_list' %}" class="kd-cat-card">
+      <div class="kd-cat-img"><span class="kd-cat-emoji">👶</span></div>
+      <div class="kd-cat-name">Newborn</div>
+    </a>
+    <a href="{% url 'products:product_list' %}?gender=Boys" class="kd-cat-card">
+      <div class="kd-cat-img"><span class="kd-cat-emoji">👦</span></div>
+      <div class="kd-cat-name">Boys</div>
+    </a>
+    <a href="{% url 'products:product_list' %}?gender=Girls" class="kd-cat-card">
+      <div class="kd-cat-img"><span class="kd-cat-emoji">👧</span></div>
+      <div class="kd-cat-name">Girls</div>
+    </a>
+    <a href="{% url 'products:product_list' %}" class="kd-cat-card">
+      <div class="kd-cat-img"><span class="kd-cat-emoji">🧥</span></div>
+      <div class="kd-cat-name">Casual Wear</div>
+    </a>
+    <a href="{% url 'products:product_list' %}" class="kd-cat-card">
+      <div class="kd-cat-img"><span class="kd-cat-emoji">👗</span></div>
+      <div class="kd-cat-name">Ethnic Wear</div>
+    </a>
+    <a href="{% url 'products:product_list' %}" class="kd-cat-card">
+      <div class="kd-cat-img"><span class="kd-cat-emoji">🎉</span></div>
+      <div class="kd-cat-name">Party Wear</div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% if top_products %}
+<section class="kd-section">
+  <h3 class="kd-section-title">TOP TRENDS</h3>
+
+  <div class="kd-tabs">
+    <button class="kd-tab kd-tab-girls active-tab" onclick="switchTab('all', this)">Girls</button>
+    <button class="kd-tab kd-tab-boys"   onclick="switchTab('B',   this)">Boys</button>
+    <button class="kd-tab kd-tab-kids"   onclick="switchTab('U',   this)">Kids</button>
+  </div>
+
+  {# All panel — default visible #}
+  <div class="kd-trend-panel active" id="kdtrend-all">
+    <div class="kd-trend-grid">
+      {% for prod in top_products %}
+      {% with img=prod.images.first %}
+      <a href="{% url 'products:product_detail' product_id=prod.id %}"
+         class="kd-trend-card" data-gender="{{ prod.gender }}">
+        <div class="kd-trend-img">
+          {% if img and img.image1 %}
+            <img src="{{ img.image1.url }}" alt="{{ prod.product_name }}" loading="lazy">
+          {% else %}
+            <span class="kd-no-img">👕</span>
+          {% endif %}
         </div>
-    </header>
+        <div class="kd-trend-name">{{ prod.product_name }}</div>
+      </a>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
 
-    <!-- ══ MAIN CONTENT ══ -->
-    <div class="home-container">
+  {# Gender sub-panels (populated by JS) #}
+  <div class="kd-trend-panel" id="kdtrend-B">
+    <div class="kd-trend-grid" id="kdgrid-B"></div>
+  </div>
+  <div class="kd-trend-panel" id="kdtrend-U">
+    <div class="kd-trend-grid" id="kdgrid-U"></div>
+  </div>
+</section>
+{% endif %}
 
-        <!-- BANNER -->
-        <div class="banner">
-            <img src="{% static 'images/banner.jpeg' %}" alt="offer">
+{% if new_arrivals %}
+<section class="kd-section">
+  <h3 class="kd-section-title">NEW ARRIVALS</h3>
+
+  <div class="kd-product-grid">
+    {% for prod in new_arrivals %}
+    {% with img=prod.images.first %}
+    <div class="kd-product-card">
+
+      {% if prod.discount_percent > 0 %}
+      <div class="kd-disc-badge">{{ prod.discount_percent }}% OFF</div>
+      {% endif %}
+
+      {# product image #}
+      <a href="{% url 'products:product_detail' product_id=prod.id %}" class="kd-prod-img">
+        {% if img and img.image1 %}
+          <img src="{{ img.image1.url }}" alt="{{ prod.product_name }}" loading="lazy">
+        {% else %}
+          <span class="kd-no-img"><i class="fa-solid fa-shirt"></i></span>
+        {% endif %}
+      </a>
+
+      <div class="kd-prod-info">
+
+        <a href="{% url 'products:product_detail' product_id=prod.id %}" class="kd-prod-name">
+          {{ prod.product_name }}
+        </a>
+
+        <div class="kd-prod-price">
+          ₹ {{ prod.final_price }}
+          {% if prod.base_price != prod.final_price %}
+          <span class="kd-base">₹ {{ prod.base_price }}</span>
+          {% endif %}
         </div>
 
-        <!-- SHOP BY CATEGORY -->
-        <section class="category-section">
-            <h3 class="section-title"><strong>SHOP BY CATEGORY</strong></h3>
-            <div class="shop-by-category card-grid">
-                <div class="card"><img src="{% static 'images/new_born.jpeg' %}" alt="Newborn category"><h4>Newborn</h4></div>
-                <div class="card"><img src="{% static 'images/boys.jpeg' %}" alt="Boys category"><h4>Boys</h4></div>
-                <div class="card"><img src="{% static 'images/girls.jpeg' %}" alt="Girls category"><h4>Girls</h4></div>
-                <div class="card"><img src="{% static 'images/casual.jpeg' %}" alt="Casuals category"><h4>Casual Wear</h4></div>
-                <div class="card"><img src="{% static 'images/ethnic_wear.jpeg' %}" alt="Ethnic category"><h4>Ethnic Wear</h4></div>
-                <div class="card"><img src="{% static 'images/party_wear.jpeg' %}" alt="Party Wear category"><h4>Party Wear</h4></div>
-            </div>
-        </section>
-
-        <!-- TOP TRENDS -->
-        <section class="category-section">
-            <h3 class="section-title"><strong>TOP TRENDS</strong></h3>
-            <div class="tabs">
-                <button class="tab-girls">Girls</button>
-                <button class="tab-boys">Boys</button>
-                <button class="tab-kids">Kids</button>
-            </div>
-            <div class="card-grid">
-                <div class="card"><img src="{% static 'images/b_cord_set_01.jpeg' %}" alt="Boys cord set"><h4>Boys Cord Set</h4></div>
-                <div class="card"><img src="{% static 'images/bcas_01.jpeg' %}" alt="Shirt and shorts"><h4>Shirt &amp; Shorts</h4></div>
-                <div class="card"><img src="{% static 'images/romber_01.jpeg' %}" alt="Rompers"><h4>Rompers</h4></div>
-                <div class="card"><img src="{% static 'images/bcas_03.jpeg' %}" alt="Casual set"><h4>Casual Set</h4></div>
-                <div class="card"><img src="{% static 'images/winter.jpeg' %}" alt="Sweaters"><h4>Sweaters</h4></div>
-                <div class="card"><img src="{% static 'images/gcas_01.jpeg' %}" alt="girl casual"><h4>Girls Casual Set</h4></div>
-            </div>
-        </section>
-
-        <!-- NEW ARRIVALS -->
-        <section class="category-section">
-            <h3 class="section-title">NEW ARRIVALS</h3>
-            <div class="card-grid">
-                <div class="card">
-                    <img src="{% static 'images/bcas_04.jpeg' %}" alt="Boys Shirt & Shorts">
-                    <div class="product-info">
-                        <h4>Boys T-Shirt &amp; Shorts</h4>
-                        <div class="price">₹ 599</div>
-                        <div class="rating">★★★★★</div>
-                        <div class="product-actions">
-                            <i class="fa fa-shopping-cart cart-icon"></i>
-                            <i class="fa-regular fa-heart icon-btn"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <img src="{% static 'images/gcas_03.jpeg' %}" alt="Girls Cord Set">
-                    <div class="product-info">
-                        <h4>Girls Shorts &amp; Top Set</h4>
-                        <div class="price">₹ 999</div>
-                        <div class="rating">★★★★★</div>
-                        <div class="product-actions">
-                            <i class="fa fa-shopping-cart cart-icon"></i>
-                            <i class="fa-regular fa-heart icon-btn"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <img src="{% static 'images/gcas_04.jpeg' %}" alt="Casual Outfit">
-                    <div class="product-info">
-                        <h4>Casual Outfit</h4>
-                        <div class="price">₹ 1,199</div>
-                        <div class="rating">★★★★★</div>
-                        <div class="product-actions">
-                            <i class="fa fa-shopping-cart cart-icon"></i>
-                            <i class="fa-regular fa-heart icon-btn"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <img src="{% static 'images/gcas_05.jpeg' %}" alt="Girls Casual Outfit">
-                    <div class="product-info">
-                        <h4>Girls Casual Outfit</h4>
-                        <div class="price">₹ 899</div>
-                        <div class="rating">★★★★★</div>
-                        <div class="product-actions">
-                            <i class="fa fa-shopping-cart cart-icon"></i>
-                            <i class="fa-regular fa-heart icon-btn"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <img src="{% static 'images/gpajama_01.jpeg' %}" alt="Girls night Wear">
-                    <div class="product-info">
-                        <h4>Pajama Set</h4>
-                        <div class="price">₹ 599</div>
-                        <div class="rating">★★★★★</div>
-                        <div class="product-actions">
-                            <i class="fa fa-shopping-cart cart-icon"></i>
-                            <i class="fa-regular fa-heart icon-btn"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <img src="{% static 'images/gethnic_01.jpeg' %}" alt="Girls Ethnic Wear">
-                    <div class="product-info">
-                        <h4>Girls Ethnic Wear</h4>
-                        <div class="price">₹ 1,899</div>
-                        <div class="rating">★★★★★</div>
-                        <div class="product-actions">
-                            <i class="fa fa-shopping-cart cart-icon"></i>
-                            <i class="fa-regular fa-heart icon-btn"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="view-all"><a href="products:product_list">View All</a></div>
-        </section>
-
-    </div><!-- end .home-container -->
-
-    <!-- ══ FOOTER ══ -->
-    <footer class="site-footer">
-        <div class="footer-container">
-            <div class="footer-logo">
-                <img src="{% static 'images/kiddora_logo.PNG' %}">
-            </div>
-            <div class="footer-column">
-                <h4>Info</h4>
-                <ul>
-                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
-                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
-                    <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h4>Policies</h4>
-                <ul>
-                    <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
-                    <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
-                    <li><a href="{% url 'shopcore:terms_conditions' %}">Terms</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h4>Subscribe to Our Newsletter</h4>
-                <form method="post" action="#">
-                    {% csrf_token %}
-                    <input type="email" name="email" placeholder="Email Address" required>
-                </form>
-                <div class="social-icons">
-                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
-                    <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
-                </div>
-            </div>
+        {# star rating #}
+        <div class="kd-stars">
+          {% for i in "12345" %}
+          <span class="kd-star {% if forloop.counter <= prod.avg_rating|floatformat:"0"|add:"0" %}on{% endif %}">★</span>
+          {% endfor %}
         </div>
-        <div class="footer-bottom">© 2025 Kiddora. All Rights Reserved.</div>
-    </footer>
 
-    <script>
-    /* ── Header live search dropdown ── */
-    (function () {
-        var wrap  = document.getElementById('searchWrap');
-        var input = document.getElementById('headerSearchQ');
-        var clr   = document.getElementById('headerSearchClear');
-        var drop  = document.getElementById('searchDropdown');
-        var timer = null;
-        var SEARCH_URL = '/products/user/search/';
-        if (!input || !drop) return;
-        function syncClear() { clr && clr.classList.toggle('show', input.value.length > 0); }
-        input.addEventListener('input', syncClear);
-        if (clr) clr.addEventListener('click', function () {
-            input.value = ''; syncClear(); closeDrop(); input.focus();
-        });
-        syncClear();
-        function openDrop(html) { drop.innerHTML = html; drop.classList.add('open'); }
-        function closeDrop() { drop.classList.remove('open'); drop.innerHTML = ''; }
-        document.addEventListener('click', function (e) {
-            if (!wrap.contains(e.target)) closeDrop();
-        });
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') { closeDrop(); input.blur(); }
-            if (e.key === 'Enter') closeDrop();
-        });
-        function fetchSuggestions(q) {
-            drop.innerHTML = '<div class="sd-loading">Searching…</div>';
-            drop.classList.add('open');
-            fetch(SEARCH_URL + '?q=' + encodeURIComponent(q), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (!drop.classList.contains('open')) return;
-                if (!data.results || data.results.length === 0) {
-                    openDrop('<div class="sd-empty">No results for "<strong>' + escHtml(q) + '</strong>"</div>');
-                    return;
-                }
-                var html = '';
-                data.results.forEach(function (p) {
-                    var priceClass = p.discount > 0 ? 'red' : 'black';
-                    var imgHtml = p.img ? '<img src="' + p.img + '" alt="' + escHtml(p.name) + '" loading="lazy">' : '👕';
-                    var badge = p.discount > 0 ? ' <small style="font-size:10px;color:#f06292;">(' + p.discount + '% off)</small>' : '';
-                    html += '<a href="' + p.url + '" class="sd-item">' +
-                        '<div class="sd-img">' + imgHtml + '</div>' +
-                        '<div class="sd-info"><div class="sd-name">' + escHtml(p.name) + '</div>' +
-                        '<div class="sd-brand">' + escHtml(p.brand) + '</div></div>' +
-                        '<div class="sd-price ' + priceClass + '">₹' + p.price + badge + '</div></a>';
-                });
-                html += '<a href="/products/user/products/?q=' + encodeURIComponent(q) + '" class="sd-footer">See all results for "' + escHtml(q) + '" →</a>';
-                openDrop(html);
-            })
-            .catch(function () { closeDrop(); });
-        }
-        input.addEventListener('input', function () {
-            clearTimeout(timer);
-            var q = input.value.trim();
-            if (q.length < 2) { closeDrop(); return; }
-            timer = setTimeout(function () { fetchSuggestions(q); }, 280);
-        });
-        input.addEventListener('focus', function () {
-            var q = input.value.trim();
-            if (q.length >= 2) fetchSuggestions(q);
-        });
-        function escHtml(s) {
-            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
-    })();
+        {# cart + wishlist icons #}
+        <div class="kd-prod-actions">
+          <a href="{% url 'products:product_detail' product_id=prod.id %}"
+             class="kd-cart-icon" title="Add to Cart">
+            <i class="fa fa-shopping-cart"></i>
+          </a>
+          <a href="{% url 'shopcore:wishlist' %}"
+             class="kd-heart-icon {% if prod.id in wishlist_product_ids %}wishlisted{% endif %}"
+             title="{% if prod.id in wishlist_product_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}">
+            <i class="fa{% if prod.id in wishlist_product_ids %}-solid{% else %}-regular{% endif %} fa-heart"></i>
+          </a>
+        </div>
 
-    /* ── Page loader ── */
-    (function () {
-        const loader = document.getElementById('global-loader');
-        const label  = document.getElementById('loader-label');
-        function show(msg) {
-            label.textContent = msg || 'Loading...';
-            loader.classList.add('active');
-            document.body.classList.add('loading');
-        }
-        function hide() {
-            loader.classList.remove('active');
-            document.body.classList.remove('loading');
-        }
-        document.addEventListener('submit', function (e) {
-            if (e.target.tagName !== 'FORM') return;
-            const btn = e.target.querySelector('[type=submit]');
-            const lower = btn ? btn.textContent.trim().toLowerCase() : '';
-            const map = {
-                'save': 'Saving...', 'update': 'Updating...',
-                'delete': 'Deleting...', 'add': 'Adding...',
-                'upload': 'Uploading...', 'login': 'Signing in...',
-                'search': 'Searching...', 'subscribe': 'Subscribing...',
-            };
-            let msg = 'Processing...';
-            for (const [key, val] of Object.entries(map)) {
-                if (lower.includes(key)) { msg = val; break; }
-            }
-            show(msg);
-        });
-        document.addEventListener('click', function (e) {
-            const anchor = e.target.closest('a');
-            if (!anchor) return;
-            const href = anchor.getAttribute('href');
-            if (!href || href === '#' || href.startsWith('javascript')) return;
-            if (anchor.target === '_blank') return;
-            if (anchor.closest('form')) return;
-            if (anchor.hasAttribute('onclick')) return;
-            if (anchor.closest('.search-dropdown')) return;
-            show('Loading...');
-        });
-        window.addEventListener('pageshow', hide);
-        window.addEventListener('popstate', hide);
-        document.addEventListener('submit', function () { setTimeout(hide, 15000); });
-    })();
-    </script>
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
 
-</body>
-</html>
+  <div class="kd-view-all">
+    <a href="{% url 'products:product_list' %}">View All</a>
+  </div>
+</section>
+{% endif %}
+
+</div>{# end .kd-home #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ═══════════════════════════════
+   HERO CAROUSEL
+═══════════════════════════════ */
+(function () {
+  const slides = document.querySelectorAll('.kd-slide');
+  const dots   = document.querySelectorAll('.kd-carousel-dot');
+  if (!slides.length || slides.length < 2) return;
+  let cur = 0, timer = null, sx = 0;
+
+  function goTo(n) {
+    slides[cur].classList.remove('active');
+    if (dots[cur]) dots[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    if (dots[cur]) dots[cur].classList.add('active');
+  }
+  const next = () => goTo(cur + 1);
+  const prev = () => goTo(cur - 1);
+  const start = () => { timer = setInterval(next, 4500); };
+  const stop  = () => clearInterval(timer);
+
+  const el = document.getElementById('kdCarousel');
+  if (el) {
+    el.addEventListener('mouseenter', stop);
+    el.addEventListener('mouseleave', start);
+    el.addEventListener('touchstart', e => { sx = e.changedTouches[0].clientX; }, {passive:true});
+    el.addEventListener('touchend', e => {
+      const d = sx - e.changedTouches[0].clientX;
+      if (Math.abs(d) > 40) { stop(); d > 0 ? next() : prev(); start(); }
+    });
+  }
+  start();
+  window.kdCar = { next, prev, goTo };
+})();
+
+/* ═══════════════════════════════
+   TOP TRENDS — gender tabs
+═══════════════════════════════ */
+(function () {
+  const allGrid = document.querySelector('#kdtrend-all .kd-trend-grid');
+  if (!allGrid) return;
+  const grids = {
+    B: document.getElementById('kdgrid-B'),
+    U: document.getElementById('kdgrid-U'),
+  };
+  allGrid.querySelectorAll('.kd-trend-card').forEach(card => {
+    const g = card.dataset.gender;
+    if (g && grids[g]) grids[g].appendChild(card.cloneNode(true));
+  });
+  Object.values(grids).forEach(grid => {
+    if (grid && !grid.children.length) {
+      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#bbb;padding:32px 0;font-size:14px;">No items yet.</p>';
+    }
+  });
+})();
+
+window.switchTab = function (gender, btn) {
+  document.querySelectorAll('.kd-tab').forEach(t => t.classList.remove('active-tab'));
+  btn.classList.add('active-tab');
+  document.querySelectorAll('.kd-trend-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('kdtrend-' + gender) || document.getElementById('kdtrend-all');
+  if (panel) panel.classList.add('active');
+};
+</script>
+{% endblock %}

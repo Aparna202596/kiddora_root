@@ -3,7 +3,8 @@
 {% block title %}My Wishlist – Kiddora{% endblock %}
 {% block filter_sidebar %}{% endblock %}
 
-{% block content %}
+{% block extra_css %}
+{% include "responsive.html" %}
 <style>
 .wl-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
 .wl-header h2 { font-size:22px; font-weight:800; color:#222; display:flex; align-items:center; gap:10px; }
@@ -12,97 +13,270 @@
 
 .wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:20px; }
 
-.wl-card { background:#fff; border:1.5px solid #eee; border-radius:14px; overflow:hidden; transition:box-shadow .2s, border-color .2s; }
+/* card fade-out on removal */
+.wl-card {
+    background:#fff; border:1.5px solid #eee; border-radius:14px;
+    overflow:hidden; transition:box-shadow .2s, border-color .2s, opacity .35s, transform .35s;
+}
 .wl-card:hover { border-color:#f06292; box-shadow:0 6px 24px rgba(240,98,146,.12); }
+.wl-card.removing { opacity:0; transform:scale(.93); pointer-events:none; }
 
 .wl-img { width:100%; height:200px; object-fit:cover; display:block; background:#f8f8f8; }
 .wl-img-placeholder { width:100%; height:200px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#ddd; }
 
 .wl-body { padding:14px 16px; }
-.wl-name { font-size:14px; font-weight:700; color:#222; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.wl-name  { font-size:14px; font-weight:700; color:#222; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .wl-price { font-size:15px; font-weight:800; color:#f06292; margin-bottom:4px; }
 .wl-price del { font-size:12px; color:#aaa; font-weight:400; margin-left:6px; }
+
 .wl-stock-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; display:inline-block; margin-bottom:10px; }
-.in-stock { background:#dcfce7; color:#15803d; }
-.out-of-stock { background:#fee2e2; color:#991b1b; }
+.in-stock    { background:#dcfce7; color:#15803d; }
+.out-of-stock{ background:#fee2e2; color:#991b1b; }
 
 .wl-actions { display:flex; gap:8px; padding:0 16px 16px; }
-.wl-btn { flex:1; padding:9px 0; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; }
-.wl-btn-cart  { background:#f06292; color:#fff; }
+.wl-btn {
+    flex:1; padding:9px 0; border:none; border-radius:8px;
+    font-size:13px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    text-decoration:none; transition:background .18s, opacity .18s;
+    position:relative;
+}
+.wl-btn-cart   { background:#f06292; color:#fff; }
 .wl-btn-cart:hover { background:#e91e63; }
 .wl-btn-cart.disabled { background:#e0e0e0; color:#999; cursor:not-allowed; pointer-events:none; }
-.wl-btn-remove { background:#fce4ec; color:#c2185b; }
+.wl-btn-cart.loading  { pointer-events:none; opacity:.7; }
+.wl-btn-remove { background:#fce4ec; color:#c2185b; flex:0 0 40px; padding:9px; }
 .wl-btn-remove:hover { background:#f8bbd9; }
 
-.wl-empty { text-align:center; padding:70px 20px; color:#aaa; }
-.wl-empty i { font-size:3.5rem; margin-bottom:16px; display:block; color:#f8bbd9; }
-.wl-empty h3 { font-size:20px; font-weight:700; color:#555; margin-bottom:8px; }
-.wl-empty a { display:inline-block; margin-top:16px; padding:12px 28px; background:#f06292; color:#fff; border-radius:50px; font-weight:700; text-decoration:none; }
-</style>
+/* inline spinner inside button */
+.btn-spinner {
+    display:none; width:14px; height:14px;
+    border:2px solid rgba(255,255,255,.5); border-top-color:#fff;
+    border-radius:50%; animation:spin .6s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.wl-btn-cart.loading .btn-text    { display:none; }
+.wl-btn-cart.loading .btn-spinner { display:inline-block; }
 
+.wl-empty { text-align:center; padding:70px 20px; color:#aaa; }
+.wl-empty i  { font-size:3.5rem; margin-bottom:16px; display:block; color:#f8bbd9; }
+.wl-empty h3 { font-size:20px; font-weight:700; color:#555; margin-bottom:8px; }
+.wl-empty a  { display:inline-block; margin-top:16px; padding:12px 28px; background:#f06292; color:#fff; border-radius:50px; font-weight:700; text-decoration:none; }
+
+/* ── TOAST ── */
+#kdToast {
+    position:fixed; bottom:24px; right:24px; z-index:100000;
+    background:#222; color:#fff; padding:12px 18px; border-radius:10px;
+    font-size:14px; font-weight:600; opacity:0; transform:translateY(10px);
+    transition:opacity .3s, transform .3s; pointer-events:none;
+    max-width:min(320px, 90vw);
+}
+#kdToast.show    { opacity:1; transform:translateY(0); }
+#kdToast.success { background:#16a34a; }
+#kdToast.error   { background:#dc2626; }
+
+@media (max-width:640px) {
+    .wl-grid { grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+    .wl-img, .wl-img-placeholder { height:160px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="wl-header">
-  <h2><i class="fa-solid fa-heart"></i> My Wishlist <span class="wl-count">({{ item_data|length }} item{{ item_data|length|pluralize }})</span></h2>
-  <a href="{% url 'products:product_list' %}" style="font-size:13px;color:#f06292;font-weight:700;text-decoration:none;">
-    <i class="fa fa-arrow-left"></i> Continue Shopping
-  </a>
+    <h2>
+        <i class="fa-solid fa-heart"></i>
+        My Wishlist
+        <span class="wl-count" id="wlCount">
+            ({{ item_data|length }} item{{ item_data|length|pluralize }})
+        </span>
+    </h2>
+    <a href="{% url 'products:product_list' %}" style="font-size:13px;color:#f06292;font-weight:700;text-decoration:none;">
+        <i class="fa fa-arrow-left"></i> Continue Shopping
+    </a>
 </div>
 
 {% if item_data %}
-<div class="wl-grid">
-  {% for d in item_data %}
-  <div class="wl-card">
-    <a href="{% url 'products:product_detail' product_id=d.product.id %}">
-      {% if d.img_url %}
-        <img src="{{ d.img_url }}" alt="{{ d.product.product_name }}" class="wl-img" loading="lazy">
-      {% else %}
-        <div class="wl-img-placeholder">🧸</div>
-      {% endif %}
-    </a>
-    <div class="wl-body">
-      <div class="wl-name">{{ d.product.product_name }}</div>
-      <div class="wl-price">
-        ₹{{ d.product.final_price }}
-        {% if d.product.original_price and d.product.original_price != d.product.final_price %}
-          <del>₹{{ d.product.original_price }}</del>
-        {% endif %}
-      </div>
-      {% if d.available and d.total_stock > 0 %}
-        <span class="wl-stock-badge in-stock"><i class="fa fa-check"></i> In Stock</span>
-      {% else %}
-        <span class="wl-stock-badge out-of-stock"><i class="fa fa-times"></i> Out of Stock</span>
-      {% endif %}
+<div class="wl-grid" id="wlGrid">
+    {% for d in item_data %}
+    <div class="wl-card" id="wlCard_{{ d.product.id }}"
+         data-product-id="{{ d.product.id }}"
+         data-product-name="{{ d.product.product_name|escapejs }}">
+
+        <a href="{% url 'products:product_detail' product_id=d.product.id %}">
+            {% if d.img_url %}
+                <img src="{{ d.img_url }}" alt="{{ d.product.product_name }}" class="wl-img" loading="lazy">
+            {% else %}
+                <div class="wl-img-placeholder">🧸</div>
+            {% endif %}
+        </a>
+
+        <div class="wl-body">
+            <div class="wl-name">{{ d.product.product_name }}</div>
+            <div class="wl-price">
+                ₹{{ d.product.final_price }}
+                {% if d.product.base_price and d.product.base_price != d.product.final_price %}
+                <del>₹{{ d.product.base_price }}</del>
+                {% endif %}
+            </div>
+            {% if d.available and d.total_stock > 0 %}
+            <span class="wl-stock-badge in-stock"><i class="fa fa-check"></i> In Stock</span>
+            {% else %}
+            <span class="wl-stock-badge out-of-stock"><i class="fa fa-times"></i> Out of Stock</span>
+            {% endif %}
+        </div>
+
+        <div class="wl-actions">
+            <!-- Add to Cart — AJAX, removes card immediately -->
+            <button type="button"
+                    class="wl-btn wl-btn-cart {% if not d.available or d.total_stock == 0 %}disabled{% endif %}"
+                    data-product="{{ d.product.id }}"
+                    data-name="{{ d.product.product_name|escapejs }}"
+                    onclick="moveToCart(this)"
+                    {% if not d.available or d.total_stock == 0 %}disabled{% endif %}>
+                <span class="btn-text"><i class="fa fa-shopping-bag"></i> Add to Cart</span>
+                <span class="btn-spinner"></span>
+            </button>
+
+            <!-- Remove from wishlist — AJAX, removes card immediately -->
+            <button type="button"
+                    class="wl-btn wl-btn-remove"
+                    data-product="{{ d.product.id }}"
+                    data-name="{{ d.product.product_name|escapejs }}"
+                    onclick="removeFromWishlist(this)"
+                    title="Remove from wishlist">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
     </div>
-    <div class="wl-actions">
-      {# Move to cart — picks first available variant #}
-      <form method="post" action="{% url 'shopcore:move_to_cart' product_id=d.product.id %}" style="flex:1;">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.path }}">
-        <button type="submit" class="wl-btn wl-btn-cart {% if not d.available or d.total_stock == 0 %}disabled{% endif %}"
-          {% if not d.available or d.total_stock == 0 %}disabled{% endif %}>
-          <i class="fa fa-shopping-bag"></i> Add to Cart
-        </button>
-      </form>
-      {# Remove #}
-      <form method="post" action="{% url 'shopcore:remove_from_wishlist' product_id=d.product.id %}"
-            onsubmit="return true;">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.path }}">
-        <button type="submit" class="wl-btn wl-btn-remove" title="Remove from wishlist">
-          <i class="fa fa-trash"></i>
-        </button>
-      </form>
-    </div>
-  </div>
-  {% endfor %}
+    {% endfor %}
 </div>
 
 {% else %}
-<div class="wl-empty">
-  <i class="fa-regular fa-heart"></i>
-  <h3>Your wishlist is empty</h3>
-  <p>Browse our collection and add items you love!</p>
-  <a href="{% url 'products:product_list' %}">Start Shopping</a>
+<div class="wl-empty" id="wlEmpty">
+    <i class="fa-regular fa-heart"></i>
+    <h3>Your wishlist is empty</h3>
+    <p>Browse our collection and add items you love!</p>
+    <a href="{% url 'products:product_list' %}">Start Shopping</a>
 </div>
 {% endif %}
 
+<!-- ── TOAST ── -->
+<div id="kdToast"></div>
+
+<!-- CSRF -->
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+<script>
+const CSRF = document.getElementById('csrfToken').value;
+let _wlItemCount = {{ item_data|length }};
+
+/* ── Toast ── */
+function showToast(msg, type) {
+    const t = document.getElementById('kdToast');
+    t.textContent = msg;
+    t.className   = 'show ' + (type || '');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.className = ''; }, 3400);
+}
+
+/* ── Update wishlist count label ── */
+function updateCount(n) {
+    const el = document.getElementById('wlCount');
+    if (el) el.textContent = '(' + n + ' item' + (n !== 1 ? 's' : '') + ')';
+}
+
+/* ── Remove card from DOM with animation ── */
+function removeCard(productId, callback) {
+    const card = document.getElementById('wlCard_' + productId);
+    if (!card) { if (callback) callback(); return; }
+    card.classList.add('removing');
+    setTimeout(() => {
+        card.remove();
+        _wlItemCount--;
+        updateCount(_wlItemCount);
+        // If grid is now empty, show empty state
+        if (_wlItemCount === 0) {
+            const grid = document.getElementById('wlGrid');
+            if (grid) grid.innerHTML = '';
+            const emptyEl = document.getElementById('wlEmpty');
+            if (emptyEl) {
+                emptyEl.style.display = 'block';
+            } else {
+                // Create empty state dynamically
+                const div = document.createElement('div');
+                div.className = 'wl-empty';
+                div.innerHTML = `<i class="fa-regular fa-heart"></i><h3>Your wishlist is empty</h3><p>Browse our collection and add items you love!</p><a href="/products/user/products/">Start Shopping</a>`;
+                document.getElementById('wlGrid').replaceWith(div);
+            }
+        }
+        if (callback) callback();
+    }, 360);
+}
+
+/* ── MOVE TO CART ── */
+function moveToCart(btn) {
+    const productId   = btn.dataset.product;
+    const productName = btn.dataset.name;
+
+    btn.classList.add('loading');
+
+    const fd = new FormData();
+
+    fetch("{% url 'shopcore:move_to_cart' product_id=0 %}".replace('/0/', '/' + productId + '/'), {
+        method:  'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
+        body:    fd,
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.classList.remove('loading');
+        if (data.success) {
+            removeCard(productId);
+            showToast('"' + productName + '" moved to cart!', 'success');
+            // Update header cart badge if present
+            const cartBadge = document.querySelector('[data-cart-count], .cart-count-badge');
+            if (cartBadge && data.cart_count !== undefined) {
+                cartBadge.textContent = data.cart_count;
+            }
+        } else {
+            showToast(data.error || 'Could not add to cart.', 'error');
+        }
+    })
+    .catch(() => {
+        btn.classList.remove('loading');
+        showToast('Network error. Please try again.', 'error');
+    });
+}
+
+/* ── REMOVE FROM WISHLIST ── */
+function removeFromWishlist(btn) {
+    const productId   = btn.dataset.product;
+    const productName = btn.dataset.name;
+
+    btn.disabled = true;
+
+    const fd = new FormData();
+
+    fetch("{% url 'shopcore:remove_from_wishlist' product_id=0 %}".replace('/0/', '/' + productId + '/'), {
+        method:  'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
+        body:    fd,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            removeCard(productId);
+            showToast('"' + productName + '" removed from wishlist.', 'success');
+        } else {
+            btn.disabled = false;
+            showToast(data.error || 'Could not remove item.', 'error');
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        showToast('Network error. Please try again.', 'error');
+    });
+}
+</script>
 {% endblock %}

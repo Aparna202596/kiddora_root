@@ -4,7 +4,6 @@ from shopcore.views import coupon_views
 from shopcore.views import cart_views
 from shopcore.views import order_views
 from shopcore.views import return_views
-from shopcore.views import banner_views
 from shopcore.views import wishlist_views
 from shopcore.views import review_views
 from shopcore.views import offer_views
@@ -13,9 +12,13 @@ app_name = 'shopcore'
 
 urlpatterns = [
     # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    # STORE (public)
-    path('', store_views.anonymous_home, name='anonymous_home'),
+    #HOME (public)
     path('user/home/', store_views.home, name='home'),
+    path('', store_views.anonymous_home, name='anonymous_home'),
+
+    # STORE (public)
+    
+
     path('aboutus/', store_views.aboutus_view, name='about_us'),
     path('contactus/', store_views.contactus_view, name='contact_us'),
     path('privacy-policy/', store_views.privacy_policy_view, name='privacy_policy'),
@@ -25,15 +28,14 @@ urlpatterns = [
     path('terms-conditions/', store_views.terms_conditions_view, name='terms_conditions'),
     path('size-chart/', store_views.size_chart, name='size_chart'),
     # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    # BANNER HOME (public)
-    path('homes/', banner_views.home_view, name='banner_home'),
+    # BANNER 
 
     # ADMIN BANNER MANAGEMENT
-    path("admin/banners/", banner_views.admin_banner_list, name="admin_banner_list"),
-    path("admin/banners/add/", banner_views.admin_add_banner, name="admin_add_banner"),
-    path("admin/banners/<int:banner_id>/edit/", banner_views.admin_edit_banner, name="admin_edit_banner"),
-    path("admin/banners/<int:banner_id>/delete/", banner_views.admin_delete_banner, name="admin_delete_banner"),
-    path("admin/banners/<int:banner_id>/toggle/", banner_views.admin_toggle_banner, name="admin_toggle_banner"),
+    path("admin/banners/", store_views.admin_banner_list, name="admin_banner_list"),
+    path("admin/banners/add/", store_views.admin_add_banner, name="admin_add_banner"),
+    path("admin/banners/<int:banner_id>/edit/", store_views.admin_edit_banner, name="admin_edit_banner"),
+    path("admin/banners/<int:banner_id>/delete/", store_views.admin_delete_banner, name="admin_delete_banner"),
+    path("admin/banners/<int:banner_id>/toggle/", store_views.admin_toggle_banner, name="admin_toggle_banner"),
     # ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     # COUPON
     # ADMIN

@@ -4,6 +4,7 @@
 {% block title %}Order {{ order.order_id }} – Kiddora{% endblock %}
 
 {% block extra_css %}
+{% include "responsive.html" %}
 <style>
   .od-layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
   .od-left   { flex: 1; min-width: 0; }

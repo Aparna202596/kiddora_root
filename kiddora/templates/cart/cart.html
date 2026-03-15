@@ -1,329 +1,565 @@
 {% extends "base_products.html" %}
 {% load static %}
-
 {% block title %}My Cart – Kiddora{% endblock %}
 
 {% block extra_css %}
+{% include "responsive.html" %}
 <style>
-    /* ── PAGE LAYOUT ── */
-    .cart-page { display: flex; gap: 28px; align-items: flex-start; }
-    .cart-left  { flex: 1; min-width: 0; }
-    .cart-right { width: 320px; flex-shrink: 0; position: sticky; top: 20px; }
+/* ── PAGE LAYOUT ── */
+.cart-page  { display:flex; gap:28px; align-items:flex-start; }
+.cart-left  { flex:1; min-width:0; }
+.cart-right { width:320px; flex-shrink:0; position:sticky; top:20px; }
 
-    /* ── SECTION HEADER ── */
-    .section-title {
-        font-size: 20px; font-weight: 700; color: #222;
-        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
-    }
-    .section-title span { font-size: 14px; font-weight: 500; color: #888; }
+/* ── SECTION HEADER ── */
+.section-title { font-size:20px; font-weight:700; color:#222; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+.section-title span { font-size:14px; font-weight:500; color:#888; }
 
-    /* ── CART ITEM CARD ── */
-    .cart-item {
-        display: flex; gap: 16px; align-items: flex-start;
-        background: #fff; border: 1.5px solid #eee; border-radius: 12px;
-        padding: 16px; margin-bottom: 14px;
-        transition: border-color .2s, box-shadow .2s;
-    }
-    .cart-item:hover { border-color: #f06292; box-shadow: 0 4px 16px rgba(240,98,146,.08); }
-    .cart-item.unavailable { border-color: #fca5a5; background: #fff5f5; opacity: .85; }
-    .cart-item.out-of-stock { border-color: #fcd34d; background: #fffbeb; }
+/* ── CART ITEM CARD ── */
+.cart-item {
+    display:flex; gap:16px; align-items:flex-start;
+    background:#fff; border:1.5px solid #eee; border-radius:12px;
+    padding:16px; margin-bottom:14px;
+    transition:border-color .2s, box-shadow .2s, opacity .3s;
+}
+.cart-item:hover { border-color:#f06292; box-shadow:0 4px 16px rgba(240,98,146,.08); }
+.cart-item.unavailable { border-color:#fca5a5; background:#fff5f5; opacity:.85; }
+.cart-item.out-of-stock { border-color:#fcd34d; background:#fffbeb; }
+/* fade-out animation on removal */
+.cart-item.removing { opacity:0; transform:translateX(30px); transition:all .35s ease; }
 
-    .item-img {
-        width: 90px; height: 110px; border-radius: 8px; overflow: hidden;
-        flex-shrink: 0; background: #f8f8f8;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .item-img img { width: 100%; height: 100%; object-fit: cover; }
-    .item-img .placeholder { font-size: 2.2rem; color: #ddd; }
+/* ── IMAGE ── */
+.item-img { width:90px; height:110px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f8f8f8; display:flex; align-items:center; justify-content:center; }
+.item-img img { width:100%; height:100%; object-fit:cover; }
+.item-img .placeholder { font-size:2.2rem; color:#ddd; }
 
-    .item-body { flex: 1; min-width: 0; }
-    .item-name  { font-size: 15px; font-weight: 700; color: #222; margin-bottom: 4px;
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .item-meta  { font-size: 12px; color: #888; margin-bottom: 8px; }
-    .item-meta span { margin-right: 10px; }
+/* ── BODY ── */
+.item-body { flex:1; min-width:0; }
+.item-name { font-size:15px; font-weight:700; color:#222; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.item-meta { font-size:12px; color:#888; margin-bottom:8px; }
+.item-meta span { margin-right:10px; }
+.item-price-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.item-price { font-size:17px; font-weight:700; color:#222; }
+.item-discount { font-size:12px; color:#f06292; background:#fdeef4; padding:2px 7px; border-radius:20px; }
 
-    .item-price-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .item-price     { font-size: 17px; font-weight: 700; color: #222; }
-    .item-discount  { font-size: 12px; color: #f06292; background: #fdeef4; padding: 2px 7px; border-radius: 20px; }
+/* ── QTY CONTROLS ── */
+.qty-row { display:flex; align-items:center; gap:12px; margin-top:10px; }
+.qty-box { display:flex; align-items:center; border:1.5px solid #e0e0e0; border-radius:8px; overflow:hidden; }
+.qty-btn {
+    width:32px; height:32px; border:none; background:#f9f9f9;
+    font-size:16px; cursor:pointer; color:#555;
+    transition:background .15s, color .15s;
+    display:flex; align-items:center; justify-content:center;
+    user-select:none;
+}
+.qty-btn:hover:not(:disabled) { background:#f06292; color:#fff; }
+.qty-btn:disabled { color:#ccc; cursor:not-allowed; }
+.qty-num { width:36px; text-align:center; font-size:14px; font-weight:600; color:#333; }
+.qty-spinner { display:none; width:16px; height:16px; border:2px solid #f06292; border-top-color:transparent; border-radius:50%; animation:spin .6s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.qty-error { font-size:11px; color:#ef4444; margin-top:4px; display:none; }
 
-    /* qty controls */
-    .qty-row { display: flex; align-items: center; gap: 12px; }
-    .qty-box  { display: flex; align-items: center; border: 1.5px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
-    .qty-btn  {
-        width: 32px; height: 32px; border: none; background: #f9f9f9;
-        font-size: 16px; cursor: pointer; color: #555;
-        transition: background .15s, color .15s;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .qty-btn:hover:not(:disabled) { background: #f06292; color: #fff; }
-    .qty-btn:disabled { color: #ccc; cursor: not-allowed; }
-    .qty-num  { width: 36px; text-align: center; font-size: 14px; font-weight: 600; color: #333; }
+/* ── REMOVE ── */
+.remove-btn {
+    font-size:12px; color:#ef4444; background:none; border:none;
+    cursor:pointer; display:flex; align-items:center; gap:4px;
+    padding:6px 10px; border-radius:6px; transition:background .15s;
+    margin-left:auto;
+}
+.remove-btn:hover { background:#fee2e2; }
 
-    .remove-btn {
-        font-size: 12px; color: #ef4444; background: none; border: none;
-        cursor: pointer; display: flex; align-items: center; gap: 4px;
-        padding: 6px 10px; border-radius: 6px; transition: background .15s;
-    }
-    .remove-btn:hover { background: #fee2e2; }
+/* ── ITEM TOTAL ── */
+.item-total { text-align:right; }
+.item-total-label { font-size:11px; color:#aaa; }
+.item-total-val { font-size:16px; font-weight:700; color:#222; }
 
-    .item-total { text-align: right; }
-    .item-total-label { font-size: 11px; color: #aaa; }
-    .item-total-val   { font-size: 16px; font-weight: 700; color: #222; }
+/* ── BADGES ── */
+.badge-warn { font-size:11px; color:#b45309; background:#fef3c7; padding:3px 8px; border-radius:20px; margin-top:6px; display:inline-block; }
+.badge-err  { font-size:11px; color:#991b1b; background:#fee2e2; padding:3px 8px; border-radius:20px; margin-top:6px; display:inline-block; }
 
-    /* badges */
-    .badge-warn { font-size: 11px; color: #b45309; background: #fef3c7;
-                    padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block; }
-    .badge-err  { font-size: 11px; color: #991b1b; background: #fee2e2;
-                    padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block; }
+/* ── EMPTY ── */
+.cart-empty { text-align:center; padding:60px 20px; }
+.cart-empty .empty-icon { font-size:4rem; margin-bottom:16px; }
+.cart-empty h3 { font-size:20px; color:#333; margin-bottom:8px; }
+.cart-empty p  { font-size:14px; color:#888; margin-bottom:24px; }
+.shop-btn { display:inline-block; padding:11px 28px; background:#f06292; color:#fff; border-radius:8px; font-size:15px; font-weight:600; transition:background .2s; }
+.shop-btn:hover { background:#e91e63; }
 
-    /* ── EMPTY STATE ── */
-    .cart-empty { text-align: center; padding: 60px 20px; }
-    .cart-empty .empty-icon { font-size: 4rem; margin-bottom: 16px; }
-    .cart-empty h3 { font-size: 20px; color: #333; margin-bottom: 8px; }
-    .cart-empty p  { font-size: 14px; color: #888; margin-bottom: 24px; }
-    .shop-btn {
-        display: inline-block; padding: 11px 28px; background: #f06292;
-        color: #fff; border-radius: 8px; font-size: 15px; font-weight: 600;
-        transition: background .2s;
-    }
-    .shop-btn:hover { background: #e91e63; }
+/* ── SUMMARY ── */
+.summary-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:24px; }
+.summary-card h3 { font-size:16px; font-weight:700; color:#222; margin-bottom:18px; }
+.summary-row { display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#555; margin-bottom:10px; }
+.summary-row.total { font-size:17px; font-weight:700; color:#222; border-top:1.5px solid #eee; padding-top:14px; margin-top:4px; }
+.summary-row .free { color:#16a34a; font-weight:600; }
+.checkout-btn { display:block; width:100%; padding:13px; background:#f06292; color:#fff; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer; margin-top:20px; text-align:center; text-decoration:none; transition:background .2s; }
+.checkout-btn:hover:not(.disabled) { background:#e91e63; }
+.checkout-btn.disabled { background:#d1d5db; color:#9ca3af; cursor:not-allowed; pointer-events:none; }
+.clear-cart-btn { display:block; width:100%; padding:9px; background:#fff; color:#ef4444; border:1.5px solid #fca5a5; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-top:10px; text-align:center; transition:background .15s; }
+.clear-cart-btn:hover { background:#fee2e2; }
+.blocked-notice { background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:10px 14px; font-size:13px; color:#991b1b; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+#summarySubtotal, #summaryGrandTotal { transition:color .25s; }
+.summary-updating { color:#f06292 !important; }
 
-    /* ── ORDER SUMMARY ── */
-    .summary-card {
-        background: #fff; border: 1.5px solid #eee; border-radius: 14px; padding: 24px;
-    }
-    .summary-card h3 { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 18px; }
-    .summary-row {
-        display: flex; justify-content: space-between; align-items: center;
-        font-size: 14px; color: #555; margin-bottom: 10px;
-    }
-    .summary-row.total { font-size: 17px; font-weight: 700; color: #222;
-                            border-top: 1.5px solid #eee; padding-top: 14px; margin-top: 4px; }
-    .summary-row .free { color: #16a34a; font-weight: 600; }
+/* ── SAVE-TO-WISHLIST MODAL ── */
+#wlSaveModal {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.45); backdrop-filter:blur(4px);
+    z-index:99999; align-items:center; justify-content:center;
+}
+#wlSaveModal.open { display:flex; }
+.wl-modal-box {
+    background:#fff; border-radius:18px; padding:32px 28px 24px;
+    width:min(92%, 420px);
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    animation:kd-popIn .22s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes kd-popIn { from{transform:scale(.8) translateY(20px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+.wl-modal-icon { width:58px; height:58px; border-radius:50%; background:#fce4ec; display:flex; align-items:center; justify-content:center; font-size:26px; }
+.wl-modal-title { font-size:17px; font-weight:700; color:#222; text-align:center; }
+.wl-modal-sub   { font-size:14px; color:#666; text-align:center; line-height:1.6; margin-top:-8px; }
+.wl-modal-btns  { display:flex; gap:10px; width:100%; }
+.wl-modal-btn {
+    flex:1; padding:11px; border-radius:10px; font-size:14px; font-weight:600;
+    cursor:pointer; border:1.5px solid #e8e8e8;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    transition:all .18s;
+}
+.wl-modal-btn-save   { background:#fce4ec; color:#e91e63; border-color:#f8bbd9; }
+.wl-modal-btn-save:hover { background:#f8bbd9; }
+.wl-modal-btn-remove { background:linear-gradient(135deg,#ef5350,#e53935); color:#fff; border-color:transparent; }
+.wl-modal-btn-remove:hover { opacity:.9; }
+.wl-modal-btn-cancel { background:#f9f9f9; color:#555; }
+.wl-modal-btn-cancel:hover { background:#f0f0f0; }
 
-    .checkout-btn {
-        display: block; width: 100%; padding: 13px;
-        background: #f06292; color: #fff; border: none; border-radius: 10px;
-        font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px;
-        text-align: center; text-decoration: none; transition: background .2s;
-    }
-    .checkout-btn:hover:not(.disabled) { background: #e91e63; }
-    .checkout-btn.disabled {
-        background: #d1d5db; color: #9ca3af; cursor: not-allowed; pointer-events: none;
-    }
+/* ── TOAST ── */
+#kdToast {
+    position:fixed; bottom:24px; right:24px; z-index:100000;
+    background:#222; color:#fff; padding:12px 18px; border-radius:10px;
+    font-size:14px; font-weight:600; opacity:0; transform:translateY(10px);
+    transition:opacity .3s, transform .3s; pointer-events:none;
+    max-width:min(320px, 90vw);
+}
+#kdToast.show { opacity:1; transform:translateY(0); }
+#kdToast.success { background:#16a34a; }
+#kdToast.error   { background:#dc2626; }
 
-    .clear-cart-btn {
-        display: block; width: 100%; padding: 9px;
-        background: #fff; color: #ef4444; border: 1.5px solid #fca5a5;
-        border-radius: 8px; font-size: 14px; font-weight: 600;
-        cursor: pointer; margin-top: 10px; text-align: center;
-        transition: background .15s;
-    }
-    .clear-cart-btn:hover { background: #fee2e2; }
+@media (max-width:900px) { .cart-page { flex-direction:column; } .cart-right { width:100%; position:static; } }
+@media (max-width:480px) { .item-img { width:70px; height:85px; } .item-price { font-size:15px; } .item-name { font-size:14px; } }
+</style>
+{% endblock %}
 
-    .blocked-notice {
-        background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
-        padding: 10px 14px; font-size: 13px; color: #991b1b;
-        margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
-    }
-
-    @media (max-width: 900px) {
-        .cart-page   { flex-direction: column; }
-        .cart-right  { width: 100%; position: static; }
-    }
-    </style>
-    {% endblock %}
-
-    {% block breadcrumb %}
-    <div class="breadcrumb-bar">
+{% block breadcrumb %}
+<div class="breadcrumb-bar">
     <a href="{% url 'shopcore:home' %}">Home</a>
     <span class="sep">›</span>
     <strong>Shopping Cart</strong>
-    </div>
-    {% endblock %}
+</div>
+{% endblock %}
 
-    {% block filter_sidebar %}{% endblock %}
+{% block filter_sidebar %}{% endblock %}
 
-    {% block content %}
-    <div class="section-title">
+{% block content %}
+<div class="section-title">
     <i class="fa fa-shopping-cart" style="color:#f06292;"></i>
     Shopping Cart
-    {% if cart_data %}<span>({{ cart_data|length }} item{{ cart_data|length|pluralize }})</span>{% endif %}
-    </div>
+    {% if cart_data %}<span id="cartItemCount">({{ cart_data|length }} item{{ cart_data|length|pluralize }})</span>{% endif %}
+</div>
 
-    {% if not cart_data %}
-    <div class="cart-empty">
-        <div class="empty-icon">🛒</div>
-        <h3>Your cart is empty</h3>
-        <p>Looks like you haven't added anything yet. Start shopping!</p>
-        <a href="{% url 'products:product_list' %}" class="shop-btn">
+{% if not cart_data %}
+<div class="cart-empty">
+    <div class="empty-icon">🛒</div>
+    <h3>Your cart is empty</h3>
+    <p>Looks like you haven't added anything yet. Start shopping!</p>
+    <a href="{% url 'products:product_list' %}" class="shop-btn">
         <i class="fa fa-arrow-left"></i> Continue Shopping
-        </a>
-    </div>
+    </a>
+</div>
 
-    {% else %}
-    <div class="cart-page">
-    <!-- ── LEFT: ITEMS ── -->
-    <div class="cart-left">
-
+{% else %}
+<div class="cart-page">
+    <!-- ══ LEFT: ITEMS ══ -->
+    <div class="cart-left" id="cartItemsContainer">
         {% if any_unavailable %}
-        <div class="blocked-notice">
-        ⚠️ Some items are no longer available. Remove them to proceed to checkout.
+        <div class="blocked-notice" id="unavailableNotice">
+            ⚠️ Some items are no longer available. Remove them to proceed to checkout.
         </div>
         {% endif %}
 
         {% for d in cart_data %}
         {% with item=d.item variant=d.variant product=d.product %}
-        <div class="cart-item {% if not d.available %}unavailable{% elif d.stock == 0 %}out-of-stock{% endif %}">
+        <div class="cart-item {% if not d.available %}unavailable{% elif d.stock == 0 %}out-of-stock{% endif %}"
+             id="cartItem_{{ item.id }}"
+             data-item-id="{{ item.id }}"
+             data-product-id="{{ product.id }}"
+             data-product-name="{{ product.product_name|escapejs }}"
+             data-available="{{ d.available|yesno:'true,false' }}"
+             data-stock="{{ d.stock }}">
 
-        <!-- Image -->
-        <div class="item-img">
-            {% if d.img_url %}
-            <img src="{{ d.img_url }}" alt="{{ product.product_name }}" loading="lazy">
-            {% else %}
-            <span class="placeholder">👕</span>
-            {% endif %}
-        </div>
-
-        <!-- Body -->
-        <div class="item-body">
-            <div class="item-name">
-            <a href="{% url 'products:product_detail' product_id=product.id %}" style="color:inherit;">
-                {{ product.product_name }}
-            </a>
-            </div>
-            <div class="item-meta">
-            <span><i class="fa fa-palette" style="color:#f06292;"></i> {{ variant.color }}</span>
-            <span><i class="fa fa-child" style="color:#f06292;"></i> {{ variant.age_group }}</span>
-            <span style="color:#aaa;">SKU: {{ variant.sku }}</span>
+            <!-- Image -->
+            <div class="item-img">
+                {% if d.img_url %}
+                <img src="{{ d.img_url }}" alt="{{ product.product_name }}" loading="lazy">
+                {% else %}
+                <span class="placeholder">👕</span>
+                {% endif %}
             </div>
 
-            <div class="item-price-row">
-            <span class="item-price">₹{{ product.final_price }}</span>
-            {% if product.discount_percent > 0 %}
-            <span class="item-discount">{{ product.discount_percent }}% off</span>
-            {% endif %}
+            <!-- Body -->
+            <div class="item-body">
+                {% if not d.available %}
+                <div class="badge-err" style="margin-bottom:8px;">
+                    ❌ Product is temporarily removed from the list.
+                </div>
+                {% endif %}
+                <div class="item-name">
+                    <a href="{% url 'products:product_detail' product_id=product.id %}" style="color:inherit;">
+                        {{ product.product_name }}
+                    </a>
+                </div>
+                <div class="item-meta">
+                    <span><i class="fa fa-palette" style="color:#f06292;"></i> {{ variant.color }}</span>
+                    <span><i class="fa fa-child" style="color:#f06292;"></i> {{ variant.age_group }}</span>
+                    <span style="color:#aaa;">SKU: {{ variant.sku }}</span>
+                </div>
+                <div class="item-price-row">
+                    <span class="item-price">₹{{ product.final_price }}</span>
+                    {% if product.discount_percent > 0 %}
+                    <span class="item-discount">{{ product.discount_percent }}% off</span>
+                    {% endif %}
+                </div>
+
+                {% if d.available and d.stock == 0 %}
+                <span class="badge-err">❌ Out of stock</span>
+                {% elif d.available and d.exceeds_stock %}
+                <span class="badge-warn">⚠️ Only {{ d.stock }} available</span>
+                {% endif %}
+
+                <!-- Qty Controls + Remove -->
+                <div class="qty-row">
+                    {% if d.available and d.stock > 0 %}
+                    <div class="qty-box" id="qtyBox_{{ item.id }}">
+                        <button class="qty-btn"
+                                data-action="decrement"
+                                data-item="{{ item.id }}"
+                                {% if item.quantity <= 1 %}disabled{% endif %}>−</button>
+                        <span class="qty-num" id="qtyNum_{{ item.id }}">{{ item.quantity }}</span>
+                        <button class="qty-btn"
+                                data-action="increment"
+                                data-item="{{ item.id }}"
+                                {% if item.quantity >= d.max_qty %}disabled{% endif %}>+</button>
+                    </div>
+                    <span style="font-size:11px;color:#aaa;">Max {{ MAX_QTY }}</span>
+                    <div class="qty-spinner" id="qtySpinner_{{ item.id }}"></div>
+                    {% endif %}
+
+                    <!-- Remove button — triggers save-to-wishlist modal -->
+                    <button class="remove-btn"
+                            data-item="{{ item.id }}"
+                            data-name="{{ product.product_name|escapejs }}"
+                            data-available="{{ d.available|yesno:'true,false' }}"
+                            onclick="openRemoveModal(this)">
+                        <i class="fa fa-trash-alt"></i> Remove
+                    </button>
+                </div>
+                <div class="qty-error" id="qtyErr_{{ item.id }}"></div>
             </div>
 
-            {% if not d.available %}
-            <span class="badge-err">❌ This product is no longer available</span>
-            {% elif d.stock == 0 %}
-            <span class="badge-err">❌ Out of stock</span>
-            {% elif d.exceeds_stock %}
-            <span class="badge-warn">⚠️ Only {{ d.stock }} available</span>
-            {% endif %}
-
-            <!-- Qty + Remove -->
-            <div class="qty-row" style="margin-top:10px;">
-            {% if d.available and d.stock > 0 %}
-            <div class="qty-box">
-                <form method="post" action="{% url 'shopcore:update_cart_quantity' item_id=item.id %}" style="display:contents;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="decrement">
-                <button class="qty-btn" type="submit"
-                    {% if item.quantity <= 1 %}disabled{% endif %}>−</button>
-                </form>
-                <span class="qty-num">{{ item.quantity }}</span>
-                <form method="post" action="{% url 'shopcore:update_cart_quantity' item_id=item.id %}" style="display:contents;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="increment">
-                <button class="qty-btn" type="submit"
-                    {% if item.quantity >= d.max_qty %}disabled{% endif %}>+</button>
-                </form>
+            <!-- Item Total -->
+            <div class="item-total">
+                <div class="item-total-label">Item Total</div>
+                <div class="item-total-val" id="itemTotal_{{ item.id }}">₹{{ d.item_total }}</div>
             </div>
-            <span style="font-size:11px;color:#aaa;">Max {{ MAX_QTY }}</span>
-            {% endif %}
-
-            <form method="post"
-                    action="{% url 'shopcore:remove_from_cart' item_id=item.id %}"
-                    onsubmit="return confirmRemove(event, '{{ product.product_name|escapejs }}')"
-                    style="margin-left:auto;">
-                {% csrf_token %}
-                <button class="remove-btn" type="submit">
-                <i class="fa fa-trash-alt"></i> Remove
-                </button>
-            </form>
-            </div>
-        </div>
-
-        <!-- Total -->
-        <div class="item-total">
-            <div class="item-total-label">Item Total</div>
-            <div class="item-total-val">₹{{ d.item_total }}</div>
-        </div>
         </div>
         {% endwith %}
         {% endfor %}
-    </div>
+    </div><!-- end cart-left -->
 
-    <!-- ── RIGHT: SUMMARY ── -->
+    <!-- ══ RIGHT: SUMMARY ══ -->
     <div class="cart-right">
         <div class="summary-card">
-        <h3><i class="fa fa-receipt" style="color:#f06292;"></i> Order Summary</h3>
-
-        {% for d in cart_data %}
-        {% if d.available %}
-        <div class="summary-row" style="font-size:13px;color:#888;">
-            <span>{{ d.product.product_name }} × {{ d.item.quantity }}</span>
-            <span>₹{{ d.item_total }}</span>
-        </div>
-        {% endif %}
-        {% endfor %}
-
-        <div class="summary-row" style="margin-top:10px;">
-            <span>Subtotal</span><span>₹{{ subtotal }}</span>
-        </div>
-        <div class="summary-row">
-            <span>Shipping</span>
-            <span class="free">{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
-        </div>
-        <div class="summary-row total">
-            <span>Grand Total</span><span>₹{{ grand_total }}</span>
-        </div>
-
-        {% if checkout_blocked %}
-            <div class="blocked-notice" style="margin-top:14px;">
-            ⚠️ Resolve issues above before checkout.
+            <h3><i class="fa fa-receipt" style="color:#f06292;"></i> Order Summary</h3>
+            {% for d in cart_data %}
+            {% if d.available %}
+            <div class="summary-row" style="font-size:13px;color:#888;" id="summaryLine_{{ d.item.id }}">
+                <span>{{ d.product.product_name }} × <span id="summaryQty_{{ d.item.id }}">{{ d.item.quantity }}</span></span>
+                <span id="summaryLineTotal_{{ d.item.id }}">₹{{ d.item_total }}</span>
             </div>
-            <span class="checkout-btn disabled">Proceed to Checkout</span>
-        {% else %}
-            <a href="{% url 'shopcore:checkout' %}" class="checkout-btn">
-            Proceed to Checkout →
+            {% endif %}
+            {% endfor %}
+            <div class="summary-row" style="margin-top:10px;">
+                <span>Subtotal</span>
+                <span id="summarySubtotal">₹{{ subtotal }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span class="free">{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
+            </div>
+            <div class="summary-row total">
+                <span>Grand Total</span>
+                <span id="summaryGrandTotal">₹{{ grand_total }}</span>
+            </div>
+
+            {% if checkout_blocked %}
+            <div class="blocked-notice" style="margin-top:14px;" id="checkoutBlockedNotice">
+                ⚠️ Resolve issues above before checkout.
+            </div>
+            <span class="checkout-btn disabled" id="checkoutBtn">Proceed to Checkout</span>
+            {% else %}
+            <a href="{% url 'shopcore:checkout' %}" class="checkout-btn" id="checkoutBtn">
+                Proceed to Checkout →
             </a>
-        {% endif %}
+            {% endif %}
 
-        <form method="post" action="{% url 'shopcore:clear_cart' %}"
-                onsubmit="return confirmClear(event)">
-            {% csrf_token %}
-            <button class="clear-cart-btn" type="submit">
-            <i class="fa fa-trash"></i> Clear Cart
-            </button>
-        </form>
+            <form method="post" action="{% url 'shopcore:clear_cart' %}"
+                  onsubmit="return confirmClear(event)">
+                {% csrf_token %}
+                <button class="clear-cart-btn" type="submit">
+                    <i class="fa fa-trash"></i> Clear Cart
+                </button>
+            </form>
         </div>
-
         <div style="margin-top:14px;text-align:center;">
-        <a href="{% url 'products:product_list' %}" style="font-size:13px;color:#f06292;">
-            <i class="fa fa-arrow-left"></i> Continue Shopping
-        </a>
+            <a href="{% url 'products:product_list' %}" style="font-size:13px;color:#f06292;">
+                <i class="fa fa-arrow-left"></i> Continue Shopping
+            </a>
         </div>
     </div>
-    </div>
-    {% endif %}
+</div><!-- end cart-page -->
+{% endif %}
 
-    <script>
-    function confirmRemove(e, name) {
+<!-- ══ SAVE-TO-WISHLIST MODAL ══ -->
+<div id="wlSaveModal" role="dialog" aria-modal="true">
+    <div class="wl-modal-box">
+        <div class="wl-modal-icon">🛒</div>
+        <div class="wl-modal-title">Remove from cart?</div>
+        <div class="wl-modal-sub" id="wlModalSub">
+            Would you like to save <strong id="wlModalName"></strong> to your wishlist before removing?
+        </div>
+        <div class="wl-modal-btns">
+            <button class="wl-modal-btn wl-modal-btn-cancel" onclick="closeRemoveModal()">
+                Cancel
+            </button>
+            <button class="wl-modal-btn wl-modal-btn-save" id="wlSaveYesBtn"
+                    onclick="doRemove(true)">
+                <i class="fa-regular fa-heart"></i> Save &amp; Remove
+            </button>
+            <button class="wl-modal-btn wl-modal-btn-remove"
+                    onclick="doRemove(false)">
+                <i class="fa fa-trash"></i> Just Remove
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="kdToast"></div>
+
+<!-- CSRF for AJAX -->
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   CART AJAX ENGINE
+   All quantity updates and removals happen via fetch().
+   The page never reloads for these actions.
+══════════════════════════════════════════════════════════ */
+const CSRF = document.getElementById('csrfToken').value;
+
+// ── Toast helper ──────────────────────────────────────────
+function showToast(msg, type) {
+    const t = document.getElementById('kdToast');
+    t.textContent = msg;
+    t.className   = 'show ' + (type || '');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.className = ''; }, 3200);
+}
+
+// ── Update summary totals in the sidebar ─────────────────
+function updateSummary(subtotal, grandTotal) {
+    const sub = document.getElementById('summarySubtotal');
+    const grd = document.getElementById('summaryGrandTotal');
+    if (sub) { sub.textContent = '₹' + parseFloat(subtotal).toFixed(2); sub.classList.add('summary-updating'); setTimeout(() => sub.classList.remove('summary-updating'), 400); }
+    if (grd) { grd.textContent = '₹' + parseFloat(grandTotal).toFixed(2); }
+}
+
+// ── Update the cart item count badge ─────────────────────
+function updateCartCountBadge(count) {
+    // Update the "(N items)" label in section title
+    const badge = document.getElementById('cartItemCount');
+    if (badge) badge.textContent = '(' + count + ' item' + (count !== 1 ? 's' : '') + ')';
+    // Update header cart icon badge if exists
+    const hdr = document.querySelector('.cart-count-badge, [data-cart-count]');
+    if (hdr) hdr.textContent = count;
+}
+
+/* ── QTY +/- BUTTONS ──────────────────────────────────── */
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.qty-btn[data-action]');
+    if (!btn || btn.disabled) return;
     e.preventDefault();
-    openConfirmModal('Remove "' + name + '" from your cart?', function () {
-        e.target.submit();
+
+    const itemId  = btn.dataset.item;
+    const action  = btn.dataset.action;
+    const spinner = document.getElementById('qtySpinner_' + itemId);
+    const errEl   = document.getElementById('qtyErr_'    + itemId);
+
+    // Disable both buttons while request is in flight
+    const box = document.getElementById('qtyBox_' + itemId);
+    box.querySelectorAll('.qty-btn').forEach(b => b.disabled = true);
+    if (spinner) { spinner.style.display = 'block'; }
+    if (errEl)   { errEl.style.display = 'none'; }
+
+    const fd = new FormData();
+    fd.append('action', action);
+
+    fetch("{% url 'shopcore:update_cart_quantity' item_id=0 %}".replace('/0/', '/' + itemId + '/'), {
+        method:  'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
+        body:    fd,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (spinner) spinner.style.display = 'none';
+
+        if (data.error) {
+            if (errEl) { errEl.textContent = data.error; errEl.style.display = 'block'; }
+            showToast(data.error, 'error');
+            // Restore qty num to last valid value from data if given
+            if (data.quantity) document.getElementById('qtyNum_' + itemId).textContent = data.quantity;
+        } else {
+            const qty    = data.quantity;
+            const maxQty = data.max_qty;
+
+            // Update qty display
+            document.getElementById('qtyNum_' + itemId).textContent = qty;
+
+            // Update item total
+            const totEl = document.getElementById('itemTotal_' + itemId);
+            if (totEl) totEl.textContent = '₹' + parseFloat(data.item_total).toFixed(2);
+
+            // Update summary line qty
+            const sqEl = document.getElementById('summaryQty_' + itemId);
+            if (sqEl) sqEl.textContent = qty;
+            const sltEl = document.getElementById('summaryLineTotal_' + itemId);
+            if (sltEl) sltEl.textContent = '₹' + parseFloat(data.item_total).toFixed(2);
+
+            updateSummary(data.subtotal, data.grand_total);
+
+            // Re-enable/disable +/- correctly
+            const decBtn = box.querySelector('[data-action="decrement"]');
+            const incBtn = box.querySelector('[data-action="increment"]');
+            if (decBtn) decBtn.disabled = (qty <= 1);
+            if (incBtn) incBtn.disabled = (qty >= maxQty);
+
+            if (data.warning) {
+                if (errEl) { errEl.textContent = data.warning; errEl.style.display = 'block'; }
+                showToast(data.warning, 'error');
+            }
+        }
+        // Re-enable buttons that weren't clamped
+        if (!data.error) {
+            box.querySelectorAll('.qty-btn').forEach(b => {
+                b.disabled = (
+                    (b.dataset.action === 'decrement' && parseInt(document.getElementById('qtyNum_' + itemId).textContent) <= 1) ||
+                    (b.dataset.action === 'increment' && parseInt(document.getElementById('qtyNum_' + itemId).textContent) >= (data.max_qty || {{ MAX_QTY }}))
+                );
+            });
+        } else {
+            // restore on error
+            box.querySelectorAll('.qty-btn').forEach(b => b.disabled = false);
+        }
+    })
+    .catch(() => {
+        if (spinner) spinner.style.display = 'none';
+        box.querySelectorAll('.qty-btn').forEach(b => b.disabled = false);
+        showToast('Network error. Please try again.', 'error');
     });
-    return false;
-    }
-    function confirmClear(e) {
+});
+
+/* ── REMOVE MODAL ────────────────────────────────────────── */
+let _removeItemId   = null;
+let _removeItemName = null;
+let _removeIsAvailable = true;
+
+function openRemoveModal(btn) {
+    _removeItemId      = btn.dataset.item;
+    _removeItemName    = btn.dataset.name;
+    _removeIsAvailable = btn.dataset.available === 'true';
+
+    document.getElementById('wlModalName').textContent = _removeItemName;
+
+    // Hide the "save to wishlist" option if product is blocked/unavailable
+    const saveBtn = document.getElementById('wlSaveYesBtn');
+    if (saveBtn) saveBtn.style.display = _removeIsAvailable ? '' : 'none';
+
+    const modal = document.getElementById('wlSaveModal');
+    modal.classList.add('open');
+}
+
+function closeRemoveModal() {
+    document.getElementById('wlSaveModal').classList.remove('open');
+    _removeItemId = _removeItemName = null;
+}
+
+// Close on backdrop click
+document.getElementById('wlSaveModal').addEventListener('click', function(e) {
+    if (e.target === this) closeRemoveModal();
+});
+
+function doRemove(saveToWishlist) {
+    closeRemoveModal();
+    if (!_removeItemId) return;
+
+    const itemEl = document.getElementById('cartItem_' + _removeItemId);
+    if (itemEl) itemEl.classList.add('removing');
+
+    const fd = new FormData();
+    fd.append('save_to_wishlist', saveToWishlist ? '1' : '0');
+
+    fetch("{% url 'shopcore:remove_from_cart' item_id=0 %}".replace('/0/', '/' + _removeItemId + '/'), {
+        method:  'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
+        body:    fd,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            setTimeout(() => {
+                if (itemEl) itemEl.remove();
+                // Remove summary line
+                const sl = document.getElementById('summaryLine_' + _removeItemId);
+                if (sl) sl.remove();
+            }, 350);
+
+            updateSummary(data.subtotal, data.grand_total);
+            updateCartCountBadge(data.cart_count);
+
+            const msg = data.saved_to_wishlist
+                ? `"${data.product_name}" removed and saved to wishlist.`
+                : `"${data.product_name}" removed from cart.`;
+            showToast(msg, 'success');
+
+            // If cart is now empty, reload to show empty state
+            if (data.cart_count === 0) {
+                setTimeout(() => location.reload(), 500);
+            }
+        } else {
+            if (itemEl) itemEl.classList.remove('removing');
+            showToast(data.error || 'Failed to remove item.', 'error');
+        }
+    })
+    .catch(() => {
+        if (itemEl) itemEl.classList.remove('removing');
+        showToast('Network error. Please try again.', 'error');
+    });
+}
+
+/* ── CLEAR CART confirm ──────────────────────────────────── */
+function confirmClear(e) {
     e.preventDefault();
     openConfirmModal('Clear your entire cart? This cannot be undone.', function () {
         e.target.submit();
     });
     return false;
-    }
-    </script>
-    {% endblock %}
+}
+</script>
+{% endblock %}
