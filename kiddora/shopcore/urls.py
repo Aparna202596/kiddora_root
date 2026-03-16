@@ -31,6 +31,8 @@ urlpatterns = [
     path("admin/banners/",                       store_views.admin_banner_list,   name="admin_banner_list"),
     path("admin/banners/add/",                   store_views.admin_add_banner,    name="admin_add_banner"),
     path("admin/banners/<int:banner_id>/edit/",  store_views.admin_edit_banner,   name="admin_edit_banner"),
+    path("admin/banners/block/<int:banner_id>/", store_views.admin_block_banner, name="admin_block_banner"),
+    path("admin/banners/unblock/<int:banner_id>/", store_views.admin_unblock_banner, name="admin_unblock_banner"),
     path("admin/banners/<int:banner_id>/delete/",store_views.admin_delete_banner, name="admin_delete_banner"),
     path("admin/banners/<int:banner_id>/toggle/",store_views.admin_toggle_banner, name="admin_toggle_banner"),
 

@@ -110,6 +110,19 @@
         <div class="info-note">
             ✅ This offer will be applied to matching products / categories again.
         </div>
+    
+    <!-- ── BANNER (add-on) ──────────────────────────────── -->
+    {% elif banner %}
+        <h2>Unblock Banner?</h2>
+        <p>You are about to unblock:</p>
+        <p><strong>{{ banner.title }}</strong></p>
+        <p style="font-size:13px; color:#888;">
+            Slot: {{ banner.get_slot_display }}
+        </p>
+        <div class="info-note">
+            ✅ This banner will become visible on the homepage again.
+        </div>
+
     {% endif %}
 
     <form method="post">
@@ -130,6 +143,8 @@
                 <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel">Cancel</a>
             {% elif offer %}
                 <a href="{% url 'shopcore:admin_offer_list' %}" class="btn-cancel">Cancel</a>
+            {% elif banner %}
+                <a href="{% url 'shopcore:admin_banner_list' %}" class="btn-cancel">Cancel</a>
             {% endif %}
         </div>
     </form>

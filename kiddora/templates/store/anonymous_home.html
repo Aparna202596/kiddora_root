@@ -126,9 +126,18 @@
 
     /* carousel */
     .kd-carousel {
-        position: relative; border-radius: 14px; overflow: hidden;
-        margin-bottom: 48px; background: #fce4ec;
-        aspect-ratio: 16/5; min-height: 160px; max-height: 240px;
+        position: relative; 
+        width: 80vw;  
+        left:50%;
+        transform: translateX(-50%);
+        border-radius: 14px; 
+        overflow: hidden;
+        margin-bottom: 56px; 
+        background: #fce4ec;
+        aspect-ratio: 21/9;
+        min-height: 220px;
+        max-height: 420px;
+
     }
     .kd-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
     .kd-slide.active { opacity: 1; pointer-events: auto; }
@@ -142,6 +151,7 @@
         cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center;
         box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: background .18s;
     }
+
     .kd-carousel-btn:hover { background: #fff; }
     .kd-carousel-btn.prev { left: 12px; }
     .kd-carousel-btn.next { right: 12px; }
@@ -229,13 +239,70 @@
     .social-icons a { font-size: 18px; color: #555; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #e0e0e0; display: flex; align-items: center; justify-content: center; transition: color .2s, border-color .2s, background .2s; }
     .social-icons a:hover { color: #f06292; border-color: #f06292; background: rgba(240,98,146,.06); }
     .footer-bottom { text-align: center; padding: 16px 0; margin-top: 36px; font-size: 13px; color: #888; border-top: 1px solid #eaeaea; background: #fff; }
+    .kd-cat-carousel-wrapper {
+        position: relative;
+    }
 
+    .kd-cat-grid.kd-carousel-scroll {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        gap: 18px;
+        padding: 0 4px 12px;           /* breathing room */
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;         /* hide scrollbar Firefox */
+    }
+
+    .kd-cat-grid.kd-carousel-scroll::-webkit-scrollbar {
+        display: none;                 /* hide scrollbar Chrome/Safari */
+    }
+
+    .kd-cat-card {
+        flex: 0 0 160px;               /* fixed width cards – adjust as needed */
+        text-align: center;
+    }
+
+    .kd-cat-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.9);
+        border: 1px solid #eee;
+        color: #f06292;
+        font-size: 1.3rem;
+        cursor: pointer;
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.2s;
+    }
+
+    .kd-cat-arrow:hover {
+        background: #f06292;
+        color: white;
+        transform: translateY(-50%) scale(1.08);
+    }
+
+    .kd-cat-arrow.prev { left: -12px; }
+    .kd-cat-arrow.next { right: -12px; }
+
+    /* Hide arrows on very small screens or when not needed */
+    @media (max-width: 480px) {
+        .kd-cat-arrow { display: none; }
+    }
     /* ══ RESPONSIVE ═════════════════════════════════════════ */
     @media (max-width: 1024px) { .kd-cat-grid,.kd-trend-grid,.kd-product-grid { grid-template-columns: repeat(4,1fr); } }
     @media (max-width: 992px)  { .main-nav { display: none; } .footer-container { grid-template-columns: repeat(2,1fr); } }
     @media (max-width: 700px)  { .kd-cat-grid { grid-template-columns: repeat(3,1fr); gap: 12px; } .kd-trend-grid,.kd-product-grid { grid-template-columns: repeat(3,1fr); gap: 12px; } .kd-carousel { aspect-ratio: 16/7; } }
     @media (max-width: 480px)  { .kd-cat-grid { grid-template-columns: repeat(3,1fr); gap: 8px; } .kd-trend-grid,.kd-product-grid { grid-template-columns: repeat(2,1fr); } .search-form input[type="text"] { width: 110px; } .footer-container { grid-template-columns: 1fr; } }
     @media (max-width: 360px)  { .header-container { padding: 10px 12px; } }
+    @media (max-width: 700px) { .kd-carousel { margin-left: -12px; margin-right: -12px; border-radius: 12px; } }
     </style>
 </head>
 <body>
@@ -279,10 +346,19 @@
     </div>
 </header>
 
-<!-- ══ HOME CONTENT (identical to home.html) ══ -->
-<div class="kd-home">
-
+<div class="kd-home"> 
     {# ── BANNER / HERO CAROUSEL ─────────────────────────── #}
+    {% comment %} <div class="kd-carousel" id="kdCarousel">
+        <div class="kd-slide active">
+            <img src="{% static 'images/ramadan_banner.jpg' %}" alt="Ramadan Big Sale - Up to 70% Off" loading="eager">
+            <!-- Optional overlay text / CTA -->
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; text-shadow:0 2px 8px black; text-align:center; padding:20px;">
+                <h1 style="font-size:3.5rem; margin-bottom:12px;">Ramadan BIG SALE</h1>
+                <p style="font-size:1.8rem; margin-bottom:24px;">UP TO <strong>70%</strong> OFF</p>
+                <a href="/products/user/products/?on_sale=true" style="background:#f06292; color:white; padding:14px 32px; border-radius:30px; font-weight:600; text-decoration:none; font-size:1.3rem;">SHOP & SAVE!</a>
+            </div>
+        </div>
+    </div> {% endcomment %}
     {% if hero_banners %}
     <div class="kd-carousel" id="kdCarousel">
         {% for banner in hero_banners %}
@@ -307,35 +383,38 @@
         <p>Welcome to Kiddora 👕 — Shop Joyful Kids' Fashion</p>
     </div>
     {% endif %}
-
+    
     {# ── SHOP BY CATEGORY ───────────────────────────────── #}
     <section class="kd-section">
         <h3 class="kd-section-title">SHOP BY CATEGORY</h3>
-        <div class="kd-cat-grid">
-            {% for cat in categories %}
-            <a href="{% url 'products:product_list_by_category' category_id=cat.id %}" class="kd-cat-card">
-                <div class="kd-cat-img">
-                    {% if cat.category_image %}
-                        <img src="{{ cat.category_image.url }}" alt="{{ cat.category_name }}" loading="lazy">
-                    {% else %}
-                        <span class="kd-cat-emoji">
-                            {% with i=forloop.counter0 %}
-                                {% if i == 0 %}👶{% elif i == 1 %}👦{% elif i == 2 %}👧
-                                {% elif i == 3 %}🧥{% elif i == 4 %}👗{% else %}🎉{% endif %}
-                            {% endwith %}
-                        </span>
-                    {% endif %}
-                </div>
-                <div class="kd-cat-name">{{ cat.category_name }}</div>
-            </a>
-            {% empty %}
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👶</span></div><div class="kd-cat-name">Newborn</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👦</span></div><div class="kd-cat-name">Boys</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👧</span></div><div class="kd-cat-name">Girls</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">🧥</span></div><div class="kd-cat-name">Casual Wear</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👗</span></div><div class="kd-cat-name">Ethnic Wear</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">🎉</span></div><div class="kd-cat-name">Party Wear</div></a>
-            {% endfor %}
+        
+        <div class="kd-cat-carousel-wrapper">
+            <button class="kd-cat-arrow prev" onclick="scrollCat('left')"><i class="fa-solid fa-chevron-left"></i></button>
+            
+            <div class="kd-cat-grid kd-carousel-scroll" id="catCarousel">
+                {% for cat in categories %}
+                <a href="{% url 'products:product_list_by_category' category_id=cat.id %}" class="kd-cat-card">
+                    <div class="kd-cat-img">
+                        {% if cat.category_image %}
+                            <img src="{{ cat.category_image.url }}" alt="{{ cat.category_name }}" loading="lazy">
+                        {% else %}
+                            <span class="kd-cat-emoji">
+                                {% with i=forloop.counter0 %}
+                                    {% if i == 0 %}👶{% elif i == 1 %}👦{% elif i == 2 %}👧
+                                    {% elif i == 3 %}🧥{% elif i == 4 %}👗{% else %}🎉{% endif %}
+                                {% endwith %}
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="kd-cat-name">{{ cat.category_name }}</div>
+                </a>
+                {% empty %}
+                <!-- Optional fallback -->
+                <div class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">🛒</span></div><div class="kd-cat-name">No categories yet</div></div>
+                {% endfor %}
+            </div>
+            
+            <button class="kd-cat-arrow next" onclick="scrollCat('right')"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     </section>
 
@@ -419,7 +498,7 @@
     </section>
     {% endif %}
 
-</div>{# end .kd-home #}
+    </div>{# end .kd-home #} 
 
 <!-- ══ FOOTER ══ -->
 <footer class="site-footer">
@@ -574,6 +653,18 @@ window.switchTab = function(gender, btn){
     window.addEventListener('pageshow', hide);
     window.addEventListener('popstate', hide);
 })();
+
+function scrollCat(direction) {
+    const container = document.getElementById('catCarousel');
+    if (!container) return;
+    
+    const scrollAmount = 300; // pixels to scroll – adjust for feel
+    if (direction === 'left') {
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else {
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+}
 </script>
 </body>
 </html>

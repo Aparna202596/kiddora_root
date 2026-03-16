@@ -38,7 +38,7 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th>Id</th>
                     <th>Image</th>
                     <th>Title</th>
                     <th>Status</th>
@@ -46,7 +46,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for banner in page_obj %}
+            {% for banner in banners %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
                     <td>
@@ -103,7 +103,7 @@
         </table>
     </div>
 
-    {% include "pagination.html" with page_obj=page_obj %}
+    {% include "pagination.html" %}
 </div>
 
 {% include "confirm_modal.html" %}

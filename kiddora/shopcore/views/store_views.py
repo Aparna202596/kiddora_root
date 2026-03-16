@@ -21,7 +21,7 @@ def anonymous_home(request):
     hero_banners      = [b for b in live_banners if b.slot == "HERO"][:6]
     secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
 
-    categories   = Category.objects.filter(is_active=True).order_by("category_name")[:6]
+    categories = Category.objects.filter(is_active=True).order_by("category_name")
     top_products = list(
         _active_products()
         .annotate(total_sold=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0)))
@@ -32,7 +32,7 @@ def anonymous_home(request):
     _attach_reviews(new_arrivals)
 
     uw = _cart_wishlist_ctx(request.user)
-    return render(request, "store/home.html", {
+    return render(request, "store/anonymous_home.html", {
         "hero_banners":         hero_banners,
         "secondary_banners":    secondary_banners,
         "categories":           categories,
@@ -96,7 +96,7 @@ def home(request):
     hero_banners      = [b for b in live_banners if b.slot == "HERO"][:6]
     secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
 
-    categories   = Category.objects.filter(is_active=True).order_by("category_name")[:6]
+    categories = Category.objects.filter(is_active=True).order_by("category_name")
     top_products = list(
         _active_products()
         .annotate(total_sold=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0)))
@@ -134,7 +134,9 @@ def admin_banner_list(request):
     if slot_f:
         banners = banners.filter(slot=slot_f)
     return render(request, "banner/admin_banner_list.html", {
-        "banners": banners, "search": search, "slot_f": slot_f,
+        "banners": banners, 
+        "search": search, 
+        "slot_f": slot_f,
         "slot_choices": Banner.SLOT_CHOICES,
     })
 
@@ -228,6 +230,41 @@ def admin_edit_banner(request, banner_id):
         ),
     })
 
+# ─────────────────────────────────────────────────────────────
+# ADMIN — BLOCK BANNER
+# ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_block_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id)
+
+    if request.method == "POST":
+        banner.is_active = False
+        banner.save()
+        messages.success(request, f'Banner "{banner.title}" blocked.')
+        return redirect("shopcore:admin_banner_list")
+
+    return render(request, "admin_confirm_block.html", {
+        "banner": banner
+    })
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN — UNBLOCK BANNER
+# ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_unblock_banner(request, banner_id):
+    banner = get_object_or_404(Banner, id=banner_id)
+
+    if request.method == "POST":
+        banner.is_active = True
+        banner.save()
+        messages.success(request, f'Banner "{banner.title}" unblocked.')
+        return redirect("shopcore:admin_banner_list")
+
+    return render(request, "admin_confirm_unblock.html", {
+        "banner": banner
+    })
 
 # ─────────────────────────────────────────────────────────────
 # ADMIN — DELETE

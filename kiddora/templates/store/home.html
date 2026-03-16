@@ -5,11 +5,24 @@
 
 {% block extra_css %}
 <style>
-/* ══ HOME CONTENT — shared styles with anonymous_home.html ══ */
+
 .kd-home { max-width: 1300px; margin: 0 auto; padding: 24px 16px 60px; }
 
 /* carousel */
-.kd-carousel { position: relative; border-radius: 14px; overflow: hidden; margin-bottom: 48px; background: #fce4ec; aspect-ratio: 16/5; min-height: 160px; max-height: 240px; }
+.kd-carousel {
+        position: relative; 
+        width: 80vw;  
+        left:50%;
+        transform: translateX(-50%);
+        border-radius: 14px; 
+        overflow: hidden;
+        margin-bottom: 56px; 
+        background: #fce4ec;
+        aspect-ratio: 21/9;
+        min-height: 220px;
+        max-height: 420px;
+
+    }
 .kd-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .6s ease; pointer-events: none; }
 .kd-slide.active { opacity: 1; pointer-events: auto; }
 .kd-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -102,7 +115,7 @@
 /* toast */
 #kdHomeToast {
     position: fixed; bottom: 24px; right: 24px; z-index: 100000;
-    background: #222; color: #fff; padding: 11px 18px; border-radius: 10px;
+    background: #ffffff; color: #fff; padding: 11px 18px; border-radius: 10px;
     font-size: 14px; font-weight: 600; opacity: 0; transform: translateY(10px);
     transition: opacity .3s, transform .3s; pointer-events: none;
     max-width: min(300px, 90vw);
@@ -119,9 +132,29 @@
 {% endblock %}
 
 {% block content %}
-<div class="kd-home">
+{% if messages %}
+    <div class="messages" id="msgContainer">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     {# ── BANNER / HERO CAROUSEL ─────────────────────────── #}
+    {% comment %} <div class="kd-carousel" id="kdCarousel">
+        <div class="kd-slide active">
+            <img src="{% static 'images/ramadan_banner.jpg' %}" alt="Ramadan Big Sale - Up to 70% Off" loading="eager">
+            <!-- Optional overlay text / CTA -->
+            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; text-shadow:0 2px 8px black; text-align:center; padding:20px;">
+                <h1 style="font-size:3.5rem; margin-bottom:12px;">Ramadan BIG SALE</h1>
+                <p style="font-size:1.8rem; margin-bottom:24px;">UP TO <strong>70%</strong> OFF</p>
+                <a href="/products/user/products/?on_sale=true" style="background:#f06292; color:white; padding:14px 32px; border-radius:30px; font-weight:600; text-decoration:none; font-size:1.3rem;">SHOP & SAVE!</a>
+            </div>
+        </div>
+    </div> {% endcomment %}
     {% if hero_banners %}
     <div class="kd-carousel" id="kdCarousel">
         {% for banner in hero_banners %}
@@ -150,31 +183,34 @@
     {# ── SHOP BY CATEGORY ───────────────────────────────── #}
     <section class="kd-section">
         <h3 class="kd-section-title">SHOP BY CATEGORY</h3>
-        <div class="kd-cat-grid">
-            {% for cat in categories %}
-            <a href="{% url 'products:product_list_by_category' category_id=cat.id %}" class="kd-cat-card">
-                <div class="kd-cat-img">
-                    {% if cat.category_image %}
-                        <img src="{{ cat.category_image.url }}" alt="{{ cat.category_name }}" loading="lazy">
-                    {% else %}
-                        <span class="kd-cat-emoji">
-                            {% with i=forloop.counter0 %}
-                                {% if i == 0 %}👶{% elif i == 1 %}👦{% elif i == 2 %}👧
-                                {% elif i == 3 %}🧥{% elif i == 4 %}👗{% else %}🎉{% endif %}
-                            {% endwith %}
-                        </span>
-                    {% endif %}
-                </div>
-                <div class="kd-cat-name">{{ cat.category_name }}</div>
-            </a>
-            {% empty %}
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👶</span></div><div class="kd-cat-name">Newborn</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👦</span></div><div class="kd-cat-name">Boys</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👧</span></div><div class="kd-cat-name">Girls</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">🧥</span></div><div class="kd-cat-name">Casual Wear</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">👗</span></div><div class="kd-cat-name">Ethnic Wear</div></a>
-            <a href="{% url 'products:product_list' %}" class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">🎉</span></div><div class="kd-cat-name">Party Wear</div></a>
-            {% endfor %}
+        
+        <div class="kd-cat-carousel-wrapper">
+            <button class="kd-cat-arrow prev" onclick="scrollCat('left')"><i class="fa-solid fa-chevron-left"></i></button>
+            
+            <div class="kd-cat-grid kd-carousel-scroll" id="catCarousel">
+                {% for cat in categories %}
+                <a href="{% url 'products:product_list_by_category' category_id=cat.id %}" class="kd-cat-card">
+                    <div class="kd-cat-img">
+                        {% if cat.category_image %}
+                            <img src="{{ cat.category_image.url }}" alt="{{ cat.category_name }}" loading="lazy">
+                        {% else %}
+                            <span class="kd-cat-emoji">
+                                {% with i=forloop.counter0 %}
+                                    {% if i == 0 %}👶{% elif i == 1 %}👦{% elif i == 2 %}👧
+                                    {% elif i == 3 %}🧥{% elif i == 4 %}👗{% else %}🎉{% endif %}
+                                {% endwith %}
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="kd-cat-name">{{ cat.category_name }}</div>
+                </a>
+                {% empty %}
+                <!-- Optional fallback -->
+                <div class="kd-cat-card"><div class="kd-cat-img"><span class="kd-cat-emoji">🛒</span></div><div class="kd-cat-name">No categories yet</div></div>
+                {% endfor %}
+            </div>
+            
+            <button class="kd-cat-arrow next" onclick="scrollCat('right')"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
     </section>
 
@@ -277,10 +313,9 @@
     </section>
     {% endif %}
 
-</div>{# end .kd-home #}
+{% comment %} </div>{# end .kd-home #} {% endcomment %}
 
-{# Toast for wishlist feedback #}
-<div id="kdHomeToast"></div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -384,5 +419,15 @@ window.switchTab = function(gender, btn){
         .catch(()=>{ showToast('Network error. Please try again.', 'error'); });
     });
 })();
+function scrollCat(direction) {
+    const container = document.getElementById('catCarousel');
+    if (!container) return;
+    const scrollAmount = 300; // adjust as needed
+    if (direction === 'left') {
+        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else {
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+}
 </script>
 {% endblock %}
