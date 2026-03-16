@@ -443,6 +443,8 @@ def admin_order_list(request):
 # ──────────────────────────────────────────────────────────────
 # ADMIN: ORDER DETAIL
 # ──────────────────────────────────────────────────────────────
+# shopcore/views/order_views.py
+
 @never_cache
 @admin_login_required
 def admin_order_detail(request, order_id):
@@ -454,18 +456,20 @@ def admin_order_detail(request, order_id):
         ),
         order_id=order_id,
     )
+    
     items_with_img = []
     for oi in order.order_items.all():
         product = oi.variant.product
         img_url = _img_url_for(product)
         items_with_img.append({"order_item": oi, "img_url": img_url})
+
     context = {
         "order": order,
         "items_with_img": items_with_img,
-        "status_choices": Order.ORDER_STATUS_CHOICES,
+        "status_choices": Order.ORDER_STATUS_CHOICES,                
+        "item_status_choices": OrderItem.ITEM_STATUS_CHOICES,        
     }
     return render(request, "orders/admin/admin_order_detail.html", context)
-
 # ──────────────────────────────────────────────────────────────
 # ADMIN: UPDATE ORDER STATUS
 # ──────────────────────────────────────────────────────────────
@@ -518,3 +522,30 @@ def admin_update_order_status(request, order_id):
         f"Order {order.order_id} status updated: {old_status} → {new_status}"
     )
     return redirect("shopcore:admin_order_detail", order_id=order.order_id)
+
+@never_cache
+@admin_login_required
+@transaction.atomic
+def admin_update_item_status(request, order_id, item_id):
+
+    if request.method != "POST":
+        return redirect("shopcore:admin_order_detail", order_id=order_id)
+
+    order = get_object_or_404(Order, order_id=order_id)
+    order_item = get_object_or_404(OrderItem, id=item_id, order=order)
+
+    new_status = request.POST.get("item_status")
+
+    if new_status not in dict(OrderItem.ITEM_STATUS_CHOICES):
+        messages.error(request, "Invalid item status.")
+        return redirect("shopcore:admin_order_detail", order_id=order_id)
+
+    order_item.item_status = new_status
+    order_item.save()
+
+    messages.success(
+        request,
+        f"Item '{order_item.variant.product.product_name}' updated to {new_status}"
+    )
+
+    return redirect("shopcore:admin_order_detail", order_id=order_id)

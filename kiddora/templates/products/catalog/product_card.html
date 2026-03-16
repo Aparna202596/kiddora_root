@@ -28,13 +28,12 @@
                     <span class="pc-final black">₹{{ product.final_price|floatformat:0 }}</span>
                 {% endif %}
             </div>
-
             <div class="pc-actions">
                 {# ── Wishlist toggle ── #}
                 {% if user.is_authenticated %}
                 <form method="post"
-                        action="#"
-                        class="pc-action-form">
+                      action="/shop/wishlist/toggle/{{ product.id }}/"   {# ← FIXED #}
+                      class="pc-action-form">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <button type="submit"
@@ -46,33 +45,31 @@
                 </form>
                 {% else %}
                 <a href="{% url 'accounts:user_login' %}?next={{ request.get_full_path }}"
-                    class="pc-icon-btn pc-wish"
-                    title="Login to wishlist"
-                    aria-label="Wishlist">
+                   class="pc-icon-btn pc-wish"
+                   title="Login to wishlist"
+                   aria-label="Wishlist">
                     <i class="fa-regular fa-heart"></i>
                 </a>
                 {% endif %}
 
-                {# ── Add to Cart ── #}
+                {# ── Add to Cart (unchanged — correct behaviour) ── #}
                 {% if product.total_stock == 0 %}
-                    {# Fully OOS — show disabled icon #}
                     <button class="pc-icon-btn pc-cart disabled"
                             disabled title="Out of stock" aria-label="Out of stock">
                         <i class="fa-solid fa-cart-shopping"></i>
                     </button>
                 {% elif user.is_authenticated %}
-                    {# Redirect to detail page where variant must be selected #}
                     <a href="{% url 'products:product_detail' product.id %}"
-                        class="pc-icon-btn pc-cart {% if product.id in cart_product_ids %}in-cart{% endif %}"
-                        title="{% if product.id in cart_product_ids %}View in cart{% else %}Add to cart{% endif %}"
-                        aria-label="Add to cart">
+                       class="pc-icon-btn pc-cart {% if product.id in cart_product_ids %}in-cart{% endif %}"
+                       title="{% if product.id in cart_product_ids %}View in cart{% else %}Add to cart{% endif %}"
+                       aria-label="Add to cart">
                         <i class="fa-solid fa-cart-shopping"></i>
                     </a>
                 {% else %}
                     <a href="{% url 'accounts:user_login' %}?next={{ request.get_full_path }}"
-                        class="pc-icon-btn pc-cart"
-                        title="Login to add to cart"
-                        aria-label="Add to cart">
+                       class="pc-icon-btn pc-cart"
+                       title="Login to add to cart"
+                       aria-label="Add to cart">
                         <i class="fa-solid fa-cart-shopping"></i>
                     </a>
                 {% endif %}

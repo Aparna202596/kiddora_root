@@ -151,7 +151,7 @@
         {{ addr.address_line1 }}<br>
         {% if addr.address_line2 %}{{ addr.address_line2 }}<br>{% endif %}
         {{ addr.city }}, {{ addr.state }} – {{ addr.pincode }}<br>
-        <i class="fa fa-phone" style="color:#f06292;"></i> {{ addr.phone }}
+        <i class="fa fa-phone" style="color:#f06292;"></i> {{ order.user.phone}}
       </div>
       {% endwith %}
     </div>
@@ -186,9 +186,11 @@
             onsubmit="return confirmStatusChange(event)">
         {% csrf_token %}
         <select name="order_status" id="statusSelect">
-          {% for val, label in valid_next %}
-          <option value="{{ val }}">{{ label }}</option>
-          {% endfor %}
+          {% for val, label in status_choices %}
+      <option value="{{ val }}" {% if val == order.order_status %}selected{% endif %}>
+        {{ label }}
+      </option>
+      {% endfor %}
         </select>
         <div id="cancelReasonWrap" style="display:none;">
           <textarea name="cancel_reason" placeholder="Reason for cancellation (optional)…"></textarea>

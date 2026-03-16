@@ -146,7 +146,7 @@ class Order(models.Model):
     address = models.ForeignKey(UserAddress, on_delete=models.PROTECT, related_name="orders")
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default="PENDING")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default="COD")
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="ALL PENDING")
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -178,13 +178,14 @@ class Order(models.Model):
 class OrderItem(models.Model):
     ITEM_STATUS_CHOICES = (
         ("ACTIVE", "Active"),
+        ("PENDING", "Pending"),
         ("CANCELLED", "Cancelled"),
         ("RETURN_REQUESTED", "Return Requested"),
         ("RETURN_APPROVED", "Return Approved"),
         ("RETURN_REJECTED", "Return Rejected"),
         ("REFUNDED", "Refunded"),
     )
-
+    
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items")
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, related_name="order_items")
     quantity = models.PositiveIntegerField()
@@ -192,6 +193,7 @@ class OrderItem(models.Model):
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_price = models.DecimalField(max_digits=10, decimal_places=2) #"unit_price × quantity) - discount_amount"
     item_status = models.CharField(max_length=20, choices=ITEM_STATUS_CHOICES, default="ACTIVE")
+    delivered_at = models.DateTimeField(null=True, blank=True)
     cancel_reason = models.TextField(blank=True, null=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
 

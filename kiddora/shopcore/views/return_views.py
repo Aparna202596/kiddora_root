@@ -1,52 +1,3 @@
-# shopcore/views/return_views.py
-"""
-Return & Refund management — user-facing and admin.
-
-Requirements covered:
-  ✓ User can request return only on DELIVERED orders (reason mandatory)
-  ✓ Admin list of return requests (search, filter, paginate)
-  ✓ Admin detail view per return request
-  ✓ Admin APPROVE → refunds previously paid amount to user's wallet
-  ✓ Admin REJECT → item_status set to RETURN_REJECTED with reason
-  ✓ Stock restocked on approval
-
-Expected model (add to shopcore/models.py if not present):
-─────────────────────────────────────────────────────────
-class ReturnRequest(models.Model):
-    STATUS_CHOICES = (
-        ("PENDING",  "Pending"),
-        ("APPROVED", "Approved"),
-        ("REJECTED", "Rejected"),
-    )
-    order_item    = models.OneToOneField(OrderItem, on_delete=models.CASCADE,
-                        related_name="return_request")
-    reason        = models.TextField()
-    status        = models.CharField(max_length=20, choices=STATUS_CHOICES,
-                        default="PENDING")
-    refund_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    admin_note    = models.TextField(blank=True)
-    created_at    = models.DateTimeField(auto_now_add=True)
-    updated_at    = models.DateTimeField(auto_now=True)
-
-Wallet model assumed (add to accounts/models.py if not present):
-─────────────────────────────────────────────────────────
-class Wallet(models.Model):
-    user    = models.OneToOneField(CustomUser, on_delete=models.CASCADE,
-                  related_name="wallet")
-    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    updated_at = models.DateTimeField(auto_now=True)
-
-class WalletTransaction(models.Model):
-    TYPES = (("CREDIT","Credit"),("DEBIT","Debit"))
-    wallet      = models.ForeignKey(Wallet, on_delete=models.CASCADE,
-                      related_name="transactions")
-    amount      = models.DecimalField(max_digits=10, decimal_places=2)
-    tx_type     = models.CharField(max_length=10, choices=TYPES)
-    description = models.TextField(blank=True)
-    created_at  = models.DateTimeField(auto_now_add=True)
-─────────────────────────────────────────────────────────
-"""
-
 from __future__ import annotations
 
 from decimal import Decimal
@@ -62,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 
 from accounts.decorators import admin_login_required
 from shopcore.models import Order, OrderItem
-
+from shopcore.models import Return
 
 # ─────────────────────────────────────────────────────────────
 # HELPERS
@@ -70,8 +21,7 @@ from shopcore.models import Order, OrderItem
 
 def _get_return_model():
     """Lazy import to avoid circular issues; raises ImportError if missing."""
-    from shopcore.models import ReturnRequest
-    return ReturnRequest
+    return Return
 
 
 def _restore_inventory(order_item: OrderItem):
@@ -114,7 +64,7 @@ def _credit_wallet(user, amount: Decimal, description: str):
 def request_return(request, order_id, item_id):
     """
     GET  → show return form (reason mandatory).
-    POST → create ReturnRequest and mark item RETURN_REQUESTED.
+    POST → create Return and mark item RETURN_REQUESTED.
     Only allowed when order.order_status == DELIVERED and item_status == ACTIVE.
     """
     order      = get_object_or_404(Order, order_id=order_id, user=request.user)
@@ -145,12 +95,12 @@ def request_return(request, order_id, item_id):
 
     # Create return request
     try:
-        ReturnRequest = _get_return_model()
-        if ReturnRequest.objects.filter(order_item=order_item).exists():
+        Return = _get_return_model()
+        if Return.objects.filter(order_item=order_item).exists():
             messages.warning(request, "A return request already exists for this item.")
             return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-        ReturnRequest.objects.create(
+        Return.objects.create(
             order_item    = order_item,
             reason        = reason,
             status        = "PENDING",
@@ -183,15 +133,15 @@ def admin_return_list(request):
     List all return requests — search, filter by status, paginate.
     """
     try:
-        ReturnRequest = _get_return_model()
+        Return = _get_return_model()
     except ImportError:
-        messages.error(request, "ReturnRequest model not found.")
+        messages.error(request, "Return model not found.")
         return redirect("shopcore:admin_order_list")
 
     search   = request.GET.get("search", "").strip()
     status_f = request.GET.get("status", "").strip()
 
-    qs = ReturnRequest.objects.select_related(
+    qs = Return.objects.select_related(
         "order_item__order__user",
         "order_item__variant__product",
         "order_item__order",
@@ -226,12 +176,12 @@ def admin_return_list(request):
 @admin_login_required
 def admin_return_detail(request, return_id):
     try:
-        ReturnRequest = _get_return_model()
+        Return = _get_return_model()
     except ImportError:
         return redirect("shopcore:admin_return_list")
 
     ret = get_object_or_404(
-        ReturnRequest.objects.select_related(
+        Return.objects.select_related(
             "order_item__order__user",
             "order_item__order__address",
             "order_item__variant__product__images",
@@ -268,7 +218,7 @@ def admin_return_detail(request, return_id):
 def admin_approve_return(request, return_id):
     """
     POST.
-    1. Marks ReturnRequest as APPROVED.
+    1. Marks Return as APPROVED.
     2. Sets OrderItem.item_status = REFUNDED.
     3. Restores inventory stock.
     4. Credits refund_amount to user's wallet.
@@ -278,11 +228,11 @@ def admin_approve_return(request, return_id):
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
     try:
-        ReturnRequest = _get_return_model()
+        Return = _get_return_model()
     except ImportError:
         return redirect("shopcore:admin_return_list")
 
-    ret = get_object_or_404(ReturnRequest, id=return_id, status="PENDING")
+    ret = get_object_or_404(Return, id=return_id, status="PENDING")
     oi  = ret.order_item
 
     # 1. Approve request
@@ -340,11 +290,11 @@ def admin_reject_return(request, return_id):
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
     try:
-        ReturnRequest = _get_return_model()
+        Return = _get_return_model()
     except ImportError:
         return redirect("shopcore:admin_return_list")
 
-    ret = get_object_or_404(ReturnRequest, id=return_id, status="PENDING")
+    ret = get_object_or_404(Return, id=return_id, status="PENDING")
     oi  = ret.order_item
 
     admin_note = request.POST.get("admin_note", "").strip()

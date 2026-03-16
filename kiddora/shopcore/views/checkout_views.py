@@ -119,13 +119,14 @@ def checkout(request):
         except Exception:
             coupon_discount = Decimal("0")
 
-    addresses       = UserAddress.objects.filter(user=request.user, is_deleted=False)
+    addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
+    #addresses = UserAddress.objects.filter(user=request.user)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
     shipping_charge = Decimal("0")
-    grand_total     = subtotal - coupon_discount + shipping_charge
+    grand_total = subtotal - coupon_discount + shipping_charge
 
     return render(request, "cart/checkout.html", {
-        "checkout_items":  checkout_items,
+        "checkout_items": checkout_items,
         "addresses":       addresses,
         "default_address": default_address,
         "subtotal":        subtotal,
@@ -155,14 +156,17 @@ def place_order(request):
     # Resolve address
     address_id = request.POST.get("address_id")
     if address_id:
-        address = get_object_or_404(
-            UserAddress, id=address_id, user=request.user, is_deleted=False
-        )
+        #address = get_object_or_404(UserAddress, id=address_id, user=request.user)
+        address = get_object_or_404( UserAddress, id=address_id, user=request.user, is_deleted=False)
     else:
         address = (
             UserAddress.objects.filter(user=request.user, is_deleted=False, is_default=True).first()
             or UserAddress.objects.filter(user=request.user, is_deleted=False).first()
         )
+        # address = (
+        #     UserAddress.objects.filter(user=request.user, is_default=True).first()
+        #     or UserAddress.objects.filter(user=request.user).first()
+        # )
     if not address:
         messages.error(request, "Please add a delivery address before placing an order.")
         return redirect("shopcore:checkout")

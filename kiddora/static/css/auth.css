@@ -68,7 +68,7 @@ body {
 /* INPUT FOCUS */
 .auth-left input:focus {
     outline: none;
-    border-color: #e8a1c6;
+    border-color: #f06292;
 }
 
 /* GOOGLE BUTTON (UNCHANGED) */
@@ -93,7 +93,7 @@ body {
 .primary-btn {
     margin-top: 10px;
     height: 45px;
-    background-color: #e8a1c6;
+    background-color: #f06292;
     border: none;
     border-radius: 8px;
     color: #fff;
@@ -102,7 +102,7 @@ body {
 }
 
 .primary-btn:hover {
-    background-color: #d98ab2;
+    background-color: #e91e63;
 }
 
 /* PASSWORD FIELD */
@@ -138,7 +138,7 @@ body {
 }
 
 .bottom-text a {
-    color: #e8a1c6;
+    color: #e91e63;
 }
 
 /* RIGHT IMAGE */

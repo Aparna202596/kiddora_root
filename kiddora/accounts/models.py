@@ -64,6 +64,7 @@ class CustomUser(AbstractUser):
     
     referred_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='referred_users')
     
+    is_deleted = models.BooleanField(default=False)
     # Authentication settings
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
@@ -121,8 +122,18 @@ class UserAddress(models.Model):
     is_default = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
+
+    is_deleted = models.BooleanField(default=False)
+
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+
     class Meta:
         verbose_name_plural = "User Addresses"
-
+    def delete(self, *args, **kwargs):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+        
     def __str__(self):
         return f"{self.user.email} - {self.city}"

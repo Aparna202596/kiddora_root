@@ -164,7 +164,12 @@
           {% endif %}
         </div>
         <div class="oi-info">
-          <div class="oi-name">{{ oi.variant.product.product_name }}</div>
+          <div class="oi-name">
+            <a href="{% url 'products:product_detail' oi.variant.product.id %}"
+              style="text-decoration:none;color:#222;">
+              {{ oi.variant.product.product_name }}
+            </a>
+          </div>
           <div class="oi-meta">
             {{ oi.variant.color }} · {{ oi.variant.age_group }}
             &nbsp;·&nbsp; Qty: {{ oi.quantity }}
@@ -211,7 +216,7 @@
         {{ addr.address_line1 }}<br>
         {% if addr.address_line2 %}{{ addr.address_line2 }}<br>{% endif %}
         {{ addr.city }}, {{ addr.state }} – {{ addr.pincode }}<br>
-        <i class="fa fa-phone" style="color:#f06292;"></i> {{ addr.phone }}
+        <i class="fa fa-phone" style="color:#f06292;"></i> {{ user.phone }}
       </div>
       {% endwith %}
     </div>

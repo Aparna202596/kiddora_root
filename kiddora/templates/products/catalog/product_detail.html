@@ -30,9 +30,9 @@
 .pc-price { display:flex; align-items:baseline; gap:.45rem; flex-wrap:wrap; }
 .pc-final { font-size:1.05rem; font-weight:700; }
 .pc-final.black { color:var(--dark); }
-.pc-final.red   { color:var(--danger); }
+.pc-final.red { color:var(--danger); }
 .pc-base { font-size:.78rem; color:var(--muted); text-decoration:line-through; }
-.pc-off  { font-size:.73rem; font-weight:700; color:var(--brand); background:var(--brand-light); padding:.1rem .42rem; border-radius:50px; }
+.pc-off { font-size:.73rem; font-weight:700; color:var(--brand); background:var(--brand-light); padding:.1rem .42rem; border-radius:50px; }
 .pc-footer { padding:.55rem 1rem .85rem; border-top:1px solid var(--border); margin-top:auto; }
 .pc-view-btn { display:block; text-align:center; padding:.5rem; background:var(--brand); color:#fff; border-radius:50px; font-weight:600; font-size:.83rem; transition:background .2s; }
 .pc-view-btn:hover { background:var(--brand-dark); }
@@ -78,15 +78,15 @@
 .price-block { margin:.8rem 0 1rem; }
 .price-row { display:flex; align-items:baseline; gap:.65rem; flex-wrap:wrap; }
 .price-final-black { font-size:2rem; font-weight:800; color:#111; }
-.price-final-red   { font-size:2rem; font-weight:800; color:var(--danger); }
+.price-final-red { font-size:2rem; font-weight:800; color:var(--danger); }
 .price-base-strike { font-size:1rem; color:var(--muted); text-decoration:line-through; }
 .price-discount-badge { font-size:.85rem; font-weight:700; color:var(--brand); background:var(--brand-light); border:1px solid #ffc5b5; padding:.18rem .65rem; border-radius:50px; }
 .price-note { font-size:.78rem; color:var(--muted); margin-top:.3rem; }
 .stock-block { margin:.8rem 0; }
 .stock-tag { display:inline-flex; align-items:center; gap:.35rem; padding:.3rem .85rem; border-radius:50px; font-size:.82rem; font-weight:700; }
-.stock-in   { background:#ECFDF5; color:#065F46; }
-.stock-low  { background:#FFFBEB; color:#92400E; }
-.stock-out  { background:#FEF2F2; color:#991B1B; }
+.stock-in { background:#ECFDF5; color:#065F46; }
+.stock-low { background:#FFFBEB; color:#92400E; }
+.stock-out { background:#FEF2F2; color:#991B1B; }
 .stock-none { background:#F5F5F5; color:#6B7280; }
 .unavail-banner { background:#FEF2F2; border:1.5px solid #FCA5A5; border-radius:var(--radius); padding:1rem 1.2rem; margin:1rem 0; }
 .unavail-banner h3 { color:var(--danger); font-size:.95rem; margin-bottom:.3rem; }
@@ -109,42 +109,19 @@
 .a-chip:hover { border-color:var(--brand); color:var(--brand); }
 .a-chip.selected { background:var(--brand); color:#fff; border-color:var(--brand); }
 .a-chip.oos { opacity:.4; cursor:not-allowed; text-decoration:line-through; }
-/* ─── CTA buttons — stacked column ─── */
+/* ─── CTA buttons ─── */
 .cta-row {
     display: flex;
     flex-direction: column;
     gap: .75rem;
     margin: 1.4rem 0 1rem;
 }
-.btn-wishlist {
-    width: 100%;
-    box-sizing: border-box;
-    padding: .85rem 1.5rem;
-    background: var(--white);
-    border: 1.5px solid var(--border);
-    border-radius: 50px;
-    font-family: var(--font-body);
-    font-size: .95rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: .5rem;
-    color: var(--text);
-    transition: border-color .2s, background .2s, color .2s;
-}
-.btn-wishlist:hover { border-color: var(--danger); background: #FFF0F0; color: var(--danger); }
-.btn-wishlist i { font-size: 1rem; color: var(--danger); transition: transform .2s; }
-.btn-wishlist:hover i { transform: scale(1.2); }
-.btn-wishlist.wishlisted { border-color: var(--danger); background: #FFF0F0; color: var(--danger); }
+
+.btn-wishlist,
 .btn-add-cart {
     width: 100%;
     box-sizing: border-box;
     padding: .85rem 1.5rem;
-    background: var(--brand);
-    color: #fff;
-    border: none;
     border-radius: 50px;
     font-family: var(--font-body);
     font-size: .95rem;
@@ -154,10 +131,44 @@
     align-items: center;
     justify-content: center;
     gap: .5rem;
-    transition: background .2s, transform .15s;
+    transition: all 0.22s ease;
+    color: #fff;
+    background: #f06292;
+    border: none;
 }
-.btn-add-cart:hover:not(:disabled) { background: var(--brand-dark); transform: translateY(-1px); }
-.btn-add-cart:disabled { background: #C9C5C0; cursor: not-allowed; }
+
+.btn-wishlist:hover,
+.btn-add-cart:hover:not(:disabled) {
+    background: #f42f71;
+    transform: translateY(-1px);
+}
+
+.btn-wishlist i,
+.btn-add-cart i {
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+/* Wishlist active (added to wishlist) state */
+.btn-wishlist.wishlisted {
+    background: #f42f71;
+}
+
+/* Disabled / Out of stock state */
+.btn-add-cart:disabled,
+.btn-add-cart.out-of-stock {
+    background: #8a0732;
+    cursor: not-allowed;
+    opacity: 0.92;
+    transform: none;
+}
+
+.btn-add-cart:disabled:hover,
+.btn-add-cart.out-of-stock:hover {
+    background: #8a0732;
+    transform: none;
+}
+
 /* highlights */
 .highlights-block { margin:1.2rem 0; }
 .highlights-block h4 { font-size:.73rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:700; margin-bottom:.6rem; }
@@ -369,7 +380,7 @@
         {% endif %}
 
         <!-- Hidden forms for real POST endpoints -->
-        <form id="addToCartForm" method="POST" action="/shop/cart/{{product.id}}" style="display:none">
+        <form id="addToCartForm" method="POST" action="#" style="display:none">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
         </form>
@@ -388,10 +399,9 @@
             </button>
             <button class="btn-add-cart" id="addToCart"
                     style="justify-content:center;"
-                    onclick="submitAddToCart()"
-                    {% if not d.available or d.total_stock == 0 %}disabled{% endif %}>
+                    onclick="submitAddToCart()">
                 <i class="fa-solid fa-cart-shopping"></i>
-                {% if all_out_of_stock %}Sold Out{% else %}Add to Cart{% endif %}
+                Add to Cart
             </button>
         </div>
 
@@ -628,36 +638,36 @@ function fetchVariantInfo(vid) {
 }
 
 function setStockUI(qty, vid) {
-    var el     = document.getElementById('stockBlock');
-    var addBtn = document.getElementById('addToCart');
-    if (!el) return;
+    var stockEl = document.getElementById('stockBlock');
+    var addBtn   = document.getElementById('addToCart');
+
+    if (!stockEl || !addBtn) return;
+
+    // Reset classes first
+    addBtn.classList.remove('out-of-stock');
+    addBtn.disabled = false;
 
     if (vid === null) {
-        el.innerHTML = '<span class="stock-tag stock-none">● Select options below</span>';
-        if (addBtn) {
-            addBtn.disabled = false;
-            addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Add to Cart';
-        }
+        // Nothing selected yet
+        stockEl.innerHTML = '<span class="stock-tag stock-none">● Select colour & age group</span>';
+        addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Select Variant';
+        addBtn.disabled = true;               // prevent accidental click
         return;
     }
+
     if (qty === 0) {
-        el.innerHTML = '<span class="stock-tag stock-out">✕ Out of Stock</span>';
-        if (addBtn) {
-            addBtn.disabled = true;
-            addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Out of Stock';
-        }
+        stockEl.innerHTML = '<span class="stock-tag stock-out">✕ Out of Stock</span>';
+        addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Out of Stock';
+        addBtn.disabled = true;
+        addBtn.classList.add('out-of-stock');   // apply gray style
     } else if (qty < 10) {
-        el.innerHTML = '<span class="stock-tag stock-low">⚠ Only ' + qty + ' left!</span>';
-        if (addBtn) {
-            addBtn.disabled = false;
-            addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Add to Cart';
-        }
+        stockEl.innerHTML = '<span class="stock-tag stock-low">⚠ Only ' + qty + ' left!</span>';
+        addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Add to Cart';
+        addBtn.disabled = false;
     } else {
-        el.innerHTML = '<span class="stock-tag stock-in">● In Stock</span>';
-        if (addBtn) {
-            addBtn.disabled = false;
-            addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Add to Cart';
-        }
+        stockEl.innerHTML = '<span class="stock-tag stock-in">● In Stock</span>';
+        addBtn.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Add to Cart';
+        addBtn.disabled = false;
     }
 }
 

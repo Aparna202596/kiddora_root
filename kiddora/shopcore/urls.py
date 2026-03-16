@@ -83,7 +83,7 @@ urlpatterns = [
     path("orders/<str:order_id>/cancel/",                        order_views.cancel_order,       name="cancel_order"),
     path("orders/<str:order_id>/cancel-item/<int:item_id>/",     order_views.cancel_order_item,  name="cancel_order_item"),
     path("orders/<str:order_id>/invoice/",                       order_views.download_invoice,   name="download_invoice"),
-
+    path('admin/order/<str:order_id>/item/<int:item_id>/update-status/', order_views.admin_update_item_status, name='admin_update_item_status'),
     # ── RETURN REQUESTS — USER ────────────────────────────────────────────────
     path("orders/<str:order_id>/return/<int:item_id>/", return_views.request_return, name="request_return"),
 
