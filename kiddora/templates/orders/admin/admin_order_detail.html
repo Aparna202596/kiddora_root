@@ -156,7 +156,6 @@
       {% endwith %}
     </div>
   </div>
-
   <!-- SIDE -->
   <div class="od-side">
     <div class="od-card">
@@ -168,8 +167,7 @@
       {% if order.coupon_discount > 0 %}
       <div class="sum-row" style="color:#16a34a;"><span>Coupon</span><span>−₹{{ order.coupon_discount }}</span></div>
       {% endif %}
-      <div class="sum-row">
-        <span>Shipping</span>
+      <div class="sum-row"><span>Shipping</span>
         <span>{% if order.shipping_charge == 0 %}<span style="color:#16a34a;">FREE</span>{% else %}₹{{ order.shipping_charge }}{% endif %}</span>
       </div>
       <div class="sum-row total"><span>Grand Total</span><span>₹{{ order.final_amount }}</span></div>

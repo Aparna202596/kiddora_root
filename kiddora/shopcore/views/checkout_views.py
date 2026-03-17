@@ -1,8 +1,7 @@
 from __future__ import annotations
 from decimal import Decimal
-
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from accounts.decorators import user_login_required
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
@@ -10,10 +9,7 @@ from django.views.decorators.cache import never_cache
 from accounts.models import UserAddress
 from shopcore.models import Cart, CartItem, Order, OrderItem
 
-
-# ──────────────────────────────────────────────────────────────
 # HELPERS
-# ──────────────────────────────────────────────────────────────
 
 def _get_cart(user):
     try:
@@ -21,28 +17,25 @@ def _get_cart(user):
     except Cart.DoesNotExist:
         return None
 
-
 def _variant_is_available(variant) -> bool:
     try:
-        p   = variant.product
+        p = variant.product
         sub = p.subcategory
         cat = sub.category
         return (
             variant.is_active
-            and p.is_active   and not p.is_deleted
+            and p.is_active and not p.is_deleted
             and sub.is_active and not sub.is_deleted
             and cat.is_active and not cat.is_deleted
         )
     except Exception:
         return False
 
-
 def _stock_for(variant) -> int:
     try:
         return variant.inventory.quantity_available
     except Exception:
         return 0
-
 
 def _img_url_for(product) -> str | None:
     img_obj = product.images.filter(is_default=True).first() or product.images.first()
@@ -53,13 +46,10 @@ def _img_url_for(product) -> str | None:
                 return val.url
     return None
 
-
-# ──────────────────────────────────────────────────────────────
 # CHECKOUT  (GET)
-# ──────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 def checkout(request):
     cart = _get_cart(request.user)
     if not cart or not cart.items.exists():
@@ -76,14 +66,14 @@ def checkout(request):
     ).prefetch_related("variant__product__images").order_by("-added_at")
 
     checkout_items = []
-    subtotal       = Decimal("0")
-    blocked        = False
+    subtotal = Decimal("0")
+    blocked = False
 
     for item in items:
-        variant   = item.variant
+        variant = item.variant
         available = _variant_is_available(variant)
-        stock     = _stock_for(variant)
-        product   = variant.product
+        stock = _stock_for(variant)
+        product = variant.product
 
         if not available or stock == 0 or item.quantity > stock:
             blocked = True
@@ -92,13 +82,13 @@ def checkout(request):
         subtotal  += item_total
 
         checkout_items.append({
-            "item":       item,
-            "variant":    variant,
-            "product":    product,
+            "item": item,
+            "variant": variant,
+            "product": product,
             "item_total": item_total,
-            "available":  available,
-            "stock":      stock,
-            "img_url":    _img_url_for(product),
+            "available": available,
+            "stock": stock,
+            "img_url": _img_url_for(product),
         })
 
     if blocked:
@@ -134,22 +124,19 @@ def checkout(request):
 
     return render(request, "cart/checkout.html", {
         "checkout_items": checkout_items,
-        "addresses":       addresses,
+        "addresses": addresses,
         "default_address": default_address,
-        "subtotal":        subtotal,
+        "subtotal": subtotal,
         "shipping_charge": shipping_charge,
         # "coupon_discount": coupon_discount,
         # "applied_coupon":  applied_coupon,
-        "grand_total":     grand_total,
+        "grand_total": grand_total,
     })
 
-
-# ──────────────────────────────────────────────────────────────
 # PLACE ORDER  (POST)
-# ──────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 @transaction.atomic
 def place_order(request):
     if request.method != "POST":
@@ -160,7 +147,6 @@ def place_order(request):
         messages.error(request, "Your cart is empty.")
         return redirect("shopcore:cart")
 
-    # Resolve address
     address_id = request.POST.get("address_id")
     if address_id:
         #address = get_object_or_404(UserAddress, id=address_id, user=request.user)
@@ -282,7 +268,7 @@ def place_order(request):
 # ──────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 def order_success(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     return render(request, "orders/user/order_success.html", {"order": order})

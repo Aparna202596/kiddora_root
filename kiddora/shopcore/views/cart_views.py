@@ -101,21 +101,21 @@ def cart_view(request):
             any_out_of_stock = True
 
         cart_data.append({
-            "item":          item,
-            "variant":       variant,
-            "product":       product,
-            "stock":         stock,
-            "available":     available,
-            "item_total":    item_total,
-            "img_url":       img_url,
-            "max_qty":       min(MAX_QTY, stock) if stock > 0 else 0,
+            "item": item,
+            "variant": variant,
+            "product": product,
+            "stock": stock,
+            "available": available,
+            "item_total": item_total,
+            "img_url": img_url,
+            "max_qty": min(MAX_QTY, stock) if stock > 0 else 0,
             "exceeds_stock": (item.quantity > stock) if available else False,
         })
         if available:
             subtotal += item_total
 
     shipping_charge  = 0
-    grand_total      = subtotal + shipping_charge
+    grand_total = subtotal + shipping_charge
     checkout_blocked = (
         any_unavailable
         or any_out_of_stock
@@ -123,21 +123,18 @@ def cart_view(request):
     )
 
     return render(request, "cart/cart.html", {
-        "cart":             cart,
-        "cart_data":        cart_data,
-        "subtotal":         subtotal,
-        "shipping_charge":  shipping_charge,
-        "grand_total":      grand_total,
+        "cart": cart,
+        "cart_data": cart_data,
+        "subtotal": subtotal,
+        "shipping_charge": shipping_charge,
+        "grand_total": grand_total,
         "checkout_blocked": checkout_blocked,
-        "any_unavailable":  any_unavailable,
+        "any_unavailable": any_unavailable,
         "any_out_of_stock": any_out_of_stock,
-        "MAX_QTY":          MAX_QTY,
+        "MAX_QTY": MAX_QTY,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADD TO CART  (AJAX-aware)
-# ─────────────────────────────────────────────────────────────
+# ADD TO CART
 
 @never_cache
 @user_login_required
@@ -208,11 +205,11 @@ def add_to_cart(request, variant_id):
 
     if ajax:
         return JsonResponse({
-            "success":      True,
-            "new_item":     new_item,
-            "quantity":     cart_item.quantity,
-            "cart_count":   cart.items.count(),
-            "product_id":   variant.product.id,
+            "success": True,
+            "new_item": new_item,
+            "quantity": cart_item.quantity,
+            "cart_count": cart.items.count(),
+            "product_id": variant.product.id,
             "product_name": variant.product.product_name,
         })
 
@@ -226,7 +223,6 @@ def add_to_cart(request, variant_id):
 
 # REMOVE FROM CART  (AJAX, optional save-to-wishlist)
 
-
 @never_cache
 @user_login_required
 @require_POST
@@ -234,7 +230,7 @@ def remove_from_cart(request, item_id):
     ajax = _is_ajax(request)
     cart = _get_or_create_cart(request.user)
     cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
-    product   = cart_item.variant.product
+    product = cart_item.variant.product
 
     saved_to_wishlist = False
     if request.POST.get("save_to_wishlist") == "1" and not product.is_deleted:
@@ -247,13 +243,13 @@ def remove_from_cart(request, item_id):
 
     if ajax:
         return JsonResponse({
-            "success":           True,
-            "item_id":           item_id,
-            "product_name":      product_name,
+            "success": True,
+            "item_id": item_id,
+            "product_name": product_name,
             "saved_to_wishlist": saved_to_wishlist,
-            "subtotal":          str(_cart_subtotal(cart)),
-            "grand_total":       str(_cart_subtotal(cart)),
-            "cart_count":        cart.items.count(),
+            "subtotal": str(_cart_subtotal(cart)),
+            "grand_total": str(_cart_subtotal(cart)),
+            "cart_count": cart.items.count(),
         })
 
     msg = f"{product_name} removed from cart."
@@ -262,10 +258,7 @@ def remove_from_cart(request, item_id):
     messages.success(request, msg)
     return redirect("shopcore:cart")
 
-
-# ─────────────────────────────────────────────────────────────
-# UPDATE QUANTITY  (AJAX)
-# ─────────────────────────────────────────────────────────────
+# UPDATE QUANTITY
 
 @never_cache
 @user_login_required
@@ -276,9 +269,9 @@ def update_cart_quantity(request, item_id):
     if request.method != "POST":
         return JsonResponse({"error": "POST required"}, status=405) if ajax else redirect("shopcore:cart")
 
-    cart      = _get_or_create_cart(request.user)
+    cart = _get_or_create_cart(request.user)
     cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
-    variant   = cart_item.variant
+    variant = cart_item.variant
 
     if not _variant_is_available(variant):
         msg = "This product is no longer available."
@@ -286,7 +279,7 @@ def update_cart_quantity(request, item_id):
 
     stock  = _stock_for(variant)
     action = request.POST.get("action", "set")
-    qty    = cart_item.quantity
+    qty = cart_item.quantity
 
     if action == "increment":
         qty += 1
@@ -312,27 +305,24 @@ def update_cart_quantity(request, item_id):
     cart_item.save()
 
     item_total = float(variant.product.final_price) * qty
-    subtotal   = _cart_subtotal(cart)
+    subtotal = _cart_subtotal(cart)
 
     if ajax:
         return JsonResponse({
-            "success":     True,
-            "quantity":    qty,
-            "max_qty":     min(MAX_QTY, stock),
-            "item_total":  str(item_total),
-            "subtotal":    str(subtotal),
+            "success": True,
+            "quantity": qty,
+            "max_qty": min(MAX_QTY, stock),
+            "item_total": str(item_total),
+            "subtotal": str(subtotal),
             "grand_total": str(subtotal),
-            "warning":     warning,
+            "warning": warning,
         })
 
     if warning:
         messages.warning(request, warning)
     return redirect("shopcore:cart")
 
-
-# ─────────────────────────────────────────────────────────────
 # CLEAR CART
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @user_login_required
@@ -342,10 +332,7 @@ def clear_cart(request):
         messages.success(request, "Cart cleared.")
     return redirect("shopcore:cart")
 
-
-# ─────────────────────────────────────────────────────────────
 # TOGGLE WISHLIST  (AJAX-aware)
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @user_login_required
@@ -355,11 +342,11 @@ def toggle_wishlist(request, product_id):
             return JsonResponse({"error": "POST required"}, status=405)
         return redirect("products:product_list")
 
-    ajax    = _is_ajax(request)
+    ajax = _is_ajax(request)
     product = get_object_or_404(Product, id=product_id)
 
     wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
-    existing    = WishlistItem.objects.filter(wishlist=wishlist, product=product).first()
+    existing = WishlistItem.objects.filter(wishlist=wishlist, product=product).first()
 
     if existing:
         existing.delete()
@@ -372,7 +359,7 @@ def toggle_wishlist(request, product_id):
 
     if ajax:
         return JsonResponse({"success": True, "wishlisted": wishlisted,
-                             "message": msg, "product_id": product_id})
+                                "message": msg, "product_id": product_id})
 
     messages.success(request, msg)
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or ""

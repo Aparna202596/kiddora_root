@@ -65,7 +65,7 @@ def _recalculate_order_amount(order):
 
     active_items = order.order_items.filter(item_status="ACTIVE")
 
-    subtotal = sum(item.unit_price * item.quantity for item in active_items)
+    subtotal= sum(item.unit_price * item.quantity for item in active_items)
 
     # Shipping rule
     shipping_charge = Decimal("0")
