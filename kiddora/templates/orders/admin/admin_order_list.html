@@ -39,7 +39,6 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>Order ID</th>
                     <th>Customer</th>
                     <th>Total</th>
@@ -51,7 +50,6 @@
             <tbody>
             {% for order in page_obj %}
                 <tr>
-                    <td style="color:#aaa;">{{ forloop.counter }}</td>
                     <td style="font-family:monospace;font-weight:700;color:#222;">{{ order.order_id }}</td>
                     <td style="font-size:12px;">
                         <div style="font-weight:600;color:#222;">{{ order.user.get_full_name|default:order.user.email }}</div>
@@ -76,7 +74,7 @@
                     </td>
                     <td class="action-icons">
                         <a href="{% url 'shopcore:admin_order_detail' order_id=order.order_id %}"
-                           class="view-btn" title="View Order">View →</a>
+                            class="view-btn" title="View Order">View →</a>
                     </td>
                 </tr>
             {% empty %}

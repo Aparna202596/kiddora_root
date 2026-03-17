@@ -12,17 +12,57 @@
     border-radius: 16px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
-h2 { text-align: center; margin-bottom: 20px; }
-label { display: block; margin-top: 12px; font-weight: 500; }
+h2 { 
+    text-align: center; 
+    margin-bottom: 20px; 
+}
+
+label { 
+    display: block; 
+    margin-top: 12px; 
+    font-weight: 500; 
+
+}
 input[type="text"] {
-    width: 100%; padding: 8px; margin-top: 6px;
-    border-radius: 6px; border: 1px solid #ccc;
+    width: 100%; 
+    padding: 8px; 
+    margin-top: 6px;
+    border-radius: 6px; 
+    border: 1px solid #ccc;
+}
+select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    height: 38px; /* ensures same height as input */
+    font-size: 14px;
 }
 /* ── ADD-ON: file input styling ── */
 input[type="file"] {
     width: 100%; padding: 6px; margin-top: 6px;
     border-radius: 6px; border: 1px solid #ccc;
     background: #fff;
+}
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+}
+.btn-custom {
+    padding: 8px 18px;
+    background: #f06292;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+}
+.btn-custom:hover {
+    background: #e15b88;
 }
 /* ── ADD-ON: current image thumb ── */
 .current-image-wrap {
@@ -66,7 +106,7 @@ input[type="file"] {
 </style>
 
 <div class="form-box">
-    <h2>{% if category %}Edit Category{% else %}Add Category{% endif %}</h2>
+    <h2>{% if subcategory %}Edit SubCategory{% else %}Add SubCategory{% endif %}</h2>
 
     {% if messages %}
     <div class="messages" id="msgContainer">
@@ -80,39 +120,49 @@ input[type="file"] {
     {% endif %}
 
     <!-- ADD-ON: enctype="multipart/form-data" required for file upload -->
-    <form id="categoryForm" method="post" enctype="multipart/form-data">
+    <form id="subcategoryForm" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <label>Category Name</label>
+        <label>Category</label>
+        <select name="category" required>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}"
+                {% if subcategory and subcategory.category.id == cat.id %}selected{% endif %}>
+                {{ cat.category_name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label>Sub-Category Name</label>
         <input type="text"
-               name="category_name"
-               value="{{ category.category_name|default:'' }}"
-               required>
+                name="subcategory_name"
+                value="{{ subcategory.subcategory_name|default:'' }}"
+                required>
 
         <!-- ── ADD-ON: category image upload with cropper ── -->
-        <label>Category Image <small style="font-weight:400;color:#888;">(optional — square crop)</small></label>
+        <label>Sub-Category Image <small style="font-weight:400;color:#888;"></small></label>
 
-        {% if category.category_image %}
+        {% if subcategory.subcategory_image %}
         <div class="current-image-wrap">
-            <img src="{{ category.category_image.url }}" alt="Current image">
+            <img src="{{ subcategory.subcategory_image.url }}" alt="Current image">
             <span>Current image — upload a new one to replace it.</span>
         </div>
         {% endif %}
 
         <input type="file"
-               id="categoryImageInput"
-               name="category_image"
-               accept="image/*">
-        <div id="categoryImagePreview" class="preview-container"></div>
+                id="categoryImageInput"
+                name="category_image"
+                accept="image/*">
+        <div id="SubCategoryImagePreview" class="preview-container"></div>
         <!-- ─────────────────────────────────────────────── -->
 
         <div class="form-actions">
-            {% if category %}
-            <button type="button" class="btn-custom" onclick="confirmUpdate('categoryForm')">Save</button>
+            {% if subcategory %}
+            <button type="button" class="btn-custom" onclick="confirmUpdate('subcategoryForm')">Save</button>
             {% else %}
-            <button type="button" class="btn-custom" onclick="confirmSave('categoryForm')">Save</button>
+            <button type="button" class="btn-custom" onclick="confirmSave('subcategoryForm')">Save</button>
             {% endif %}
-            <a href="{% url 'products:admin_category_list' %}" class="btn-custom">Cancel</a>
+            <a href="{% url 'products:admin_subcategory_list' %}" class="btn-custom">Cancel</a>
         </div>
     </form>
 </div>

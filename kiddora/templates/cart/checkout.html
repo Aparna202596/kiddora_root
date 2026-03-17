@@ -21,7 +21,24 @@
         border-bottom: 1.5px solid #f5f5f5; padding-bottom: 12px;
     }
     .ck-card-title i { color: #f06292; }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
 
+    .form-grid input {
+        padding: 10px;
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        font-size: 13px;
+        outline: none;
+        transition: border .2s;
+    }
+
+    .form-grid input:focus {
+        border-color: #f06292;
+    }
     /* ── ADDRESS ── */
     .address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .address-card {
@@ -127,152 +144,174 @@
 
     <form method="post" action="{% url 'shopcore:place_order' %}" id="checkoutForm">
     {% csrf_token %}
+        <div class="checkout-layout">
 
-    <div class="checkout-layout">
     <!-- ── LEFT ── -->
     <div class="checkout-left">
 
-        <!-- DELIVERY ADDRESS -->
-        <div class="ck-card">
-        <div class="ck-card-title">
-            <i class="fa fa-map-marker-alt"></i> Delivery Address
-        </div>
-
-        <div class="address-grid">
-            {% for addr in addresses %}
-            <label class="address-card {% if addr == default_address %}selected{% endif %}"
-                for="addr_{{ addr.id }}"
-                onclick="selectAddress(this)">
-            <input type="radio" name="address_id" id="addr_{{ addr.id }}" value="{{ addr.id }}"
-                    {% if addr == default_address %}checked{% endif %}>
-            <div class="addr-name">{{ addr.full_name }}</div>
-            <div class="addr-line">
-                {{ addr.address_line1 }}<br>
-                {% if addr.address_line2 %}{{ addr.address_line2 }}<br>{% endif %}
-                {{ addr.city }}, {{ addr.state }} – {{ addr.pincode }}
-            </div>
-            <div class="addr-phone"><i class="fa fa-phone" style="color:#f06292;"></i> {{ user.phone }}</div>
-            {% if addr.is_default %}<span class="default-badge">Default</span>{% endif %}
-            </label>
-            {% empty %}
-            <div style="grid-column:1/-1;text-align:center;color:#888;padding:20px 0;">
-            No saved addresses. Please add one.
-            </div>
-            {% endfor %}
-
-            <a href="{% url 'accounts:address_add' %}?next={% url 'shopcore:checkout' %}" class="add-address-btn">
-            <i class="fa fa-plus-circle"></i> Add New Address
-            </a>
-        </div>
-        </div>
-
         <!-- ORDER ITEMS -->
         <div class="ck-card">
-        <div class="ck-card-title">
-            <i class="fa fa-box"></i> Order Items ({{ checkout_items|length }})
-        </div>
-        {% for d in checkout_items %}
-        <div class="ck-item">
-            <div class="ck-img">
-            {% if d.img_url %}
-                <img src="{{ d.img_url }}" alt="{{ d.product.product_name }}" loading="lazy">
-            {% else %}
-                <span>👕</span>
-            {% endif %}
+            <div class="ck-card-title">
+                <i class="fa fa-box"></i> Order Items ({{ checkout_items|length }})
             </div>
-            <div class="ck-info">
-            <div class="ck-name">{{ d.product.product_name }}</div>
-            <div class="ck-meta">
-                {{ d.variant.color }} · {{ d.variant.age_group }}
-                {% if d.product.discount_percent > 0 %}
-                · <span style="color:#f06292;">{{ d.product.discount_percent }}% off</span>
-                {% endif %}
+
+            {% for d in checkout_items %}
+            <div class="ck-item">
+                <div class="ck-img">
+                    {% if d.img_url %}
+                        <img src="{{ d.img_url }}" alt="{{ d.product.product_name }}">
+                    {% else %}
+                        <span>👕</span>
+                    {% endif %}
+                </div>
+
+                <div class="ck-info">
+                    <div class="ck-name">{{ d.product.product_name }}</div>
+                    <div class="ck-meta">
+                        {{ d.variant.color }} · {{ d.variant.age_group }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="ck-qty">Qty: {{ d.item.quantity }}</div>
+                    <div class="ck-price">₹{{ d.item_total }}</div>
+                </div>
             </div>
-            </div>
-            <div>
-            <div class="ck-qty">Qty: {{ d.item.quantity }}</div>
-            <div class="ck-price">₹{{ d.item_total }}</div>
-            </div>
-        </div>
-        {% endfor %}
+            {% endfor %}
         </div>
 
-        <!-- PAYMENT METHOD -->
+        <!-- DELIVERY ADDRESS (BELOW ITEMS) -->
         <div class="ck-card">
-        <div class="ck-card-title">
-            <i class="fa fa-credit-card"></i> Payment Method
-        </div>
-        <div class="payment-option">
-            <input type="radio" name="payment_method" id="cod" value="COD" checked>
-            <span class="pay-icon">💵</span>
-            <label for="cod">
-            Cash on Delivery <span class="cod-badge">Available</span>
-            </label>
-        </div>
-        </div>
-    </div>
-
-    <!-- ── RIGHT: SUMMARY ── -->
-    <div class="checkout-right">
-        <div class="summary-card">
-        <h3><i class="fa fa-receipt" style="color:#f06292;"></i> Price Details</h3>
-
-        {% for d in checkout_items %}
-        <div class="sum-row" style="font-size:13px;color:#888;">
-            <span>{{ d.product.product_name }} × {{ d.item.quantity }}</span>
-            <span>₹{{ d.item_total }}</span>
-        </div>
-        {% endfor %}
-
-        <div class="sum-row" style="margin-top:10px;">
-            <span>Subtotal</span><span>₹{{ subtotal }}</span>
-        </div>
-        {% if coupon_discount > 0 %}
-        <div class="sum-row" style="color:#16a34a;">
-            <span>Coupon Discount</span><span>−₹{{ coupon_discount }}</span>
-        </div>
-        {% endif %}
-        <div class="sum-row">
-            <span>Shipping</span>
-            <span class="free">{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
-        </div>
-        <div class="sum-row total">
-            <span>Total Payable</span><span>₹{{ grand_total }}</span>
-        </div>
-
-        {% if not addresses %}
-            <div style="background:#fef2f2;border-radius:8px;padding:10px 12px;font-size:13px;color:#991b1b;margin-top:12px;">
-            ⚠️ Please add a delivery address first.
+            <div class="ck-card-title">
+                <i class="fa fa-map-marker-alt"></i> Delivery Address
             </div>
-            <button class="place-order-btn" type="button" disabled style="background:#d1d5db;cursor:not-allowed;">
-            Place Order
-            </button>
-        {% else %}
-            <button class="place-order-btn" type="submit" id="placeOrderBtn">
-            <i class="fa fa-check-circle"></i> Place Order
-            </button>
-        {% endif %}
 
-        <div style="margin-top:14px;font-size:12px;color:#aaa;text-align:center;">
-            <i class="fa fa-shield-alt" style="color:#f06292;"></i>
-            Secure &amp; encrypted checkout
+            <div class="address-grid">
+                {% for addr in addresses %}
+                <label class="address-card {% if default_address and addr.id == default_address.id %}selected{% endif %}"
+                       onclick="selectAddress(this)">
+                    
+                    <input type="radio" name="address_id" value="{{ addr.id }}"
+                        {% if default_address and addr.id == default_address.id %}checked{% endif %}>
+
+                    <div class="addr-name">{{ addr.full_name }}</div>
+
+                    <div class="addr-line">
+                        {{ addr.address_line1 }}<br>
+                        {{ addr.city }}, {{ addr.state }} - {{ addr.pincode }}
+                    </div>
+
+                    <div class="addr-phone">
+                        {{ addr.phone }}
+                    </div>
+
+                    {% if addr.is_default %}
+                        <span class="default-badge">Default</span>
+                    {% endif %}
+                </label>
+                {% endfor %}
+
+                <div class="add-address-btn" onclick="toggleAddressForm()">
+                    + Add New Address
+                </div>
+            </div>
+
+            <!-- ADD ADDRESS FORM -->
+            <div id="newAddressForm" style="display:none; margin-top:15px;">
+                <div class="form-grid">
+                    <input type="text" name="full_name" placeholder="Full Name">
+                    <input type="text" name="phone" placeholder="Phone">
+                    <input type="text" name="address_line1" placeholder="Address Line 1">
+                    <input type="text" name="address_line2" placeholder="Address Line 2">
+                    <input type="text" name="city" placeholder="City">
+                    <input type="text" name="state" placeholder="State">
+                    <input type="text" name="pincode" placeholder="Pincode">
+                </div>
+
+                <label>
+                    <input type="checkbox" name="set_default"> Set as default
+                </label>
+            </div>
         </div>
+
+    </div>
+
+
+    <!-- ── RIGHT ── -->
+    <div class="checkout-right">
+
+        <!-- PRICE DETAILS -->
+        <div class="summary-card">
+            <h3>Price Details</h3>
+
+            <div class="sum-row">
+                <span>Subtotal</span>
+                <span>₹{{ subtotal }}</span>
+            </div>
+
+            <div class="sum-row">
+                <span>Shipping</span>
+                <span>{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
+            </div>
+
+            <div class="sum-row total">
+                <span>Total</span>
+                <span>₹{{ grand_total }}</span>
+            </div>
         </div>
+
+        <!-- PAYMENT METHOD (RIGHT SIDE NOW) -->
+        <div class="ck-card" style="margin-top:20px;">
+            <div class="ck-card-title">
+                <i class="fa fa-credit-card"></i> Payment Method
+            </div>
+
+            <div class="payment-option">
+                <input type="radio" name="payment_method" value="COD" checked>
+                <span class="pay-icon">💵</span>
+                <label>Cash on Delivery</label>
+            </div>
+        </div>
+
+        <!-- PLACE ORDER BUTTON -->
+        <button class="place-order-btn" type="submit">
+            Place Order
+        </button>
+
     </div>
-    </div>
+
+</div>
+    
     </form>
 
     <script>
     function selectAddress(el) {
-    document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
+        document.querySelectorAll('.address-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+
+        const radio = el.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
     }
+
     document.getElementById('checkoutForm').addEventListener('submit', function(e) {
-    var checked = document.querySelector('input[name=address_id]:checked');
-    if (!checked) {
-        e.preventDefault();
-        alert('Please select a delivery address.');
-    }
+        const checked = document.querySelector('input[name="address_id"]:checked');
+        if (!checked) {
+            e.preventDefault();
+            alert('Please select a delivery address.');
+        }
     });
+
+    function toggleAddressForm() {
+        const form = document.getElementById('newAddressForm');
+        form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+    }
+
+    window.onload = function() {
+        const selected = document.querySelector('input[name="address_id"]:checked');
+        if (!selected) {
+            const first = document.querySelector('input[name="address_id"]');
+            if (first) first.checked = true;
+        }
+    }
     </script>
     {% endblock %}

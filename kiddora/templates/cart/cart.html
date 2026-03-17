@@ -326,7 +326,7 @@
 </div><!-- end cart-page -->
 {% endif %}
 
-{% comment %} <!-- ══ SAVE-TO-WISHLIST MODAL ══ -->
+<!-- ══ SAVE-TO-WISHLIST MODAL ══ -->
 <div id="wlSaveModal" role="dialog" aria-modal="true">
     <div class="wl-modal-box">
         <div class="wl-modal-icon">🛒</div>
@@ -348,7 +348,7 @@
             </button>
         </div>
     </div>
-</div> {% endcomment %}
+</div>
 
 <!-- ══ TOAST ══ -->
 <div id="kdToast"></div>
@@ -506,27 +506,30 @@ document.getElementById('wlSaveModal').addEventListener('click', function(e) {
 });
 
 function doRemove(saveToWishlist) {
-    closeRemoveModal();
-    if (!_removeItemId) return;
+    const itemId = _removeItemId;   // ✅ store first
+    const itemName = _removeItemName;
 
-    const itemEl = document.getElementById('cartItem_' + _removeItemId);
+    closeRemoveModal();             // now safe
+
+    if (!itemId) return;
+
+    const itemEl = document.getElementById('cartItem_' + itemId);
     if (itemEl) itemEl.classList.add('removing');
 
     const fd = new FormData();
     fd.append('save_to_wishlist', saveToWishlist ? '1' : '0');
 
-    fetch("{% url 'shopcore:remove_from_cart' item_id=0 %}".replace('/0/', '/' + _removeItemId + '/'), {
-        method:  'POST',
+    fetch("{% url 'shopcore:remove_from_cart' item_id=0 %}".replace('/0/', '/' + itemId + '/'), {
+        method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
-        body:    fd,
+        body: fd,
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             setTimeout(() => {
                 if (itemEl) itemEl.remove();
-                // Remove summary line
-                const sl = document.getElementById('summaryLine_' + _removeItemId);
+                const sl = document.getElementById('summaryLine_' + itemId);
                 if (sl) sl.remove();
             }, 350);
 
@@ -534,11 +537,11 @@ function doRemove(saveToWishlist) {
             updateCartCountBadge(data.cart_count);
 
             const msg = data.saved_to_wishlist
-                ? `"${data.product_name}" removed and saved to wishlist.`
-                : `"${data.product_name}" removed from cart.`;
+                ? `"${itemName}" removed and saved to wishlist.`
+                : `"${itemName}" removed from cart.`;
+
             showToast(msg, 'success');
 
-            // If cart is now empty, reload to show empty state
             if (data.cart_count === 0) {
                 setTimeout(() => location.reload(), 500);
             }

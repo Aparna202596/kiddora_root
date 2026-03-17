@@ -2,11 +2,10 @@
 from __future__ import annotations
 from decimal import Decimal
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from accounts.decorators import user_login_required
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
@@ -15,10 +14,17 @@ from accounts.decorators import admin_login_required
 from accounts.models import UserAddress
 from shopcore.models import Cart, CartItem, Order, OrderItem
 from products.models import ProductVariant
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-import io
+from django.http import HttpResponse
 
+import io
+import os
+from reportlab.pdfbase import pdfmetrics
+from django.conf import settings
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 # ──────────────────────────────────────────────────────────────
 # HELPERS (shared between user & admin)
 # ──────────────────────────────────────────────────────────────
@@ -88,7 +94,7 @@ def _recalculate_order_amount(order):
 # USER: CHECKOUT (GET)
 # ──────────────────────────────────────────────────────────────
 @never_cache
-@login_required
+@user_login_required
 def checkout(request):
     cart = _get_cart(request.user)
     if not cart or not cart.items.exists():
@@ -170,7 +176,7 @@ def checkout(request):
 # USER: PLACE ORDER (POST – COD only for now)
 # ──────────────────────────────────────────────────────────────
 @never_cache
-@login_required
+@user_login_required
 @transaction.atomic
 def place_order(request):
     if request.method != "POST":
@@ -278,7 +284,7 @@ def place_order(request):
 # USER: ORDER SUCCESS
 # ──────────────────────────────────────────────────────────────
 @never_cache
-@login_required
+@user_login_required
 def order_success(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     return render(request, "orders/user/order_success.html", {"order": order})
@@ -287,7 +293,7 @@ def order_success(request, order_id):
 # USER: ORDER LIST
 # ──────────────────────────────────────────────────────────────
 @never_cache
-@login_required
+@user_login_required
 def user_order_list(request):
     query = request.GET.get("q", "").strip()
     orders = Order.objects.filter(user=request.user).order_by("-order_date")
@@ -308,7 +314,7 @@ def user_order_list(request):
 # USER: ORDER DETAIL
 # ──────────────────────────────────────────────────────────────
 @never_cache
-@login_required
+@user_login_required
 def user_order_detail(request, order_id):
     order = get_object_or_404(
         Order.objects.select_related("address", "coupon").prefetch_related(
@@ -335,7 +341,7 @@ def user_order_detail(request, order_id):
 # USER: CANCEL WHOLE ORDER
 # ──────────────────────────────────────────────────────────────
 @never_cache
-@login_required
+@user_login_required
 @transaction.atomic
 def cancel_order(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
@@ -368,7 +374,7 @@ def cancel_order(request, order_id):
 # USER: CANCEL SINGLE ITEM
 # ──────────────────────────────────────────────────────────────
 @never_cache
-@login_required
+@user_login_required
 @transaction.atomic
 def cancel_order_item(request, order_id, item_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
@@ -405,41 +411,6 @@ def cancel_order_item(request, order_id, item_id):
         order.save(update_fields=["order_status", "cancel_reason", "cancelled_at"])
     messages.success(request, f"Item '{order_item.variant.product.product_name}' cancelled.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
-
-# ──────────────────────────────────────────────────────────────
-# USER: DOWNLOAD INVOICE
-# ──────────────────────────────────────────────────────────────
-@login_required
-def download_invoice(request, order_id):
-    order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    try:
-        
-        buffer = io.BytesIO()
-        c = canvas.Canvas(buffer, pagesize=A4)
-        width, height = A4
-        y = height - 50
-        c.drawString(100, y, f"KIDDORA Invoice - {order.order_id}")
-        y -= 30
-        c.drawString(100, y, f"Date: {order.order_date.strftime('%d %b %Y')}")
-        y -= 30
-        c.drawString(100, y, f"Status: {order.get_order_status_display()}")
-        y -= 50
-        for oi in order.order_items.all():
-            c.drawString(100, y, f"{oi.variant.product.product_name} x{oi.quantity} = ₹{oi.total_price}")
-            y -= 20
-        y -= 30
-        c.drawString(100, y, f"Grand Total: ₹{order.final_amount}")
-        c.showPage()
-        c.save()
-        buffer.seek(0)
-        response = HttpResponse(buffer, content_type="application/pdf")
-        response["Content-Disposition"] = f'attachment; filename="invoice_{order.order_id}.pdf"'
-        return response
-    except ImportError:
-        content = f"KIDDORA Invoice\nOrder ID: {order.order_id}\nTotal: ₹{order.final_amount}"
-        response = HttpResponse(content, content_type="text/plain")
-        response["Content-Disposition"] = f'attachment; filename="invoice_{order.order_id}.txt"'
-        return response
 
 # ──────────────────────────────────────────────────────────────
 # ADMIN: ORDER LIST
@@ -590,3 +561,125 @@ def admin_update_item_status(request, order_id, item_id):
     )
 
     return redirect("shopcore:admin_order_detail", order_id=order_id)
+
+@user_login_required
+def download_invoice(request, order_id):
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    font_path = "C:/Windows/Fonts/arial.ttf"
+    pdfmetrics.registerFont(TTFont("Arial", font_path))
+    styles = getSampleStyleSheet()
+
+    # ✨ CUSTOM SPACING STYLE
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontName="Arial",
+        spaceAfter=8,
+        leading=14
+    )
+
+    heading_style = ParagraphStyle(
+        'Heading',
+        parent=styles['Heading2'],
+        fontName="Arial",
+        spaceAfter=12
+    )
+
+    elements = []
+
+    # ───── LOGO ─────
+    logo_path = os.path.join(settings.BASE_DIR, "static/images/kiddora_logo.PNG")
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=120, height=50)
+        elements.append(logo)
+
+    elements.append(Spacer(1, 15))
+
+    # ───── TITLE ─────
+    elements.append(Paragraph("<b>KIDDORA INVOICE</b>", styles['Title']))
+    elements.append(Spacer(1, 20))
+
+    # ───── ORDER INFO ─────
+    elements.append(Paragraph(f"<b>Order ID:</b> {order.order_id}", normal_style))
+    elements.append(Paragraph(f"<b>Date:</b> {order.order_date.strftime('%d %b %Y')}", normal_style))
+    elements.append(Paragraph(f"<b>Status:</b> {order.get_order_status_display()}", normal_style))
+
+    elements.append(Spacer(1, 20))
+
+    # ───── CUSTOMER DETAILS ─────
+    address = order.address
+
+    name = getattr(address, 'full_name', None) or getattr(order.user, 'username', '')
+    phone = getattr(address, 'phone', None) or getattr(order.user, 'phone', '')
+
+    full_address = f"""
+    {getattr(address, 'address_line1', '')}, 
+    {getattr(address, 'address_line2', '')}, 
+    {getattr(address, 'city', '')}, 
+    {getattr(address, 'state', '')} - {getattr(address, 'pincode', '')}
+    """
+
+    elements.append(Paragraph("<b>Customer Details</b>", heading_style))
+    elements.append(Paragraph(f"<b>Name:</b> {name}", normal_style))
+    elements.append(Paragraph(f"<b>Phone:</b> {phone}", normal_style))
+    elements.append(Paragraph(f"<b>Address:</b> {full_address}", normal_style))
+
+    elements.append(Spacer(1, 25))
+
+    # ───── TABLE DATA ─────
+    data = [["Order ID", "Item", "Qty", "Price (₹)"]]
+
+    for oi in order.order_items.all():
+        data.append([
+            str(order.order_id),
+            oi.variant.product.product_name,
+            str(oi.quantity),
+            f"₹{oi.unit_price * oi.quantity}"
+        ])
+
+    data.append(["", "", "Grand Total", f"₹{order.final_amount}"])
+
+    # ───── TABLE ─────
+    table = Table(data, colWidths=[90, 200, 60, 100])
+
+    table.setStyle(TableStyle([
+        # Header
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#ff6f91")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, -1), "Arial"),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+
+        # Body
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.whitesmoke, colors.lightgrey]),
+
+        # Alignment
+        ("ALIGN", (2, 1), (2, -1), "CENTER"),
+        ("ALIGN", (3, 1), (3, -1), "RIGHT"),
+
+        # Padding (✨ better spacing)
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+
+        # Grand Total Highlight
+        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#ffd6e0")),
+        ("FONTNAME", (0, -1), (-1, -1), "Arial"),
+    ]))
+
+    elements.append(table)
+
+    # ───── BUILD PDF ─────
+    doc.build(elements)
+
+    buffer.seek(0)
+
+    return HttpResponse(
+        buffer,
+        content_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="invoice_{order.order_id}.pdf"'
+        }
+    )

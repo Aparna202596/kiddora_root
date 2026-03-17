@@ -5,6 +5,9 @@ from shopcore.views import checkout_views   # ← checkout + place_order + order
 from shopcore.views import order_views
 from shopcore.views import return_views
 from shopcore.views import wishlist_views
+from shopcore.views import coupon_views
+from shopcore.views import offer_views
+from shopcore.views import review_views
 
 
 app_name = 'shopcore'
@@ -73,4 +76,38 @@ urlpatterns = [
     path("admin/returns/<int:return_id>/", return_views.admin_return_detail, name="admin_return_detail"),
     path("admin/returns/<int:return_id>/approve/", return_views.admin_approve_return, name="admin_approve_return"),
     path("admin/returns/<int:return_id>/reject/", return_views.admin_reject_return, name="admin_reject_return"),
+
+     # ── COUPON — ADMIN ────────────────────────────────────────────────────────
+    path("admin/coupons/",                              coupon_views.admin_coupon_list,    name="admin_coupon_list"),
+    path("admin/coupons/add/",                          coupon_views.admin_add_coupon,     name="admin_add_coupon"),
+    path("admin/coupons/<int:coupon_id>/edit/",         coupon_views.admin_edit_coupon,    name="admin_edit_coupon"),
+    path("admin/coupons/<int:coupon_id>/delete/",       coupon_views.admin_delete_coupon,  name="admin_delete_coupon"),
+    path("admin/coupons/<int:coupon_id>/toggle/",       coupon_views.admin_toggle_coupon,  name="admin_toggle_coupon"),
+    path("admin/coupons/<int:coupon_id>/block/",        coupon_views.admin_block_coupon,   name="admin_block_coupon"),
+    path("admin/coupons/<int:coupon_id>/unblock/",      coupon_views.admin_unblock_coupon, name="admin_unblock_coupon"),
+
+    # ── COUPON — USER ─────────────────────────────────────────────────────────
+    path("cart/coupon/apply/",  coupon_views.apply_coupon,  name="apply_coupon"),
+    path("cart/coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"),
+
+    # ── OFFER — ADMIN ─────────────────────────────────────────────────────────
+    path("admin/offers/",                         offer_views.admin_offer_list,    name="admin_offer_list"),
+    path("admin/offers/add/",                     offer_views.admin_add_offer,     name="admin_add_offer"),
+    path("admin/offers/<int:offer_id>/edit/",     offer_views.admin_edit_offer,    name="admin_edit_offer"),
+    path("admin/offers/<int:offer_id>/delete/",   offer_views.admin_delete_offer,  name="admin_delete_offer"),
+    path("admin/offers/<int:offer_id>/toggle/",   offer_views.admin_toggle_offer,  name="admin_toggle_offer"),
+    path("admin/offers/<int:offer_id>/block/",    offer_views.admin_block_offer,   name="admin_block_offer"),
+    path("admin/offers/<int:offer_id>/unblock/",  offer_views.admin_unblock_offer, name="admin_unblock_offer"),
+
+
+    # ── REVIEWS — USER ────────────────────────────────────────────────────────
+    path("reviews/",                           review_views.my_reviews,     name="my_reviews"),
+    path("reviews/submit/<int:product_id>/",   review_views.submit_review,  name="submit_review"),
+    path("reviews/delete/<int:review_id>/",    review_views.delete_review,  name="delete_review"),
+
+    # ── REVIEW MANAGEMENT — ADMIN ─────────────────────────────────────────────
+    path("admin/reviews/",                             review_views.admin_review_list,    name="admin_review_list"),
+    path("admin/reviews/<int:review_id>/approve/",     review_views.admin_approve_review, name="admin_approve_review"),
+    path("admin/reviews/<int:review_id>/reject/",      review_views.admin_reject_review,  name="admin_reject_review"),
+
 ]

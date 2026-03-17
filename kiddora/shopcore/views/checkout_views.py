@@ -112,6 +112,7 @@ def checkout(request):
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     #addresses = UserAddress.objects.filter(user=request.user)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
+    
     DEFAULT_SHIPPING = Decimal("100") 
 
     shipping_charge = Decimal("0")
@@ -148,21 +149,45 @@ def place_order(request):
         return redirect("shopcore:cart")
 
     address_id = request.POST.get("address_id")
+
+    # 🟢 CASE 1: Existing address selected
     if address_id:
-        #address = get_object_or_404(UserAddress, id=address_id, user=request.user)
-        address = get_object_or_404( UserAddress, id=address_id, user=request.user, is_deleted=False)
+        address = get_object_or_404(
+            UserAddress,
+            id=address_id,
+            user=request.user,
+            is_deleted=False
+        )
+
+    # 🟢 CASE 2: New address from checkout
+    elif request.POST.get("full_name"):
+        address = UserAddress.objects.create(
+            user=request.user,
+            full_name=request.POST.get("full_name"),
+            phone=request.POST.get("phone"),
+            address_line1=request.POST.get("address_line1"),
+            address_line2=request.POST.get("address_line2"),
+            city=request.POST.get("city"),
+            state=request.POST.get("state"),
+            pincode=request.POST.get("pincode"),
+            is_default=bool(request.POST.get("set_default"))
+        )
+
+        # If new address set as default → remove old defaults
+        if address.is_default:
+            UserAddress.objects.filter(user=request.user)\
+                .exclude(id=address.id)\
+                .update(is_default=False)
+
+    # 🟢 CASE 3: fallback
     else:
         address = (
             UserAddress.objects.filter(user=request.user, is_deleted=False, is_default=True).first()
             or UserAddress.objects.filter(user=request.user, is_deleted=False).first()
         )
-        # address = (
-        #     UserAddress.objects.filter(user=request.user, is_default=True).first()
-        #     or UserAddress.objects.filter(user=request.user).first()
-        # )
-    if not address:
-        messages.error(request, "Please add a delivery address before placing an order.")
-        return redirect("shopcore:checkout")
+        if not address:
+            messages.error(request, "Please add a delivery address before placing an order.")
+            return redirect("shopcore:checkout")
 
     # Re-validate cart
     items = cart.items.select_related(

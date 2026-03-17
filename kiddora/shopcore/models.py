@@ -127,6 +127,7 @@ class Order(models.Model):
         ("OUT_FOR_DELIVERY", "Out for Delivery"),
         ("DELIVERED", "Delivered"),
         ("CANCELLED", "Cancelled"),
+        ("RETURNED", "Returned")
     )
     PAYMENT_METHOD_CHOICES = (
         ("COD", "Cash on Delivery"),

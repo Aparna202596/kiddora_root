@@ -217,7 +217,7 @@ def admin_user_detail(request, user_id):
 
 @admin_login_required
 def admin_sales_report(request):
-    orders = Order.objects.all().order_by("-order_date")
+    orders = Order.objects.filter(payment_status="PAID").order_by("-order_date")
 
     # Daily, Weekly, Yearly filters
     report_type = request.GET.get("type") 
