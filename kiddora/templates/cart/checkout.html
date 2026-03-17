@@ -151,7 +151,7 @@
                 {% if addr.address_line2 %}{{ addr.address_line2 }}<br>{% endif %}
                 {{ addr.city }}, {{ addr.state }} – {{ addr.pincode }}
             </div>
-            <div class="addr-phone"><i class="fa fa-phone" style="color:#f06292;"></i> {{ addr.phone }}</div>
+            <div class="addr-phone"><i class="fa fa-phone" style="color:#f06292;"></i> {{ user.phone }}</div>
             {% if addr.is_default %}<span class="default-badge">Default</span>{% endif %}
             </label>
             {% empty %}
@@ -245,11 +245,11 @@
             ⚠️ Please add a delivery address first.
             </div>
             <button class="place-order-btn" type="button" disabled style="background:#d1d5db;cursor:not-allowed;">
-            Place Order (COD)
+            Place Order
             </button>
         {% else %}
             <button class="place-order-btn" type="submit" id="placeOrderBtn">
-            <i class="fa fa-check-circle"></i> Place Order (COD)
+            <i class="fa fa-check-circle"></i> Place Order
             </button>
         {% endif %}
 

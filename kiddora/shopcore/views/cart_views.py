@@ -1,65 +1,41 @@
-# shopcore/views/cart_views.py
-"""
-Cart management — AJAX-enabled, all requirements met.
-
-✓ Add to Cart (POST, AJAX-aware)
-✓ Full hierarchy check: variant → product → subcategory → category
-✓ Blocked / deleted product after cart add → flagged; "Sorry!! Product
-  is temporarily removed from the list." shown in cart
-✓ Already in cart → increment (capped at MAX_QTY and live stock)
-✓ Added to cart → remove from wishlist
-✓ Increment / decrement via AJAX, stock-validated
-✓ Out-of-stock and blocked → disabled UI, checkout blocked
-✓ Remove with optional save-to-wishlist (AJAX modal)
-✓ Clear cart
-✓ Toggle wishlist (AJAX-aware)
-"""
-
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from accounts.decorators import user_login_required
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-
-from products.models import ProductVariant, Product
+from products.models import ProductVariant, Product, Category, SubCategory
 from shopcore.models import Cart, CartItem, Wishlist, WishlistItem
 
-
-# ─────────────────────────────────────────────────────────────
-# CONSTANTS & HELPERS
-# ─────────────────────────────────────────────────────────────
+# HELPERS
 
 MAX_QTY = CartItem.MAX_QTY_PER_PRODUCT
-
 
 def _get_or_create_cart(user):
     cart, _ = Cart.objects.get_or_create(user=user)
     return cart
 
-
 def _variant_is_available(variant: ProductVariant) -> bool:
-    """Full hierarchy check (mirrors catalog_views filters)."""
     try:
-        p   = variant.product
+        p = variant.product
         sub = p.subcategory
         cat = sub.category
         return (
             variant.is_active
-            and p.is_active   and not p.is_deleted
+            and p.is_active and not p.is_deleted
             and sub.is_active and not sub.is_deleted
             and cat.is_active and not cat.is_deleted
         )
     except Exception:
         return False
-
-
+    
+#available stock quantity
 def _stock_for(variant: ProductVariant) -> int:
     try:
         return variant.inventory.quantity_available
     except Exception:
-        return 0
+        return 0           #No stock available
 
 
 def _is_ajax(request) -> bool:
@@ -78,17 +54,13 @@ def _cart_subtotal(cart) -> float:
             total += float(item.variant.product.final_price) * item.quantity
     return total
 
-
-# ─────────────────────────────────────────────────────────────
 # CART LIST
-# ─────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 def cart_view(request):
-    cart  = _get_or_create_cart(request.user)
-    items = (
-        cart.items
+    cart = _get_or_create_cart(request.user)
+    items = (cart.items
         .select_related(
             "variant",
             "variant__product",
@@ -102,16 +74,16 @@ def cart_view(request):
         .order_by("-added_at")
     )
 
-    cart_data        = []
-    subtotal         = 0
-    any_unavailable  = False
+    cart_data = []
+    subtotal = 0
+    any_unavailable = False
     any_out_of_stock = False
 
     for item in items:
-        variant   = item.variant
+        variant = item.variant
         available = _variant_is_available(variant)
-        stock     = _stock_for(variant)
-        product   = variant.product
+        stock = _stock_for(variant)
+        product = variant.product
         item_total = product.final_price * item.quantity if available else 0
 
         img_url = None
@@ -168,7 +140,7 @@ def cart_view(request):
 # ─────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 @transaction.atomic
 def add_to_cart(request, variant_id):
     if request.method != "POST":
@@ -252,17 +224,15 @@ def add_to_cart(request, variant_id):
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or ""
     return redirect(next_url) if next_url.startswith("/") else redirect("shopcore:cart")
 
-
-# ─────────────────────────────────────────────────────────────
 # REMOVE FROM CART  (AJAX, optional save-to-wishlist)
-# ─────────────────────────────────────────────────────────────
+
 
 @never_cache
-@login_required
+@user_login_required
 @require_POST
 def remove_from_cart(request, item_id):
-    ajax      = _is_ajax(request)
-    cart      = _get_or_create_cart(request.user)
+    ajax = _is_ajax(request)
+    cart = _get_or_create_cart(request.user)
     cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
     product   = cart_item.variant.product
 
@@ -298,7 +268,7 @@ def remove_from_cart(request, item_id):
 # ─────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 @transaction.atomic
 def update_cart_quantity(request, item_id):
     ajax = _is_ajax(request)
@@ -365,7 +335,7 @@ def update_cart_quantity(request, item_id):
 # ─────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 def clear_cart(request):
     if request.method == "POST":
         _get_or_create_cart(request.user).items.all().delete()
@@ -378,7 +348,7 @@ def clear_cart(request):
 # ─────────────────────────────────────────────────────────────
 
 @never_cache
-@login_required
+@user_login_required
 def toggle_wishlist(request, product_id):
     if request.method != "POST":
         if _is_ajax(request):

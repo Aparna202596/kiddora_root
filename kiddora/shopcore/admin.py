@@ -1,5 +1,3 @@
-# shopcore/admin.py
-
 from django.contrib import admin
 from django.utils.html import format_html
 from django.utils import timezone
@@ -188,7 +186,7 @@ class OrderItemAdmin(admin.ModelAdmin):
 class ReturnAdmin(admin.ModelAdmin):
     list_display  = (
         "order_item", "status", "refund_amount",
-        "reviewed_at", "refunded_at", "created_at",
+        "updated_at", "refunded_at", "created_at",
     )
     list_filter   = ("status",)
     search_fields = ("order_item__order__order_id",)
@@ -196,11 +194,11 @@ class ReturnAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
     fieldsets = (
         ("Return Details", {
-            "fields": ("order_item", "reason", "status", "refund_amount", "admin_remark"),
+            "fields": ("order_item", "reason", "status", "refund_amount", "admin_note"),
         }),
         ("Timestamps", {
             "classes": ("collapse",),
-            "fields": ("reviewed_at", "refunded_at", "created_at"),
+            "fields": ("updated_at", "refunded_at", "created_at"),
         }),
     )
 

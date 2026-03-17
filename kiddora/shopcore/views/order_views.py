@@ -10,11 +10,14 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
-from shopcore.views.coupon_views import compute_coupon_discount
+#from shopcore.views.coupon_views import compute_coupon_discount
 from accounts.decorators import admin_login_required
 from accounts.models import UserAddress
 from shopcore.models import Cart, CartItem, Order, OrderItem
 from products.models import ProductVariant
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import io
 
 # ──────────────────────────────────────────────────────────────
 # HELPERS (shared between user & admin)
@@ -54,6 +57,33 @@ def _img_url_for(product):
                 return val.url
     return None
 
+def _recalculate_order_amount(order):
+    """
+    Recalculate order totals based on ACTIVE items only.
+    Also update shipping charge based on subtotal.
+    """
+
+    active_items = order.order_items.filter(item_status="ACTIVE")
+
+    subtotal = sum(item.unit_price * item.quantity for item in active_items)
+
+    # Shipping rule
+    shipping_charge = Decimal("0")
+    if 0 < subtotal < Decimal("499"):
+        shipping_charge = Decimal("100")
+
+    order.total_amount = subtotal
+    order.shipping_charge = shipping_charge
+
+    # Calculate final amount ensuring it doesn't go negative
+    total_deductions = order.discount_amount + order.coupon_discount
+    order.final_amount = max(Decimal("0"), subtotal - total_deductions + shipping_charge)
+
+    order.save(update_fields=[
+        "total_amount",
+        "shipping_charge",
+        "final_amount",
+    ])
 # ──────────────────────────────────────────────────────────────
 # USER: CHECKOUT (GET)
 # ──────────────────────────────────────────────────────────────
@@ -105,23 +135,24 @@ def checkout(request):
         )
         return redirect("shopcore:cart")
 
-    # Coupon
-    coupon_discount = Decimal("0")
-    applied_coupon = getattr(cart, "coupon", None)
-    if applied_coupon:
-        try:
-            if applied_coupon.is_valid():
-                coupon_discount = sum(
-                    compute_coupon_discount(applied_coupon, item.variant.product.final_price * item.quantity)
-                    for item in items
-                )
-        except Exception:
-            coupon_discount = Decimal("0")
+    # # Coupon
+    # coupon_discount = Decimal("0")
+    # applied_coupon = getattr(cart, "coupon", None)
+    # if applied_coupon:
+    #     try:
+    #         if applied_coupon.is_valid():
+    #             coupon_discount = sum(
+    #                 compute_coupon_discount(applied_coupon, item.variant.product.final_price * item.quantity)
+    #                 for item in items
+    #             )
+    #     except Exception:
+    #         coupon_discount = Decimal("0")
 
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
     shipping_charge = Decimal("0")
-    grand_total = subtotal - coupon_discount + shipping_charge
+    grand_total = subtotal + shipping_charge
+    # grand_total = subtotal - coupon_discount + shipping_charge
 
     context = {
         "checkout_items": checkout_items,
@@ -129,8 +160,8 @@ def checkout(request):
         "default_address": default_address,
         "subtotal": subtotal,
         "shipping_charge": shipping_charge,
-        "coupon_discount": coupon_discount,
-        "applied_coupon": applied_coupon,
+        # "coupon_discount": coupon_discount,
+        # "applied_coupon": applied_coupon,
         "grand_total": grand_total,
     }
     return render(request, "cart/checkout.html", context)
@@ -194,7 +225,7 @@ def place_order(request):
     if applied_coupon:
         try:
             if applied_coupon.is_valid():
-                coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
+                # coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
                 applied_coupon.used_count += 1
                 applied_coupon.used_by.add(request.user)
                 applied_coupon.save(update_fields=["used_count"])
@@ -362,11 +393,16 @@ def cancel_order_item(request, order_id, item_id):
     order_item.cancel_reason = reason or "Item cancelled by user"
     order_item.cancelled_at = timezone.now()
     order_item.save()
+
+    # Recalculate order totals
+    _recalculate_order_amount(order)
+
+    # If all items cancelled -> cancel order
     if not order.order_items.filter(item_status="ACTIVE").exists():
         order.order_status = "CANCELLED"
         order.cancel_reason = "All items cancelled"
         order.cancelled_at = timezone.now()
-        order.save()
+        order.save(update_fields=["order_status", "cancel_reason", "cancelled_at"])
     messages.success(request, f"Item '{order_item.variant.product.product_name}' cancelled.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
@@ -377,9 +413,7 @@ def cancel_order_item(request, order_id, item_id):
 def download_invoice(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     try:
-        from reportlab.lib.pagesizes import A4
-        from reportlab.pdfgen import canvas
-        import io
+        
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
         width, height = A4
@@ -482,10 +516,10 @@ def admin_update_order_status(request, order_id):
     order = get_object_or_404(Order, order_id=order_id)
     new_status = request.POST.get("order_status", "").strip()
     valid_transitions = {
-        "PENDING": ["CONFIRMED", "CANCELLED"],
-        "CONFIRMED": ["SHIPPED", "CANCELLED"],
-        "SHIPPED": ["OUT_FOR_DELIVERY"],
-        "OUT_FOR_DELIVERY": ["DELIVERED"],
+        "PENDING": ["CONFIRMED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
+        "CONFIRMED": ["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
+        "SHIPPED": ["OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
+        "OUT_FOR_DELIVERY": ["DELIVERED", "CANCELLED"],
         "DELIVERED": [],
         "CANCELLED": [],
     }
@@ -495,9 +529,13 @@ def admin_update_order_status(request, order_id):
             request,
             f"Cannot change status from '{order.get_order_status_display()}' to '{new_status}'."
         )
+        print(order.order_status)
+        print(new_status)
         return redirect("shopcore:admin_order_detail", order_id=order.order_id)
     old_status = order.order_status
     order.order_status = new_status
+    print(order.order_status)
+    print(new_status)
     if new_status == "DELIVERED":
         order.delivered_at = timezone.now()
         order.payment_status = "PAID"
@@ -542,6 +580,9 @@ def admin_update_item_status(request, order_id, item_id):
 
     order_item.item_status = new_status
     order_item.save()
+
+    if new_status == "CANCELLED":
+        _recalculate_order_amount(order)
 
     messages.success(
         request,

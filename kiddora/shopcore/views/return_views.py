@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from decimal import Decimal
-
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -10,17 +8,14 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
-
 from accounts.decorators import admin_login_required
 from shopcore.models import Order, OrderItem
 from shopcore.models import Return
 
-# ─────────────────────────────────────────────────────────────
 # HELPERS
-# ─────────────────────────────────────────────────────────────
+
 
 def _get_return_model():
-    """Lazy import to avoid circular issues; raises ImportError if missing."""
     return Return
 
 
@@ -35,18 +30,14 @@ def _restore_inventory(order_item: OrderItem):
 
 
 def _credit_wallet(user, amount: Decimal, description: str):
-    """
-    Credit user's wallet and log a WalletTransaction.
-    Silently skips if Wallet model does not exist yet.
-    """
     try:
         from accounts.models import Wallet, WalletTransaction
         wallet, _ = Wallet.objects.get_or_create(user=user)
         wallet.balance += amount
         wallet.save(update_fields=["balance", "updated_at"])
         WalletTransaction.objects.create(
-            wallet      = wallet,
-            amount      = amount,
+            wallet = wallet,
+            amount = amount,
             tx_type     = "CREDIT",
             description = description,
         )
@@ -79,7 +70,7 @@ def request_return(request, order_id, item_id):
         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
     if request.method == "GET":
-        return render(request, "orders/user/request_return.html", {
+        return render(request, "returns/request_return.html", {
             "order":      order,
             "order_item": order_item,
         })
@@ -87,7 +78,7 @@ def request_return(request, order_id, item_id):
     reason = request.POST.get("reason", "").strip()
     if not reason:
         messages.error(request, "Please provide a reason for the return.")
-        return render(request, "orders/user/request_return.html", {
+        return render(request, "returns/request_return.html", {
             "order":      order,
             "order_item": order_item,
             "error":      "Reason is required.",
@@ -160,7 +151,7 @@ def admin_return_list(request):
     status_choices = [("PENDING", "Pending"), ("APPROVED", "Approved"), ("REJECTED", "Rejected")]
     page_obj       = Paginator(qs, 20).get_page(request.GET.get("page"))
 
-    return render(request, "orders/admin/admin_return_list.html", {
+    return render(request, "returns/admin_return_list.html", {
         "page_obj":       page_obj,
         "search":         search,
         "status_f":       status_f,
@@ -182,19 +173,21 @@ def admin_return_detail(request, return_id):
 
     ret = get_object_or_404(
         Return.objects.select_related(
-            "order_item__order__user",
-            "order_item__order__address",
-            "order_item__variant__product__images",
-            "order_item__variant__color",
-            "order_item__variant__age_group",
-        ),
-        id=return_id,
-    )
+        "order_item__order__user",
+        "order_item__order__address",
+        "order_item__variant__product",
+        "order_item__variant__color",
+        "order_item__variant__age_group",
+    ).prefetch_related(
+        "order_item__variant__product__images"
+    ),
+    id=return_id,
+)
 
     oi      = ret.order_item
     img_url = None
     img_obj = oi.variant.product.images.filter(is_default=True).first() or \
-              oi.variant.product.images.first()
+                oi.variant.product.images.first()
     if img_obj:
         for field in ("image1", "image2", "image3", "image4", "image5"):
             val = getattr(img_obj, field)
@@ -202,7 +195,7 @@ def admin_return_detail(request, return_id):
                 img_url = val.url
                 break
 
-    return render(request, "orders/admin/admin_return_detail.html", {
+    return render(request, "returns/admin_return_detail.html", {
         "ret":     ret,
         "img_url": img_url,
     })
@@ -216,14 +209,7 @@ def admin_return_detail(request, return_id):
 @admin_login_required
 @transaction.atomic
 def admin_approve_return(request, return_id):
-    """
-    POST.
-    1. Marks Return as APPROVED.
-    2. Sets OrderItem.item_status = REFUNDED.
-    3. Restores inventory stock.
-    4. Credits refund_amount to user's wallet.
-    5. Sets Order.payment_status = REFUNDED (or PARTIALLY_REFUNDED).
-    """
+    
     if request.method != "POST":
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 

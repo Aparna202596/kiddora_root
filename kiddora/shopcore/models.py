@@ -146,13 +146,15 @@ class Order(models.Model):
     address = models.ForeignKey(UserAddress, on_delete=models.PROTECT, related_name="orders")
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default="PENDING")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default="COD")
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="ALL PENDING")
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=100)
     final_amount = models.DecimalField(max_digits=10, decimal_places=2) #"total_amount - discount_amount - coupon_discount + shipping_charge"
+    
     order_date = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
@@ -216,9 +218,10 @@ class Return(models.Model):
     reason = models.TextField(help_text="Reason for return (mandatory per instructions).")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="REQUESTED")
     refund_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    admin_remark = models.TextField(blank=True, null=True)
-    reviewed_at = models.DateTimeField(null=True, blank=True)
+    admin_note = models.TextField(blank=True, null=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     refunded_at = models.DateTimeField(null=True, blank=True)
+    locked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at"]

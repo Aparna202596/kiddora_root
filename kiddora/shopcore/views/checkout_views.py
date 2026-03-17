@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
-from shopcore.views.coupon_views import compute_coupon_discount
+#from shopcore.views.coupon_views import compute_coupon_discount
 from accounts.models import UserAddress
 from shopcore.models import Cart, CartItem, Order, OrderItem
 
@@ -109,21 +109,28 @@ def checkout(request):
         )
         return redirect("shopcore:cart")
 
-    # Coupon
-    coupon_discount = Decimal("0")
-    applied_coupon  = getattr(cart, "coupon", None)
-    if applied_coupon:
-        try:
-            if applied_coupon.is_valid():
-                coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
-        except Exception:
-            coupon_discount = Decimal("0")
+    # # Coupon
+    # coupon_discount = Decimal("0")
+    # applied_coupon  = getattr(cart, "coupon", None)
+    # if applied_coupon:
+    #     try:
+    #         if applied_coupon.is_valid():
+    #             coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
+    #     except Exception:
+    #         coupon_discount = Decimal("0")
 
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     #addresses = UserAddress.objects.filter(user=request.user)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
+    DEFAULT_SHIPPING = Decimal("100") 
+
     shipping_charge = Decimal("0")
-    grand_total = subtotal - coupon_discount + shipping_charge
+    if subtotal < 499:
+        shipping_charge = DEFAULT_SHIPPING
+
+    grand_total = subtotal - Decimal("0") + shipping_charge
+    
+    #grand_total = subtotal - coupon_discount + shipping_charge
 
     return render(request, "cart/checkout.html", {
         "checkout_items": checkout_items,
@@ -131,8 +138,8 @@ def checkout(request):
         "default_address": default_address,
         "subtotal":        subtotal,
         "shipping_charge": shipping_charge,
-        "coupon_discount": coupon_discount,
-        "applied_coupon":  applied_coupon,
+        # "coupon_discount": coupon_discount,
+        # "applied_coupon":  applied_coupon,
         "grand_total":     grand_total,
     })
 
@@ -204,7 +211,7 @@ def place_order(request):
     if applied_coupon:
         try:
             if applied_coupon.is_valid():
-                coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
+                #coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
                 applied_coupon.used_count += 1
                 applied_coupon.used_by.add(request.user)
                 applied_coupon.save(update_fields=["used_count"])
