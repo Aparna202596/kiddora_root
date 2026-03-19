@@ -9,7 +9,13 @@ from django.utils import timezone
 from decimal import Decimal
 from types import SimpleNamespace
 
-# HELPER
+# ───────────────────────────────── HELPER ─────────────────────────────────
+def _get_cart(user):
+    try:
+        return user.cart
+    except Cart.DoesNotExist:
+        return None
+
 def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
     """Return discount amount. Exported so checkout / order views can reuse it."""
     if coupon.discount_type == "PERCENT":
@@ -20,72 +26,74 @@ def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
         discount = coupon.discount_value
     return min(discount, subtotal)
 
+# ───────────────────────────────── USER ─────────────────────────────────
 # USER: APPLY COUPON
-
 @never_cache
 @user_login_required
 def apply_coupon(request):
     if request.method != "POST":
-        return redirect("shopcore:cart")
-
+        return redirect("shopcore:checkout")
+    
     code = request.POST.get("coupon_code", "").strip().upper()
     if not code:
         messages.error(request, "Please enter a coupon code!")
-        return redirect("shopcore:cart")
-
+        return redirect("shopcore:checkout")
+    
     try:
         coupon = Coupon.objects.get(code=code)
     except Coupon.DoesNotExist:
         messages.error(request, f'Coupon "{code}" not found.')
-        return redirect("shopcore:cart")
-
+        return redirect("shopcore:checkout")
+    
     if not coupon.is_valid():
-        messages.error(request, f'Sorry!!, Coupon "{code}" is expired or inactive.')
-        return redirect("shopcore:cart")
-
+        messages.error(request, f'Coupon "{code}" is expired or inactive.')
+        return redirect("shopcore:checkout")
+    
     if coupon.used_by.filter(id=request.user.id).exists():
-        messages.error(request, "Oops!, You have already used this coupon.")
-        return redirect("shopcore:cart")
-
+        messages.error(request, "You have already used this coupon.")
+        return redirect("shopcore:checkout")
+    
     if coupon.used_count >= coupon.usage_limit:
-        messages.error(request, "Oops, This coupon has reached its usage limit.")
-        return redirect("shopcore:cart")
-
-    cart, _ = Cart.objects.get_or_create(user=request.user)
+        messages.error(request, "This coupon has reached its usage limit.")
+        return redirect("shopcore:checkout")
+    
+    cart = _get_cart(request.user)
+    if not cart:
+        messages.error(request, "No active cart found.")
+        return redirect("shopcore:checkout")
+    
     subtotal = sum(
         item.variant.product.final_price * item.quantity
-        for item in cart.items.select_related("variant__product").all()
+        for item in cart.items.select_related("variant__product")
     )
-
+    
     if subtotal < coupon.min_order_amount:
-        messages.error(
-            request,
-            f"Minimum order of ₹{coupon.min_order_amount:.0f} required!! "
-            f"(your cart: ₹{subtotal:.0f}).",
-        )
-        return redirect("shopcore:cart")
-
+        messages.error(request, f"Minimum order ₹{coupon.min_order_amount} required.")
+        return redirect("shopcore:checkout")
+    
     cart.coupon = coupon
     cart.save(update_fields=["coupon"])
+    
     discount = compute_coupon_discount(coupon, subtotal)
-    messages.success(request, f'Coupon "{code}" applied — you save ₹{discount:.0f}!')
-    return redirect("shopcore:cart")
+    messages.success(request, f'Coupon "{code}" applied! You save ₹{discount:.0f}')
+    return redirect("shopcore:checkout")
 
 # USER: REMOVE COUPON
 @never_cache
 @user_login_required
 def remove_coupon(request):
     if request.method != "POST":
-        return redirect("shopcore:cart")
-    try:
-        cart = request.user.cart
+        return redirect("shopcore:checkout")
+    
+    cart = _get_cart(request.user)
+    if cart and cart.coupon:
         cart.coupon = None
         cart.save(update_fields=["coupon"])
         messages.success(request, "Coupon removed.")
-    except Cart.DoesNotExist:
-        pass
-    return redirect("shopcore:cart")
+    
+    return redirect("shopcore:checkout")
 
+# ───────────────────────────────── ADMIN ─────────────────────────────────
 # ADMIN: LIST
 @never_cache
 @admin_login_required
@@ -151,6 +159,9 @@ def admin_edit_coupon(request, coupon_id):
         ),
     })
 
+# ADMIN: SAVE
+@never_cache
+@admin_login_required
 def _save_coupon(request, instance):
     code = request.POST.get("code", "").strip().upper()
     discount_type = request.POST.get("discount_type", "PERCENT")

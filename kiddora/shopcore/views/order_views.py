@@ -1,33 +1,32 @@
-# shopcore/views/order_views.py
 from __future__ import annotations
-from decimal import Decimal
-from django.contrib import messages
-from accounts.decorators import user_login_required
+from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator
-from django.db import transaction
+from accounts.decorators import user_login_required, admin_login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 from django.utils import timezone
-from django.views.decorators.cache import never_cache
-#from shopcore.views.coupon_views import compute_coupon_discount
-from accounts.decorators import admin_login_required
-from accounts.models import UserAddress
-from shopcore.models import Cart, CartItem, Order, OrderItem
-from products.models import ProductVariant
 from django.http import HttpResponse
-
-import io
-import os
-from reportlab.pdfbase import pdfmetrics
 from django.conf import settings
+from django.db import transaction
+from decimal import Decimal
+
+from shopcore.views.coupon_views import compute_coupon_discount
+from accounts.models import UserAddress
+from shopcore.models import Cart, CartItem, Order, OrderItem, Offer
+from products.models import ProductVariant
+
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-# ──────────────────────────────────────────────────────────────
-# HELPERS (shared between user & admin)
-# ──────────────────────────────────────────────────────────────
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.pdfbase import pdfmetrics
+from reportlab.lib import colors
+import io
+import os
+
+# ──────────────────────────────────────────────HELPERS (shared between user & admin)──────────────────────────────────────────────────
+
 def _get_cart(user):
     try:
         return user.cart
@@ -64,11 +63,6 @@ def _img_url_for(product):
     return None
 
 def _recalculate_order_amount(order):
-    """
-    Recalculate order totals based on ACTIVE items only.
-    Also update shipping charge based on subtotal.
-    """
-
     active_items = order.order_items.filter(item_status="ACTIVE")
 
     subtotal= sum(item.unit_price * item.quantity for item in active_items)
@@ -90,9 +84,40 @@ def _recalculate_order_amount(order):
         "shipping_charge",
         "final_amount",
     ])
-# ──────────────────────────────────────────────────────────────
-# USER: CHECKOUT (GET)
-# ──────────────────────────────────────────────────────────────
+    
+def get_max_offer_discount_percent(product):
+    """
+    Returns the highest applicable offer percentage for this product
+    (larger between product-specific and category-specific offer)
+    """
+    if not product:
+        return 0
+    
+    now = timezone.now()
+    # Active offers only
+    active_offers = Offer.objects.filter(is_active=True, is_deleted=False, start_date__lte=now)
+    # Product-specific
+    product_offer = active_offers.filter(offer_type="PRODUCT", product=product).first()
+    # Category-specific
+    category_offer = None
+    try:
+        if product.subcategory and product.subcategory.category:
+            category_offer = active_offers.filter(
+                offer_type="CATEGORY",
+                category=product.subcategory.category
+            ).first()
+    except:
+        pass
+    
+    max_pct = 0
+    if product_offer and product_offer.is_valid():
+        max_pct = max(max_pct, product_offer.discount_percent)
+    if category_offer and category_offer.is_valid():
+        max_pct = max(max_pct, category_offer.discount_percent)
+    
+    return max_pct
+#─────────────────────────────────────────────────────────────USER────────────────────────────────────────────────────────────────────────
+# USER: CHECKOUT 
 @never_cache
 @user_login_required
 def checkout(request):
@@ -111,23 +136,38 @@ def checkout(request):
     ).prefetch_related("variant__product__images").order_by("-added_at")
 
     checkout_items = []
-    subtotal = Decimal("0")
-    blocked = False
+    subtotal = Decimal("0")               # before any discount
+    offer_discount_total = Decimal("0")
 
     for item in items:
         variant = item.variant
+        product = variant.product
+        
         available = _variant_is_available(variant)
         stock = _stock_for(variant)
-        product = variant.product
+        
         if not available or stock == 0 or item.quantity > stock:
             blocked = True
-        item_total = product.final_price * item.quantity
-        subtotal += item_total
+        
+        base_price = product.final_price
+        offer_pct = get_max_offer_discount_percent(product)
+        discounted_price = base_price * (Decimal('1') - Decimal(offer_pct)/100)
+        
+        item_base_total    = base_price * item.quantity
+        item_offer_discount = (base_price - discounted_price) * item.quantity
+        item_final_total   = discounted_price * item.quantity
+        
+        subtotal += item_base_total
+        offer_discount_total += item_offer_discount
+        
         checkout_items.append({
             "item": item,
             "variant": variant,
             "product": product,
-            "item_total": item_total,
+            "item_total": item_final_total,          # after offer
+            "base_item_total": item_base_total,
+            "offer_discount": item_offer_discount,
+            "offer_pct": offer_pct,
             "available": available,
             "stock": stock,
             "img_url": _img_url_for(product),
@@ -141,40 +181,66 @@ def checkout(request):
         )
         return redirect("shopcore:cart")
 
-    # # Coupon
-    # coupon_discount = Decimal("0")
-    # applied_coupon = getattr(cart, "coupon", None)
-    # if applied_coupon:
-    #     try:
-    #         if applied_coupon.is_valid():
-    #             coupon_discount = sum(
-    #                 compute_coupon_discount(applied_coupon, item.variant.product.final_price * item.quantity)
-    #                 for item in items
-    #             )
-    #     except Exception:
-    #         coupon_discount = Decimal("0")
-
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
     shipping_charge = Decimal("0")
-    grand_total = subtotal + shipping_charge
-    # grand_total = subtotal - coupon_discount + shipping_charge
+    coupon_discount = Decimal("0")
+    applied_coupon = getattr(cart, "coupon", None)
+    if applied_coupon and applied_coupon.is_valid():
+        # Use original subtotal (before offer) for coupon – most common behavior
+        coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
+
+    shipping_charge = Decimal("0")
+    if subtotal < 499:
+        shipping_charge = Decimal("100")
+
+    grand_total = subtotal - offer_discount_total - coupon_discount + shipping_charge
 
     context = {
         "checkout_items": checkout_items,
         "addresses": addresses,
         "default_address": default_address,
         "subtotal": subtotal,
+        "offer_discount_total": offer_discount_total,
+        "coupon_discount": coupon_discount,
+        "applied_coupon": applied_coupon,
         "shipping_charge": shipping_charge,
-        # "coupon_discount": coupon_discount,
-        # "applied_coupon": applied_coupon,
         "grand_total": grand_total,
     }
     return render(request, "cart/checkout.html", context)
 
-# ──────────────────────────────────────────────────────────────
+@never_cache
+@user_login_required
+def edit_address_checkout(request, address_id):
+    address = get_object_or_404(
+        UserAddress,
+        pk=address_id,
+        user=request.user,
+        is_deleted=False
+    )
+    
+    if request.method == "POST":
+        address.full_name = request.POST.get("full_name", address.full_name)
+        address.phone = request.POST.get("phone", address.phone)
+        address.address_line1 = request.POST.get("address_line1", address.address_line1)
+        address.address_line2 = request.POST.get("address_line2", address.address_line2)
+        address.city = request.POST.get("city", address.city)
+        address.state = request.POST.get("state", address.state)
+        address.pincode  = request.POST.get("pincode", address.pincode)
+        
+        if request.POST.get("set_default"):
+            address.is_default = True
+            UserAddress.objects.filter(user=request.user, is_deleted=False)\
+                                .exclude(pk=address.pk)\
+                                .update(is_default=False)
+        address.save()
+        
+        messages.success(request, "Address updated successfully.")
+        return redirect("shopcore:checkout")
+    
+    return render(request, "cart/edit_address.html", {"address": address})
+
 # USER: PLACE ORDER (POST – COD only for now)
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -187,21 +253,19 @@ def place_order(request):
         messages.error(request, "Your cart is empty.")
         return redirect("shopcore:cart")
 
+    # Address logic
     address_id = request.POST.get("address_id")
     if address_id:
-        address = get_object_or_404(
-            UserAddress, id=address_id, user=request.user, is_deleted=False
-        )
+        address = get_object_or_404(UserAddress, id=address_id, user=request.user, is_deleted=False)
     else:
-        address = (
-            UserAddress.objects.filter(user=request.user, is_deleted=False, is_default=True).first()
-            or UserAddress.objects.filter(user=request.user, is_deleted=False).first()
-        )
+        address = (UserAddress.objects.filter(user=request.user, is_deleted=False, is_default=True).first()
+            or UserAddress.objects.filter(user=request.user, is_deleted=False).first())
 
     if not address:
         messages.error(request, "Please add a delivery address before placing an order.")
         return redirect("shopcore:checkout")
 
+    # ── Cart validation ─────────────────────────────────────
     items = cart.items.select_related(
         "variant__product",
         "variant__product__subcategory",
@@ -216,6 +280,7 @@ def place_order(request):
                 f"'{item.variant.product.product_name}' is no longer available."
             )
             return redirect("shopcore:cart")
+
         stock = _stock_for(item.variant)
         if stock < item.quantity:
             messages.error(
@@ -224,55 +289,89 @@ def place_order(request):
             )
             return redirect("shopcore:cart")
 
-    subtotal = sum(i.variant.product.final_price * i.quantity for i in items)
-    shipping_charge = Decimal("0")
+    # ── Calculate totals with offers & coupon ───────────────
+    subtotal = Decimal("0")               # before any discount
+    offer_discount_total = Decimal("0")
+
+    for item in items:
+        base = item.variant.product.final_price * item.quantity
+        offer_pct = get_max_offer_discount_percent(item.variant.product)
+        item_offer_disc = base * Decimal(offer_pct) / 100
+
+        subtotal += base
+        offer_discount_total += item_offer_disc
+
     coupon_discount = Decimal("0")
     applied_coupon = getattr(cart, "coupon", None)
-    if applied_coupon:
-        try:
-            if applied_coupon.is_valid():
-                # coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
-                applied_coupon.used_count += 1
-                applied_coupon.used_by.add(request.user)
-                applied_coupon.save(update_fields=["used_count"])
-        except Exception:
-            coupon_discount = Decimal("0")
+    if applied_coupon and applied_coupon.is_valid():
+        coupon_discount = compute_coupon_discount(applied_coupon, subtotal)
+        applied_coupon.used_count += 1
+        applied_coupon.used_by.add(request.user)
+        applied_coupon.save(update_fields=["used_count"])
 
-    final_amount = subtotal - coupon_discount + shipping_charge
+    shipping_charge = Decimal("100") if subtotal < 499 else Decimal("0")
 
-    # COD limit check (from your requirements)
-    if final_amount > Decimal("1000") and request.POST.get("payment_method", "COD") == "COD":
+    final_amount = subtotal - offer_discount_total - coupon_discount + shipping_charge
+
+    # ── COD restriction ─────────────────────────────────────
+    payment_method = request.POST.get("payment_method", "COD")
+    if final_amount > Decimal("1000") and payment_method == "COD":
         messages.error(request, "Orders above ₹1000 cannot use Cash on Delivery.")
         return redirect("shopcore:checkout")
 
+    # ── Create Order ────────────────────────────────────────
     order = Order.objects.create(
         user=request.user,
         address=address,
-        payment_method=request.POST.get("payment_method", "COD"),
+        payment_method=payment_method,
         payment_status="PENDING",
         order_status="PENDING",
         coupon=applied_coupon,
         coupon_discount=coupon_discount,
         total_amount=subtotal,
-        discount_amount=Decimal("0"),
+        discount_amount=offer_discount_total,      # ← offer discount goes here
         shipping_charge=shipping_charge,
         final_amount=final_amount,
     )
 
+    # Address snapshot (if your Order model has these fields)
+    snapshot_fields = {
+        "snapshot_name": getattr(address, "full_name", ""),
+        "snapshot_phone": getattr(address, "phone", ""),
+        "snapshot_line1": getattr(address, "address_line1", ""),
+        "snapshot_line2": getattr(address, "address_line2", ""),
+        "snapshot_city": getattr(address, "city", ""),
+        "snapshot_state": getattr(address, "state", ""),
+        "snapshot_pincode": getattr(address, "pincode", ""),
+    }
+    dirty_fields = [f for f, v in snapshot_fields.items() if hasattr(order, f) and v]
+    if dirty_fields:
+        for field in dirty_fields:
+            setattr(order, field, snapshot_fields[field])
+        order.save(update_fields=dirty_fields)
+
+    # ── Create OrderItems + update inventory ────────────────
     for item in items:
         variant = item.variant
+        base_price = variant.product.final_price
+        offer_pct = get_max_offer_discount_percent(variant.product)
+        item_discount = (base_price * item.quantity) * Decimal(offer_pct) / 100
+
         OrderItem.objects.create(
             order=order,
             variant=variant,
             quantity=item.quantity,
-            unit_price=variant.product.final_price,
-            discount_amount=Decimal("0"),
+            unit_price=base_price,
+            discount_amount=item_discount,          # per-item offer discount
         )
+
+        # Update stock
         inv = variant.inventory
         inv.quantity_available = max(0, inv.quantity_available - item.quantity)
         inv.quantity_sold += item.quantity
         inv.save(update_fields=["quantity_available", "quantity_sold"])
 
+    # ── Clear cart ──────────────────────────────────────────
     cart.items.all().delete()
     if hasattr(cart, "coupon") and cart.coupon:
         cart.coupon = None
@@ -280,18 +379,14 @@ def place_order(request):
 
     return redirect("shopcore:order_success", order_id=order.order_id)
 
-# ──────────────────────────────────────────────────────────────
 # USER: ORDER SUCCESS
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def order_success(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     return render(request, "orders/user/order_success.html", {"order": order})
 
-# ──────────────────────────────────────────────────────────────
 # USER: ORDER LIST
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def user_order_list(request):
@@ -310,21 +405,16 @@ def user_order_list(request):
         "query": query,
     })
 
-# ──────────────────────────────────────────────────────────────
 # USER: ORDER DETAIL
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def user_order_detail(request, order_id):
-    order = get_object_or_404(
-        Order.objects.select_related("address", "coupon").prefetch_related(
+    order = get_object_or_404(Order.objects.select_related("address", "coupon").prefetch_related(
             "order_items__variant__product__images",
             "order_items__variant__color",
             "order_items__variant__age_group",
         ),
-        order_id=order_id,
-        user=request.user,
-    )
+        order_id=order_id, user=request.user)
     items_with_img = []
     for oi in order.order_items.all():
         product = oi.variant.product
@@ -337,9 +427,7 @@ def user_order_detail(request, order_id):
     }
     return render(request, "orders/user/user_order_detail.html", context)
 
-# ──────────────────────────────────────────────────────────────
 # USER: CANCEL WHOLE ORDER
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -370,9 +458,7 @@ def cancel_order(request, order_id):
     messages.success(request, f"Order {order.order_id} has been cancelled.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-# ──────────────────────────────────────────────────────────────
 # USER: CANCEL SINGLE ITEM
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -411,10 +497,8 @@ def cancel_order_item(request, order_id, item_id):
         order.save(update_fields=["order_status", "cancel_reason", "cancelled_at"])
     messages.success(request, f"Item '{order_item.variant.product.product_name}' cancelled.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
-
-# ──────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────ADMIN────────────────────────────────────────────────────────────────────────
 # ADMIN: ORDER LIST
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_order_list(request):
@@ -445,22 +529,15 @@ def admin_order_list(request):
     }
     return render(request, "orders/admin/admin_order_list.html", context)
 
-# ──────────────────────────────────────────────────────────────
 # ADMIN: ORDER DETAIL
-# ──────────────────────────────────────────────────────────────
-# shopcore/views/order_views.py
-
 @never_cache
 @admin_login_required
 def admin_order_detail(request, order_id):
-    order = get_object_or_404(
-        Order.objects.select_related("user", "address", "coupon").prefetch_related(
+    order = get_object_or_404(Order.objects.select_related("user", "address", "coupon").prefetch_related(
             "order_items__variant__product__images",
             "order_items__variant__color",
             "order_items__variant__age_group",
-        ),
-        order_id=order_id,
-    )
+        ), order_id=order_id)
     
     items_with_img = []
     for oi in order.order_items.all():
@@ -475,9 +552,8 @@ def admin_order_detail(request, order_id):
         "item_status_choices": OrderItem.ITEM_STATUS_CHOICES,        
     }
     return render(request, "orders/admin/admin_order_detail.html", context)
-# ──────────────────────────────────────────────────────────────
+
 # ADMIN: UPDATE ORDER STATUS
-# ──────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 @transaction.atomic
@@ -500,13 +576,10 @@ def admin_update_order_status(request, order_id):
             request,
             f"Cannot change status from '{order.get_order_status_display()}' to '{new_status}'."
         )
-        print(order.order_status)
-        print(new_status)
         return redirect("shopcore:admin_order_detail", order_id=order.order_id)
     old_status = order.order_status
     order.order_status = new_status
-    print(order.order_status)
-    print(new_status)
+
     if new_status == "DELIVERED":
         order.delivered_at = timezone.now()
         order.payment_status = "PAID"
@@ -559,7 +632,6 @@ def admin_update_item_status(request, order_id, item_id):
         request,
         f"Item '{order_item.variant.product.product_name}' updated to {new_status}"
     )
-
     return redirect("shopcore:admin_order_detail", order_id=order_id)
 
 @user_login_required
@@ -572,7 +644,7 @@ def download_invoice(request, order_id):
     pdfmetrics.registerFont(TTFont("Arial", font_path))
     styles = getSampleStyleSheet()
 
-    # ✨ CUSTOM SPACING STYLE
+    #  CUSTOM SPACING STYLE
     normal_style = ParagraphStyle(
         'CustomNormal',
         parent=styles['Normal'],

@@ -1,0 +1,180 @@
+{% extends "base_profile.html" %}
+{% block content %}
+
+<style>
+    .form-container {
+        max-width: 520px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .form-container h2 {
+        text-align: center;
+        color: #e91e63;
+        margin-bottom: 28px;
+        font-weight: 600;
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #444;
+        font-size: 14px;
+    }
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #f06292;
+        box-shadow: 0 0 0 3px rgba(240,98,146,0.15);
+    }
+    .default-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 20px 0;
+        font-size: 15px;
+        color: #555;
+    }
+    .default-checkbox input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #e91e63;
+        cursor: pointer;
+    }
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: #e91e63;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.25s;
+    }
+    .submit-btn:hover {
+        background: #d81b60;
+    }
+
+    /* Messages */
+    .messages {
+        margin-bottom: 20px;
+    }
+    .message {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .message.success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .message.error   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+    .message button {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+    }
+    .message button:hover { opacity: 1; }
+</style>
+
+<div class="form-container">
+    <h2>Edit Delivery Address</h2>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" name="full_name" id="full_name"
+                   value="{{ address.full_name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" name="phone" id="phone"
+                   value="{{ address.phone }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="address_line1">Address Line 1</label>
+            <input type="text" name="address_line1" id="address_line1"
+                   value="{{ address.address_line1 }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="address_line2">Address Line 2 (Optional)</label>
+            <input type="text" name="address_line2" id="address_line2"
+                   value="{{ address.address_line2|default:'' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" name="city" id="city"
+                   value="{{ address.city }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="state">State</label>
+            <input type="text" name="state" id="state"
+                   value="{{ address.state }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="pincode">Pincode</label>
+            <input type="text" name="pincode" id="pincode"
+                   value="{{ address.pincode }}" required pattern="\d{6}" title="Please enter a 6-digit pincode">
+        </div>
+
+        <div class="default-checkbox">
+            <input type="checkbox" name="set_default" id="set_default"
+                   {% if address.is_default %}checked{% endif %}>
+            <label for="set_default">Set as Default Address</label>
+        </div>
+
+        <button type="submit" class="submit-btn">Update Address</button>
+    </form>
+</div>
+
+<script>
+    // Auto-dismiss messages after 6 seconds
+    document.querySelectorAll('.message').forEach(msg => {
+        setTimeout(() => {
+            msg.style.transition = 'opacity 0.6s';
+            msg.style.opacity = '0';
+            setTimeout(() => msg.remove(), 600);
+        }, 6000);
+    });
+</script>
+
+{% endblock %}

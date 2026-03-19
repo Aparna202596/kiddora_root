@@ -16,7 +16,7 @@ from products.models import Product, Category
 from shopcore.models import Coupon, Offer
 
 
-# ─────────────────────────────────────────────────────────────
+
 # ADMIN: LIST
 # ─────────────────────────────────────────────────────────────
 @never_cache
