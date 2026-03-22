@@ -155,3 +155,4 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 # ── Payments ──────────────────────────────────────────────────────────────────
 RAZORPAY_KEY_ID = "rzp_test_xxxxx"
 RAZORPAY_KEY_SECRET = "xxxxxxxx"
+RAZORPAY_WEBHOOK_SECRET = "..."

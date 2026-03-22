@@ -1,24 +1,67 @@
-# shopcore/views/offer_views.py
-# Admin-only: list, add, edit, soft-delete, block, unblock offers.
-# Offers are applied automatically to products/categories — no user-facing views needed.
+from __future__ import annotations
+
+from types import SimpleNamespace
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
-from types import SimpleNamespace
 
 from accounts.decorators import admin_login_required
-from products.models import Product, Category
+from products.models import Category, Product
 from shopcore.models import Coupon, Offer
 
 
+# ─────────────────────────────────────────────────────────────
+# SHARED UTILITY  (imported by checkout_views & order_views)
+# ─────────────────────────────────────────────────────────────
 
+def get_max_offer_discount_percent(product) -> int:
+    """
+    Return the highest applicable offer percentage for *product*.
+
+    Rules:
+    • Considers PRODUCT-specific offers and CATEGORY-specific offers.
+    • When both exist for the same item, the larger discount wins.
+    • Returns 0 when no valid offer exists.
+    """
+    if not product:
+        return 0
+
+    now = timezone.now()
+    active_offers = Offer.objects.filter(
+        is_active=True, is_deleted=False, start_date__lte=now
+    )
+
+    product_offer = active_offers.filter(
+        offer_type="PRODUCT", product=product
+    ).first()
+
+    category_offer = None
+    try:
+        if product.subcategory and product.subcategory.category:
+            category_offer = active_offers.filter(
+                offer_type="CATEGORY",
+                category=product.subcategory.category,
+            ).first()
+    except Exception:
+        pass
+
+    max_pct = 0
+    if product_offer and product_offer.is_valid():
+        max_pct = max(max_pct, product_offer.discount_percent)
+    if category_offer and category_offer.is_valid():
+        max_pct = max(max_pct, category_offer.discount_percent)
+
+    return max_pct
+
+
+# ─────────────────────────────────────────────────────────────
 # ADMIN: LIST
 # ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_offer_list(request):
@@ -26,7 +69,10 @@ def admin_offer_list(request):
     type_f   = request.GET.get("type", "")
     status_f = request.GET.get("status", "")
 
-    qs = Offer.objects.filter(is_deleted=False).select_related("product", "category", "referral_coupon")
+    qs = Offer.objects.filter(is_deleted=False).select_related(
+        "product", "category", "referral_coupon"
+    )
+
     if search:
         qs = qs.filter(
             Q(product__product_name__icontains=search)
@@ -40,6 +86,7 @@ def admin_offer_list(request):
         qs = qs.filter(is_active=False)
 
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
+
     return render(request, "coupon_offer/admin_offer_list.html", {
         "page_obj":    page_obj,
         "search":      search,
@@ -53,11 +100,13 @@ def admin_offer_list(request):
 # ─────────────────────────────────────────────────────────────
 # ADMIN: ADD
 # ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_add_offer(request):
     if request.method == "POST":
         return _save_offer(request, instance=None)
+
     return render(request, "coupon_offer/admin_offer_form.html", {
         "action":      "Add",
         "offer":       None,
@@ -76,12 +125,15 @@ def admin_add_offer(request):
 # ─────────────────────────────────────────────────────────────
 # ADMIN: EDIT
 # ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_edit_offer(request, offer_id):
     offer = get_object_or_404(Offer, id=offer_id, is_deleted=False)
+
     if request.method == "POST":
         return _save_offer(request, instance=offer)
+
     return render(request, "coupon_offer/admin_offer_form.html", {
         "action":      "Edit",
         "offer":       offer,
@@ -89,13 +141,13 @@ def admin_edit_offer(request, offer_id):
         "products":    Product.objects.filter(is_active=True, is_deleted=False).order_by("product_name"),
         "categories":  Category.objects.filter(is_active=True, is_deleted=False).order_by("category_name"),
         "coupons":     Coupon.objects.filter(is_active=True, is_deleted=False).order_by("code"),
-        "form_data": SimpleNamespace(
-            offer_type="", product_id="", category_id="",
-            referral_coupon_id="", discount_percent="",
-            start_date="", end_date="", is_active=False,
-        ),
+        "form_data":   offer,   # use model instance for pre-fill
     })
 
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN: SAVE OFFER (shared by add + edit)
+# ─────────────────────────────────────────────────────────────
 
 def _save_offer(request, instance):
     offer_type         = request.POST.get("offer_type", "")
@@ -108,18 +160,21 @@ def _save_offer(request, instance):
     is_active          = bool(request.POST.get("is_active"))
 
     errors = []
+
     if not offer_type:
         errors.append("Offer type is required.")
     if offer_type == "PRODUCT" and not product_id:
         errors.append("A product must be selected for product offers.")
     if offer_type == "CATEGORY" and not category_id:
         errors.append("A category must be selected for category offers.")
+
     try:
         dp = int(discount_percent)
         if dp < 1 or dp > 100:
             raise ValueError
     except (ValueError, TypeError):
         errors.append("Discount percent must be between 1 and 100.")
+
     if not start_date:
         errors.append("Start date is required.")
 
@@ -132,12 +187,13 @@ def _save_offer(request, instance):
         "coupons":     Coupon.objects.filter(is_active=True, is_deleted=False).order_by("code"),
         "form_data":   request.POST,
     }
+
     if errors:
         for e in errors:
             messages.error(request, e)
         return render(request, "coupon_offer/admin_offer_form.html", ctx)
 
-    obj                 = instance or Offer()
+    obj                  = instance or Offer()
     obj.offer_type       = offer_type
     obj.product          = Product.objects.filter(id=product_id).first() if product_id else None
     obj.category         = Category.objects.filter(id=category_id).first() if category_id else None
@@ -147,13 +203,18 @@ def _save_offer(request, instance):
     obj.end_date         = end_date
     obj.is_active        = is_active
     obj.save()
-    messages.success(request, f'Offer {"updated" if instance else "created"} successfully.')
+
+    messages.success(
+        request,
+        f'Offer {"updated" if instance else "created"} successfully.',
+    )
     return redirect("shopcore:admin_offer_list")
 
 
 # ─────────────────────────────────────────────────────────────
 # ADMIN: SOFT DELETE
 # ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_delete_offer(request, offer_id):
@@ -163,28 +224,13 @@ def admin_delete_offer(request, offer_id):
         offer.is_active  = False
         offer.save(update_fields=["is_deleted", "is_active"])
         messages.success(request, "Offer deleted.")
-        return redirect("shopcore:admin_offer_list")
     return redirect("shopcore:admin_offer_list")
 
 
 # ─────────────────────────────────────────────────────────────
-# ADMIN: TOGGLE ACTIVE  (kept for backward-compat — do not remove)
+# ADMIN: BLOCK OFFER  (deactivate)
 # ─────────────────────────────────────────────────────────────
-@never_cache
-@admin_login_required
-def admin_toggle_offer(request, offer_id):
-    """Legacy view kept so existing URL conf / bookmarks don't 404."""
-    offer = get_object_or_404(Offer, id=offer_id)
-    if request.method == "POST":
-        offer.is_active = not offer.is_active
-        offer.save(update_fields=["is_active"])
-        messages.success(request, f'Offer {"activated" if offer.is_active else "deactivated"}.')
-    return redirect("shopcore:admin_offer_list")
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: BLOCK OFFER  (GET → confirm page, POST → execute)
-# ─────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_block_offer(request, offer_id):
@@ -192,15 +238,15 @@ def admin_block_offer(request, offer_id):
     if request.method == "POST":
         offer.is_active = False
         offer.save(update_fields=["is_active"])
-        messages.success(request, f'Offer "{offer}" has been blocked.')
+        messages.success(request, f'Offer "{offer}" blocked.')
         return redirect("shopcore:admin_offer_list")
-    # GET → show confirmation page
     return render(request, "admin_confirm_block.html", {"offer": offer})
 
 
 # ─────────────────────────────────────────────────────────────
-# ADMIN: UNBLOCK OFFER  (GET → confirm page, POST → execute)
+# ADMIN: UNBLOCK OFFER  (reactivate)
 # ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_unblock_offer(request, offer_id):
@@ -208,7 +254,6 @@ def admin_unblock_offer(request, offer_id):
     if request.method == "POST":
         offer.is_active = True
         offer.save(update_fields=["is_active"])
-        messages.success(request, f'Offer "{offer}" has been unblocked.')
+        messages.success(request, f'Offer "{offer}" unblocked.')
         return redirect("shopcore:admin_offer_list")
-    # GET → show confirmation page
     return render(request, "admin_confirm_unblock.html", {"offer": offer})

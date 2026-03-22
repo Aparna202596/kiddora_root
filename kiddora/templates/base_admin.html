@@ -209,9 +209,9 @@
             <li><a href="{% url 'products:admin_inventory_list' %}"><i class="fa-solid fa-warehouse"></i> Inventory</a></li>
             <li><a href="{% url 'shopcore:admin_order_list' %}"><i class="fa-solid fa-bag-shopping"></i> Orders</a></li>
             <li><a href="{% url 'shopcore:admin_return_list' %}"><i class="fa-solid fa-rotate-left"></i> Refund / Return</a></li>
-            <li><a href="#"><i class="fa-solid fa-ticket"></i> Coupons</a></li>
-            <li><a href="#"><i class="fa-solid fa-percent"></i> Offers</a></li>
-            <li><a href="#"><i class="fa-solid fa-star"></i> Reviews</a></li>
+            <li><a href="{% url 'shopcore:admin_coupon_list' %}"><i class="fa-solid fa-ticket"></i> Coupons</a></li>
+            <li><a href="{% url 'shopcore:admin_offer_list' %}"><i class="fa-solid fa-percent"></i> Offers</a></li>
+            <li><a href="{% url 'shopcore:admin_review_list' %}"><i class="fa-solid fa-star"></i> Reviews</a></li>
             <li><a href="{% url 'shopcore:admin_banner_list' %}"><i class="fa-solid fa-image"></i> Banners</a></li>
             <li><a href="#"><i class="fa-solid fa-share-nodes"></i> Referrals</a></li>
             <li class="logout"><a href="{% url 'accounts:admin_logout' %}"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a></li>

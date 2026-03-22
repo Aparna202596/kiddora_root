@@ -297,7 +297,7 @@
                     <span class="price-final-black">₹{{ product.final_price|floatformat:0 }}</span>
                 {% endif %}
             </div>
-            <p class="price-note">Inclusive of all taxes &nbsp;·&nbsp; Free delivery on orders above ₹499</p>
+            <p class="price-note">Inclusive of all taxes &nbsp;·&nbsp; Free delivery on orders above ₹999</p>
         </div>
         <!-- Stock -->
         <div class="stock-block" id="stockBlock">
@@ -322,20 +322,7 @@
             </p>
         </div>
         {% endif %}
-        <!-- Coupons -->
-        <div class="coupon-block">
-            <h4>🏷 Applicable Coupons</h4>
-            <div class="coupon-chips">
-                {% if available_coupons %}
-                    {% for coupon in available_coupons %}
-                    <span class="coupon-chip" title="{{ coupon.description|default:'' }}">{{ coupon.code }}</span>
-                    {% endfor %}
-                {% else %}
-                    <span class="coupon-chip">KIDS10</span>
-                    <span class="coupon-chip">FIRST20</span>
-                {% endif %}
-            </div>
-        </div>
+
         <!-- Variant selectors -->
         {% if variant_data %}
         <div class="variant-block" id="colorBlock">

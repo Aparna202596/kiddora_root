@@ -1,0 +1,134 @@
+{% extends "base_products.html" %}
+{% load static %}
+{% block title %}Pay with Razorpay – Kiddora{% endblock %}
+{% block filter_sidebar %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+.pay-page { min-height:70vh; display:flex; align-items:center; justify-content:center; padding:40px 16px; background:linear-gradient(135deg,#fff8fb 0%,#fce4ec 50%,#f8f9ff 100%); font-family:'Nunito',sans-serif; }
+.pay-card { background:#fff; border-radius:22px; padding:44px 40px; max-width:500px; width:100%; box-shadow:0 16px 50px rgba(240,98,146,.13); text-align:center; position:relative; overflow:hidden; }
+.pay-card::before { content:''; position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,#f06292,#e91e63,#f48fb1); }
+.pay-logo { font-size:40px; margin-bottom:12px; }
+.pay-title { font-size:22px; font-weight:900; color:#222; margin-bottom:6px; }
+.pay-subtitle { font-size:13px; color:#888; margin-bottom:24px; }
+.order-strip { background:#fafafa; border:1.5px solid #f0d6e0; border-radius:12px; padding:16px 20px; margin-bottom:24px; text-align:left; }
+.order-row { display:flex; justify-content:space-between; font-size:13px; color:#666; margin-bottom:6px; }
+.order-row:last-child { margin-bottom:0; }
+.order-row strong { color:#222; font-weight:800; }
+.order-amount { font-size:32px; font-weight:900; color:#f06292; margin:16px 0; }
+.btn-razorpay { display:block; width:100%; padding:16px; background:linear-gradient(135deg,#f06292,#e91e63); color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:800; cursor:pointer; transition:opacity .2s, transform .15s; box-shadow:0 6px 20px rgba(240,98,146,.3); font-family:'Nunito',sans-serif; margin-bottom:12px; }
+.btn-razorpay:hover { opacity:.92; transform:translateY(-2px); }
+.btn-razorpay:disabled { background:#ccc; cursor:not-allowed; box-shadow:none; transform:none; }
+.divider { display:flex; align-items:center; gap:10px; margin:14px 0; color:#bbb; font-size:12px; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:#eee; }
+.btn-paypal { display:block; width:100%; padding:14px; background:#ffc439; color:#003087; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; transition:opacity .2s; font-family:'Nunito',sans-serif; text-decoration:none; box-shadow:0 4px 12px rgba(255,196,57,.4); }
+.btn-paypal:hover { opacity:.9; color:#003087; }
+.secure-note { font-size:11px; color:#aaa; margin-top:18px; }
+.back-link { display:inline-block; margin-top:14px; font-size:12px; color:#f06292; text-decoration:none; }
+.back-link:hover { text-decoration:underline; }
+</style>
+
+<div class="pay-page">
+    <div class="pay-card">
+        <div class="pay-logo">🔐</div>
+        <h1 class="pay-title">Complete Payment</h1>
+        <p class="pay-subtitle">Choose your preferred payment method</p>
+
+        <div class="order-strip">
+            <div class="order-row"><span>Order ID</span><strong>#{{ order.order_id }}</strong></div>
+            <div class="order-row"><span>Items</span><strong>{{ order.order_items.count }} item{{ order.order_items.count|pluralize }}</strong></div>
+            <div class="order-row"><span>Shipping</span>
+                {% if order.shipping_charge == 0 %}<strong style="color:#16a34a;">FREE</strong>{% else %}<strong>₹{{ order.shipping_charge }}</strong>{% endif %}
+            </div>
+            {% if order.coupon_discount and order.coupon_discount > 0 %}
+            <div class="order-row"><span>Coupon Discount</span><strong style="color:#f06292;">–₹{{ order.coupon_discount }}</strong></div>
+            {% endif %}
+        </div>
+
+        <div class="order-amount">₹{{ order.final_amount }}</div>
+
+        <!-- Razorpay button -->
+        <button id="rzp-btn" class="btn-razorpay" onclick="openRazorpay()">
+            💳 Pay with Razorpay
+        </button>
+        <div style="font-size:11px;color:#aaa;margin-bottom:8px;">Card · UPI · NetBanking · Wallet</div>
+
+        <div class="divider">or</div>
+
+        <!-- PayPal button -->
+        <a href="{% url 'payments:initiate_paypal_payment' order_id=order.order_id %}"
+           class="btn-paypal" id="paypal-btn">
+            <img src="https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png"
+                 alt="PayPal" style="height:20px;vertical-align:middle;margin-right:6px;">
+            Pay with PayPal
+        </a>
+
+        <div class="secure-note">🔒 256-bit SSL encryption · PCI DSS compliant</div>
+        <a href="{% url 'shopcore:user_order_detail' order_id=order.order_id %}" class="back-link">
+            ← Go to Order Details
+        </a>
+    </div>
+</div>
+
+<!-- Hidden form to submit verified payment data -->
+<form id="verifyForm" method="post" action="{% url 'payments:verify_razorpay_payment' %}">
+    {% csrf_token %}
+    <input type="hidden" name="razorpay_order_id"   id="rp_order_id">
+    <input type="hidden" name="razorpay_payment_id" id="rp_payment_id">
+    <input type="hidden" name="razorpay_signature"  id="rp_signature">
+    <input type="hidden" name="order_id"            value="{{ order.order_id }}">
+</form>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+function openRazorpay() {
+    const btn = document.getElementById('rzp-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Opening payment window…';
+
+    const options = {
+        key:         "{{ razorpay_key_id }}",
+        amount:      {{ amount_paise }},
+        currency:    "{{ currency }}",
+        name:        "Kiddora",
+        description: "Order #{{ order.order_id }}",
+        order_id:    "{{ razorpay_order_id }}",
+        image:       "{% static 'images/kiddora_logo.PNG' %}",
+        prefill: {
+            name:    "{{ user_name }}",
+            email:   "{{ user_email }}",
+            contact: "{{ user_phone }}",
+        },
+        notes:  { order_id: "{{ order.order_id }}" },
+        theme:  { color: "#f06292" },
+
+        handler: function(response) {
+            document.getElementById('rp_order_id').value   = response.razorpay_order_id;
+            document.getElementById('rp_payment_id').value = response.razorpay_payment_id;
+            document.getElementById('rp_signature').value  = response.razorpay_signature;
+            btn.textContent = '⏳ Verifying payment…';
+            document.getElementById('verifyForm').submit();
+        },
+
+        modal: {
+            ondismiss: function() {
+                btn.disabled   = false;
+                btn.textContent = '💳 Pay with Razorpay';
+            }
+        }
+    };
+
+    const rzp = new Razorpay(options);
+
+    rzp.on("payment.failed", function(resp) {
+        btn.disabled    = false;
+        btn.textContent = '💳 Pay with Razorpay';
+        window.location.href = "{% url 'payments:razorpay_payment_failure' order_id=order.order_id %}";
+    });
+
+    rzp.open();
+}
+</script>
+{% endblock %}

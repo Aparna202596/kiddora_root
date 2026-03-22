@@ -108,6 +108,8 @@ class UserAddress(models.Model):
     id = models.BigAutoField(primary_key=True)
     
     address_line1 = models.CharField(max_length=200)
+
+    address_line2 = models.CharField(max_length=200, blank=True, null=True, default='')
     
     city = models.CharField(max_length=100)
     

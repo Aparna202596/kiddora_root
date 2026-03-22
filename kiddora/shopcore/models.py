@@ -5,9 +5,24 @@ from django.utils import timezone
 from accounts.models import CustomUser, UserAddress
 from products.models import Product, Category, ProductVariant
 import uuid
+from django.conf import settings
 
 #  COUPON
 #  User-applied discount codes at checkout.
+class CouponUsage(models.Model):
+    """Tracks how many times each user has used a specific coupon."""
+    coupon = models.ForeignKey('Coupon', on_delete=models.CASCADE, related_name='usages')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    times_used = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('coupon', 'user')
+        verbose_name = 'Coupon Usage'
+        verbose_name_plural = 'Coupon Usages'
+
 class Coupon(models.Model):
     DISCOUNT_TYPE_CHOICES = (
         ("PERCENT", "Percentage"),
@@ -25,13 +40,18 @@ class Coupon(models.Model):
     expiry_date = models.DateTimeField()
     usage_limit = models.PositiveIntegerField(default=1)
     used_count = models.PositiveIntegerField(default=0)
-    used_by = models.ManyToManyField(CustomUser,blank=True,related_name="used_coupons")
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at"]
-
+    def get_user_usage(self, user):
+        """Return how many times THIS user has used the coupon."""
+        try:
+            return self.usages.get(user=user).times_used
+        except CouponUsage.DoesNotExist:
+            return 0
+        
     def is_valid(self):
         """Check coupon is active, not deleted, and within its date window."""
         now = timezone.now()

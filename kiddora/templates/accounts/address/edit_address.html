@@ -70,6 +70,9 @@
         <input name="address_line1"
                 value="{{ form_data.address_line1|default:address.address_line1 }}"
                 placeholder="Address Line 1" required>
+        <input name="address_line2"
+                value="{{ form_data.address_line2|default:'' }}"
+                placeholder="Address Line 2 (optional)">
         <input name="city"
                 value="{{ form_data.city|default:address.city }}"
                 placeholder="City" required>

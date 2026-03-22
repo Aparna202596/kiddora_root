@@ -1,0 +1,122 @@
+{% extends "base_products.html" %}
+{% block title %}Available Coupons{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4 fw-bold">🎟️ Available Coupons</h2>
+
+    {% if not coupon_data %}
+        <div class="alert alert-info">No coupons are available right now. Check back later!</div>
+    {% endif %}
+
+    <div class="row g-4">
+        {% for c in coupon_data %}
+        <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-2 shadow-sm
+                    {% if not c.is_available %}opacity-50{% endif %}"
+            style="border-style: dashed;">
+
+            <!-- Header: code + badge -->
+            <div class="card-header d-flex justify-content-between align-items-center
+                        {% if c.is_available %}bg-success text-white{% else %}bg-secondary text-white{% endif %}">
+            <span class="fs-5 fw-bold font-monospace">{{ c.code }}</span>
+            {% if c.already_used %}
+                <span class="badge bg-warning text-dark">Already Used</span>
+            {% elif c.usage_exhausted %}
+                <span class="badge bg-danger">Limit Reached</span>
+            {% else %}
+                <span class="badge bg-light text-success">Active</span>
+            {% endif %}
+            </div>
+
+            <div class="card-body">
+
+            <!-- Discount -->
+            <p class="fs-4 fw-bold text-success mb-1">{{ c.discount_label }}</p>
+
+            <!-- Condition to apply -->
+            <p class="text-muted small mb-2">
+                <i class="bi bi-info-circle"></i> {{ c.condition }}
+            </p>
+
+            <hr class="my-2">
+
+            <!-- Details table -->
+            <table class="table table-sm table-borderless mb-0">
+                <tbody>
+
+                {% if c.discount_type == "PERCENT" and c.max_discount %}
+                <tr>
+                    <td class="text-muted">Max Discount</td>
+                    <td class="fw-semibold">₹{{ c.max_discount|floatformat:0 }}</td>
+                </tr>
+                {% endif %}
+
+                <tr>
+                    <td class="text-muted">Min Order</td>
+                    <td class="fw-semibold">
+                    {% if c.min_order_amount > 0 %}
+                        ₹{{ c.min_order_amount|floatformat:0 }}
+                    {% else %}
+                        No minimum
+                    {% endif %}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="text-muted">Usage Limit</td>
+                    <td class="fw-semibold">
+                    {{ c.used_count }} / {{ c.usage_limit }} used
+                    &nbsp;
+                    <span class="text-muted small">({{ c.remaining_uses }} left)</span>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="text-muted">Valid From</td>
+                    <td class="fw-semibold">{{ c.start_date|date:"d M Y" }}</td>
+                </tr>
+
+                <tr>
+                    <td class="text-muted">Valid Until</td>
+                    <td class="fw-semibold {% if c.expiry_date < now %}text-danger{% endif %}">
+                    {{ c.expiry_date|date:"d M Y, g:i A" }}
+                    </td>
+                </tr>
+
+                </tbody>
+            </table>
+            </div>
+
+            <!-- Copy button -->
+            <div class="card-footer bg-transparent">
+            {% if c.is_available %}
+                <button class="btn btn-outline-success btn-sm w-100 copy-btn"
+                        data-code="{{ c.code }}">
+                📋 Copy Code
+                </button>
+            {% else %}
+                <button class="btn btn-secondary btn-sm w-100" disabled>
+                Unavailable
+                </button>
+            {% endif %}
+            </div>
+
+        </div>
+        </div>
+        {% endfor %}
+    </div>
+    </div>
+
+    <script>
+    document.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+        const code = btn.dataset.code;
+        navigator.clipboard.writeText(code).then(() => {
+            btn.textContent = "✅ Copied!";
+            setTimeout(() => btn.textContent = "📋 Copy Code", 2000);
+        });
+        });
+    });
+</script>
+{% endblock %}

@@ -35,16 +35,16 @@ urlpatterns = [
     path("admin/category/add/", category_admin_views.admin_add_category, name="admin_add_category"),
     path("admin/category/edit/<int:category_id>/", category_admin_views.admin_edit_category, name="admin_edit_category"),
     path("admin/category/delete/<int:category_id>/", category_admin_views.admin_delete_category, name="admin_delete_category"),
-    path("categories/<int:category_id>/block/", category_admin_views.admin_block_category, name="admin_block_category"),
-    path("categories/<int:category_id>/unblock/", category_admin_views.admin_unblock_category, name="admin_unblock_category"),
+    path("admin/category/<int:category_id>/block/", category_admin_views.admin_block_category, name="admin_block_category"),
+    path("admin/category/<int:category_id>/unblock/", category_admin_views.admin_unblock_category, name="admin_unblock_category"),
     
     # SubCategory 
     path("admin/category/subcategories/", category_admin_views.admin_subcategory_list, name="admin_subcategory_list"),
     path("admin/category/subcategories/add/", category_admin_views.admin_add_subcategory, name="admin_add_subcategory"),
     path("admin/category/subcategories/edit/<int:subcategory_id>/", category_admin_views.admin_edit_subcategory, name="admin_edit_subcategory"),
     path("admin/category/subcategories/delete/<int:subcategory_id>/", category_admin_views.admin_delete_subcategory, name="admin_delete_subcategory"),
-    path("subcategories/<int:subcategory_id>/block/", category_admin_views.admin_block_subcategory, name="admin_block_subcategory"),
-    path("subcategories/<int:subcategory_id>/unblock/", category_admin_views.admin_unblock_subcategory, name="admin_unblock_subcategory"),
+    path("admin/category/subcategories/<int:subcategory_id>/block/", category_admin_views.admin_block_subcategory, name="admin_block_subcategory"),
+    path("admin/category/subcategories/<int:subcategory_id>/unblock/", category_admin_views.admin_unblock_subcategory, name="admin_unblock_subcategory"),
     
     #  ADMIN – PRODUCT MANAGEMENT
 

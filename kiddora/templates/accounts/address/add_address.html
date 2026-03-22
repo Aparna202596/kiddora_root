@@ -71,19 +71,22 @@
         {% csrf_token %}
         <input name="address_line1"
                 value="{{ form_data.address_line1|default:'' }}"
-                placeholder="Address Line 1" required>
+                placeholder="Address Line 1*" required>
+        <input name="address_line2"
+                value="{{ form_data.address_line2|default:'' }}"
+                placeholder="Address Line 2 (optional)">
         <input name="city"
                 value="{{ form_data.city|default:'' }}"
-                placeholder="City" required>
+                placeholder="City*" required>
         <input name="state"
                 value="{{ form_data.state|default:'' }}"
-                placeholder="State" required>
+                placeholder="State*" required>
         <input name="country"
                 value="{{ form_data.country|default:'' }}"
-                placeholder="Country" required>
+                placeholder="Country*" required>
         <input name="pincode"
                 value="{{ form_data.pincode|default:'' }}"
-                placeholder="Pincode" required>
+                placeholder="Pincode (6 digits)*" required>
 
         <label>Address Type</label>
         <select name="address_type" required>

@@ -26,7 +26,7 @@ urlpatterns=[
     path('accounts/', include('accounts.urls')),
     path('accounts/', include('allauth.urls')),
     path('products/', include('products.urls')),
-    path('payments/', include('payments.urls')),
+    path('payments/', include('payments.urls', namespace="payments")),
     path('shop/', include('shopcore.urls')),
     
     # Root URL → anonymous home page

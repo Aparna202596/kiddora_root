@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from decimal import Decimal
 from products.models import ProductVariant, Product, Category, SubCategory
 from shopcore.models import Cart, CartItem, Wishlist, WishlistItem
 
@@ -114,7 +115,12 @@ def cart_view(request):
         if available:
             subtotal += item_total
 
-    shipping_charge  = 0
+    DEFAULT_SHIPPING = Decimal("100") 
+
+    shipping_charge = Decimal("0")
+    if subtotal < 1000:
+        shipping_charge = DEFAULT_SHIPPING
+
     grand_total = subtotal + shipping_charge
     checkout_blocked = (
         any_unavailable
