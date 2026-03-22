@@ -25,7 +25,6 @@
 .btn-save:hover { background:#e91e63; }
 .btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; }
 .btn-cancel:hover { background:#eee; }
-
 /* ── flash messages (reuse shared pattern) ── */
 .messages { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
 .message { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:8px; font-size:14px; font-weight:500; }
@@ -35,15 +34,12 @@
 .message.error   { background:#fdecea; color:#c0392b; border:1px solid #f5a9a4; }
 .message.warning { background:#fff8e1; color:#b07d00; border:1px solid #ffe082; }
 .message.info    { background:#e8f4fd; color:#1565c0; border:1px solid #90caf9; }
-
 @media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
-
 <div class="form-wrap">
     <a href="{% url 'shopcore:admin_coupon_list' %}" class="back-link">
         <i class="fa fa-arrow-left"></i> Coupons
     </a>
-
     {% if messages %}
     <div class="messages" id="msgContainer">
         {% for message in messages %}
@@ -54,12 +50,9 @@
         {% endfor %}
     </div>
     {% endif %}
-
     <div class="form-hdr"><h2>{{ action }} Coupon</h2></div>
-
     <form method="post" id="couponForm">
         {% csrf_token %}
-
         <div class="form-card">
             <div class="card-title">Coupon Details</div>
             <div class="form-row">
@@ -103,7 +96,6 @@
                        value="{{ coupon.min_order_amount|default:form_data.min_order_amount|default:'0' }}">
             </div>
         </div>
-
         <div class="form-card">
             <div class="card-title">Validity &amp; Limits</div>
             <div class="form-row">
@@ -121,40 +113,27 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>Usage Limit</label>
+                <label>Usage Limit <span style="color:#aaa;font-weight:400;">(per customer)</span></label>
                 <input type="number" name="usage_limit" min="1"
                        value="{{ coupon.usage_limit|default:form_data.usage_limit|default:'1' }}">
-                <div class="hint">Total number of times this coupon can be used across all users.</div>
+                <div class="hint">
+                    How many times <strong>each individual customer</strong> can use this coupon.
+                    e.g. set to 2 → every customer may use it up to 2 times; there is no cap on the total number of customers who can use it.
+                </div>
             </div>
         </div>
-
-        {% comment %} <div class="form-card">
-            <div class="card-title">Status</div>
-            <div class="toggle-row">
-                <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
-                       {% if coupon.is_active or not coupon %}checked{% endif %}>
-                <label for="isActive">Active (visible &amp; usable by customers)</label>
-            </div>
-        </div> {% endcomment %}
-
         <div class="form-actions">
-            <!--
-              The save button triggers a confirm modal first.
-              On confirmation the hidden submit button fires the form.
-            -->
             <button type="button" class="btn-save" id="btnSaveTrigger">
                 <i class="fa fa-check"></i> {{ action }} Coupon
             </button>
             <!-- hidden real submit — called by modal callback -->
             <button type="submit" id="btnRealSubmit" style="display:none;"></button>
-
             <a href="{% url 'shopcore:admin_coupon_list' %}" class="btn-cancel">
                 <i class="fa fa-times"></i> Cancel
             </a>
         </div>
     </form>
 </div>
-
 {% include "confirm_modal.html" %}
 <script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
@@ -164,7 +143,6 @@ function toggleMaxDiscount() {
     document.getElementById('maxDiscountGroup').style.opacity = type === 'PERCENT' ? '1' : '0.4';
 }
 toggleMaxDiscount();
-
 /* ── Confirm modal before saving ── */
 document.getElementById('btnSaveTrigger').addEventListener('click', function () {
     var action = '{{ action|escapejs }}';
@@ -175,7 +153,6 @@ document.getElementById('btnSaveTrigger').addEventListener('click', function () 
         document.getElementById('btnRealSubmit').click();
     });
 });
-
 /* ── Auto-dismiss messages ── */
 (function () {
     var mc = document.getElementById('msgContainer');

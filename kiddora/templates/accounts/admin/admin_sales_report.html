@@ -145,45 +145,6 @@ th {
             <canvas id="revenueChart" style="height: 220px;"></canvas>
         </div>
     </div>
-    <!-- ===== ORDERS TABLE ===== -->
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>User</th>
-                    <th>Status</th>
-                    <th>Payment</th>
-                    <th>Final Amount</th>
-                    <th>Order Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td>{{ order.order_id }}</td>
-                    <td>{{ order.user.email }}</td>
-                    <td>
-                        {% if order.order_status == "DELIVERED" %}
-                            <span class="badge badge-green">Delivered</span>
-                        {% elif order.order_status == "CANCELLED" %}
-                            <span class="badge badge-red">Cancelled</span>
-                        {% else %}
-                            <span class="badge badge-yellow">{{ order.order_status }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ order.payment_status }}</td>
-                    <td>₹ {{ order.final_amount }}</td>
-                    <td>{{ order.order_date|date:"d M Y H:i" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6">No orders found for this period.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

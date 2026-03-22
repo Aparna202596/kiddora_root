@@ -80,6 +80,7 @@ urlpatterns = [
     # ── COUPON — ADMIN ────────────────────────────────────────────────────────
     path("admin/coupons/", coupon_views.admin_coupon_list, name="admin_coupon_list"),
     path("admin/coupons/add/", coupon_views.admin_add_coupon,    name="admin_add_coupon"),
+    path("admin/coupons/<int:coupon_id>/", coupon_views.admin_coupon_detail, name="admin_coupon_detail"),
     path("admin/coupons/<int:coupon_id>/edit/", coupon_views.admin_edit_coupon, name="admin_edit_coupon"),
     path("admin/coupons/<int:coupon_id>/delete/", coupon_views.admin_delete_coupon, name="admin_delete_coupon"),
     path("admin/coupons/<int:coupon_id>/block/", coupon_views.admin_block_coupon, name="admin_block_coupon"),

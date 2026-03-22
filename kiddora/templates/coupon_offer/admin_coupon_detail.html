@@ -1,0 +1,449 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}Coupon {{ coupon.code }} – Admin{% endblock %}
+
+{% block content %}
+<style>
+/* ── layout ── */
+.detail-wrap   { max-width:960px; margin:0 auto; }
+.back-link     { color:#888; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-bottom:18px; }
+.back-link:hover { color:#f06292; }
+
+/* ── page header ── */
+.page-hdr      { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+.page-hdr h2   { font-size:22px; font-weight:800; color:#222; margin:0; }
+.hdr-actions   { display:flex; gap:10px; flex-wrap:wrap; }
+
+/* ── stat cards row ── */
+.stat-grid     { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+.stat-card     { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:18px 20px; }
+.stat-card .lbl{ font-size:11px; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+.stat-card .val{ font-size:22px; font-weight:800; color:#222; }
+.stat-card .sub{ font-size:11px; color:#aaa; margin-top:3px; }
+
+/* ── info cards ── */
+.info-card     { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:22px 24px; margin-bottom:20px; }
+.card-title    { font-size:12px; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:.06em; margin-bottom:16px; padding-bottom:10px; border-bottom:1.5px solid #f5f5f5; display:flex; align-items:center; gap:8px; }
+.kv-grid       { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 24px; }
+.kv            { }
+.kv .k         { font-size:11px; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
+.kv .v         { font-size:14px; color:#222; font-weight:600; }
+.kv .v.mono    { font-family:monospace; font-size:15px; letter-spacing:.08em; }
+
+/* ── progress bar ── */
+.usage-bar-wrap{ margin-top:6px; }
+.usage-bar-bg  { background:#f0f0f0; border-radius:99px; height:8px; overflow:hidden; }
+.usage-bar-fill{ background:#f06292; height:100%; border-radius:99px; transition:width .4s; }
+
+/* ── badges ── */
+.badge         { display:inline-block; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; }
+.badge-active  { background:#e6f9f0; color:#1a7a4a; }
+.badge-inactive{ background:#f5f5f5; color:#888; }
+.badge-expired { background:#fdecea; color:#c0392b; }
+.badge-scheduled{ background:#fff8e1; color:#b07d00; }
+.badge-percent { background:#e8f4fd; color:#1565c0; }
+.badge-flat    { background:#f3e5f5; color:#7b1fa2; }
+.badge-exhausted{ background:#fdecea; color:#c0392b; }
+.badge-ok      { background:#e6f9f0; color:#1a7a4a; }
+
+/* ── tables ── */
+.data-table    { width:100%; border-collapse:collapse; font-size:13px; }
+.data-table th { background:#fafafa; padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:.05em; border-bottom:1.5px solid #eee; white-space:nowrap; }
+.data-table td { padding:11px 14px; border-bottom:1px solid #f5f5f5; color:#333; vertical-align:middle; }
+.data-table tr:last-child td { border-bottom:none; }
+.data-table tr:hover td { background:#fafafa; }
+.table-wrapper { border:1.5px solid #eee; border-radius:12px; overflow:hidden; }
+
+/* ── action buttons ── */
+.btn           { padding:9px 20px; border-radius:9px; font-size:13px; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:none; }
+.btn-edit      { background:#f06292; color:#fff; }
+.btn-edit:hover{ background:#e91e63; }
+.btn-block     { background:#fdecea; color:#c0392b; border:1.5px solid #f5a9a4; }
+.btn-block:hover{ background:#fbc5c2; }
+.btn-unblock   { background:#e6f9f0; color:#1a7a4a; border:1.5px solid #a3e0c1; }
+.btn-unblock:hover{ background:#c3f0d9; }
+.btn-back      { background:#f5f5f5; color:#555; border:1.5px solid #ddd; }
+.btn-back:hover{ background:#eee; }
+
+/* ── empty state ── */
+.empty-state   { text-align:center; padding:32px; color:#aaa; font-size:13px; }
+.empty-state i { font-size:2rem; display:block; margin-bottom:8px; }
+
+/* ── section divider ── */
+.section-gap   { margin-bottom:20px; }
+
+/* ── referral tag ── */
+.ref-tag       { background:#f3e5f5; color:#7b1fa2; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:700; }
+
+/* ── messages ── */
+.messages      { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+.message       { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:8px; font-size:14px; font-weight:500; }
+.message button{ background:none; border:none; cursor:pointer; font-size:18px; padding:0 0 0 10px; color:inherit; opacity:.7; }
+.message.success{ background:#e6f9f0; color:#1a7a4a; border:1px solid #a3e0c1; }
+.message.error  { background:#fdecea; color:#c0392b; border:1px solid #f5a9a4; }
+
+@media(max-width:600px){
+  .kv-grid { grid-template-columns:1fr; }
+  .stat-grid{ grid-template-columns:1fr 1fr; }
+}
+</style>
+
+<div class="detail-wrap">
+
+  <!-- back -->
+  <a href="{% url 'shopcore:admin_coupon_list' %}" class="back-link">
+    <i class="fa fa-arrow-left"></i> Coupons
+  </a>
+
+  {% if messages %}
+  <div class="messages" id="msgContainer">
+    {% for message in messages %}
+    <div class="message {{ message.tags }}">
+      <span>{{ message }}</span>
+      <button type="button" onclick="this.parentElement.remove()">×</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- page header -->
+  <div class="page-hdr">
+    <h2>
+      <i class="fa-solid fa-ticket" style="color:#f06292;"></i>
+      {{ coupon.code }}
+      <span class="badge {{ status_class }}" style="font-size:13px;margin-left:8px;">{{ status_label }}</span>
+    </h2>
+    <div class="hdr-actions">
+      <a href="{% url 'shopcore:admin_edit_coupon' coupon_id=coupon.id %}" class="btn btn-edit">
+        <i class="fa fa-pencil"></i> Edit
+      </a>
+      {% if coupon.is_active %}
+        <form method="post" action="{% url 'shopcore:admin_block_coupon' coupon_id=coupon.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button class="btn btn-block" type="submit">
+            <i class="fa-solid fa-ban"></i> Block
+          </button>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'shopcore:admin_unblock_coupon' coupon_id=coupon.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button class="btn btn-unblock" type="submit">
+            <i class="fa-solid fa-circle-check"></i> Unblock
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── STAT CARDS ─────────────────────────────────── -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="lbl">Discount</div>
+      <div class="val">{{ discount_label }}</div>
+      <div class="sub">{{ coupon.get_discount_type_display }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="lbl">Total Redemptions</div>
+      <div class="val">{{ coupon.used_count }}</div>
+      <div class="sub">across all customers</div>
+    </div>
+    <div class="stat-card">
+      <div class="lbl">Unique Customers</div>
+      <div class="val">{{ unique_users_count }}</div>
+      <div class="sub">{{ exhausted_users_count }} fully exhausted</div>
+    </div>
+    <div class="stat-card">
+      <div class="lbl">Total Discount Given</div>
+      <div class="val">&#8377;{{ total_discount_given|floatformat:2 }}</div>
+      <div class="sub">coupon savings granted</div>
+    </div>
+    <div class="stat-card">
+      <div class="lbl">Revenue via Coupon</div>
+      <div class="val">&#8377;{{ total_revenue|floatformat:2 }}</div>
+      <div class="sub">final order amounts</div>
+    </div>
+  </div>
+
+  <!-- ── COUPON DETAILS CARD ────────────────────────── -->
+  <div class="info-card section-gap">
+    <div class="card-title"><i class="fa-solid fa-circle-info"></i> Coupon Details</div>
+    <div class="kv-grid">
+      <div class="kv">
+        <div class="k">Code</div>
+        <div class="v mono">{{ coupon.code }}</div>
+      </div>
+      <div class="kv">
+        <div class="k">Discount Type</div>
+        <div class="v">
+          {% if coupon.discount_type == "PERCENT" %}
+            <span class="badge badge-percent">%</span>
+          {% else %}
+            <span class="badge badge-flat">&#8377;</span>
+          {% endif %}
+          {{ coupon.get_discount_type_display }}
+        </div>
+      </div>
+      <div class="kv">
+        <div class="k">Discount Value</div>
+        <div class="v">
+          {% if coupon.discount_type == "PERCENT" %}
+            {{ coupon.discount_value }}%
+          {% else %}
+            &#8377;{{ coupon.discount_value }}
+          {% endif %}
+        </div>
+      </div>
+      {% if coupon.max_discount %}
+      <div class="kv">
+        <div class="k">Max Discount Cap</div>
+        <div class="v">&#8377;{{ coupon.max_discount }}</div>
+      </div>
+      {% endif %}
+      <div class="kv">
+        <div class="k">Min Order Amount</div>
+        <div class="v">&#8377;{{ coupon.min_order_amount }}</div>
+      </div>
+      <div class="kv">
+        <div class="k">Status</div>
+        <div class="v"><span class="badge {{ status_class }}">{{ status_label }}</span></div>
+      </div>
+      <div class="kv">
+        <div class="k">Created</div>
+        <div class="v">{{ coupon.created_at|date:"d M Y, H:i" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VALIDITY CARD ──────────────────────────────── -->
+  <div class="info-card section-gap">
+    <div class="card-title"><i class="fa-regular fa-calendar"></i> Validity &amp; Limits</div>
+    <div class="kv-grid">
+      <div class="kv">
+        <div class="k">Start Date</div>
+        <div class="v">{{ coupon.start_date|date:"d M Y, H:i" }}</div>
+      </div>
+      <div class="kv">
+        <div class="k">Expiry Date</div>
+        <div class="v">
+          {{ coupon.expiry_date|date:"d M Y, H:i" }}
+          {% if is_expired %}<span class="badge badge-expired" style="margin-left:6px;">Expired</span>{% endif %}
+        </div>
+      </div>
+      <div class="kv">
+        <div class="k">Usage Limit <small style="font-weight:400;text-transform:none;">(per customer)</small></div>
+        <div class="v">{{ coupon.usage_limit }}× per customer</div>
+      </div>
+      <div class="kv">
+        <div class="k">Total Redemptions</div>
+        <div class="v">{{ coupon.used_count }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERRAL OFFERS CARD (only if linked) ─────── -->
+  {% if referral_offers %}
+  <div class="info-card section-gap">
+    <div class="card-title"><i class="fa-solid fa-link"></i> Linked Referral Offers</div>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Offer Type</th>
+            <th>Discount %</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for offer in referral_offers %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><span class="ref-tag">{{ offer.get_offer_type_display }}</span></td>
+            <td>{{ offer.discount_percent }}%</td>
+            <td>{{ offer.start_date|date:"d M Y" }}</td>
+            <td>{{ offer.end_date|date:"d M Y"|default:"—" }}</td>
+            <td>
+              {% if offer.is_active %}<span class="badge badge-active">Active</span>
+              {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── PER-CUSTOMER USAGE ─────────────────────────── -->
+  <div class="info-card section-gap">
+    <div class="card-title">
+      <i class="fa-solid fa-users"></i> Per-Customer Usage
+      <span style="font-size:12px;font-weight:400;color:#aaa;text-transform:none;margin-left:auto;">
+        Each customer may use this coupon up to {{ coupon.usage_limit }}× &nbsp;|&nbsp;
+        {{ unique_users_count }} customer{{ unique_users_count|pluralize }} used &nbsp;|&nbsp;
+        {{ exhausted_users_count }} exhausted
+      </span>
+    </div>
+    {% if usage_rows %}
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Times Used</th>
+            <th>Remaining</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in usage_rows %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ row.user.full_name|default:row.user.email }}</td>
+            <td style="color:#888;">{{ row.user.email }}</td>
+            <td>
+              <!-- mini progress bar -->
+              {{ row.times_used }} / {{ coupon.usage_limit }}
+              <div class="usage-bar-wrap">
+                <div class="usage-bar-bg">
+                  <div class="usage-bar-fill"
+                       style="width:{% widthratio row.times_used coupon.usage_limit 100 %}%"></div>
+                </div>
+              </div>
+            </td>
+            <td>{{ row.remaining }}</td>
+            <td>
+              {% if row.exhausted %}
+                <span class="badge badge-exhausted">Exhausted</span>
+              {% else %}
+                <span class="badge badge-ok">Active</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-users"></i>
+      No customer has used this coupon yet.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── ORDERS THAT USED THIS COUPON ──────────────── -->
+  <div class="info-card section-gap">
+    <div class="card-title">
+      <i class="fa-solid fa-bag-shopping"></i> Orders Using This Coupon
+      <span style="font-size:12px;font-weight:400;color:#aaa;text-transform:none;margin-left:auto;">
+        {{ linked_orders.count }} order{{ linked_orders.count|pluralize }}
+        &nbsp;|&nbsp; ₹{{ total_discount_given|floatformat:2 }} total saved by customers
+      </span>
+    </div>
+    {% if orders_page.object_list %}
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Order Date</th>
+            <th>Order Total</th>
+            <th>Coupon Discount</th>
+            <th>Final Amount</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders_page %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><strong>{{ order.order_id }}</strong></td>
+            <td>
+              {{ order.user.full_name|default:order.user.email }}
+              <br><small style="color:#aaa;">{{ order.user.email }}</small>
+            </td>
+            <td>{{ order.order_date|date:"d M Y, H:i" }}</td>
+            <td>&#8377;{{ order.total_amount|floatformat:2 }}</td>
+            <td style="color:#e91e63;font-weight:700;">
+              – &#8377;{{ order.coupon_discount|floatformat:2 }}
+            </td>
+            <td style="font-weight:700;">&#8377;{{ order.final_amount|floatformat:2 }}</td>
+            <td>{{ order.get_payment_method_display }}</td>
+            <td>
+              {% if order.order_status == "DELIVERED" %}
+                <span class="badge badge-active">Delivered</span>
+              {% elif order.order_status == "CANCELLED" %}
+                <span class="badge badge-expired">Cancelled</span>
+              {% elif order.order_status == "PENDING" %}
+                <span class="badge badge-scheduled">Pending</span>
+              {% else %}
+                <span class="badge badge-inactive">{{ order.get_order_status_display }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'shopcore:admin_order_detail' order_id=order.order_id %}"
+                 style="color:#f06292;font-size:13px;font-weight:600;text-decoration:none;">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- pagination for orders -->
+    {% if orders_page.has_other_pages %}
+    <div style="display:flex;justify-content:center;gap:6px;padding:16px 0 4px;">
+      {% if orders_page.has_previous %}
+        <a href="?opage={{ orders_page.previous_page_number }}"
+           style="padding:6px 14px;border:1.5px solid #eee;border-radius:8px;font-size:13px;text-decoration:none;color:#444;">
+          &laquo; Prev
+        </a>
+      {% endif %}
+      <span style="padding:6px 14px;border:1.5px solid #f06292;border-radius:8px;font-size:13px;color:#f06292;font-weight:700;">
+        {{ orders_page.number }} / {{ orders_page.paginator.num_pages }}
+      </span>
+      {% if orders_page.has_next %}
+        <a href="?opage={{ orders_page.next_page_number }}"
+           style="padding:6px 14px;border:1.5px solid #eee;border-radius:8px;font-size:13px;text-decoration:none;color:#444;">
+          Next &raquo;
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <i class="fa-solid fa-bag-shopping"></i>
+      No orders have used this coupon yet.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+/* auto-dismiss flash messages */
+(function(){
+  var mc = document.getElementById('msgContainer');
+  if (!mc) return;
+  setTimeout(function(){
+    mc.querySelectorAll('.message').forEach(function(m){
+      m.style.transition = 'opacity .5s';
+      m.style.opacity = '0';
+      setTimeout(function(){ m.remove(); }, 500);
+    });
+  }, 12000);
+})();
+</script>
+{% endblock %}

@@ -1,20 +1,16 @@
 from __future__ import annotations
-
 from decimal import Decimal
 from types import SimpleNamespace
-
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-
 from accounts.decorators import admin_login_required, user_login_required
 from shopcore.models import Cart, Coupon, CouponUsage
-
 
 # ─────────────────────────────────────────────────────────────
 # HELPERS
@@ -36,14 +32,12 @@ def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
     """
     if subtotal < coupon.min_order_amount:
         return Decimal("0")
-
     if coupon.discount_type == "PERCENT":
         discount = subtotal * coupon.discount_value / Decimal("100")
         if coupon.max_discount:
             discount = min(discount, coupon.max_discount)
     else:  # FLAT
         discount = coupon.discount_value
-
     return min(discount, subtotal)
 
 
@@ -264,6 +258,107 @@ def admin_coupon_list(request):
 
 
 # ─────────────────────────────────────────────────────────────
+# ADMIN: COUPON DETAIL
+# ─────────────────────────────────────────────────────────────
+
+@never_cache
+@admin_login_required
+def admin_coupon_detail(request, coupon_id):
+    coupon = get_object_or_404(Coupon, id=coupon_id)
+
+    now = timezone.now()
+
+    # ── Status derived fields ─────────────────────────────────
+    is_expired  = coupon.expiry_date < now
+    is_upcoming = coupon.start_date > now
+    if is_expired:
+        status_label = "Expired"
+        status_class = "badge-expired"
+    elif not coupon.is_active:
+        status_label = "Inactive"
+        status_class = "badge-inactive"
+    elif is_upcoming:
+        status_label = "Scheduled"
+        status_class = "badge-scheduled"
+    else:
+        status_label = "Active"
+        status_class = "badge-active"
+
+    # ── Discount label ────────────────────────────────────────
+    if coupon.discount_type == "PERCENT":
+        discount_label = f"{coupon.discount_value:.0f}% off"
+        if coupon.max_discount:
+            discount_label += f" (max ₹{coupon.max_discount:.0f})"
+    else:
+        discount_label = f"₹{coupon.discount_value:.0f} flat off"
+
+    # ── Per-user usage records ────────────────────────────────
+    # Each row: user info + times_used + remaining uses
+    usages = (
+        CouponUsage.objects
+        .filter(coupon=coupon)
+        .select_related("user")
+        .order_by("-times_used", "user__email")
+    )
+
+    usage_rows = []
+    for u in usages:
+        usage_rows.append({
+            "user":           u.user,
+            "times_used":     u.times_used,
+            "remaining":      max(coupon.usage_limit - u.times_used, 0),
+            "exhausted":      u.times_used >= coupon.usage_limit,
+        })
+
+    # ── Aggregate stats ───────────────────────────────────────
+    unique_users_count    = usages.count()
+    exhausted_users_count = sum(1 for r in usage_rows if r["exhausted"])
+
+    # Total discount given across all orders that used this coupon
+    from shopcore.models import Order
+    linked_orders = (
+        Order.objects
+        .filter(coupon=coupon)
+        .select_related("user", "address")
+        .order_by("-order_date")
+    )
+    total_discount_given = linked_orders.aggregate(
+        total=Sum("coupon_discount")
+    )["total"] or Decimal("0")
+    total_revenue        = linked_orders.aggregate(
+        total=Sum("final_amount")
+    )["total"] or Decimal("0")
+
+    # ── Orders paginated ─────────────────────────────────────
+    orders_page = Paginator(linked_orders, 10).get_page(request.GET.get("opage"))
+
+    # ── Referral offer linked (if any) ───────────────────────
+    referral_offers = coupon.referral_offers.filter(is_deleted=False)
+
+    return render(request, "coupon_offer/admin_coupon_detail.html", {
+        "coupon":               coupon,
+        "now":                  now,
+        # status
+        "status_label":         status_label,
+        "status_class":         status_class,
+        "is_expired":           is_expired,
+        "is_upcoming":          is_upcoming,
+        "discount_label":       discount_label,
+        # per-user usage
+        "usage_rows":           usage_rows,
+        "unique_users_count":   unique_users_count,
+        "exhausted_users_count":exhausted_users_count,
+        # order stats
+        "linked_orders":        linked_orders,
+        "orders_page":          orders_page,
+        "total_discount_given": total_discount_given,
+        "total_revenue":        total_revenue,
+        # referral
+        "referral_offers":      referral_offers,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
 # ADMIN: ADD COUPON
 # ─────────────────────────────────────────────────────────────
 
@@ -301,7 +396,7 @@ def admin_edit_coupon(request, coupon_id):
         "action":           "Edit",
         "coupon":           coupon,
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
-        "form_data":        coupon,   # use model instance for pre-fill
+        "form_data":        coupon,
     })
 
 
@@ -352,9 +447,9 @@ def _save_coupon(request, instance):
             messages.error(request, e)
         return render(request, "coupon_offer/admin_coupon_form.html", ctx)
 
-    obj               = instance or Coupon()
-    obj.code          = code
-    obj.discount_type = discount_type
+    obj                  = instance or Coupon()
+    obj.code             = code
+    obj.discount_type    = discount_type
     obj.discount_value   = Decimal(discount_val)
     obj.max_discount     = Decimal(max_discount) if max_discount else None
     obj.min_order_amount = Decimal(min_order)

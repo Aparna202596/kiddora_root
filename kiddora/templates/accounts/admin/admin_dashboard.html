@@ -153,42 +153,6 @@ th { background: #f8fafc; font-weight: 600; }
             </div>
         </div>
     </div>
-
-    <!-- ===== RECENT ORDERS ===== -->
-    <div class="section">
-        <h3 class="section-title">Recent Orders</h3>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order ID</th><th>User</th><th>Status</th>
-                        <th>Final Amount</th><th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for order in orders %}
-                    <tr>
-                        <td>{{ order.order_id }}</td>
-                        <td>{{ order.user.email }}</td>
-                        <td>
-                            {% if order.order_status == "DELIVERED" %}
-                                <span class="badge badge-green">Delivered</span>
-                            {% elif order.order_status == "CANCELLED" %}
-                                <span class="badge badge-red">Cancelled</span>
-                            {% else %}
-                                <span class="badge badge-yellow">{{ order.order_status }}</span>
-                            {% endif %}
-                        </td>
-                        <td>₹ {{ order.final_amount }}</td>
-                        <td>{{ order.created_at|date:"d M Y" }}</td>
-                    </tr>
-                {% empty %}
-                    <tr><td colspan="5">No orders available</td></tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -3,7 +3,6 @@
 {% block title %}Coupons – Kiddora Admin{% endblock %}
 {% block content %}
 {% include "admin_list_style.html" %}
-
 <div class="container">
     <div class="page-hdr">
         <h2><i class="fa-solid fa-ticket" style="color:#f06292;"></i> Coupons</h2>
@@ -11,7 +10,6 @@
             <i class="fa fa-plus"></i> Add Coupon
         </a>
     </div>
-
     {% if messages %}
     <div class="messages" id="msgContainer">
         {% for message in messages %}
@@ -22,7 +20,6 @@
         {% endfor %}
     </div>
     {% endif %}
-
     <!-- Filter toolbar -->
     <form method="get" class="search-box">
         <input type="text" name="search" value="{{ search }}" placeholder="Search code…" style="width:180px;">
@@ -43,7 +40,6 @@
         <a href="{% url 'shopcore:admin_coupon_list' %}" class="search-btn">Clear</a>
         {% endif %}
     </form>
-
     <!-- Table -->
     <div class="table-wrapper">
         <table class="data-table">
@@ -54,7 +50,8 @@
                     <th>Type</th>
                     <th>Value</th>
                     <th>Min Order</th>
-                    <th>Used / Limit</th>
+                    <th title="Total redemptions across all customers / limit per customer">Used / Limit per Customer</th>
+                    <th>Starting</th>
                     <th>Expiry</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -64,7 +61,11 @@
             {% for coupon in page_obj %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
-                    <td><strong>{{ coupon.code }}</strong></td>
+                    <td><strong><a href="{% url 'shopcore:admin_coupon_detail' coupon.id %}"
+                            style="color:#f06292;font-weight:600;text-decoration:none;">
+                            {{ coupon.code }}
+                        </a></strong></td>
+                    
                     <td>
                         {% if coupon.discount_type == "PERCENT" %}
                             <span class="badge badge-percent">%</span>
@@ -81,13 +82,20 @@
                         {% endif %}
                     </td>
                     <td>&#8377;{{ coupon.min_order_amount }}</td>
-                    <td>{{ coupon.used_count }} / {{ coupon.usage_limit }}</td>
+                    <td title="Each customer can use this coupon up to {{ coupon.usage_limit }} time{{ coupon.usage_limit|pluralize }}">
+                        {{ coupon.used_count }} total &nbsp;/&nbsp;
+                        {{ coupon.usage_limit }}× per customer
+                    </td>
+                    <td>
+                        {{ coupon.start_date|date:"d M Y" }}
+                    </td>
                     <td>
                         {{ coupon.expiry_date|date:"d M Y" }}
                         {% if coupon.expiry_date < now %}
                         <br><small style="color:#dc2626;">Expired</small>
                         {% endif %}
                     </td>
+                    
                     <td>
                         {% if coupon.expiry_date < now %}
                             <span class="badge badge-expired">Expired</span>
@@ -99,11 +107,9 @@
                     </td>
                     <td>
                         <div class="tbl-actions">
-
                             <!-- Edit -->
                             <a href="{% url 'shopcore:admin_edit_coupon' coupon_id=coupon.id %}"
                                class="icon-edit" title="Edit">&#9999;&#65039;</a>
-
                             <!-- Block / Unblock (GET goes to confirm page) -->
                             {% if coupon.is_active %}
                                 <a href="{% url 'shopcore:admin_block_coupon' coupon_id=coupon.id %}"
@@ -118,7 +124,6 @@
                                     <i class="fa-solid fa-circle-check"></i>
                                 </a>
                             {% endif %}
-
                             <!-- Delete via confirm modal -->
                             <button type="button"
                                     class="icon-delete"
@@ -134,7 +139,6 @@
                                   style="display:none;">
                                 {% csrf_token %}
                             </form>
-
                         </div>
                     </td>
                 </tr>
@@ -149,10 +153,8 @@
             </tbody>
         </table>
     </div>
-
     {% include "pagination.html" with page_obj=page_obj %}
 </div>
-
 {% include "confirm_modal.html" %}
 <script src="{% static 'js/ui-utils.js' %}"></script>
-{% endblock %}cd 
+{% endblock %}
