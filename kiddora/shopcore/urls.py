@@ -48,7 +48,8 @@ urlpatterns = [
     path("wishlist/", wishlist_views.wishlist_view, name="wishlist"),
     path("wishlist/toggle/<int:product_id>/", cart_views.toggle_wishlist, name="toggle_wishlist"),
     path("wishlist/remove/<int:product_id>/", wishlist_views.remove_from_wishlist, name="remove_from_wishlist"),
-    path("wishlist/move-to-cart/<int:product_id>/", wishlist_views.move_to_cart, name="move_to_cart"),
+    path("wishlist/move-to-cart/<int:variant_id>/", wishlist_views.move_to_cart, name="move_to_cart"),
+    path('wishlist/variant-popup/<int:product_id>/', wishlist_views.wishlist_variant_popup, name='wishlist_variant_popup'),
 
 # ── CHECKOUT — USER ───────────────────────────────────────────────────────
     path("checkout/", checkout_views.checkout, name="checkout"),

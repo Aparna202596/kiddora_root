@@ -1,0 +1,230 @@
+{% load static %}
+<style>
+/* ───────── POPUP OVERLAY ───────── */
+.wl-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+}
+/* ───────── POPUP BOX ───────── */
+.wl-popup {
+    background: #fff;
+    width: 420px;
+    max-width: 92%;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.25);
+    animation: fadeIn .25s ease;
+}
+@keyframes fadeIn {
+    from { transform: scale(.9); opacity: 0; }
+    to   { transform: scale(1);  opacity: 1; }
+}
+/* ───────── HEADER ───────── */
+.wl-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.wl-popup-title { font-size: 16px; font-weight: 800; color: #222; }
+.wl-popup-close {
+    cursor: pointer;
+    font-size: 20px;
+    color: #888;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 6px;
+    user-select: none;
+}
+.wl-popup-close:hover { background: #f5f5f5; color: #333; }
+/* ───────── PRODUCT ───────── */
+.wl-popup-product { display: flex; gap: 14px; margin-bottom: 16px; }
+.wl-popup-product img {
+    width: 80px; height: 80px;
+    border-radius: 10px; object-fit: cover; background: #f5f5f5;
+}
+.wl-popup-name  { font-size: 14px; font-weight: 700; }
+.wl-popup-price { color: #f06292; font-weight: 800; }
+/* ───────── VARIANTS ───────── */
+.wl-variants { margin-top: 10px; }
+.wl-variant {
+    padding: 10px;
+    border: 1.5px solid #eee;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color .15s, background .15s;
+}
+.wl-variant:hover:not(.out)  { border-color: #f06292; }
+.wl-variant.selected         { border: 2px solid #f06292; background: #fff0f5; }
+.wl-variant.out              { background: #fafafa; color: #aaa; cursor: not-allowed; }
+.wl-stock     { font-size: 12px; font-weight: 700; }
+.wl-stock.in  { color: #16a34a; }
+.wl-stock.out { color: #dc2626; }
+/* ───────── BUTTON ───────── */
+.wl-popup-btn {
+    width: 100%; padding: 12px;
+    background: #f06292; color: #fff;
+    border: none; border-radius: 10px;
+    font-weight: 700; cursor: pointer; margin-top: 12px;
+    font-size: 15px;
+}
+.wl-popup-btn:disabled { background: #f8bbd0; cursor: not-allowed; }
+</style>
+
+<div id="wlVariantPopupWrap">
+    <div class="wl-popup-overlay" id="wlOverlay">
+        <div class="wl-popup" id="wlPopupBox">
+
+            <!-- HEADER -->
+            <div class="wl-popup-header">
+                <div class="wl-popup-title">Select Variant</div>
+                <div class="wl-popup-close" id="wlCloseBtn">✕</div>
+            </div>
+
+            <!-- PRODUCT -->
+            <div class="wl-popup-product">
+                <div>
+                    <div class="wl-popup-name">{{ product.product_name }}</div>
+                    <div class="wl-popup-price">₹{{ product.final_price }}</div>
+                </div>
+            </div>
+
+            <!-- VARIANTS -->
+            <div class="wl-variants" id="wlVariantList">
+                {% for v in variant_data %}
+                <div class="wl-variant {% if v.qty <= 0 %}out{% endif %}"
+                     data-variant-id="{{ v.id }}"
+                     data-qty="{{ v.qty }}">
+                    <span>{{ v.color_name }} - {{ v.age }}</span>
+                    {% if v.qty > 0 %}
+                        <span class="wl-stock in">In Stock</span>
+                    {% else %}
+                        <span class="wl-stock out">Out of Stock</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ADD TO CART -->
+            <button class="wl-popup-btn" id="addToCartBtn">
+                Add to Cart
+            </button>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+
+{% comment %} <script>
+/*
+ * KEY FIX: setTimeout(0) defers execution until after the browser has
+ * fully parsed and rendered the injected HTML into the live DOM.
+ * Without this, getElementById calls return null when the template is
+ * loaded dynamically via fetch / innerHTML.
+ */
+setTimeout(function () {
+
+    var selectedVariant = null;
+
+    var wrap       = document.getElementById('wlVariantPopupWrap');
+    var overlay    = document.getElementById('wlOverlay');
+    var closeBtn   = document.getElementById('wlCloseBtn');
+    var cartBtn    = document.getElementById('addToCartBtn');
+    var variantEls = document.querySelectorAll('#wlVariantList .wl-variant');
+
+    /* ── GUARD: abort if any critical element is missing ── */
+    if (!wrap || !overlay || !closeBtn || !cartBtn) {
+        console.error('[WishlistPopup] Required DOM elements not found. Aborting init.');
+        return;
+    }
+
+    /* ── CLOSE POPUP ── */
+    function closePopup() {
+        if (wrap) wrap.remove();
+    }
+
+    /* ── CLOSE: X button ── */
+    closeBtn.addEventListener('click', closePopup);
+
+    /* ── CLOSE: click on dark overlay (not the popup box itself) ── */
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closePopup();
+    });
+
+    /* ── CLOSE: Escape key ── */
+    document.addEventListener('keydown', function onKey(e) {
+        if (e.key === 'Escape') {
+            closePopup();
+            document.removeEventListener('keydown', onKey);
+        }
+    });
+
+    /* ── SELECT VARIANT ── */
+    variantEls.forEach(function (el) {
+        el.addEventListener('click', function () {
+            var qty = parseInt(el.dataset.qty, 10);
+            if (qty <= 0) return;                       /* out-of-stock: do nothing */
+
+            selectedVariant = el.dataset.variantId;
+
+            /* clear previous highlight */
+            variantEls.forEach(function (v) { v.classList.remove('selected'); });
+
+            /* highlight this one */
+            el.classList.add('selected');
+
+            /* enable button */
+            cartBtn.disabled = false;
+        });
+    });
+
+    /* ── ADD TO CART ── */
+    cartBtn.addEventListener('click', function () {
+        if (!selectedVariant) return;
+
+        cartBtn.disabled = true;
+        cartBtn.textContent = 'Adding…';
+
+        var csrf = document.getElementById('csrfToken');
+
+        fetch('/shop/cart/add/' + selectedVariant + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrf ? csrf.value : ''
+            }
+        })
+        .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function (data) {
+            if (data.success) {
+                closePopup();
+                if (typeof onCartAddSuccess === 'function') {
+                    onCartAddSuccess(data.product_id, data.product_name, data.cart_count);
+                }
+            } else {
+                alert(data.message || 'Add to cart failed. Please try again.');
+                cartBtn.disabled = false;
+                cartBtn.textContent = 'Add to Cart';
+            }
+        })
+        .catch(function (err) {
+            console.error('[WishlistPopup] Cart error:', err);
+            alert('Network error — please try again.');
+            cartBtn.disabled = false;
+            cartBtn.textContent = 'Add to Cart';
+        });
+    });
+
+}, 0); /* setTimeout 0 — defers until DOM is ready after dynamic injection */
+</script> {% endcomment %}

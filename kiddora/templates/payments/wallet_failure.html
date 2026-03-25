@@ -8,53 +8,135 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 body { font-family:'Nunito',sans-serif; }
-.wf-page { min-height:70vh; display:flex; align-items:center; justify-content:center; padding:40px 16px; background:linear-gradient(135deg,#f5f3ff,#ede9fe,#f8f9ff); }
-.wf-card { background:#fff; border-radius:22px; padding:48px 40px 40px; max-width:480px; width:100%; text-align:center; box-shadow:0 16px 50px rgba(109,40,217,.1); position:relative; overflow:hidden; }
-.wf-card::before { content:''; position:absolute; top:0; left:0; right:0; height:5px; background:linear-gradient(90deg,#7c3aed,#a78bfa,#7c3aed); background-size:200%; animation:shimmer 2s linear infinite; }
+
+.fail-page {
+  min-height:70vh; display:flex; align-items:center; justify-content:center;
+  padding:40px 16px;
+  background:linear-gradient(135deg,#fff5f5,#fce4ec,#f8f9ff);
+}
+.fail-card {
+  background:#fff; border-radius:22px; padding:48px 40px 40px;
+  max-width:520px; width:100%; text-align:center;
+  box-shadow:0 16px 50px rgba(239,68,68,.12);
+  position:relative; overflow:hidden;
+}
+.fail-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:5px;
+  background:linear-gradient(90deg,#ef4444,#f97316,#ef4444);
+  background-size:200%; animation:shimmer 2s linear infinite;
+}
 @keyframes shimmer { to { background-position:200%; } }
-.wf-icon { font-size:60px; margin-bottom:16px; animation:popIn .6s cubic-bezier(.34,1.56,.64,1); }
+
+.fail-icon {
+  width:100px; height:100px;
+  background:linear-gradient(135deg,#fee2e2,#fff5f5);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  margin:0 auto 20px;
+  animation:popIn .6s cubic-bezier(.34,1.56,.64,1);
+}
 @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
-.wf-title { font-size:24px; font-weight:900; color:#222; margin-bottom:8px; }
-.wf-sub { font-size:14px; color:#888; line-height:1.6; margin-bottom:24px; }
-.balance-chip { display:inline-block; background:#ede9fe; color:#7c3aed; font-size:14px; font-weight:800; border-radius:20px; padding:6px 18px; margin-bottom:20px; }
-.wf-strip { background:#f5f3ff; border:1.5px solid #ddd6fe; border-radius:12px; padding:16px 20px; margin-bottom:24px; text-align:left; }
-.wf-row { display:flex; justify-content:space-between; font-size:13px; color:#666; margin-bottom:6px; }
-.wf-row:last-child { margin-bottom:0; }
-.wf-row strong { color:#222; }
-.btn-razorpay { display:flex; align-items:center; justify-content:center; gap:8px; padding:15px 24px; background:linear-gradient(135deg,#f06292,#e91e63); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:pointer; text-decoration:none; width:100%; margin-bottom:10px; box-shadow:0 6px 20px rgba(240,98,146,.25); font-family:'Nunito',sans-serif; transition:opacity .2s; }
-.btn-razorpay:hover { opacity:.9; color:#fff; }
-.btn-paypal { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 24px; background:#ffc439; color:#003087; border:none; border-radius:12px; font-size:14px; font-weight:800; cursor:pointer; text-decoration:none; width:100%; margin-bottom:10px; font-family:'Nunito',sans-serif; transition:opacity .2s; }
-.btn-paypal:hover { opacity:.9; color:#003087; }
-.btn-orders { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 24px; background:#fff; color:#888; border:1.5px solid #ddd; border-radius:12px; font-size:14px; text-decoration:none; width:100%; font-family:'Nunito',sans-serif; }
-.btn-orders:hover { background:#fafafa; }
+
+.fail-title  { font-size:26px; font-weight:900; color:#222; margin-bottom:8px; }
+.fail-sub    { font-size:14px; color:#888; line-height:1.6; margin-bottom:24px; }
+
+.fail-strip {
+  background:#fff5f5; border:1.5px solid #fecaca; border-radius:12px;
+  padding:16px 20px; margin-bottom:24px; text-align:left;
+}
+.fail-row    { display:flex; justify-content:space-between; font-size:13px; color:#666; margin-bottom:6px; }
+.fail-row:last-child { margin-bottom:0; }
+.fail-row strong { color:#222; }
+
+.balance-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#fef3c7; color:#92400e;
+  border:1.5px solid #fde68a; border-radius:99px;
+  padding:4px 14px; font-size:13px; font-weight:700; margin-bottom:20px;
+}
+
+.btn-paypal {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:15px 24px;
+  background:linear-gradient(135deg,#003087,#009cde);
+  color:#fff; border:none; border-radius:12px;
+  font-size:15px; font-weight:800; cursor:pointer; text-decoration:none;
+  width:100%; margin-bottom:10px;
+  box-shadow:0 6px 20px rgba(0,48,135,.2);
+  font-family:'Nunito',sans-serif; transition:opacity .2s;
+}
+.btn-paypal:hover { opacity:.9; color:#fff; }
+
+.btn-orders {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:13px 24px; background:#fff; color:#ef4444;
+  border:2px solid #ef4444; border-radius:12px;
+  font-size:14px; font-weight:700; cursor:pointer; text-decoration:none;
+  width:100%; font-family:'Nunito',sans-serif; transition:background .15s;
+}
+.btn-orders:hover { background:#fff5f5; color:#ef4444; }
+
+.help-note { font-size:11px; color:#aaa; margin-top:16px; }
 </style>
 
-<div class="wf-page">
-    <div class="wf-card">
-        <div class="wf-icon">👛</div>
-        <h1 class="wf-title">Wallet Payment Failed</h1>
-        <p class="wf-sub">Your wallet did not have enough balance to cover this order. Please choose another payment method.</p>
+<div class="fail-page">
+  <div class="fail-card">
 
-        <div class="balance-chip">Your Balance: ₹{{ wallet_balance }}</div>
-
-        <div class="wf-strip">
-            <div class="wf-row"><span>Order ID</span><strong>#{{ order.order_id }}</strong></div>
-            <div class="wf-row"><span>Order Total</span><strong>₹{{ order.final_amount }}</strong></div>
-            <div class="wf-row"><span>Wallet Balance</span><strong style="color:#7c3aed;">₹{{ wallet_balance }}</strong></div>
-            <div class="wf-row"><span>Shortfall</span>
-                <strong style="color:#ef4444;">₹{{ order.final_amount|floatformat:2 }}</strong>
-            </div>
-        </div>
-
-        <a href="{% url 'payments:initiate_razorpay_payment' order_id=order.order_id %}" class="btn-razorpay">
-            💳 Pay with Razorpay
-        </a>
-        <a href="{% url 'payments:initiate_paypal_payment' order_id=order.order_id %}" class="btn-paypal">
-            🅿️ Pay with PayPal
-        </a>
-        <a href="{% url 'shopcore:user_order_detail' order_id=order.order_id %}" class="btn-orders">
-            📦 View Order Details
-        </a>
+    <div class="fail-icon">
+      <!-- Wallet icon -->
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="24" stroke="#ef4444" stroke-width="3" fill="white"/>
+        <rect x="13" y="18" width="26" height="17" rx="3" stroke="#ef4444" stroke-width="3"/>
+        <path d="M13 23h26" stroke="#ef4444" stroke-width="2.5"/>
+        <circle cx="34" cy="27" r="2" fill="#ef4444"/>
+      </svg>
     </div>
+
+    <h1 class="fail-title">Wallet Payment Failed 😔</h1>
+    <p class="fail-sub">
+      Your wallet balance is insufficient to complete this order.<br>
+      No amount has been deducted.
+    </p>
+
+    <div class="balance-chip">
+      💰 Current Balance: ₹{{ wallet_balance|floatformat:2 }}
+    </div>
+
+    <div class="fail-strip">
+      <div class="fail-row">
+        <span>Order ID</span>
+        <strong>#{{ order.order_id }}</strong>
+      </div>
+      <div class="fail-row">
+        <span>Order Total</span>
+        <strong>₹{{ order.final_amount }}</strong>
+      </div>
+      <div class="fail-row">
+        <span>Wallet Balance</span>
+        <strong style="color:#ef4444;">₹{{ wallet_balance|floatformat:2 }}</strong>
+      </div>
+      <div class="fail-row">
+        <span>Shortfall</span>
+        <strong style="color:#ef4444;">
+          ₹{{ order.final_amount|floatformat:2 }}
+        </strong>
+      </div>
+    </div>
+
+    <!-- Pay with PayPal instead -->
+    <a href="{% url 'payments:initiate_paypal_payment' order_id=order.order_id %}" class="btn-paypal">
+      🅿️ Pay with PayPal Instead
+    </a>
+
+    <!-- View Order -->
+    <a href="{% url 'shopcore:user_order_detail' order_id=order.order_id %}" class="btn-orders">
+      📦 View Order Details
+    </a>
+
+    <div class="help-note">
+      Need help?
+      <a href="mailto:support@kiddora.com" style="color:#ef4444;">support@kiddora.com</a>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

@@ -153,6 +153,7 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 # ── Payments ──────────────────────────────────────────────────────────────────
-RAZORPAY_KEY_ID = "rzp_test_xxxxx"
-RAZORPAY_KEY_SECRET = "xxxxxxxx"
-RAZORPAY_WEBHOOK_SECRET = "..."
+PAYPAL_CLIENT_ID =os.getenv('PAYPAL_CLIENT_ID')
+PAYPAL_CLIENT_SECRET =os.getenv('PAYPAL_CLIENT_SECRET')
+PAYPAL_MODE = "sandbox"   # → "live" in production
+PAYPAL_CURRENCY = "USD" 

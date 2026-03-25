@@ -5,266 +5,375 @@
 
 {% block extra_css %}
 {% include "responsive.html" %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-.wl-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
-.wl-header h2 { font-size:22px; font-weight:800; color:#222; display:flex; align-items:center; gap:10px; }
-.wl-header h2 i { color:#f06292; }
-.wl-count { font-size:13px; color:#888; margin-left:4px; }
-
-.wl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:20px; }
-
-/* card fade-out on removal */
+.wl-page { padding: 28px 0 60px; }
+.wl-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+.wl-header h2 {
+    font-size: 22px; font-weight: 800; color: #222;
+    display: flex; align-items: center; gap: 10px;
+}
+.wl-header h2 i { color: #f06292; }
+.wl-count { font-size: 13px; color: #888; margin-left: 4px; }
+.wl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+}
 .wl-card {
-    background:#fff; border:1.5px solid #eee; border-radius:14px;
-    overflow:hidden; transition:box-shadow .2s, border-color .2s, opacity .35s, transform .35s;
+    background: #fff; border: 1.5px solid #eee; border-radius: 14px;
+    overflow: hidden;
+    transition: box-shadow .2s, border-color .2s, opacity .35s, transform .35s;
+    display: flex; flex-direction: column;
 }
-.wl-card:hover { border-color:#f06292; box-shadow:0 6px 24px rgba(240,98,146,.12); }
-.wl-card.removing { opacity:0; transform:scale(.93); pointer-events:none; }
-
-.wl-img { width:100%; height:200px; object-fit:cover; display:block; background:#f8f8f8; }
-.wl-img-placeholder { width:100%; height:200px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:3rem; color:#ddd; }
-
-.wl-body { padding:14px 16px; }
-.wl-name  { font-size:14px; font-weight:700; color:#222; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.wl-price { font-size:15px; font-weight:800; color:#f06292; margin-bottom:4px; }
-.wl-price del { font-size:12px; color:#aaa; font-weight:400; margin-left:6px; }
-
-.wl-stock-badge { font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; display:inline-block; margin-bottom:10px; }
-.in-stock    { background:#dcfce7; color:#15803d; }
-.out-of-stock{ background:#fee2e2; color:#991b1b; }
-
-.wl-actions { display:flex; gap:8px; padding:0 16px 16px; }
+.wl-card:hover { border-color: #f06292; box-shadow: 0 6px 24px rgba(240,98,146,.12); }
+.wl-card.removing { opacity: 0; transform: scale(.93); pointer-events: none; }
+.wl-img-link { display: block; position: relative; overflow: hidden; }
+.wl-img {
+    width: 100%; height: 220px; object-fit: cover; display: block;
+    background: #f8f8f8; transition: transform .4s;
+}
+.wl-card:hover .wl-img { transform: scale(1.04); }
+.wl-img-placeholder {
+    width: 100%; height: 220px; background: #f5f5f5;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; color: #ddd;
+}
+.wl-body { padding: 14px 16px 10px; flex: 1; }
+.wl-name {
+    font-size: 14px; font-weight: 700; color: #222; margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    text-decoration: none; display: block;
+}
+.wl-name:hover { color: #f06292; }
+.wl-price { font-size: 15px; font-weight: 800; color: #f06292; margin-bottom: 6px; }
+.wl-price del { font-size: 12px; color: #aaa; font-weight: 400; margin-left: 6px; }
+.wl-stock-badge {
+    font-size: 11px; font-weight: 700; padding: 2px 10px;
+    border-radius: 20px; display: inline-flex; align-items: center; gap: 4px;
+}
+.wl-stock-badge.in-stock  { background: #dcfce7; color: #15803d; }
+.wl-stock-badge.out-stock { background: #fee2e2; color: #991b1b; }
+.wl-actions { display: flex; gap: 8px; padding: 10px 16px 16px; margin-top: auto; }
 .wl-btn {
-    flex:1; padding:9px 0; border:none; border-radius:8px;
-    font-size:13px; font-weight:700; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    text-decoration:none; transition:background .18s, opacity .18s;
-    position:relative;
+    flex: 1; padding: 10px 0; border: none; border-radius: 10px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    text-decoration: none; transition: background .18s, opacity .18s;
 }
-.wl-btn-cart   { background:#f06292; color:#fff; }
-.wl-btn-cart:hover { background:#e91e63; }
-.wl-btn-cart.disabled { background:#e0e0e0; color:#999; cursor:not-allowed; pointer-events:none; }
-.wl-btn-cart.loading  { pointer-events:none; opacity:.7; }
-.wl-btn-remove { background:#fce4ec; color:#c2185b; flex:0 0 40px; padding:9px; }
-.wl-btn-remove:hover { background:#f8bbd9; }
-
-/* inline spinner inside button */
-.btn-spinner {
-    display:none; width:14px; height:14px;
-    border:2px solid rgba(255,255,255,.5); border-top-color:#fff;
-    border-radius:50%; animation:spin .6s linear infinite;
+.wl-btn-cart { background: #f06292; color: #fff; }
+.wl-btn-cart:hover { background: #e91e63; color: #fff; }
+.wl-btn-cart.disabled {
+    background: #e0e0e0; color: #9e9e9e;
+    cursor: not-allowed; pointer-events: none;
 }
-@keyframes spin { to { transform:rotate(360deg); } }
-.wl-btn-cart.loading .btn-text    { display:none; }
-.wl-btn-cart.loading .btn-spinner { display:inline-block; }
-
-.wl-empty { text-align:center; padding:70px 20px; color:#aaa; }
-.wl-empty i  { font-size:3.5rem; margin-bottom:16px; display:block; color:#f8bbd9; }
-.wl-empty h3 { font-size:20px; font-weight:700; color:#555; margin-bottom:8px; }
-.wl-empty a  { display:inline-block; margin-top:16px; padding:12px 28px; background:#f06292; color:#fff; border-radius:50px; font-weight:700; text-decoration:none; }
-
-/* ── TOAST ── */
+.wl-btn-remove {
+    flex: 0 0 42px; padding: 10px;
+    background: #fce4ec; color: #c2185b; border-radius: 10px;
+}
+.wl-btn-remove:hover { background: #f8bbd9; }
+.wl-empty { text-align: center; padding: 70px 20px; color: #aaa; }
+.wl-empty i { font-size: 3.5rem; margin-bottom: 16px; display: block; color: #f8bbd9; }
+.wl-empty h3 { font-size: 20px; font-weight: 700; color: #555; margin-bottom: 8px; }
+.wl-empty a {
+    display: inline-block; margin-top: 16px; padding: 12px 28px;
+    background: #f06292; color: #fff; border-radius: 50px;
+    font-weight: 700; text-decoration: none; transition: background .2s;
+}
+.wl-empty a:hover { background: #e91e63; }
 #kdToast {
-    position:fixed; bottom:24px; right:24px; z-index:100000;
-    background:#222; color:#fff; padding:12px 18px; border-radius:10px;
-    font-size:14px; font-weight:600; opacity:0; transform:translateY(10px);
-    transition:opacity .3s, transform .3s; pointer-events:none;
-    max-width:min(320px, 90vw);
+    position: fixed; bottom: 24px; right: 24px; z-index: 100000;
+    color: #fff; padding: 12px 18px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; opacity: 0; transform: translateY(10px);
+    transition: opacity .3s, transform .3s; pointer-events: none;
+    max-width: min(320px, 90vw); background: #222;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18);
 }
-#kdToast.show    { opacity:1; transform:translateY(0); }
-#kdToast.success { background:#16a34a; }
-#kdToast.error   { background:#dc2626; }
-
-@media (max-width:640px) {
-    .wl-grid { grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
-    .wl-img, .wl-img-placeholder { height:160px; }
+#kdToast.show    { opacity: 1; transform: translateY(0); }
+#kdToast.success { background: #16a34a; }
+#kdToast.error   { background: #dc2626; }
+#kdToast.warning { background: #d97706; }
+@media (max-width: 640px) {
+    .wl-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .wl-img, .wl-img-placeholder { height: 170px; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="wl-header">
-    <h2>
-        <i class="fa-solid fa-heart"></i>
-        My Wishlist
-        <span class="wl-count" id="wlCount">
-            ({{ item_data|length }} item{{ item_data|length|pluralize }})
-        </span>
-    </h2>
-    <a href="{% url 'products:product_list' %}" style="font-size:13px;color:#f06292;font-weight:700;text-decoration:none;">
-        <i class="fa fa-arrow-left"></i> Continue Shopping
-    </a>
-</div>
-
-{% if item_data %}
-<div class="wl-grid" id="wlGrid">
-    {% for d in item_data %}
-    <div class="wl-card" id="wlCard_{{ d.product.id }}"
-         data-product-id="{{ d.product.id }}"
-         data-product-name="{{ d.product.product_name|escapejs }}">
-
-        <a href="{% url 'products:product_detail' product_id=d.product.id %}">
-            {% if d.img_url %}
-                <img src="{{ d.img_url }}" alt="{{ d.product.product_name }}" class="wl-img" loading="lazy">
-            {% else %}
-                <div class="wl-img-placeholder">🧸</div>
-            {% endif %}
+<div class="wl-page">
+    <div class="wl-header">
+        <h2>
+            <i class="fa-solid fa-heart"></i>
+            My Wishlist
+            <span class="wl-count" id="wlCount">
+                ({{ item_data|length }} item{{ item_data|length|pluralize }})
+            </span>
+        </h2>
+        <a href="{% url 'products:product_list' %}"
+           style="font-size:13px; color:#f06292; font-weight:700; text-decoration:none;">
+            <i class="fa fa-arrow-left"></i> Continue Shopping
         </a>
+    </div>
 
-        <div class="wl-body">
-            <div class="wl-name">{{ d.product.product_name }}</div>
-            <div class="wl-price">
-                ₹{{ d.product.final_price }}
-                {% if d.product.base_price and d.product.base_price != d.product.final_price %}
-                <del>₹{{ d.product.base_price }}</del>
+    {% if item_data %}
+    <div class="wl-grid" id="wlGrid">
+        {% for d in item_data %}
+        <div class="wl-card"
+             id="wlCard_{{ d.product.id }}"
+             data-product-id="{{ d.product.id }}"
+             data-product-name="{{ d.product.product_name|escapejs }}">
+
+            <a href="{% url 'products:product_detail' product_id=d.product.id %}"
+               class="wl-img-link">
+                {% if d.img_url %}
+                    <img src="{{ d.img_url }}" alt="{{ d.product.product_name }}"
+                         class="wl-img" loading="lazy">
+                {% else %}
+                    <div class="wl-img-placeholder">🧸</div>
+                {% endif %}
+            </a>
+
+            <div class="wl-body">
+                <a href="{% url 'products:product_detail' product_id=d.product.id %}"
+                   class="wl-name">{{ d.product.product_name }}</a>
+                <div class="wl-price">
+                    ₹{{ d.product.final_price }}
+                    {% if d.product.base_price and d.product.base_price != d.product.final_price %}
+                    <del>₹{{ d.product.base_price }}</del>
+                    {% endif %}
+                </div>
+                {% if d.available and d.total_stock > 0 %}
+                    <span class="wl-stock-badge in-stock">
+                        <i class="fa-solid fa-circle-check"></i> In Stock
+                    </span>
+                {% else %}
+                    <span class="wl-stock-badge out-stock">
+                        <i class="fa-solid fa-circle-xmark"></i> Out of Stock
+                    </span>
                 {% endif %}
             </div>
-            {% if d.available and d.total_stock > 0 %}
-            <span class="wl-stock-badge in-stock"><i class="fa fa-check"></i> In Stock</span>
-            {% else %}
-            <span class="wl-stock-badge out-of-stock"><i class="fa fa-times"></i> Out of Stock</span>
-            {% endif %}
-        </div>
 
-        <div class="wl-actions">
-            <!-- Add to Cart — AJAX, removes card immediately -->
-            <button type="button"
-                    class="wl-btn wl-btn-cart {% if not d.available or d.total_stock == 0 %}disabled{% endif %}"
-                    data-product="{{ d.product.id }}"
-                    data-name="{{ d.product.product_name|escapejs }}"
-                    onclick="moveToCart(this)"
-                    {% if not d.available or d.total_stock == 0 %}disabled{% endif %}>
-                <span class="btn-text"><i class="fa fa-shopping-bag"></i> Add to Cart</span>
-                <span class="btn-spinner"></span>
-            </button>
+            <div class="wl-actions">
+                {% if d.available and d.total_stock > 0 %}
+                <button type="button"
+                        class="wl-btn wl-btn-cart"
+                        data-product="{{ d.product.id }}"
+                        data-name="{{ d.product.product_name|escapejs }}"
+                        onclick="openVariantPopup({{ d.product.id }})">
+                    <i class="fa-solid fa-cart-shopping"></i> Add to Cart
+                </button>
+                {% else %}
+                <button type="button" class="wl-btn wl-btn-cart disabled" disabled>
+                    <i class="fa-solid fa-ban"></i> Out of Stock
+                </button>
+                {% endif %}
 
-            <!-- Remove from wishlist — AJAX, removes card immediately -->
-            <button type="button"
-                    class="wl-btn wl-btn-remove"
-                    data-product="{{ d.product.id }}"
-                    data-name="{{ d.product.product_name|escapejs }}"
-                    onclick="removeFromWishlist(this)"
-                    title="Remove from wishlist">
-                <i class="fa fa-trash"></i>
-            </button>
+                <button type="button"
+                        class="wl-btn wl-btn-remove"
+                        data-product="{{ d.product.id }}"
+                        data-name="{{ d.product.product_name|escapejs }}"
+                        onclick="removeFromWishlist(this)"
+                        title="Remove from wishlist">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+
+    {% else %}
+    <div class="wl-empty" id="wlEmpty">
+        <i class="fa-regular fa-heart"></i>
+        <h3>Your wishlist is empty</h3>
+        <p>Browse our collection and add items you love!</p>
+        <a href="{% url 'products:product_list' %}">Start Shopping</a>
+    </div>
+    {% endif %}
 </div>
 
-{% else %}
-<div class="wl-empty" id="wlEmpty">
-    <i class="fa-regular fa-heart"></i>
-    <h3>Your wishlist is empty</h3>
-    <p>Browse our collection and add items you love!</p>
-    <a href="{% url 'products:product_list' %}">Start Shopping</a>
-</div>
-{% endif %}
-
-<!-- ── TOAST ── -->
 <div id="kdToast"></div>
-
-<!-- CSRF -->
 <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+{% endblock %}
 
+{% block extra_js %}
 <script>
-const CSRF = document.getElementById('csrfToken').value;
-let _wlItemCount = {{ item_data|length }};
+/* ── CSRF token (read once, reused everywhere) ── */
+var CSRF = document.getElementById('csrfToken').value;
+var _wlItemCount = {{ item_data|length }};
 
-/* ── Toast ── */
+/* ════════════════════════════════════════════════════════════
+   TOAST + COUNT + REMOVE CARD + EMPTY STATE (unchanged)
+════════════════════════════════════════════════════════════ */
 function showToast(msg, type) {
-    const t = document.getElementById('kdToast');
+    var t = document.getElementById('kdToast');
     t.textContent = msg;
     t.className   = 'show ' + (type || '');
     clearTimeout(t._timer);
-    t._timer = setTimeout(() => { t.className = ''; }, 3400);
+    t._timer = setTimeout(function() { t.className = ''; }, 3400);
 }
 
-/* ── Update wishlist count label ── */
 function updateCount(n) {
-    const el = document.getElementById('wlCount');
+    var el = document.getElementById('wlCount');
     if (el) el.textContent = '(' + n + ' item' + (n !== 1 ? 's' : '') + ')';
 }
 
-/* ── Remove card from DOM with animation ── */
-function removeCard(productId, callback) {
-    const card = document.getElementById('wlCard_' + productId);
-    if (!card) { if (callback) callback(); return; }
+function removeCard(productId) {
+    var card = document.getElementById('wlCard_' + productId);
+    if (!card) return;
     card.classList.add('removing');
-    setTimeout(() => {
+    setTimeout(function() {
         card.remove();
-        _wlItemCount--;
+        _wlItemCount = Math.max(0, _wlItemCount - 1);
         updateCount(_wlItemCount);
-        // If grid is now empty, show empty state
-        if (_wlItemCount === 0) {
-            const grid = document.getElementById('wlGrid');
-            if (grid) grid.innerHTML = '';
-            const emptyEl = document.getElementById('wlEmpty');
-            if (emptyEl) {
-                emptyEl.style.display = 'block';
-            } else {
-                // Create empty state dynamically
-                const div = document.createElement('div');
-                div.className = 'wl-empty';
-                div.innerHTML = `<i class="fa-regular fa-heart"></i><h3>Your wishlist is empty</h3><p>Browse our collection and add items you love!</p><a href="/products/user/products/">Start Shopping</a>`;
-                document.getElementById('wlGrid').replaceWith(div);
-            }
-        }
-        if (callback) callback();
-    }, 360);
+        if (_wlItemCount === 0) showEmptyState();
+    }, 370);
 }
 
-/* ── MOVE TO CART ── */
-function moveToCart(btn) {
-    const productId   = btn.dataset.product;
-    const productName = btn.dataset.name;
+function showEmptyState() {
+    var grid = document.getElementById('wlGrid');
+    if (!grid) return;
+    grid.outerHTML = '<div class="wl-empty" id="wlEmpty">'
+        + '<i class="fa-regular fa-heart"></i>'
+        + '<h3>Your wishlist is empty</h3>'
+        + '<p>Browse our collection and add items you love!</p>'
+        + '<a href="/shop/products/">Start Shopping</a>'
+        + '</div>';
+}
 
-    btn.classList.add('loading');
+/* ════════════════════════════════════════════════════════════
+   OPEN VARIANT POPUP (clean version - no dead code)
+════════════════════════════════════════════════════════════ */
+function openVariantPopup(productId) {
+    /* Remove any existing popup first */
+    var existing = document.getElementById('wlVariantPopupWrap');
+    if (existing) existing.remove();
 
-    const fd = new FormData();
-
-    fetch("{% url 'shopcore:move_to_cart' product_id=0 %}".replace('/0/', '/' + productId + '/'), {
-        method:  'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
-        body:    fd,
+    fetch('/shop/wishlist/variant-popup/' + productId + '/', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(r => r.json())
-    .then(data => {
-        btn.classList.remove('loading');
-        if (data.success) {
-            removeCard(productId);
-            showToast('"' + productName + '" moved to cart!', 'success');
-            // Update header cart badge if present
-            const cartBadge = document.querySelector('[data-cart-count], .cart-count-badge');
-            if (cartBadge && data.cart_count !== undefined) {
-                cartBadge.textContent = data.cart_count;
-            }
-        } else {
-            showToast(data.error || 'Could not add to cart.', 'error');
-        }
+    .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
     })
-    .catch(() => {
-        btn.classList.remove('loading');
-        showToast('Network error. Please try again.', 'error');
+    .then(function(html) {
+        var wrap = document.createElement('div');
+        wrap.id  = 'wlVariantPopupWrap';
+        wrap.innerHTML = html;
+        document.body.appendChild(wrap);
+
+        initWishlistPopup(wrap);   // <-- pass the wrapper so init can clean up
+    })
+    .catch(function(err) {
+        console.error('[WishlistPopup] Move error:', err);
+        showToast('Failed to move to cart. Please try again.', 'error');
+        cartBtn.disabled = false;
+        cartBtn.textContent = 'Add to Cart';
     });
 }
 
-/* ── REMOVE FROM WISHLIST ── */
-function removeFromWishlist(btn) {
-    const productId   = btn.dataset.product;
-    const productName = btn.dataset.name;
+/* ════════════════════════════════════════════════════════════
+   INIT POPUP (all logic here - works reliably after appendChild)
+════════════════════════════════════════════════════════════ */
+function initWishlistPopup(wrap) {
+    let selectedVariantId = null;
 
+    const overlay  = document.getElementById('wlOverlay');
+    const closeBtn = document.getElementById('wlCloseBtn');
+    const cartBtn  = document.getElementById('addToCartBtn');   // matches template
+    const variantEls = wrap.querySelectorAll('#wlVariantList .wl-variant');
+
+    if (!overlay || !closeBtn || !cartBtn) {
+        console.error('[WishlistPopup] Could not find popup elements.');
+        return;
+    }
+
+    function closePopup() {
+        wrap.remove();
+    }
+
+    closeBtn.addEventListener('click', closePopup);
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closePopup();
+    });
+
+    document.addEventListener('keydown', function onEsc(e) {
+        if (e.key === 'Escape') {
+            closePopup();
+            document.removeEventListener('keydown', onEsc);
+        }
+    });
+
+    /* Variant selection */
+    variantEls.forEach(function(el) {
+        el.addEventListener('click', function() {
+            var qty = parseInt(el.dataset.qty, 10);
+            if (qty <= 0) return;
+
+            selectedVariantId = el.dataset.variantId;
+
+            variantEls.forEach(function(v) { v.classList.remove('selected'); });
+            el.classList.add('selected');
+
+            cartBtn.disabled = false;
+        });
+    });
+
+    /* Move to cart (new endpoint) */
+    cartBtn.addEventListener('click', function() {
+        if (!selectedVariantId) return;
+
+        cartBtn.disabled = true;
+        cartBtn.textContent = 'Moving…';
+
+        fetch('/shop/wishlist/move-to-cart/' + selectedVariantId + '/', {
+            method:  'POST',
+            headers: { 'X-CSRFToken': CSRF }
+        })
+        .then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                closePopup();
+                onCartAddSuccess(data.product_id, data.product_name, data.cart_count);
+            } else {
+                showToast(data.message || 'Failed to move to cart.', 'error');
+                cartBtn.disabled = false;
+                cartBtn.textContent = 'Add to Cart';
+            }
+        })
+        .catch(function(err) {
+            console.error('[WishlistPopup] Move error:', err);
+            showToast('Network error — please try again.', 'error');
+            cartBtn.disabled = false;
+            cartBtn.textContent = 'Add to Cart';
+        });
+    });
+}
+
+/* ════════════════════════════════════════════════════════════
+   REMOVE FROM WISHLIST (unchanged)
+════════════════════════════════════════════════════════════ */
+function removeFromWishlist(btn) {
+    var productId   = btn.dataset.product;
+    var productName = btn.dataset.name;
     btn.disabled = true;
 
-    const fd = new FormData();
-
-    fetch("{% url 'shopcore:remove_from_wishlist' product_id=0 %}".replace('/0/', '/' + productId + '/'), {
+    fetch('/shop/wishlist/remove/' + productId + '/', {
         method:  'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
-        body:    fd,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken':      CSRF
+        },
+        body: new FormData()
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
         if (data.success) {
             removeCard(productId);
             showToast('"' + productName + '" removed from wishlist.', 'success');
@@ -273,10 +382,20 @@ function removeFromWishlist(btn) {
             showToast(data.error || 'Could not remove item.', 'error');
         }
     })
-    .catch(() => {
+    .catch(function() {
         btn.disabled = false;
         showToast('Network error. Please try again.', 'error');
     });
+}
+
+/* ════════════════════════════════════════════════════════════
+   CALLBACK AFTER SUCCESSFUL MOVE
+════════════════════════════════════════════════════════════ */
+function onCartAddSuccess(productId, productName, cartCount) {
+    removeCard(productId);
+    var badge = document.querySelector('.cart-count, [data-cart-count]');
+    if (badge && cartCount !== undefined) badge.textContent = cartCount;
+    showToast('"' + productName + '" moved to cart!', 'success');
 }
 </script>
 {% endblock %}

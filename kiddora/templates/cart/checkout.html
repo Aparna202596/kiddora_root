@@ -1,14 +1,12 @@
 {% extends "base_products.html" %}
 {% load static %}
 {% block title %}Checkout – Kiddora{% endblock %}
-
 {% block extra_css %}
 {% include "responsive.html" %}
 <style>
 .checkout-layout { display:flex; gap:28px; align-items:flex-start; }
 .checkout-left   { flex:1; min-width:0; display:flex; flex-direction:column; gap:20px; }
 .checkout-right  { width:350px; flex-shrink:0; position:sticky; top:20px; display:flex; flex-direction:column; gap:16px; }
-
 .ck-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:22px; }
 .ck-card-title {
     font-size:15px; font-weight:700; color:#222;
@@ -16,7 +14,6 @@
     border-bottom:1.5px solid #f5f5f5; padding-bottom:12px;
 }
 .ck-card-title i { color:#f06292; }
-
 /* Address */
 .address-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .address-card {
@@ -47,7 +44,6 @@
     background:#fff; min-height:80px; transition:background .15s;
 }
 .add-address-btn:hover { background:#fff0f5; }
-
 /* Address form */
 .addr-form-panel {
     display:none; margin-top:16px; background:#fafafa;
@@ -72,7 +68,6 @@
     border-radius:8px; font-size:13px; cursor:pointer;
 }
 .form-error { font-size:12px; color:#e53935; margin-top:6px; }
-
 /* Order items */
 .ck-item { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #f5f5f5; }
 .ck-item:last-child { border-bottom:none; }
@@ -90,7 +85,6 @@
 .ck-final-price { font-size:15px; font-weight:700; color:#222; }
 .ck-qty    { font-size:12px; color:#888; margin-top:2px; }
 .ck-saving { font-size:11px; color:#16a34a; margin-top:2px; }
-
 /* Coupon */
 .coupon-input-wrap { display:flex; gap:10px; margin-bottom:10px; }
 .coupon-input-wrap input {
@@ -121,7 +115,6 @@
 .coupon-msg { font-size:12px; margin-top:8px; min-height:18px; }
 .coupon-msg.success { color:#16a34a; }
 .coupon-msg.error   { color:#e53935; }
-
 /* Summary */
 .summary-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:22px; }
 .summary-card h3 { font-size:16px; font-weight:700; margin-bottom:16px; color:#222; }
@@ -129,7 +122,6 @@
 .sum-row.coupon { color:#f06292; font-weight:600; }
 .sum-row.total  { font-size:17px; font-weight:800; color:#222; border-top:2px solid #eee; padding-top:12px; margin-top:6px; }
 .sum-row .free  { color:#16a34a; font-weight:600; }
-
 /* Payment options */
 .payment-option {
     display:flex; align-items:center; gap:12px;
@@ -138,7 +130,7 @@
 }
 .payment-option:hover { border-color:#f06292; }
 .payment-option.selected { border-color:#f06292; background:#fff8fb; }
-.payment-option.disabled-option { opacity:.5; cursor:not-allowed; }
+.payment-option.disabled-option { opacity:.5; cursor:not-allowed; pointer-events:none; }
 .payment-option input[type=radio] { accent-color:#f06292; width:16px; height:16px; flex-shrink:0; }
 .payment-option label { font-size:14px; font-weight:600; cursor:pointer; flex:1; }
 .pay-icon { font-size:20px; }
@@ -149,13 +141,10 @@
 .pay-badge.blue   { background:#dbeafe; color:#1d4ed8; }
 .pay-badge.purple { background:#ede9fe; color:#6d28d9; }
 .pay-badge.red    { background:#fee2e2; color:#dc2626; }
-
+.pay-badge.orange { background:#fff7ed; color:#c2410c; }
 /* Wallet balance sub-line */
-.wallet-sub {
-    font-size:11px; color:#888; margin-top:2px; display:block;
-}
+.wallet-sub     { font-size:11px; color:#888; margin-top:2px; display:block; }
 .wallet-sub.low { color:#e53935; }
-
 /* Blocked notes */
 .payment-blocked-note {
     font-size:12px; color:#e53935; background:#fff5f5;
@@ -163,7 +152,6 @@
     margin-top:-4px; margin-bottom:10px; display:none;
 }
 .payment-blocked-note.show { display:block; }
-
 /* Place order */
 .place-order-btn {
     display:block; width:100%; padding:15px; margin-top:4px;
@@ -173,7 +161,6 @@
     box-shadow:0 4px 16px rgba(240,98,146,.35); text-align:center;
 }
 .place-order-btn:hover { opacity:.92; transform:translateY(-1px); }
-
 /* Modals */
 .modal-overlay {
     display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
@@ -199,7 +186,6 @@
     border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
 }
 .btn-use-coupon:hover { background:#e91e63; }
-
 @media (max-width:900px) {
     .checkout-layout { flex-direction:column; }
     .checkout-right  { width:100%; position:static; }
@@ -262,15 +248,15 @@
                 <div class="ck-info">
                     <div class="ck-name">{{ d.product.product_name }}</div>
                     <div class="ck-meta">{{ d.variant.color }} · {{ d.variant.age_group }}</div>
-                    {% if d.item_offer_discount and d.item_offer_discount > 0 %}
-                    <div class="ck-offer-tag">🏷️ Offer Applied</div>
+                    {% if d.offer_discount and d.offer_discount > 0 %}
+                    <div class="ck-offer-tag">🏷️ {{ d.offer_pct }}% Offer Applied</div>
                     {% endif %}
                 </div>
                 <div class="ck-price-col">
                     <div class="ck-qty">Qty: {{ d.item.quantity }}</div>
-                    <div class="ck-final-price">₹{{ d.item_total }}</div>
-                    {% if d.item_offer_discount and d.item_offer_discount > 0 %}
-                    <div class="ck-saving">Save ₹{{ d.item_offer_discount }}</div>
+                    <div class="ck-final-price">₹{{ d.item_total|floatformat:2 }}</div>
+                    {% if d.offer_discount and d.offer_discount > 0 %}
+                    <div class="ck-saving">Save ₹{{ d.offer_discount|floatformat:2 }}</div>
                     {% endif %}
                 </div>
             </div>
@@ -314,7 +300,6 @@
                     <i class="fa fa-plus"></i> Add New Address
                 </div>
             </div>
-
             <!-- NEW ADDRESS FORM -->
             <div class="addr-form-panel" id="newAddressForm">
                 <div style="font-size:14px;font-weight:700;color:#222;margin-bottom:12px;">Add New Address</div>
@@ -366,6 +351,7 @@
             <div class="coupon-applied-strip" id="couponAppliedStrip" style="display:none;"></div>
             {% endif %}
         </div>
+
     </div>
     <!-- ══ END LEFT ══ -->
 
@@ -377,8 +363,14 @@
             <h3>💰 Price Details</h3>
             <div class="sum-row">
                 <span>Subtotal ({{ checkout_items|length }} item{{ checkout_items|length|pluralize }})</span>
-                <span>₹{{ subtotal }}</span>
+                <span>₹{{ subtotal|floatformat:2 }}</span>
             </div>
+            {% if offer_discount_total and offer_discount_total > 0 %}
+            <div class="sum-row" style="color:#15803d;">
+                <span>🏷️ Offer Discount</span>
+                <span>– ₹{{ offer_discount_total|floatformat:2 }}</span>
+            </div>
+            {% endif %}
             <div class="sum-row">
                 <span>Shipping</span>
                 <span>{% if shipping_charge == 0 %}<span class="free">FREE 🎁</span>{% else %}₹{{ shipping_charge }}{% endif %}</span>
@@ -390,7 +382,7 @@
             </div>
             <div class="sum-row total">
                 <span>Grand Total</span>
-                <span>₹<span id="summGrandTotal">{{ grand_total }}</span></span>
+                <span>₹<span id="summGrandTotal">{{ grand_total|floatformat:2 }}</span></span>
             </div>
             <div style="font-size:11px;color:#999;margin-top:8px;">
                 {% if shipping_charge == 0 %}🎁 Free delivery on this order!
@@ -403,63 +395,80 @@
             <div class="ck-card-title"><i class="fa fa-credit-card"></i> Payment Method</div>
 
             <!-- COD -->
-            <label class="payment-option {% if not cod_blocked %}selected{% endif %}"
-                    id="codOption" onclick="selectPayment(this, 'COD')">
+            <label class="payment-option {% if not cod_blocked %}selected{% endif %} {% if cod_blocked %}disabled-option{% endif %}"
+                    id="codOption"
+                    onclick="selectPayment(this, 'COD')">
                 <input type="radio" name="payment_method" value="COD"
                         {% if not cod_blocked %}checked{% endif %}
                         {% if cod_blocked %}disabled{% endif %}
                         id="radio_COD">
                 <span class="pay-icon">💵</span>
-                <label for="radio_COD">
-                    Cash on Delivery
-                    {% if not cod_blocked %}<span class="pay-badge green">Available</span>{% endif %}
-                </label>
+                <div style="flex:1;">
+                    <label for="radio_COD">
+                        Cash on Delivery
+                        {% if not cod_blocked %}
+                            <span class="pay-badge green">Available</span>
+                        {% else %}
+                            <span class="pay-badge red">Blocked above ₹1,000</span>
+                        {% endif %}
+                    </label>
+                </div>
             </label>
             <div class="payment-blocked-note {% if cod_blocked %}show{% endif %}" id="codBlockedNote">
                 ⚠️ COD is not available for orders above ₹1,000.
             </div>
 
-            <!-- ONLINE (Razorpay) -->
+            <!-- PAYPAL -->
             <label class="payment-option {% if cod_blocked %}selected{% endif %}"
-                   id="onlineOption" onclick="selectPayment(this, 'ONLINE')">
-                <input type="radio" name="payment_method" value="ONLINE"
+                   id="paypalOption"
+                   onclick="selectPayment(this, 'PAYPAL')">
+                <input type="radio" name="payment_method" value="PAYPAL"
                        {% if cod_blocked %}checked{% endif %}
-                       id="radio_ONLINE">
-                <span class="pay-icon">💳</span>
-                <label for="radio_ONLINE">
-                    Online Payment
-                    <span class="pay-badge blue">Card / UPI / NetBanking</span>
-                </label>
+                       id="radio_PAYPAL">
+                <span class="pay-icon">🅿️</span>
+                <div style="flex:1;">
+                    <label for="radio_PAYPAL">
+                        PayPal
+                        <span class="pay-badge blue">Secure Online Payment</span>
+                    </label>
+                    <span style="font-size:11px;color:#888;display:block;margin-top:2px;">
+                        Pay via PayPal — cards, bank &amp; wallet accepted
+                    </span>
+                </div>
             </label>
 
             <!-- WALLET -->
-            <label class="payment-option {% if wallet_balance <= 0 %}disabled-option{% endif %}"
+            <label class="payment-option {% if not wallet_sufficient or wallet_balance <= 0 %}disabled-option{% endif %}"
                    id="walletOption"
-                   onclick="{% if wallet_balance > 0 %}selectPayment(this, 'WALLET'){% endif %}">
+                   onclick="selectPayment(this, 'WALLET')">
                 <input type="radio" name="payment_method" value="WALLET"
                        id="radio_WALLET"
-                       {% if wallet_balance <= 0 %}disabled{% endif %}>
+                       {% if not wallet_sufficient or wallet_balance <= 0 %}disabled{% endif %}>
                 <span class="pay-icon">👛</span>
                 <div style="flex:1;">
-                    <label for="radio_WALLET" style="{% if wallet_balance <= 0 %}cursor:not-allowed;{% endif %}">
+                    <label for="radio_WALLET"
+                           style="{% if not wallet_sufficient or wallet_balance <= 0 %}cursor:not-allowed;{% endif %}">
                         Wallet
                         {% if wallet_balance > 0 %}
-                            <span class="pay-badge purple">₹{{ wallet_balance }} available</span>
+                            <span class="pay-badge purple">₹{{ wallet_balance|floatformat:2 }} available</span>
                         {% else %}
                             <span class="pay-badge red">No balance</span>
                         {% endif %}
                     </label>
                     {% if wallet_balance > 0 %}
-                        {% if wallet_balance >= grand_total %}
+                        {% if wallet_sufficient %}
                         <span class="wallet-sub" id="walletSubNote">✅ Sufficient to cover this order</span>
                         {% else %}
-                        <span class="wallet-sub low" id="walletSubNote">⚠️ ₹{{ wallet_balance }} available, order total ₹<span id="walletGrandDisplay">{{ grand_total }}</span></span>
+                        <span class="wallet-sub low" id="walletSubNote">
+                            ⚠️ ₹{{ wallet_balance|floatformat:2 }} available — order total ₹<span id="walletGrandDisplay">{{ grand_total|floatformat:2 }}</span>
+                        </span>
                         {% endif %}
                     {% endif %}
                 </div>
             </label>
-            <div class="payment-blocked-note" id="walletBlockedNote">
-                ⚠️ Wallet balance (₹{{ wallet_balance }}) is less than the order total. Please choose another method.
+            <div class="payment-blocked-note {% if wallet_balance > 0 and not wallet_sufficient %}show{% endif %}"
+                 id="walletBlockedNote">
+                ⚠️ Wallet balance (₹{{ wallet_balance|floatformat:2 }}) is less than the order total. Please choose COD or PayPal.
             </div>
 
         </div>
@@ -471,6 +480,7 @@
         <div style="font-size:11px;color:#999;text-align:center;margin-top:6px;">
             🔒 Your information is 100% secure
         </div>
+
     </div>
     <!-- ══ END RIGHT ══ -->
 
@@ -530,17 +540,16 @@
     </div>
 </div>
 
-
 <script>
 const CSRF           = '{{ csrf_token }}';
-const SUBTOTAL       = parseFloat('{{ subtotal }}');
-const SHIPPING       = parseFloat('{{ shipping_charge }}');
+const SUBTOTAL       = parseFloat('{{ price_after_offers|floatformat:2 }}');  // after offer discounts
+const SHIPPING       = parseFloat('{{ shipping_charge|floatformat:2 }}');
 const COD_LIMIT      = 1000;
-const WALLET_BALANCE = parseFloat('{{ wallet_balance|default:"0" }}');
+const WALLET_BALANCE = parseFloat('{{ wallet_balance|floatformat:2|default:"0" }}');
 
-let currentCouponDiscount = parseFloat('{{ coupon_discount|default:"0" }}');
+let currentCouponDiscount = parseFloat('{{ coupon_discount|floatformat:2|default:"0" }}');
 let appliedCouponCode     = '{% if applied_coupon %}{{ applied_coupon.code }}{% endif %}';
-let currentGrandTotal     = parseFloat('{{ grand_total }}');
+let currentGrandTotal     = parseFloat('{{ grand_total|floatformat:2 }}');
 
 /* ── AJAX helper ──────────────────────────────────── */
 function ajaxFetch(url, formData) {
@@ -558,7 +567,6 @@ function selectAddress(el) {
     const radio = el.querySelector('input[type="radio"]');
     if (radio) radio.checked = true;
 }
-
 function toggleAddressForm(forceClose) {
     const panel = document.getElementById('newAddressForm');
     if (forceClose || panel.classList.contains('open')) {
@@ -568,7 +576,6 @@ function toggleAddressForm(forceClose) {
         panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
-
 function saveNewAddress() {
     const fd = new FormData();
     fd.append('csrfmiddlewaretoken', CSRF);
@@ -580,7 +587,6 @@ function saveNewAddress() {
     fd.append('pincode',       document.getElementById('na_pincode').value.trim());
     fd.append('address_type',  document.getElementById('na_address_type').value);
     fd.append('set_default',   document.getElementById('na_set_default').checked ? '1' : '0');
-
     ajaxFetch('{% url "shopcore:save_new_address" %}', fd)
         .then(r => r.json())
         .then(res => {
@@ -592,7 +598,6 @@ function saveNewAddress() {
         })
         .catch(() => { document.getElementById('naError').textContent = 'Something went wrong.'; });
 }
-
 function clearNewAddressForm() {
     ['na_line1','na_line2','na_city','na_state','na_country','na_pincode'].forEach(id => {
         document.getElementById(id).value = '';
@@ -600,7 +605,6 @@ function clearNewAddressForm() {
     document.getElementById('na_set_default').checked = false;
     document.getElementById('na_address_type').selectedIndex = 0;
 }
-
 function injectAddressCard(addr, selectIt) {
     if (addr.is_default) document.querySelectorAll('.default-badge').forEach(b => b.style.display = 'none');
     if (selectIt) {
@@ -631,7 +635,6 @@ function injectAddressCard(addr, selectIt) {
                 )">✏️ Edit</button>`;
     grid.insertBefore(card, addBtn);
 }
-
 function esc(s) { return (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 /* ── Edit address ─────────────────────────────────── */
@@ -649,9 +652,7 @@ function openEditModal(id, l1, l2, city, state, country, pincode, type, isDef) {
     for (let o of sel.options) o.selected = (o.value === type);
     document.getElementById('editAddressModal').classList.add('open');
 }
-
 function closeEditModal() { document.getElementById('editAddressModal').classList.remove('open'); }
-
 function saveEditAddress() {
     const id = document.getElementById('ea_id').value;
     const fd = new FormData();
@@ -664,7 +665,6 @@ function saveEditAddress() {
     fd.append('pincode',       document.getElementById('ea_pincode').value.trim());
     fd.append('address_type',  document.getElementById('ea_address_type').value);
     fd.append('set_default',   document.getElementById('ea_set_default').checked ? '1' : '0');
-
     ajaxFetch(`/shop/checkout/address/edit/${id}/`, fd)
         .then(r => r.json())
         .then(res => {
@@ -699,12 +699,10 @@ function applyCoupon() {
     const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
     const msg  = document.getElementById('couponMsg');
     if (!code) { msg.className = 'coupon-msg error'; msg.textContent = 'Please enter a coupon code.'; return; }
-
     const fd = new FormData();
     fd.append('csrfmiddlewaretoken', CSRF);
     fd.append('coupon_code', code);
     fd.append('subtotal',    SUBTOTAL);
-
     ajaxFetch('{% url "shopcore:apply_coupon" %}', fd)
         .then(r => { if (!r.ok && r.status !== 400) throw new Error(''); return r.json(); })
         .then(res => {
@@ -735,7 +733,6 @@ function removeCoupon() {
             document.getElementById('couponMsg').textContent = '';
         });
 }
-
 function showAppliedStrip(code, discount) {
     const strip = document.getElementById('couponAppliedStrip');
     strip.innerHTML = `🎉 <strong>${code}</strong> applied — You save <strong>₹${parseFloat(discount).toFixed(2)}</strong>
@@ -743,16 +740,15 @@ function showAppliedStrip(code, discount) {
     strip.style.display = 'flex';
     document.getElementById('couponInputSection').style.display = 'none';
 }
-
 function hideAppliedStrip() {
     document.getElementById('couponAppliedStrip').style.display = 'none';
     document.getElementById('couponInputSection').style.display = 'block';
 }
 
-/* ── Update summary + all payment guards ─────────── */
+/* ── Update summary + payment guards ─────────────── */
 function updateSummary() {
+    // SUBTOTAL here is price_after_offers (already offer-discounted)
     currentGrandTotal = SUBTOTAL - currentCouponDiscount + SHIPPING;
-
     document.getElementById('summGrandTotal').textContent = currentGrandTotal.toFixed(2);
 
     // Coupon row
@@ -770,13 +766,13 @@ function updateSummary() {
     // Wallet sub-note
     const walletNote = document.getElementById('walletSubNote');
     const walletGrandDisplay = document.getElementById('walletGrandDisplay');
-    if (walletNote && walletGrandDisplay) {
-        walletGrandDisplay.textContent = currentGrandTotal.toFixed(2);
+    if (walletNote) {
+        if (walletGrandDisplay) walletGrandDisplay.textContent = currentGrandTotal.toFixed(2);
         if (WALLET_BALANCE >= currentGrandTotal) {
             walletNote.textContent = '✅ Sufficient to cover this order';
             walletNote.className   = 'wallet-sub';
         } else {
-            walletNote.textContent = `⚠️ ₹${WALLET_BALANCE.toFixed(2)} available, order total ₹${currentGrandTotal.toFixed(2)}`;
+            walletNote.textContent = `⚠️ ₹${WALLET_BALANCE.toFixed(2)} available — order total ₹${currentGrandTotal.toFixed(2)}`;
             walletNote.className   = 'wallet-sub low';
         }
     }
@@ -784,30 +780,30 @@ function updateSummary() {
     updatePaymentAvailability(currentGrandTotal);
 }
 
-/* ── Payment availability checks ─────────────────── */
+/* ── Payment availability ─────────────────────────── */
 function updatePaymentAvailability(grand) {
-    // COD
+    // COD: blocked above ₹1,000
     const codBlocked = grand > COD_LIMIT;
-    const codOpt     = document.getElementById('codOption');
-    const codNote    = document.getElementById('codBlockedNote');
-    const codRadio   = document.getElementById('radio_COD');
+    const codOpt   = document.getElementById('codOption');
+    const codNote  = document.getElementById('codBlockedNote');
+    const codRadio = document.getElementById('radio_COD');
     codRadio.disabled = codBlocked;
+    codOpt.classList.toggle('disabled-option', codBlocked);
     codNote.classList.toggle('show', codBlocked);
     if (codBlocked && codRadio.checked) {
-        // Force switch to ONLINE if COD was selected and is now blocked
-        selectPayment(document.getElementById('onlineOption'), 'ONLINE');
+        selectPayment(document.getElementById('paypalOption'), 'PAYPAL');
     }
 
-    // Wallet
-    const walletBlocked = WALLET_BALANCE < grand;
-    const walletOpt     = document.getElementById('walletOption');
-    const walletNote    = document.getElementById('walletBlockedNote');
-    const walletRadio   = document.getElementById('radio_WALLET');
-    walletRadio.disabled = walletBlocked || WALLET_BALANCE <= 0;
-    walletOpt.classList.toggle('disabled-option', walletBlocked || WALLET_BALANCE <= 0);
-    walletNote.classList.toggle('show', walletBlocked && WALLET_BALANCE > 0);
+    // Wallet: disabled when balance < grand total or no balance
+    const walletBlocked = WALLET_BALANCE < grand || WALLET_BALANCE <= 0;
+    const walletOpt   = document.getElementById('walletOption');
+    const walletNote  = document.getElementById('walletBlockedNote');
+    const walletRadio = document.getElementById('radio_WALLET');
+    walletRadio.disabled = walletBlocked;
+    walletOpt.classList.toggle('disabled-option', walletBlocked);
+    walletNote.classList.toggle('show', WALLET_BALANCE > 0 && WALLET_BALANCE < grand);
     if (walletBlocked && walletRadio.checked) {
-        selectPayment(document.getElementById('onlineOption'), 'ONLINE');
+        selectPayment(document.getElementById('paypalOption'), 'PAYPAL');
     }
 }
 
@@ -818,6 +814,15 @@ function selectPayment(el, method) {
     document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
     el.classList.add('selected');
     if (radio) radio.checked = true;
+
+    // Update place-order button label
+    const btn = document.getElementById('placeOrderBtn');
+    const labels = {
+        COD:    '🛒 Place Order (Cash on Delivery)',
+        PAYPAL: '🅿️ Continue to PayPal',
+        WALLET: '👛 Pay with Wallet',
+    };
+    btn.textContent = labels[method] || '🛒 Place Order';
 }
 
 /* ── Form submit guard ────────────────────────────── */
@@ -832,22 +837,21 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
 
     if (pay.value === 'COD' && grand > COD_LIMIT) {
         e.preventDefault();
-        alert('COD is not available for orders above ₹1,000. Please select Online Payment.');
+        alert('COD is not available for orders above ₹1,000. Please choose PayPal.');
         return;
     }
     if (pay.value === 'WALLET' && WALLET_BALANCE < grand) {
         e.preventDefault();
-        alert('Insufficient wallet balance. Please choose a different payment method.');
+        alert('Insufficient wallet balance. Please choose PayPal or COD.');
         return;
     }
 
     // Loading feedback
     const btn = document.getElementById('placeOrderBtn');
     const labels = {
-        COD:     '⏳ Placing your order…',
-        WALLET:  '⏳ Processing wallet payment…',
-        ONLINE:  '⏳ Redirecting to Razorpay…',
-        PAYPAL:  '⏳ Redirecting to PayPal…',
+        COD:    '⏳ Placing your order…',
+        WALLET: '⏳ Processing wallet payment…',
+        PAYPAL: '⏳ Redirecting to PayPal…',
     };
     btn.textContent = labels[pay.value] || '⏳ Processing…';
     btn.disabled    = true;
@@ -862,7 +866,7 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
 
 /* ── Init ─────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', function() {
-    // Ensure one address selected
+    // Ensure one address is selected
     const checked = document.querySelector('input[name="address_id"]:checked');
     if (!checked) {
         const first = document.querySelector('input[name="address_id"]');
@@ -870,10 +874,10 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     if (currentCouponDiscount > 0) updateSummary();
     else updatePaymentAvailability(currentGrandTotal);
+
+    // Set initial button label based on pre-selected payment
+    const preSelected = document.querySelector('input[name="payment_method"]:checked');
+    if (preSelected) selectPayment(preSelected.closest('.payment-option'), preSelected.value);
 });
 </script>
-
-
-
-
 {% endblock %}

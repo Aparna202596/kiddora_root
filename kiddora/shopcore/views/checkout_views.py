@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.decorators import user_login_required
 from accounts.models import UserAddress
+from payments.models import Wallet
 from shopcore.models import Cart, Coupon, CouponUsage, Order, OrderItem
 from shopcore.views.coupon_views import compute_coupon_discount
 from shopcore.views.offer_views import get_max_offer_discount_percent
@@ -97,11 +98,13 @@ def _validate_address_post(post) -> list[str]:
     return errors
 
 
+def _wallet_balance(user) -> Decimal:
+    """Return wallet balance. Creates the wallet row if it doesn't exist yet."""
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+    return wallet.balance
+
+
 def _user_has_exhausted_coupon(coupon: Coupon, user) -> bool:
-    """
-    Return True if this user has used the coupon >= usage_limit times.
-    Uses CouponUsage — there is NO used_by M2M on Coupon.
-    """
     try:
         usage = coupon.usages.get(user=user)
         return usage.times_used >= coupon.usage_limit
@@ -110,11 +113,6 @@ def _user_has_exhausted_coupon(coupon: Coupon, user) -> bool:
 
 
 def _session_coupon(request, subtotal: Decimal):
-    """
-    Re-validate the coupon stored in the session.
-    Returns (coupon_obj_or_None, discount_decimal).
-    Clears the session key if the coupon is no longer valid.
-    """
     code = request.session.get("applied_coupon_code")
     if not code:
         return None, Decimal("0")
@@ -133,18 +131,12 @@ def _session_coupon(request, subtotal: Decimal):
     ):
         return coupon, compute_coupon_discount(coupon, subtotal)
 
-    # Coupon no longer valid for this user — evict from session
     request.session.pop("applied_coupon_code", None)
     request.session.pop("applied_coupon_discount", None)
     return None, Decimal("0")
 
 
 def _exhausted_coupon_ids(user) -> list[int]:
-    """
-    Return primary-key list of coupons that this user has fully exhausted
-    (times_used >= coupon.usage_limit).  Used to exclude them from the
-    available-coupons list shown at checkout.
-    """
     return [
         cu.coupon_id
         for cu in CouponUsage.objects.filter(user=user).select_related("coupon")
@@ -239,7 +231,7 @@ def checkout(request):
     ).prefetch_related("variant__product__images").order_by("-added_at")
 
     checkout_items       = []
-    subtotal             = Decimal("0")   # sum of base prices × qty (before any discount)
+    subtotal             = Decimal("0")
     offer_discount_total = Decimal("0")
     blocked              = False
 
@@ -253,7 +245,7 @@ def checkout(request):
             blocked = True
 
         base_price       = product.final_price
-        offer_pct        = get_max_offer_discount_percent(product)   # int 0-100
+        offer_pct        = get_max_offer_discount_percent(product)
         offer_pct_dec    = Decimal(str(offer_pct))
         discounted_price = base_price * (Decimal("1") - offer_pct_dec / 100)
 
@@ -270,7 +262,7 @@ def checkout(request):
             "product":          product,
             "unit_price":       base_price,
             "discounted_price": discounted_price,
-            "item_total":       item_final_total,     # price shown to user (after offer)
+            "item_total":       item_final_total,
             "base_item_total":  item_base_total,
             "offer_discount":   item_offer_discount,
             "offer_pct":        offer_pct,
@@ -288,28 +280,19 @@ def checkout(request):
         return redirect("shopcore:cart")
 
     price_after_offers = subtotal - offer_discount_total
-
-    # Free shipping when price_after_offers >= ₹1000
     shipping_charge = (
         Decimal("0") if price_after_offers >= Decimal("1000") else Decimal("100")
     )
 
-    # Coupon stored in session — re-validated against price_after_offers
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
-
     grand_total = price_after_offers - coupon_discount + shipping_charge
 
-    # COD not allowed when grand total > ₹1000
     cod_blocked = grand_total > Decimal("1000")
 
-    # Wallet balance
-    wallet_balance = Decimal("0")
-    try:
-        wallet_balance = request.user.wallet.balance
-    except Exception:
-        pass
+    # Safe wallet lookup — creates wallet row if user has none yet
+    wallet_balance    = _wallet_balance(request.user)
+    wallet_sufficient = wallet_balance >= grand_total
 
-    # Available coupons — exclude ones this user has fully used up
     now = timezone.now()
     available_coupons = Coupon.objects.filter(
         is_active=True,
@@ -325,7 +308,6 @@ def checkout(request):
         "checkout_items":       checkout_items,
         "addresses":            addresses,
         "default_address":      default_address,
-        # Price summary
         "subtotal":             subtotal,
         "offer_discount_total": offer_discount_total,
         "price_after_offers":   price_after_offers,
@@ -333,9 +315,9 @@ def checkout(request):
         "coupon_discount":      coupon_discount,
         "applied_coupon":       applied_coupon,
         "grand_total":          grand_total,
-        # Flags
         "cod_blocked":          cod_blocked,
         "wallet_balance":       wallet_balance,
+        "wallet_sufficient":    wallet_sufficient,
         "available_coupons":    available_coupons,
         "address_type_choices": UserAddress.ADDRESS_TYPE_CHOICES,
     })
@@ -343,11 +325,14 @@ def checkout(request):
 
 # ─────────────────────────────────────────────────────────────
 # PLACE ORDER  (POST)
-# Routes:  COD     → shopcore:order_success
-#          WALLET  → payments:pay_with_wallet
-#          ONLINE  → payments:initiate_razorpay_payment
+# COD    → shopcore:order_success
+# WALLET → payments:pay_with_wallet
+# PAYPAL → payments:initiate_paypal_payment
 # ─────────────────────────────────────────────────────────────
 
+# ─────────────────────────────────────────────────────────────
+# PLACE ORDER  (POST)
+# ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -360,16 +345,18 @@ def place_order(request):
         messages.error(request, "Your cart is empty.")
         return redirect("shopcore:cart")
 
-    payment_method = request.POST.get("payment_method", "COD")
+    payment_method = request.POST.get("payment_method", "COD").upper()
+    if payment_method not in ("COD", "WALLET", "PAYPAL"):
+        messages.error(request, "Invalid payment method selected.")
+        return redirect("shopcore:checkout")
 
-    # ── Address resolution ────────────────────────────────────
+    # ── Address ───────────────────────────────────────────────
     address_id = request.POST.get("address_id")
     if address_id:
         address = get_object_or_404(
             UserAddress, id=address_id, user=request.user, is_deleted=False
         )
     elif request.POST.get("address_line1"):
-        # Inline new address from the checkout form
         errs = _validate_address_post(request.POST)
         if errs:
             messages.error(request, " ".join(errs))
@@ -392,18 +379,14 @@ def place_order(request):
         )
     else:
         address = (
-            UserAddress.objects.filter(
-                user=request.user, is_deleted=False, is_default=True
-            ).first()
+            UserAddress.objects.filter(user=request.user, is_deleted=False, is_default=True).first()
             or UserAddress.objects.filter(user=request.user, is_deleted=False).first()
         )
         if not address:
-            messages.error(
-                request, "Please add a delivery address before placing an order."
-            )
+            messages.error(request, "Please add a delivery address before placing an order.")
             return redirect("shopcore:checkout")
 
-    # ── Re-validate all cart items (stock + availability) ─────
+    # ── Re-validate cart items ────────────────────────────────
     items = cart.items.select_related(
         "variant__product",
         "variant__product__subcategory",
@@ -413,128 +396,116 @@ def place_order(request):
 
     for item in items:
         if not _variant_is_available(item.variant):
-            messages.error(
-                request,
-                f"'{item.variant.product.product_name}' is no longer available.",
-            )
+            messages.error(request, f"'{item.variant.product.product_name}' is no longer available.")
             return redirect("shopcore:cart")
         stock = _stock_for(item.variant)
         if stock < item.quantity:
-            messages.error(
-                request,
-                f"Only {stock} unit(s) of "
-                f"'{item.variant.product.product_name}' left in stock.",
-            )
+            messages.error(request, f"Only {stock} unit(s) of '{item.variant.product.product_name}' left in stock.")
             return redirect("shopcore:cart")
 
-    # ── Calculate totals with offers ──────────────────────────
+    # ── Calculate Totals ──────────────────────────────────────
     subtotal             = Decimal("0")
     offer_discount_total = Decimal("0")
-    item_offer_data: dict[int, Decimal] = {}   # variant_id → per-item offer discount
+    item_offer_data: dict[int, Decimal] = {}
 
     for item in items:
         base      = item.variant.product.final_price * item.quantity
         offer_pct = get_max_offer_discount_percent(item.variant.product)
         item_disc = base * Decimal(str(offer_pct)) / 100
-
         subtotal             += base
         offer_discount_total += item_disc
         item_offer_data[item.variant_id] = item_disc
 
     price_after_offers = subtotal - offer_discount_total
-    shipping_charge    = (
-        Decimal("100") if price_after_offers < Decimal("1000") else Decimal("0")
-    )
+    shipping_charge    = Decimal("100") if price_after_offers < Decimal("1000") else Decimal("0")
 
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
     final_amount = price_after_offers - coupon_discount + shipping_charge
 
-    # ── COD restriction: blocked above ₹1000 grand total ─────
+    # ── Guards ────────────────────────────────────────────────
     if payment_method == "COD" and final_amount > Decimal("1000"):
-        messages.error(
-            request,
-            "Cash on Delivery is not available for orders above ₹1,000. "
-            "Please choose an online payment method.",
-        )
+        messages.error(request, "Cash on Delivery is not available for orders above ₹1,000.")
         return redirect("shopcore:checkout")
 
-    # ── Wallet pre-flight ─────────────────────────────────────
     if payment_method == "WALLET":
-        try:
-            wallet_balance = request.user.wallet.balance
-        except Exception:
-            wallet_balance = Decimal("0")
-        if wallet_balance < final_amount:
-            messages.error(
-                request,
-                f"Insufficient wallet balance (₹{wallet_balance:.2f}). "
-                "Please choose another payment method.",
-            )
+        balance = _wallet_balance(request.user)
+        if balance < final_amount:
+            messages.error(request, f"Insufficient wallet balance (₹{balance:.2f}).")
             return redirect("shopcore:checkout")
 
-    # ── Create Order ──────────────────────────────────────────
-    order = Order.objects.create(
-        user            = request.user,
-        address         = address,
-        payment_method  = payment_method,
-        payment_status  = "PENDING",
-        order_status    = "PENDING",
-        coupon          = applied_coupon,
-        coupon_discount = coupon_discount,
-        total_amount    = subtotal,
-        discount_amount = offer_discount_total,
-        shipping_charge = shipping_charge,
-        final_amount    = final_amount,
-    )
-
-    # ── Create OrderItems + decrement stock ───────────────────
-    for item in items:
-        variant    = item.variant
-        base_price = variant.product.final_price
-        item_disc  = item_offer_data.get(item.variant_id, Decimal("0"))
-
-        OrderItem.objects.create(
-            order           = order,
-            variant         = variant,
-            quantity        = item.quantity,
-            unit_price      = base_price,
-            discount_amount = item_disc,
+    # ── CREATE ORDER ONLY FOR COD ─────────────────────────────
+    order = None
+    if payment_method == "COD":
+        order = Order.objects.create(
+            user            = request.user,
+            address         = address,
+            payment_method  = "COD",
+            payment_status  = "PAID",           # COD is treated as paid
+            order_status    = "PENDING",
+            coupon          = applied_coupon,
+            coupon_discount = coupon_discount,
+            total_amount    = subtotal,
+            discount_amount = offer_discount_total,
+            shipping_charge = shipping_charge,
+            final_amount    = final_amount,
         )
 
-        inv = variant.inventory
-        inv.quantity_available = max(0, inv.quantity_available - item.quantity)
-        inv.quantity_sold     += item.quantity
-        inv.save(update_fields=["quantity_available", "quantity_sold"])
+        # Create OrderItems + deduct stock for COD
+        for item in items:
+            variant    = item.variant
+            base_price = variant.product.final_price
+            item_disc  = item_offer_data.get(item.variant_id, Decimal("0"))
 
-    # ── Record coupon usage (per-user tracking) ───────────────
-    if applied_coupon:
-        usage, _ = CouponUsage.objects.get_or_create(
-            coupon=applied_coupon, user=request.user
-        )
-        usage.times_used += 1
-        usage.save(update_fields=["times_used"])
+            OrderItem.objects.create(
+                order           = order,
+                variant         = variant,
+                quantity        = item.quantity,
+                unit_price      = base_price,
+                discount_amount = item_disc,
+            )
 
-        applied_coupon.used_count += 1
-        applied_coupon.save(update_fields=["used_count"])
+            inv = variant.inventory
+            inv.quantity_available = max(0, inv.quantity_available - item.quantity)
+            inv.quantity_sold     += item.quantity
+            inv.save(update_fields=["quantity_available", "quantity_sold"])
 
-    # ── Clear cart + session ──────────────────────────────────
+        # Coupon usage
+        if applied_coupon:
+            usage, _ = CouponUsage.objects.get_or_create(coupon=applied_coupon, user=request.user)
+            usage.times_used += 1
+            usage.save(update_fields=["times_used"])
+            applied_coupon.used_count += 1
+            applied_coupon.save(update_fields=["used_count"])
+
+        # Clear cart
+        cart.items.all().delete()
+        request.session.pop("applied_coupon_code", None)
+        request.session.pop("applied_coupon_discount", None)
+
+        return redirect("shopcore:order_success", order_id=order.order_id)
+
+    # ── For Online Payments (PayPal / Wallet) ─────────────────
+    # Do NOT create order yet → store data in session
+    request.session['pending_order_data'] = {
+        'payment_method': payment_method,
+        'address_id': address.id,
+        'final_amount': str(final_amount),
+        'subtotal': str(subtotal),
+        'offer_discount_total': str(offer_discount_total),
+        'shipping_charge': str(shipping_charge),
+        'coupon_id': applied_coupon.id if applied_coupon else None,
+        'coupon_discount': str(coupon_discount),
+    }
+
+    # Clear cart immediately (we will restore on failure if needed)
     cart.items.all().delete()
-    if getattr(cart, "coupon", None):
-        cart.coupon = None
-        cart.save(update_fields=["coupon"])
     request.session.pop("applied_coupon_code", None)
     request.session.pop("applied_coupon_discount", None)
 
-    # ── Route based on payment method ─────────────────────────
-    if payment_method == "COD":
-        return redirect("shopcore:order_success", order_id=order.order_id)
-    elif payment_method == "WALLET":
-        return redirect("payments:pay_with_wallet", order_id=order.order_id)
+    if payment_method == "WALLET":
+        return redirect("payments:pay_with_wallet")
     else:
-        # RAZORPAY / PAYPAL
-        return redirect("payments:initiate_razorpay_payment", order_id=order.order_id)
-
-
+        return redirect("payments:initiate_paypal_payment")
 # ─────────────────────────────────────────────────────────────
 # ORDER SUCCESS
 # ─────────────────────────────────────────────────────────────

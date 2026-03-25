@@ -105,6 +105,24 @@ class Offer(models.Model):
         target = self.product or self.category or "Referral"
         return f"{self.get_offer_type_display()} – {self.discount_percent}% on {target}"
 
+#  WISHLIST
+# Per-user wishlist of products. One Wishlist per user, multiple WishlistItems per wishlist.
+class Wishlist(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="wishlist")
+
+    def __str__(self):
+        return f"Wishlist – {self.user.email}"
+
+class WishlistItem(models.Model):
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name="items")
+    product  = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="wishlist_items")
+    added_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        unique_together = ("wishlist", "product")
+        ordering = ["-added_at"]
+
+    def __str__(self):
+        return f"{self.wishlist.user.email} - {self.product.product_name}"
 
 #  CART
 class Cart(models.Model):
@@ -268,25 +286,6 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.user.email} → {self.product.product_name} ({self.rating}★)"
-
-#  WISHLIST
-# Per-user wishlist of products. One Wishlist per user, multiple WishlistItems per wishlist.
-class Wishlist(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="wishlist")
-
-    def __str__(self):
-        return f"Wishlist – {self.user.email}"
-
-class WishlistItem(models.Model):
-    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name="items")
-    product  = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="wishlist_items")
-    added_at = models.DateTimeField(auto_now_add=True)
-    class Meta:
-        unique_together = ("wishlist", "product")
-        ordering = ["-added_at"]
-
-    def __str__(self):
-        return f"{self.wishlist.user.email} - {self.product.product_name}"
 
 class Banner(models.Model):
 

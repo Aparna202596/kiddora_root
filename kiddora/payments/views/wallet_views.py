@@ -1,31 +1,59 @@
-# payments/views/wallet_views.py
 from __future__ import annotations
 
 from decimal import Decimal
+
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from accounts.decorators import user_login_required
-from payments.models import Payment, Order
+
+from accounts.decorators import admin_login_required, user_login_required
+from payments.models import Payment, Wallet, WalletTransaction
 from payments.views.wallet_helpers import debit_from_wallet
 from shopcore.models import Order
+
+
+# ─────────────────────────────────────────────────────────────
+# INTERNAL HELPER
+# ─────────────────────────────────────────────────────────────
+
+def _wallet_balance(user) -> Decimal:
+    """Return the user's wallet balance, creating the wallet row if absent."""
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+    return wallet.balance
+
+
+# ─────────────────────────────────────────────────────────────
+# USER: PAY WITH WALLET
+# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @user_login_required
 @require_POST
 def pay_with_wallet(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    
+
     if order.payment_status == "PAID":
         messages.info(request, "Order already paid.")
         return redirect("shopcore:order_success", order_id=order.order_id)
 
+    balance = _wallet_balance(request.user)
+
+    if balance < order.final_amount:
+        messages.error(
+            request,
+            f"Insufficient wallet balance (₹{balance:.2f}). "
+            "Please choose another payment method.",
+        )
+        return redirect("payments:wallet_payment_failure", order_id=order.order_id)
+
     success, msg, txn = debit_from_wallet(
         user=request.user,
         amount=order.final_amount,
-        description=f"Order payment {order.order_id}",
+        description=f"Payment for order {order.order_id}",
         reference_type="ORDER",
         reference_id=str(order.order_id),
         order=order,
@@ -51,16 +79,123 @@ def pay_with_wallet(request, order_id):
     request.session.pop("applied_coupon_code", None)
     request.session.pop("applied_coupon_discount", None)
 
-    messages.success(request, f"Paid ₹{order.final_amount} from wallet. Order confirmed.")
+    messages.success(request, f"₹{order.final_amount} paid from wallet. Order confirmed!")
     return redirect("shopcore:order_success", order_id=order.order_id)
 
+
+# ─────────────────────────────────────────────────────────────
+# USER: WALLET PAYMENT FAILURE PAGE
+# ─────────────────────────────────────────────────────────────
 
 @never_cache
 @user_login_required
 def wallet_payment_failure(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    balance = getattr(request.user.wallet, 'balance', Decimal('0'))
     return render(request, "payments/wallet_failure.html", {
-        "order": order,
-        "wallet_balance": balance,
+        "order":          order,
+        "wallet_balance": _wallet_balance(request.user),
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN: WALLET TRANSACTION LIST
+# ─────────────────────────────────────────────────────────────
+
+@never_cache
+@admin_login_required
+def admin_wallet_list(request):
+    search = request.GET.get("search", "").strip()
+    type_f = request.GET.get("type", "")
+    ref_f  = request.GET.get("ref", "")
+
+    qs = (
+        WalletTransaction.objects
+        .select_related("wallet__user", "order")
+        .order_by("-created_at")
+    )
+
+    if search:
+        qs = qs.filter(
+            Q(wallet__user__email__icontains=search)
+            | Q(wallet__user__full_name__icontains=search)
+            | Q(reference_id__icontains=search)
+            | Q(description__icontains=search)
+        )
+    if type_f:
+        qs = qs.filter(txn_type=type_f)
+    if ref_f:
+        qs = qs.filter(reference_type=ref_f)
+
+    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+
+    return render(request, "payments/admin_wallet_list.html", {
+        "page_obj":  page_obj,
+        "search":    search,
+        "type_f":    type_f,
+        "ref_f":     ref_f,
+        "txn_types": WalletTransaction.TRANSACTION_TYPE_CHOICES,
+        "ref_types": WalletTransaction.REFERENCE_TYPE_CHOICES,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN: WALLET TRANSACTION DETAIL
+# ─────────────────────────────────────────────────────────────
+
+@never_cache
+@admin_login_required
+def admin_wallet_detail(request, txn_id):
+    txn = get_object_or_404(
+        WalletTransaction.objects.select_related("wallet__user", "order"),
+        txn_id=txn_id,
+    )
+
+    recent_txns = (
+        WalletTransaction.objects
+        .filter(wallet=txn.wallet)
+        .order_by("-created_at")[:10]
+    )
+
+    return render(request, "payments/admin_wallet_detail.html", {
+        "txn":         txn,
+        "user":        txn.wallet.user,
+        "wallet":      txn.wallet,
+        "recent_txns": recent_txns,
+    })
+
+
+# ─────────────────────────────────────────────────────────────
+# ADMIN: PAYMENT LIST
+# ─────────────────────────────────────────────────────────────
+
+@never_cache
+@admin_login_required
+def admin_payment_list(request):
+    search   = request.GET.get("search", "").strip()
+    method_f = request.GET.get("method", "")
+    status_f = request.GET.get("status", "")
+
+    qs = Payment.objects.select_related("order__user").order_by("-created_at")
+
+    if search:
+        qs = qs.filter(
+            Q(order__order_id__icontains=search)
+            | Q(order__user__email__icontains=search)
+            | Q(paypal_order_id__icontains=search)
+            | Q(paypal_capture_id__icontains=search)
+        )
+    if method_f:
+        qs = qs.filter(payment_method=method_f)
+    if status_f:
+        qs = qs.filter(payment_status=status_f)
+
+    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+
+    return render(request, "payments/admin_payment_list.html", {
+        "page_obj":       page_obj,
+        "search":         search,
+        "method_f":       method_f,
+        "status_f":       status_f,
+        "method_choices": Payment.PAYMENT_METHOD_CHOICES,
+        "status_choices": Payment.PAYMENT_STATUS_CHOICES,
     })
