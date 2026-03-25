@@ -485,7 +485,7 @@ def place_order(request):
         return redirect("shopcore:order_success", order_id=order.order_id)
 
     # ── For Online Payments (PayPal / Wallet) ─────────────────
-    # Do NOT create order yet → store data in session
+    # Do NOT create order yet
     request.session['pending_order_data'] = {
         'payment_method': payment_method,
         'address_id': address.id,
@@ -497,15 +497,16 @@ def place_order(request):
         'coupon_discount': str(coupon_discount),
     }
 
-    # Clear cart immediately (we will restore on failure if needed)
+    # Clear cart
     cart.items.all().delete()
     request.session.pop("applied_coupon_code", None)
     request.session.pop("applied_coupon_discount", None)
 
     if payment_method == "WALLET":
-        return redirect("payments:pay_with_wallet")
+        return redirect("payments:pay_with_wallet")           # No order_id needed
     else:
-        return redirect("payments:initiate_paypal_payment")
+        # For PayPal: redirect to a version that does NOT require order_id
+        return redirect("payments:initiate_paypal_payment_no_order")
 # ─────────────────────────────────────────────────────────────
 # ORDER SUCCESS
 # ─────────────────────────────────────────────────────────────

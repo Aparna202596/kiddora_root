@@ -65,6 +65,8 @@ class CustomUser(AbstractUser):
     referred_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='referred_users')
     
     is_deleted = models.BooleanField(default=False)
+
+    deleted_at = models.DateTimeField(null=True, blank=True)
     # Authentication settings
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
@@ -92,6 +94,16 @@ class CustomUser(AbstractUser):
                 pass
 
         super().save(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        """Soft delete the user"""
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.is_active = False          # Important: prevent login
+        self.save(update_fields=['is_deleted', 'deleted_at', 'is_active'])
+
+    def hard_delete(self):
+        """Real delete (use with caution)"""
+        super().delete()
 
     def __str__(self):
         return self.email
@@ -103,7 +115,7 @@ class UserAddress(models.Model):
 
     ADDRESS_TYPE_CHOICES = ((ADDRESS_HOME, "Home"),(ADDRESS_WORK, "Work"),(ADDRESS_OTHER, "Other"),)
 
-    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="addresses")
+    user = models.ForeignKey(CustomUser,on_delete=models.PROTECT,related_name="addresses")
     
     id = models.BigAutoField(primary_key=True)
     

@@ -18,7 +18,8 @@ from django.views.decorators.http import require_POST
 
 from accounts.decorators import user_login_required
 from payments.models import Payment, PaymentLog, Wallet
-from shopcore.models import Order
+from shopcore.models import Order, Coupon
+from accounts.models import UserAddress
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +137,48 @@ def _paypal_capture_order(paypal_order_id: str) -> dict:
     resp.raise_for_status()
     return resp.json()
 
+@never_cache
+@user_login_required
+def initiate_paypal_payment_no_order(request):
+    """Initiate PayPal when no Order exists yet (called from checkout)."""
+    pending = request.session.get('pending_order_data')
+    if not pending:
+        messages.error(request, "Session expired. Please try again.")
+        return redirect("shopcore:cart")
 
+    # Create the Order NOW (just before sending user to PayPal)
+    try:
+        address = UserAddress.objects.get(id=pending['address_id'], user=request.user)
+    except UserAddress.DoesNotExist:
+        messages.error(request, "Address not found.")
+        return redirect("shopcore:checkout")
+
+    coupon = None
+    if pending.get('coupon_id'):
+        try:
+            coupon = Coupon.objects.get(id=pending['coupon_id'])
+        except Coupon.DoesNotExist:
+            pass
+
+    order = Order.objects.create(
+        user            = request.user,
+        address         = address,
+        payment_method  = "PAYPAL",
+        payment_status  = "PENDING",
+        order_status    = "PENDING",
+        coupon          = coupon,
+        coupon_discount = Decimal(pending['coupon_discount']),
+        total_amount    = Decimal(pending['subtotal']),
+        discount_amount = Decimal(pending['offer_discount_total']),
+        shipping_charge = Decimal(pending['shipping_charge']),
+        final_amount    = Decimal(pending['final_amount']),
+    )
+
+    # Store the newly created order_id in session for callback
+    request.session['pending_kiddora_order_id'] = order.order_id
+
+    # Now redirect to the original initiate view that expects order_id
+    return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
 # ─────────────────────────────────────────────────────────────
 # STEP 1 – INITIATE PAYPAL PAYMENT
 # ─────────────────────────────────────────────────────────────

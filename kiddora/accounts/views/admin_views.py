@@ -147,7 +147,7 @@ def admin_dashboard_view(request):
 def admin_user_list(request):
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "")
-    users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER).order_by('-date_joined')
+    users = CustomUser.objects.filter(role=CustomUser.ROLE_CUSTOMER, is_deleted=False).order_by('-date_joined')
     if query:
         users = users.filter(
             Q(username__icontains=query) |
@@ -196,14 +196,18 @@ def admin_unblock_user(request, user_id):
 @admin_login_required
 def delete_user_view(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id, role=CustomUser.ROLE_CUSTOMER)
+
     if request.user.id == user.id:
         messages.error(request, "You cannot delete your own account.")
         return redirect("accounts:admin_user_list")
+
     if request.method == "POST":
-        username = user.username
-        user.delete()
-        messages.success(request, f"User {username} has been deleted successfully.")
+        # Soft delete only
+        username = user.username or user.email
+        user.delete()                     # This now calls the soft delete method
+        messages.success(request, f"Customer {username} has been deleted successfully.")
         return redirect("accounts:admin_user_list")
+
     return render(request, "accounts/admin/delete_user.html", {"user": user})
 
 @never_cache

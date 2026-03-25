@@ -181,7 +181,7 @@ class Order(models.Model):
         ("PARTIALLY_REFUNDED", "Partially Refunded"),
     )
     order_id = models.CharField(max_length=20, unique=True, editable=False)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="orders")
+    user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name="orders")
     address = models.ForeignKey(UserAddress, on_delete=models.PROTECT, related_name="orders")
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default="PENDING")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default="COD")
