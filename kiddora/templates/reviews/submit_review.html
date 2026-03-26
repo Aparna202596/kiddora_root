@@ -65,7 +65,7 @@
           {% with star=i|add:"0" %}
           <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}"
             {% if existing and existing.rating == i|add:0 %}checked
-            {% elif form_data.rating == i %}checked{% endif %}>
+            {% endif %}>
           <label for="star{{ i }}" title="{{ i }} star{{ i|pluralize }}">&#9733;</label>
           {% endwith %}
           {% endfor %}
@@ -74,7 +74,7 @@
 
       <div class="form-group">
         <label for="id_comment">Your Review <span style="color:#e91e63;">*</span></label>
-        <textarea name="comment" id="id_comment" placeholder="Share your experience with this product…">{{ existing.comment|default:form_data.comment|default:'' }}</textarea>
+        <textarea name="comment" id="id_comment" placeholder="Share your experience with this product…">{% if existing %}{{ existing.comment }}{% endif %}</textarea>
       </div>
 
       <div class="rev-actions">

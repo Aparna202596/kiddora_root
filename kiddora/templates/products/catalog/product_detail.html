@@ -14,6 +14,25 @@
 {% include "responsive.html" %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
+:root {
+    --brand:       var(--pink);
+    --brand-dark:  var(--pink-dark);
+    --brand-light: var(--pink-light);
+    --white:       #ffffff;
+    --dark:        #222222;
+    --text:        var(--text-primary);
+    --muted:       var(--text-muted);
+    --border:      var(--border-mid);
+    --radius:      var(--r-md);
+    --radius-lg:   var(--r-lg);
+    --radius-sm:   var(--r-sm);
+    --shadow:      var(--shadow-xs);
+    --shadow-lg:   var(--shadow-lg);
+    --success:     #22c55e;
+    --danger:      #ef4444;
+    --font-body:   "Segoe UI", Arial, sans-serif;
+    --font-display:"Segoe UI", Arial, sans-serif;
+}
 /* ─── shared product-card styles (related grid) ─── */
 .product-card { background:var(--white); border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:transform .22s,box-shadow .22s,border-color .22s; position:relative; display:flex; flex-direction:column; }
 .product-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-lg); border-color:var(--brand); }
@@ -438,25 +457,33 @@
         </div>
     </div>
 
-    <!-- Write / Edit Review — enabled only if purchased & delivered -->
+    <!-- Write / Edit Review — enabled ONLY for customers who purchased and received the product -->
     <div class="review-action-wrap">
+        <!-- DEBUG: auth={{ user.is_authenticated }} can={{ user_can_review }} reviewed={{ user_has_reviewed }} -->
         {% if user.is_authenticated %}
             {% if user_has_reviewed %}
-                <a href="/shop/reviews/edit/{{ user_review.id }}/" class="btn-edit-review">
+                <!-- User already reviewed -->
+                <a href="{% url 'shopcore:submit_review' product.id %}" class="btn-edit-review">
                     <i class="fa-regular fa-pen-to-square"></i> Edit Your Review
                 </a>
             {% elif user_can_review %}
-                <a href="/shop/reviews/add/{{ product.id }}/" class="btn-write-review">
+                <!-- User bought & received the product -->
+                <a href="{% url 'shopcore:submit_review' product.id %}" class="btn-write-review">
                     <i class="fa-regular fa-star"></i> Write a Review
                 </a>
             {% else %}
-                <button class="btn-write-review disabled" disabled title="You can review this product only after it has been delivered to you.">
+                <!-- Not eligible yet -->
+                <button class="btn-write-review disabled" disabled 
+                        title="You can review this product only after it has been delivered to you.">
                     <i class="fa-regular fa-star"></i> Write a Review
                 </button>
-                <p class="review-locked-msg">🔒 Only customers who have received this product can leave a review.</p>
+                <p class="review-locked-msg">
+                    🔒 Only customers who have received this product can leave a review.
+                </p>
             {% endif %}
         {% else %}
-            <a href="/accounts/login/?next={{ request.path }}" class="btn-write-review">
+            <!-- Not logged in -->
+            <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn-write-review">
                 <i class="fa-regular fa-star"></i> Login to Write a Review
             </a>
         {% endif %}
@@ -484,7 +511,6 @@
         {% endif %}
     </div>
 </section>
-
 <!-- ══════ RELATED PRODUCTS ══════ -->
 {% if related_products %}
 <section class="related-section">

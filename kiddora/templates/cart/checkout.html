@@ -409,22 +409,22 @@
                         {% if not cod_blocked %}
                             <span class="pay-badge green">Available</span>
                         {% else %}
-                            <span class="pay-badge red">Blocked above ₹1,000</span>
+                            <span class="pay-badge red">⚠️ COD is not available for orders above ₹1,000</span>
                         {% endif %}
                     </label>
                 </div>
             </label>
-            <div class="payment-blocked-note {% if cod_blocked %}show{% endif %}" id="codBlockedNote">
+            {% comment %} <div class="payment-blocked-note {% if cod_blocked %}show{% endif %}" id="codBlockedNote">
                 ⚠️ COD is not available for orders above ₹1,000.
-            </div>
+            </div> {% endcomment %}
 
             <!-- PAYPAL -->
             <label class="payment-option {% if cod_blocked %}selected{% endif %}"
-                   id="paypalOption"
-                   onclick="selectPayment(this, 'PAYPAL')">
+                    id="paypalOption"
+                    onclick="selectPayment(this, 'PAYPAL')">
                 <input type="radio" name="payment_method" value="PAYPAL"
-                       {% if cod_blocked %}checked{% endif %}
-                       id="radio_PAYPAL">
+                        {% if cod_blocked %}checked{% endif %}
+                        id="radio_PAYPAL">
                 <span class="pay-icon">🅿️</span>
                 <div style="flex:1;">
                     <label for="radio_PAYPAL">

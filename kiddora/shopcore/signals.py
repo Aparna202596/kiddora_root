@@ -136,6 +136,7 @@ def update_average_on_save(sender, instance, **kwargs):
 def update_average_on_delete(sender, instance, **kwargs):
     """Fires when a review is deleted."""
     update_product_average(instance.product)
+    
 def _credit_wallet(ret):
     """Credit the refund amount to the user's wallet."""
     try:

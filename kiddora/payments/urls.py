@@ -8,11 +8,6 @@ urlpatterns = [
     # ── PAYPAL ────────────────────────────────────────────────
     # Step 1: Create PayPal order → redirect buyer to PayPal
     path(
-        "paypal/initiate/",
-        paypal_views.initiate_paypal_payment_no_order,
-        name="initiate_paypal_payment_no_order",
-    ),
-    path(
         "paypal/initiate/<str:order_id>/",
         paypal_views.initiate_paypal_payment,
         name="initiate_paypal_payment",

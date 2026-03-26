@@ -7,7 +7,7 @@ from django.db.models import Q, Min, Max, Count, Sum, Prefetch, Avg
 from django.core.paginator import Paginator
 from django.db.models.functions import Coalesce
 from django.db.models import Value
-from shopcore.models import Cart, CartItem, Wishlist, WishlistItem
+from shopcore.models import *
 
 #  Build sidebar filter options from a filtered QS
 def get_filter_options(products_qs):
@@ -311,6 +311,7 @@ def search_products(request):
     return JsonResponse({"results": results, "query": query})
 
 def product_detail_view(request, product_id):
+    product = get_object_or_404(Product, id=product_id, is_active=True, is_deleted=False)
     try:
         product = Product.objects.select_related(
             "subcategory", "subcategory__category"
@@ -339,7 +340,6 @@ def product_detail_view(request, product_id):
         .select_related("color", "age_group", "inventory")
         .order_by("color__color", "age_group__age")
     )
-
     variant_data     = []
     total_stock      = 0
     any_in_stock     = False
@@ -363,7 +363,7 @@ def product_detail_view(request, product_id):
             "qty":          qty,
             "is_oos":       qty == 0,
             "max_cart_qty": min(CartItem.MAX_QTY_PER_PRODUCT, qty) if qty > 0 else 0,
-            "in_cart":      False,   # stamped below after cart ctx resolves
+            "in_cart":      False,
         })
 
     # ── Images ───────────────────────────────────────────────
@@ -397,23 +397,28 @@ def product_detail_view(request, product_id):
         .select_related("user")
         .order_by("-created_at")
     )
-    review_list   = list(reviews_qs[:20])     # latest 20 approved reviews
-    review_count  = reviews_qs.count()
-    avg_data      = reviews_qs.aggregate(avg=Avg("rating"))
+    review_list    = list(reviews_qs[:20])
+    review_count   = reviews_qs.count()
+    avg_data       = reviews_qs.aggregate(avg=Avg("rating"))
     average_rating = round(avg_data["avg"], 1) if avg_data["avg"] else None
 
-    # Has the current user already reviewed this product?
-    user_review      = None
-    user_can_review  = False
+    # ── Review eligibility — SINGLE source of truth ──────────
+    # Do NOT duplicate this logic; compute it once here cleanly.
+    user_review       = None
     user_has_reviewed = False
+    user_can_review   = False
+
     if request.user.is_authenticated:
+        # Check against ALL reviews (approved or pending) so a user who
+        # submitted but is awaiting approval is not shown the button again.
         user_review = Review.objects.filter(
             user=request.user, product=product
         ).first()
         user_has_reviewed = user_review is not None
+
         if not user_has_reviewed:
-            # Only allow review if they've bought & received it
-            from shopcore.models import Order
+            # Eligible only if they have a DELIVERED order containing
+            # this product — any variant counts.
             user_can_review = Order.objects.filter(
                 user=request.user,
                 order_status="DELIVERED",
@@ -423,8 +428,7 @@ def product_detail_view(request, product_id):
     # ── Active Offers ─────────────────────────────────────────
     from django.utils import timezone
     now = timezone.now()
-
-    product_offers  = [
+    product_offers = [
         o for o in Offer.objects.filter(
             offer_type="PRODUCT",
             product=product,
@@ -434,7 +438,6 @@ def product_detail_view(request, product_id):
         )
         if o.is_valid()
     ]
-
     category_offers = [
         o for o in Offer.objects.filter(
             offer_type="CATEGORY",
@@ -445,20 +448,18 @@ def product_detail_view(request, product_id):
         )
         if o.is_valid()
     ]
-
-    # Best offer = highest discount among product + category offers
-    all_offers       = product_offers + category_offers
-    best_offer       = max(all_offers, key=lambda o: o.discount_percent) if all_offers else None
+    all_offers = product_offers + category_offers
+    best_offer = max(all_offers, key=lambda o: o.discount_percent) if all_offers else None
 
     context = {
         # ── product core ─────────────────────────────────────
-        "product":           product,
-        "variant_data":      variant_data,
-        "image_urls":        image_urls,
-        "total_stock":       total_stock,
-        "any_in_stock":      any_in_stock,
-        "all_out_of_stock":  all_out_of_stock,
-        "related_products":  related_products,
+        "product":          product,
+        "variant_data":     variant_data,
+        "image_urls":       image_urls,
+        "total_stock":      total_stock,
+        "any_in_stock":     any_in_stock,
+        "all_out_of_stock": all_out_of_stock,
+        "related_products": related_products,
         # ── cart / wishlist ───────────────────────────────────
         "cart_variant_ids":     uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
@@ -467,20 +468,19 @@ def product_detail_view(request, product_id):
         "MAX_QTY":              CartItem.MAX_QTY_PER_PRODUCT,
         "add_to_cart_url_base": "/shop/cart/add/",
         # ── reviews ───────────────────────────────────────────
-        "reviews":            review_list,
-        "review_count":       review_count,
-        "average_rating":     average_rating,
-        "user_review":        user_review,
-        "user_has_reviewed":  user_has_reviewed,
-        "user_can_review":    user_can_review,
+        "reviews":           review_list,
+        "review_count":      review_count,
+        "average_rating":    average_rating,
+        "user_review":       user_review,
+        "user_has_reviewed": user_has_reviewed,  # ← single clean source
+        "user_can_review":   user_can_review,    # ← single clean source
         # ── offers ────────────────────────────────────────────
-        "product_offers":    product_offers,
-        "category_offers":   category_offers,
-        "all_offers":        all_offers,
-        "best_offer":        best_offer,
+        "product_offers":  product_offers,
+        "category_offers": category_offers,
+        "all_offers":      all_offers,
+        "best_offer":      best_offer,
     }
     return render(request, "products/catalog/product_detail.html", context)
-
 #  AJAX – Variant stock / price info
 
 def ajax_variant_info(request):

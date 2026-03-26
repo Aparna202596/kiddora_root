@@ -400,7 +400,7 @@ def place_order(request):
             return redirect("shopcore:cart")
         stock = _stock_for(item.variant)
         if stock < item.quantity:
-            messages.error(request, f"Only {stock} unit(s) of '{item.variant.product.product_name}' left in stock.")
+            messages.error(request, f"Only {stock} unit(s) of '{item.variant.product.product_name}' left.")
             return redirect("shopcore:cart")
 
     # ── Calculate Totals ──────────────────────────────────────
@@ -418,7 +418,6 @@ def place_order(request):
 
     price_after_offers = subtotal - offer_discount_total
     shipping_charge    = Decimal("100") if price_after_offers < Decimal("1000") else Decimal("0")
-
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
     final_amount = price_after_offers - coupon_discount + shipping_charge
 
@@ -433,14 +432,13 @@ def place_order(request):
             messages.error(request, f"Insufficient wallet balance (₹{balance:.2f}).")
             return redirect("shopcore:checkout")
 
-    # ── CREATE ORDER ONLY FOR COD ─────────────────────────────
-    order = None
+    # ── COD: create order + payment record immediately ────────
     if payment_method == "COD":
         order = Order.objects.create(
             user            = request.user,
             address         = address,
             payment_method  = "COD",
-            payment_status  = "PAID",           # COD is treated as paid
+            payment_status  = "PAID",
             order_status    = "PENDING",
             coupon          = applied_coupon,
             coupon_discount = coupon_discount,
@@ -449,13 +447,10 @@ def place_order(request):
             shipping_charge = shipping_charge,
             final_amount    = final_amount,
         )
-
-        # Create OrderItems + deduct stock for COD
         for item in items:
             variant    = item.variant
             base_price = variant.product.final_price
             item_disc  = item_offer_data.get(item.variant_id, Decimal("0"))
-
             OrderItem.objects.create(
                 order           = order,
                 variant         = variant,
@@ -463,13 +458,23 @@ def place_order(request):
                 unit_price      = base_price,
                 discount_amount = item_disc,
             )
-
             inv = variant.inventory
             inv.quantity_available = max(0, inv.quantity_available - item.quantity)
             inv.quantity_sold     += item.quantity
             inv.save(update_fields=["quantity_available", "quantity_sold"])
 
-        # Coupon usage
+        # ── COD Payment record ────────────────────────────────
+        from payments.models import Payment
+        from django.utils import timezone as tz
+        Payment.objects.create(
+            order          = order,
+            payment_method = "COD",
+            payment_status = "PAID",
+            amount         = final_amount,
+            initiated_at   = tz.now(),
+            completed_at   = tz.now(),
+        )
+
         if applied_coupon:
             usage, _ = CouponUsage.objects.get_or_create(coupon=applied_coupon, user=request.user)
             usage.times_used += 1
@@ -477,36 +482,63 @@ def place_order(request):
             applied_coupon.used_count += 1
             applied_coupon.save(update_fields=["used_count"])
 
-        # Clear cart
         cart.items.all().delete()
         request.session.pop("applied_coupon_code", None)
         request.session.pop("applied_coupon_discount", None)
-
         return redirect("shopcore:order_success", order_id=order.order_id)
 
-    # ── For Online Payments (PayPal / Wallet) ─────────────────
-    # Do NOT create order yet
-    request.session['pending_order_data'] = {
-        'payment_method': payment_method,
-        'address_id': address.id,
-        'final_amount': str(final_amount),
-        'subtotal': str(subtotal),
-        'offer_discount_total': str(offer_discount_total),
-        'shipping_charge': str(shipping_charge),
-        'coupon_id': applied_coupon.id if applied_coupon else None,
-        'coupon_discount': str(coupon_discount),
-    }
+    # ── PAYPAL / WALLET: create order first, then route to payment ──
+    # Order is created here with PENDING payment_status.
+    # Payment record is only created AFTER successful payment.
+    order = Order.objects.create(
+        user            = request.user,
+        address         = address,
+        payment_method  = payment_method,
+        payment_status  = "PENDING",
+        order_status    = "PENDING",
+        coupon          = applied_coupon,
+        coupon_discount = coupon_discount,
+        total_amount    = subtotal,
+        discount_amount = offer_discount_total,
+        shipping_charge = shipping_charge,
+        final_amount    = final_amount,
+    )
+    for item in items:
+        variant    = item.variant
+        base_price = item.variant.product.final_price
+        item_disc  = item_offer_data.get(item.variant_id, Decimal("0"))
+        OrderItem.objects.create(
+            order           = order,
+            variant         = variant,
+            quantity        = item.quantity,
+            unit_price      = base_price,
+            discount_amount = item_disc,
+        )
+        inv = variant.inventory
+        inv.quantity_available = max(0, inv.quantity_available - item.quantity)
+        inv.quantity_sold     += item.quantity
+        inv.save(update_fields=["quantity_available", "quantity_sold"])
 
-    # Clear cart
+    if applied_coupon:
+        usage, _ = CouponUsage.objects.get_or_create(coupon=applied_coupon, user=request.user)
+        usage.times_used += 1
+        usage.save(update_fields=["times_used"])
+        applied_coupon.used_count += 1
+        applied_coupon.save(update_fields=["used_count"])
+
     cart.items.all().delete()
     request.session.pop("applied_coupon_code", None)
     request.session.pop("applied_coupon_discount", None)
 
+    # Store order_id in session for the payment views
+    request.session["pending_kiddora_order_id"] = order.order_id
+
     if payment_method == "WALLET":
-        return redirect("payments:pay_with_wallet")           # No order_id needed
+        # Redirect to wallet pay with the real order_id in URL
+        return redirect("payments:pay_with_wallet", order_id=order.order_id)
     else:
-        # For PayPal: redirect to a version that does NOT require order_id
-        return redirect("payments:initiate_paypal_payment_no_order")
+        # Redirect directly to initiate_paypal_payment (order already exists)
+        return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
 # ─────────────────────────────────────────────────────────────
 # ORDER SUCCESS
 # ─────────────────────────────────────────────────────────────
