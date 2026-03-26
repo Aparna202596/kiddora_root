@@ -123,7 +123,8 @@ class Offer(models.Model):
     def __str__(self):
         target = self.product or self.category or "Referral"
         return f"{self.get_offer_type_display()} – {self.discount_percent}% on {target}"
-
+    
+#   ────────────────────────────────────────────────── REFERRAL ──────────────────────────────────────────────────
 class ReferralCode(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referral_record")
 
@@ -158,7 +159,7 @@ class ReferralUse(models.Model):
     referred_user  = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referred_via")
 
     coupon_awarded = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_uses")
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -167,8 +168,8 @@ class ReferralUse(models.Model):
     def __str__(self):
         return f"{self.referral_code.user.email} → {self.referred_user.email}"
 
+#   ────────────────────────────────────────────────── WISHLIST ──────────────────────────────────────────────────
 
-#  WISHLIST
 # Per-user wishlist of products. One Wishlist per user, multiple WishlistItems per wishlist.
 class Wishlist(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="wishlist")
@@ -178,7 +179,9 @@ class Wishlist(models.Model):
 
 class WishlistItem(models.Model):
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name="items")
+
     product  = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="wishlist_items")
+
     added_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         unique_together = ("wishlist", "product")
@@ -187,7 +190,7 @@ class WishlistItem(models.Model):
     def __str__(self):
         return f"{self.wishlist.user.email} - {self.product.product_name}"
 
-#  CART
+#   ────────────────────────────────────────────────── CART ──────────────────────────────────────────────────
 class Cart(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="cart")
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="carts")
@@ -219,7 +222,7 @@ class CartItem(models.Model):
     def __str__(self):
         return f"{self.variant} × {self.quantity}"
 
-#  ORDER
+#   ────────────────────────────────────────────────── ORDER ──────────────────────────────────────────────────
 class Order(models.Model):
     ORDER_STATUS_CHOICES = (
         ("PENDING", "Pending"),
@@ -244,23 +247,37 @@ class Order(models.Model):
         ("PARTIALLY_REFUNDED", "Partially Refunded"),
     )
     order_id = models.CharField(max_length=20, unique=True, editable=False)
+
     user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name="orders")
+
     address = models.ForeignKey(UserAddress, on_delete=models.PROTECT, related_name="orders")
+
     order_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default="PENDING")
+
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default="COD")
+
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
+
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
+
     coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
+
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
     shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=100)
+
     final_amount = models.DecimalField(max_digits=10, decimal_places=2) #"total_amount - discount_amount - coupon_discount + shipping_charge"
-    
+
     order_date = models.DateTimeField(auto_now_add=True)
+
     updated_at = models.DateTimeField(auto_now=True)
+
     delivered_at = models.DateTimeField(null=True, blank=True)
+
     cancelled_at = models.DateTimeField(null=True, blank=True)
+
     cancel_reason = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -291,14 +308,23 @@ class OrderItem(models.Model):
     )
     
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items")
+
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, related_name="order_items")
+
     quantity = models.PositiveIntegerField()
+
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
     total_price = models.DecimalField(max_digits=10, decimal_places=2) #"unit_price × quantity) - discount_amount"
+
     item_status = models.CharField(max_length=20, choices=ITEM_STATUS_CHOICES, default="ACTIVE")
+
     delivered_at = models.DateTimeField(null=True, blank=True)
+
     cancel_reason = models.TextField(blank=True, null=True)
+
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -317,13 +343,21 @@ class Return(models.Model):
     )
 
     order_item = models.OneToOneField(OrderItem, on_delete=models.CASCADE, related_name="return_request")
+
     reason = models.TextField(help_text="Reason for return (mandatory per instructions).")
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="REQUESTED")
+
     refund_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
     admin_note = models.TextField(blank=True, null=True)
+
     updated_at = models.DateTimeField(null=True, blank=True)
+
     refunded_at = models.DateTimeField(null=True, blank=True)
+
     locked = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at"]
@@ -331,17 +365,25 @@ class Return(models.Model):
     def __str__(self):
         return f"Return: {self.order_item} [{self.status}]"
 
-#  REVIEW
+#   ────────────────────────────────────────────────── REVIEW ──────────────────────────────────────────────────
 #  User reviews for products. One review per user per product.
 class Review(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="reviews")
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
+
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+
     comment = models.TextField()
+
     is_approved = models.BooleanField(default=False)
+
     admin_reply = models.TextField(blank=True, null=True)
+
     replied_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         unique_together = ("user", "product")
@@ -350,24 +392,35 @@ class Review(models.Model):
     def __str__(self):
         return f"{self.user.email} → {self.product.product_name} ({self.rating}★)"
 
+#   ────────────────────────────────────────────────── BANNER ──────────────────────────────────────────────────
 class Banner(models.Model):
-
     SLOT_CHOICES = (
         ("HERO", "Hero Carousel"),
         ("SECONDARY", "Secondary Banner"),
     )
 
     title = models.CharField(max_length=120)
+
     subtitle = models.CharField(max_length=200, blank=True)
+
     image = models.ImageField(upload_to="banners/")
+
     cta_text = models.CharField(max_length=40, default="Shop Now")
+
     cta_url = models.CharField(max_length=300, default="/products/user/products/")
+
     badge_text = models.CharField(max_length=40, blank=True)
+
     slot = models.CharField(max_length=20, choices=SLOT_CHOICES, default="HERO")
+
     display_order = models.PositiveIntegerField(default=0,validators=[MinValueValidator(0)])
+
     is_active = models.BooleanField(default=True)
+
     start_date = models.DateTimeField(null=True, blank=True)
+
     end_date = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -375,8 +428,7 @@ class Banner(models.Model):
         verbose_name = "Banner"
         verbose_name_plural = "Banners"
 
-    def is_live(self):
-        
+    def is_live(self):        
         now = timezone.now()
         if not self.is_active:
             return False
