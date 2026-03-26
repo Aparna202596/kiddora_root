@@ -8,7 +8,7 @@ from shopcore.views import wishlist_views
 from shopcore.views import coupon_views
 from shopcore.views import offer_views
 from shopcore.views import review_views
-
+from shopcore.views import referral_views
 
 app_name = 'shopcore'
 
@@ -94,6 +94,14 @@ urlpatterns = [
     path("admin/offers/<int:offer_id>/delete/", offer_views.admin_delete_offer, name="admin_delete_offer"),
     path("admin/offers/<int:offer_id>/block/", offer_views.admin_block_offer, name="admin_block_offer"),
     path("admin/offers/<int:offer_id>/unblock/", offer_views.admin_unblock_offer, name="admin_unblock_offer"),
+    
+    # ── REFERRALS — USER ──────────────────────────────────────
+    path("user/my-referrals/", referral_views.my_referrals, name="my_referrals"),
+
+    # ── REFERRALS — ADMIN ─────────────────────────────────────
+    path("admin/referrals/", referral_views.admin_referral_list, name="admin_referral_list"),
+    path("admin/referrals/<int:referral_id>/uses/", referral_views.admin_referral_uses, name="admin_referral_uses"),
+
     # ── RETURN REQUESTS — USER ────────────────────────────────────────────────
     path("orders/<str:order_id>/return/<int:item_id>/", return_views.request_return, name="request_return"),
 

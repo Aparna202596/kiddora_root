@@ -1,59 +1,55 @@
-from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from accounts.models import CustomUser, UserAddress
 from products.models import Product, Category, ProductVariant
-import uuid
+from django.utils import timezone
 from django.conf import settings
+from django.db import models
+import uuid
 
-#  COUPON
-#  User-applied discount codes at checkout.
-class CouponUsage(models.Model):
-    """Tracks how many times each user has used a specific coupon."""
-    coupon = models.ForeignKey('Coupon', on_delete=models.CASCADE, related_name='usages')
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
-    )
-    times_used = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        unique_together = ('coupon', 'user')
-        verbose_name = 'Coupon Usage'
-        verbose_name_plural = 'Coupon Usages'
-
+#   ────────────────────────────────────────────────── COUPON ──────────────────────────────────────────────────
 class Coupon(models.Model):
     DISCOUNT_TYPE_CHOICES = (
         ("PERCENT", "Percentage"),
-        ("FLAT",    "Flat Amount"),
+        ("FLAT", "Flat Amount"),
     )
-
-    code = models.CharField(max_length=20, unique=True)
-    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
     #   PERCENT type → discount_value = 10  means 10%
     #   FLAT type    → discount_value = 100 means ₹100 off
+    code = models.CharField(max_length=20, unique=True)
+
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(1)])
+
     max_discount = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
+
     min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
     start_date = models.DateTimeField(default=timezone.now)
+
     expiry_date = models.DateTimeField()
+
     usage_limit = models.PositiveIntegerField(default=1)
+
     used_count = models.PositiveIntegerField(default=0)
+
     is_active = models.BooleanField(default=True)
+
     is_deleted = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     class Meta:
         ordering = ["-created_at"]
+
     def get_user_usage(self, user):
-        """Return how many times THIS user has used the coupon."""
+        #Return how many times THIS user has used the coupon
         try:
             return self.usages.get(user=user).times_used
         except CouponUsage.DoesNotExist:
             return 0
         
     def is_valid(self):
-        """Check coupon is active, not deleted, and within its date window."""
+        #Check coupon is active, not deleted, and within its date window.
         now = timezone.now()
         return (self.is_active and not self.is_deleted and self.start_date <= now <= self.expiry_date)
 
@@ -66,7 +62,21 @@ class Coupon(models.Model):
 
     def __str__(self):
         return f"{self.code} ({self.discount_type}: {self.discount_value})"
+    
+class CouponUsage(models.Model):
+    coupon = models.ForeignKey('Coupon', on_delete=models.CASCADE, related_name='usages')
 
+    #user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='coupon_usages')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='coupon_usages')
+
+    times_used = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('coupon', 'user')
+        verbose_name = 'Coupon Usage'
+        verbose_name_plural = 'Coupon Usages'
+
+#   ────────────────────────────────────────────────── OFFER ──────────────────────────────────────────────────
 class Offer(models.Model):
     OFFER_TYPE_CHOICES = (
         ("PRODUCT", "Product Offer"),
@@ -75,14 +85,23 @@ class Offer(models.Model):
     )
 
     offer_type = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, related_name="offers")
+
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True, related_name="offers")
+
     discount_percent = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(100)])
+
     start_date = models.DateTimeField(default=timezone.now)
+
     end_date = models.DateTimeField(null=True, blank=True)
+
     referral_coupon  = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_offers")
+
     is_active = models.BooleanField(default=True)
+
     is_deleted = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -104,6 +123,50 @@ class Offer(models.Model):
     def __str__(self):
         target = self.product or self.category or "Referral"
         return f"{self.get_offer_type_display()} – {self.discount_percent}% on {target}"
+
+class ReferralCode(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referral_record")
+
+    code = models.CharField(max_length=20, unique=True)  
+
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @classmethod
+    def fresh_code(cls) -> str:
+        # Generate a new referral code (used by signal and views)
+        return f"KIDDREF-{uuid.uuid4().hex[:8].upper()}"
+
+    @property
+    def use_count(self):
+        return self.uses.count()
+
+    def __str__(self):
+        return f"{self.user.email} — {self.code}"
+    
+
+class ReferralUse(models.Model):
+    #Created once when a new user registers via referral code or token URL.
+    #Records who referred whom and the coupon awarded to the referrer.
+
+    referral_code  = models.ForeignKey(ReferralCode, on_delete=models.CASCADE, related_name="uses")
+
+    referred_user  = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referred_via")
+
+    coupon_awarded = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_uses")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.referral_code.user.email} → {self.referred_user.email}"
+
 
 #  WISHLIST
 # Per-user wishlist of products. One Wishlist per user, multiple WishlistItems per wishlist.

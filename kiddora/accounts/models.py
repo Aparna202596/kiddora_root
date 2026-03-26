@@ -59,10 +59,6 @@ class CustomUser(AbstractUser):
     blocked_at = models.DateTimeField(null=True, blank=True)
     
     timezone = models.CharField(max_length=50,default="UTC",help_text="timezone Asia/Kolkata, Asia/Dubai")
-
-    referral_code = models.CharField(max_length=20, unique=True, blank=True, null=True)
-    
-    referred_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='referred_users')
     
     is_deleted = models.BooleanField(default=False)
 
@@ -75,14 +71,6 @@ class CustomUser(AbstractUser):
         # Ensure superusers always have admin role
         if self.is_superuser:
             self.role = self.ROLE_ADMIN
-
-        # Generate referral code once
-        if not self.referral_code:
-            while True:
-                code = f"KIDDREF-{uuid.uuid4().hex[:8].upper()}"
-                if not CustomUser.objects.filter(referral_code=code).exists():
-                    self.referral_code = code
-                    break
 
         # Delete old profile image if replaced
         if self.pk:

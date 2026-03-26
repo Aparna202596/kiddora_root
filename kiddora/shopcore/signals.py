@@ -8,9 +8,9 @@ from decimal import Decimal
 import math
 from products.models import Inventory
 from products.services.inventory import release_stock, deduct_stock_on_delivery
-from shopcore.models import OrderItem, Return, Review
+from shopcore.models import OrderItem, Return, Review, ReferralCode
 from payments.models import Wallet, WalletTransaction
-
+from accounts.models import CustomUser
 
 # ─────────────────────────────────────────────────────────────
 # ORDER ITEM: reserve inventory on creation
@@ -152,3 +152,15 @@ def _credit_wallet(ret):
         )
     except Exception:
         pass
+
+# ─────────────────────────────────────────────────────────────
+# AUTO-GENERATE REFERRAL CODE ON USER CREATION (THE REQUIRED ADDON)
+# ─────────────────────────────────────────────────────────────
+@receiver(post_save, sender=CustomUser)
+def create_referral_record_for_new_user(sender, instance, created, **kwargs):
+    """Automatically create ReferralCode + token + code when any new user is created."""
+    if created:
+        ReferralCode.objects.get_or_create(
+            user=instance,
+            defaults={"code": ReferralCode.fresh_code()},
+        )

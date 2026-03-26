@@ -1,4 +1,5 @@
 from django.views.decorators.cache import never_cache
+from shopcore.views.referral_views import get_or_create_referral_record
 from accounts.views.otp_views import generate_otp
 from accounts.decorators import user_login_required
 from django.contrib.auth import update_session_auth_hash
@@ -21,11 +22,13 @@ OTP_EXPIRY_MINUTES = 5
 def user_profile(request):
     user = request.user
     addresses = UserAddress.objects.filter(user=user)
+    rc = get_or_create_referral_record(request.user)
+    referral_link = request.build_absolute_uri(f"/accounts/signup/?ref={rc.token}")
     orders = Order.objects.filter(user=user).order_by("-order_date")
     return render(
         request,
         "accounts/profile/profile.html",
-        {"user": user, "addresses": addresses,"orders": orders,},)
+        {"user": user, "addresses": addresses, "referral_link": referral_link, "orders": orders,},)
 
 @never_cache
 @user_login_required

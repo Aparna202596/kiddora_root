@@ -85,43 +85,58 @@ def user_login(request):
 #Signup
 @never_cache
 def user_signup(request):
-    error=''
-    success=''
+    error   = ''
+    success = ''
     context = {}
-
-    if request.method=='POST':
-        form_data = request.POST.dict()     #preserve field
+ 
+    # ── Pre-fill referral info from invite URL (?ref=<uuid>) ──
+    referral_token        = request.GET.get("ref", "").strip()
+    prefill_referral_code = ""
+    if referral_token:
+        try:
+            from shopcore.models import ReferralCode as RC
+            rc = RC.objects.select_related("user").get(token=referral_token)
+            prefill_referral_code = rc.code
+        except Exception:
+            referral_token = ""   # invalid token — ignore silently
+ 
+    context["referral_token"]        = referral_token
+    context["prefill_referral_code"] = prefill_referral_code
+ 
+    if request.method == 'POST':
+        form_data = request.POST.dict()
         context["form_data"] = form_data
-
-        username=request.POST.get('username','').strip()
-        email=request.POST['email']
-        password1=request.POST['password1']
-        password2=request.POST['password2']
-
-        # Validation checks
-
+ 
+        username          = request.POST.get('username', '').strip()
+        email             = request.POST['email']
+        password1         = request.POST['password1']
+        password2         = request.POST['password2']
+        referral_code_str = request.POST.get('referral_code', '').strip()
+        referral_token    = request.POST.get('referral_token', '').strip()
+ 
+        # Validation
         if User.objects.filter(username__iexact=username).exists():
-            messages.error(request,"Username already exists!")
-            return render(request,'accounts/auth/signup.html',context)
-        elif len(username)<6:
-            messages.error(request,"Username atleast contain 6 characters, Retry!")
-            return render(request,'accounts/auth/signup.html',context)
-        elif re.search(r'\s',username):
-            messages.error(request,"Username cannot contain spaces!")
-            return render(request,'accounts/auth/signup.html',context)
+            messages.error(request, "Username already exists!")
+            return render(request, 'accounts/auth/signup.html', context)
+        elif len(username) < 6:
+            messages.error(request, "Username atleast contain 6 characters, Retry!")
+            return render(request, 'accounts/auth/signup.html', context)
+        elif re.search(r'\s', username):
+            messages.error(request, "Username cannot contain spaces!")
+            return render(request, 'accounts/auth/signup.html', context)
         elif User.objects.filter(email__iexact=email).exists():
-            messages.error(request,"Email already exists, Try new!")
-            return render(request,'accounts/auth/signup.html',context)
+            messages.error(request, "Email already exists, Try new!")
+            return render(request, 'accounts/auth/signup.html', context)
         elif len(password1) < 6:
-            messages.error(request,"Password must be at least 6 characters, Retry!")
-            return render(request,'accounts/auth/signup.html',context)
+            messages.error(request, "Password must be at least 6 characters, Retry!")
+            return render(request, 'accounts/auth/signup.html', context)
         elif re.search(r'\s', password1):
-            messages.error(request,"Password cannot contain spaces!")
-            return render(request,'accounts/auth/signup.html',context)
+            messages.error(request, "Password cannot contain spaces!")
+            return render(request, 'accounts/auth/signup.html', context)
         elif password1 != password2:
-            messages.error(request,"Passwords do not match!")
-            return render(request,'accounts/auth/signup.html',context)
-        
+            messages.error(request, "Passwords do not match!")
+            return render(request, 'accounts/auth/signup.html', context)
+ 
         with transaction.atomic():
             user = User.objects.create_user(
                 username=email.split("@")[0],
@@ -131,11 +146,24 @@ def user_signup(request):
                 is_active=False,
                 email_verified=False,
             )
-
-        user.otp = generate_otp()
+ 
+        user.otp          = generate_otp()
         user.otp_created_at = timezone.now()
         user.save()
-
+ 
+        # ── Process referral AFTER user is created ──────────
+        if referral_code_str or referral_token:
+            try:
+                from shopcore.views.referral_views import process_referral_on_signup
+                process_referral_on_signup(
+                    new_user=user,
+                    referral_code_str=referral_code_str,
+                    referral_token=referral_token,
+                )
+            except Exception as e:
+                # Referral failure must never block signup
+                print("REFERRAL ERROR:", e)
+ 
         try:
             send_mail(
                 subject="Verify your Kiddora account",
@@ -145,22 +173,24 @@ def user_signup(request):
                     f"Your One-Time Password (OTP) is {user.otp}.\n"
                     f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
                     "If you did not request this, please ignore this email.\n\n"
-                    "Best regards,\n"
-                    "Kiddora Team"
+                    "Best regards,\nKiddora Team"
                 ),
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[user.email],
-                fail_silently=False
+                fail_silently=False,
             )
         except Exception as e:
             print("EMAIL ERROR:", e)
             messages.error(request, "Failed to send OTP. Try again later.")
             return redirect("accounts:signup")
-
+ 
         request.session["verify_user_id"] = user.id
         return redirect("accounts:verify_signup_otp")
-    return render(request,'accounts/auth/signup.html',{'error':error,'success':success})
-
+ 
+    return render(request, 'accounts/auth/signup.html',
+                  {'error': error, 'success': success, **context})
+ 
+ 
 @never_cache
 def admin_login(request):
     # Already logged in as ADMIN
