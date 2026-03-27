@@ -1,0 +1,367 @@
+{% extends "base_products.html" %}
+{% load static %}
+{% block title %}My Referral – Kiddora{% endblock %}
+{% block filter_sidebar %}{% endblock %}
+
+{% block content %}
+<style>
+    .ref-wrap { 
+        max-width: 780px; 
+        margin: 0 auto; 
+        padding: 20px 15px; 
+    }
+    .ref-hdr { 
+        margin-bottom: 28px; 
+    }
+    .ref-hdr h2 { 
+        font-size: 24px; 
+        font-weight: 800; 
+        color: #222; 
+        display: flex; 
+        align-items: center; 
+        gap: 12px; 
+    }
+    .ref-hdr h2 i { 
+        color: #f06292; 
+    }
+
+    /* Main Code Card */
+    .ref-code-card {
+        background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+        border: 2px solid #f8bbd9;
+        border-radius: 20px;
+        padding: 32px 28px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    .ref-code-card p {
+        font-size: 15px;
+        color: #555;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    /* Referral Code Box */
+    .ref-code-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        background: #fff;
+        border: 2px dashed #f06292;
+        border-radius: 14px;
+        padding: 16px 32px;
+        margin-bottom: 20px;
+    }
+    .ref-code-box span {
+        font-size: 28px;
+        font-weight: 900;
+        letter-spacing: 4px;
+        color: #e91e63;
+        font-family: monospace;
+    }
+    .btn-copy {
+        padding: 10px 20px;
+        background: #f06292;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+    }
+    .btn-copy:hover {
+        background: #e91e63;
+        transform: translateY(-2px);
+    }
+
+    /* Shareable Link Section - Improved */
+    .share-link-section {
+        background: #fff;
+        border: 1.5px solid #eee;
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    .share-link-section label {
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 8px;
+        display: block;
+    }
+    .share-link-group {
+        display: flex;
+        gap: 10px;
+    }
+    .share-link-group input {
+        flex: 1;
+        padding: 14px 16px;
+        border: 1.5px solid #ddd;
+        border-radius: 10px;
+        font-size: 14px;
+        background: #fafafa;
+    }
+    .share-link-group input:focus {
+        outline: none;
+        border-color: #f06292;
+    }
+    .btn-link-copy {
+        padding: 14px 22px;
+        background: #f06292;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.3s;
+    }
+    .btn-link-copy:hover {
+        background: #e91e63;
+    }
+
+    /* Stats */
+    .ref-stats {
+        display: flex;
+        gap: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+    .ref-stat {
+        background: #fff;
+        border: 1.5px solid #f0f0f0;
+        border-radius: 12px;
+        padding: 16px 28px;
+        text-align: center;
+        min-width: 140px;
+    }
+    .ref-stat .num {
+        font-size: 32px;
+        font-weight: 900;
+        color: #f06292;
+    }
+    .ref-stat .lbl {
+        font-size: 13px;
+        color: #777;
+        margin-top: 4px;
+    }
+
+    /* How it works */
+    .ref-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    .ref-step {
+        background: #fff;
+        border: 1.5px solid #eee;
+        border-radius: 14px;
+        padding: 22px 18px;
+        text-align: center;
+    }
+    .ref-step .icon {
+        font-size: 2.2rem;
+        margin-bottom: 12px;
+    }
+    .ref-step h4 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #222;
+        margin-bottom: 6px;
+    }
+    .ref-step p {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    /* Table */
+    .ref-table-wrap {
+        background: #fff;
+        border: 1.5px solid #eee;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 40px;
+    }
+    .ref-table-title {
+        padding: 18px 24px;
+        font-size: 16px;
+        font-weight: 800;
+        color: #222;
+        border-bottom: 1.5px solid #f5f5f5;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th {
+        padding: 14px 20px;
+        background: #fafafa;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 700;
+        color: #777;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    td {
+        padding: 14px 20px;
+        border-top: 1px solid #f5f5f5;
+        font-size: 14px;
+        color: #333;
+    }
+    tr:hover td {
+        background: #fff9fb;
+    }
+    .coupon-pill {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .empty-ref {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+</style>
+
+<div class="ref-wrap">
+    <div class="ref-hdr">
+        <h2><i class="fa-solid fa-gift"></i> My Referral Programme</h2>
+    </div>
+
+    <!-- Referral Code Card -->
+    <div class="ref-code-card">
+        <p>Share your unique code with friends. When they sign up and place their first order, you both get rewarded!</p>
+        
+        <div class="ref-code-box">
+            <span id="refCode">{{ referral_code.code }}</span>
+            <button class="btn-copy" onclick="copyCode()">
+                <i class="fa fa-copy" id="copyIcon"></i> Copy Code
+            </button>
+        </div>
+
+        <!-- Shareable Link Section - Properly Styled -->
+        <div class="share-link-section">
+            <label><strong>Shareable Referral Link</strong></label>
+            <div class="share-link-group">
+                <input type="text" 
+                       id="refLink" 
+                       value="{{ referral_link }}" 
+                       readonly>
+                <button class="btn-link-copy" onclick="copyLink()">
+                    <i class="fa fa-link"></i> Copy Link
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="ref-stats">
+            <div class="ref-stat">
+                <div class="num">{{ total_uses }}</div>
+                <div class="lbl">Friends Referred</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="ref-steps">
+        <div class="ref-step">
+            <div class="icon">📤</div>
+            <h4>Share Your Code</h4>
+            <p>Send your unique referral code to friends and family.</p>
+        </div>
+        <div class="ref-step">
+            <div class="icon">🛒</div>
+            <h4>Friend Signs Up</h4>
+            <p>They register using your code and place their first order.</p>
+        </div>
+        <div class="ref-step">
+            <div class="icon">🎁</div>
+            <h4>Both Get Rewarded</h4>
+            <p>You and your friend receive discount coupons automatically.</p>
+        </div>
+    </div>
+
+    <!-- Referral History -->
+    <div class="ref-table-wrap">
+        <div class="ref-table-title">
+            <i class="fa fa-users" style="color:#f06292;"></i> 
+            Friends Who Used Your Code
+        </div>
+        
+        {% if uses %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Friend Email</th>
+                    <th>Coupon Awarded</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for use in uses %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ use.referred_user.email }}</td>
+                    <td>
+                        {% if use.coupon_awarded %}
+                            <span class="coupon-pill">{{ use.coupon_awarded.code }}</span>
+                        {% else %}
+                            <span style="color:#aaa;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ use.created_at|date:"d M Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-ref">
+            <i class="fa-regular fa-face-smile" style="font-size:2.5rem; display:block; margin-bottom:12px;"></i>
+            No one has used your referral code yet.<br>
+            Start sharing to earn rewards!
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyCode() {
+    const code = document.getElementById('refCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        const icon = document.getElementById('copyIcon');
+        icon.className = 'fa fa-check';
+        setTimeout(() => { icon.className = 'fa fa-copy'; }, 1800);
+    });
+}
+
+function copyLink() {
+    const link = document.getElementById('refLink').value;
+    navigator.clipboard.writeText(link).then(() => {
+        alert('Referral link copied successfully!');
+    }).catch(() => {
+        // Fallback for older browsers
+        const el = document.createElement('textarea');
+        el.value = link;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        alert('Referral link copied!');
+    });
+}
+</script>
+{% endblock %}

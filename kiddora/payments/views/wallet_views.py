@@ -171,31 +171,118 @@ def admin_wallet_detail(request, txn_id):
 @never_cache
 @admin_login_required
 def admin_payment_list(request):
+    from shopcore.models import Order as ShopOrder
+    import itertools
+ 
     search   = request.GET.get("search", "").strip()
     method_f = request.GET.get("method", "")
     status_f = request.GET.get("status", "")
-
-    qs = Payment.objects.select_related("order__user").order_by("-created_at")
-
+ 
+    # ── 1. Online payments (PayPal + Wallet) from Payment model ──
+    payment_qs = (
+        Payment.objects
+        .select_related("order__user")
+        .order_by("-created_at")
+    )
     if search:
-        qs = qs.filter(
+        payment_qs = payment_qs.filter(
             Q(order__order_id__icontains=search)
             | Q(order__user__email__icontains=search)
+            | Q(order__user__full_name__icontains=search)
             | Q(paypal_order_id__icontains=search)
             | Q(paypal_capture_id__icontains=search)
         )
-    if method_f:
-        qs = qs.filter(payment_method=method_f)
+    if method_f and method_f != "COD":
+        payment_qs = payment_qs.filter(payment_method=method_f)
+    elif method_f == "COD":
+        payment_qs = payment_qs.none()   # COD has no Payment rows
+ 
     if status_f:
-        qs = qs.filter(payment_status=status_f)
-
-    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+        payment_qs = payment_qs.filter(payment_status=status_f)
+ 
+    # Convert Payment queryset rows to unified dicts
+    online_rows = []
+    for p in payment_qs:
+        online_rows.append({
+            "source":           "payment",
+            "txn_id_display":   p.txn_id_display,
+            "order":            p.order,
+            "payment_method":   p.payment_method,
+            "amount":           p.amount,
+            "payment_status":   p.payment_status,
+            "paypal_capture_id": p.paypal_capture_id or "",
+            "initiated_at":     p.initiated_at,
+            "completed_at":     p.completed_at,
+            "sort_dt":          p.created_at,
+        })
+ 
+    # ── 2. COD orders (no Payment row — derive from Order) ──
+    cod_rows = []
+    if not method_f or method_f == "COD":
+        cod_qs = (
+            ShopOrder.objects
+            .filter(payment_method="COD")
+            .select_related("user")
+            .order_by("-order_date")
+        )
+        if search:
+            cod_qs = cod_qs.filter(
+                Q(order_id__icontains=search)
+                | Q(user__email__icontains=search)
+                | Q(user__full_name__icontains=search)
+            )
+        # Map order status → payment status for filtering
+        # COD: PENDING/CONFIRMED/SHIPPED/OUT_FOR_DELIVERY → PENDING
+        #      DELIVERED → PAID   CANCELLED → CANCELLED
+        def _cod_pay_status(order):
+            if order.order_status == "DELIVERED":
+                return "PAID"
+            elif order.order_status == "CANCELLED":
+                return "CANCELLED"
+            return "PENDING"
+ 
+        for o in cod_qs:
+            ps = _cod_pay_status(o)
+            if status_f and ps != status_f:
+                continue
+            cod_rows.append({
+                "source":           "cod",
+                "txn_id_display":   f"COD-{o.order_id}",
+                "order":            o,
+                "payment_method":   "COD",
+                "amount":           o.final_amount,
+                "payment_status":   ps,
+                "paypal_capture_id": "",
+                "initiated_at":     o.order_date,
+                "completed_at":     o.delivered_at,
+                "sort_dt":          o.order_date,
+            })
+ 
+    # ── 3. Merge + sort by date descending ──────────────────
+    all_rows = sorted(
+        online_rows + cod_rows,
+        key=lambda r: r["sort_dt"] if r["sort_dt"] else timezone.now().replace(year=2000),
+        reverse=True,
+    )
+ 
+    # ── 4. Manual pagination ─────────────────────────────────
+    from django.core.paginator import Paginator as DjPaginator
+    paginator = DjPaginator(all_rows, 20)
+    page_obj  = paginator.get_page(request.GET.get("page"))
+ 
+    # Build method choices including COD
+    method_choices = [
+        ("PAYPAL", "PayPal"),
+        ("WALLET", "Wallet"),
+        ("COD",    "Cash on Delivery"),
+    ]
+    status_choices = Payment.PAYMENT_STATUS_CHOICES
 
     return render(request, "payments/admin_payment_list.html", {
         "page_obj":       page_obj,
         "search":         search,
         "method_f":       method_f,
         "status_f":       status_f,
-        "method_choices": Payment.PAYMENT_METHOD_CHOICES,
-        "status_choices": Payment.PAYMENT_STATUS_CHOICES,
+        "method_choices": method_choices,
+        "status_choices": status_choices,
     })

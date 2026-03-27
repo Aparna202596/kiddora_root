@@ -52,7 +52,7 @@ def _award_referral_coupon(referrer) -> Coupon | None:
         return offer.referral_coupon
 
     # Auto-generate a personal one-time 10% coupon valid 30 days
-    code = f"REF-{referrer.referral_code[-6:]}-{uuid.uuid4().hex[:4].upper()}"
+    code = f"REF-{referrer.referral_record.code[-6:]}-{uuid.uuid4().hex[:4].upper()}"
     coupon = Coupon.objects.create(
         code             = code,
         discount_type    = "PERCENT",
@@ -130,9 +130,7 @@ def my_referrals(request):
     rc = get_or_create_referral_record(request.user)   # updated call
     uses = rc.uses.select_related("referred_user", "coupon_awarded").order_by("-created_at")
 
-    referral_link = request.build_absolute_uri(
-        f"/accounts/signup/?ref={rc.token}"
-    )
+    referral_link = request.build_absolute_uri(f"/accounts/user/signup/?ref={rc.token}")
 
     return render(request, "referral/my_referrals.html", {
         "referral_code": rc,

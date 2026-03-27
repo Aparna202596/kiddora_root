@@ -8,9 +8,9 @@
 <div class="container">
   <div class="page-hdr">
     <h2><i class="fa-solid fa-wallet" style="color:#f06292;"></i> Wallet Transactions</h2>
-    <a href="{% url 'payments:admin_payment_list' %}" class="btn-add" style="background:#f5f5f5;color:#555;border:1.5px solid #ddd;">
+    {% comment %} <a href="{% url 'payments:admin_payment_list' %}" class="btn-add" style="background:#f5f5f5;color:#555;border:1.5px solid #ddd;">
       <i class="fa-solid fa-receipt"></i> All Payments
-    </a>
+    </a> {% endcomment %}
   </div>
 
   {% if messages %}

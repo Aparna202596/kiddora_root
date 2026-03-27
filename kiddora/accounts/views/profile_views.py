@@ -23,12 +23,17 @@ def user_profile(request):
     user = request.user
     addresses = UserAddress.objects.filter(user=user)
     rc = get_or_create_referral_record(request.user)
-    referral_link = request.build_absolute_uri(f"/accounts/signup/?ref={rc.token}")
+    referral_link = request.build_absolute_uri(f"/accounts/user/signup/?ref={rc.token}")
     orders = Order.objects.filter(user=user).order_by("-order_date")
     return render(
         request,
         "accounts/profile/profile.html",
-        {"user": user, "addresses": addresses, "referral_link": referral_link, "orders": orders,},)
+        {"user": user, 
+        "addresses": addresses, 
+        "referral_link": referral_link,
+        #"referral_token": rc.token, 
+        "referral_code": rc.code,
+        "orders": orders,},)
 
 @never_cache
 @user_login_required

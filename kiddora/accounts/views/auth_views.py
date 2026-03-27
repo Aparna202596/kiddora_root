@@ -1,41 +1,31 @@
 from django.views.decorators.cache import never_cache
+from shopcore.views.referral_views import process_referral_on_signup
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from accounts.decorators import user_login_required,admin_login_required
 from django.utils.crypto import get_random_string
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
-from accounts.models import *
+from accounts.models import CustomUser
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
 from django.db import transaction 
 import re
 
-
 User = get_user_model()
 
 OTP_EXPIRY_MINUTES=5
-
+#   ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────
 def generate_otp():
     """Return a 6-digit numeric OTP."""
     return get_random_string(length=6, allowed_chars="0123456789")
 
-#User_logout
-@never_cache
-@user_login_required
-def user_logout(request):
-    logout(request)
-    request.session.flush()
-    response = redirect("shopcore:anonymous_home")
-    response.delete_cookie("remember_user")
-    return response
-
-#Google_login
+#  ────────────────────────────────────────────────── GOOGLE LOGIN ──────────────────────────────────────────────────
 @never_cache
 def google_login(request):
     return redirect("/accounts/google/login/")
 
-#User_login
+#  ────────────────────────────────────────────────── USER LOGIN ──────────────────────────────────────────────────
 @never_cache
 def user_login(request):
     if request.user.is_authenticated and request.user.role == CustomUser.ROLE_CUSTOMER:
@@ -82,15 +72,14 @@ def user_login(request):
     
     return render(request,"accounts/auth/login.html",context)
 
-#Signup
+#  ────────────────────────────────────────────────── USER SIGNUP ──────────────────────────────────────────────────
 @never_cache
 def user_signup(request):
-    error   = ''
+    error = ''
     success = ''
     context = {}
- 
-    # ── Pre-fill referral info from invite URL (?ref=<uuid>) ──
-    referral_token        = request.GET.get("ref", "").strip()
+
+    referral_token = request.GET.get("ref", "").strip()
     prefill_referral_code = ""
     if referral_token:
         try:
@@ -99,21 +88,21 @@ def user_signup(request):
             prefill_referral_code = rc.code
         except Exception:
             referral_token = ""   # invalid token — ignore silently
- 
+
     context["referral_token"]        = referral_token
     context["prefill_referral_code"] = prefill_referral_code
- 
+
     if request.method == 'POST':
         form_data = request.POST.dict()
         context["form_data"] = form_data
- 
+
         username          = request.POST.get('username', '').strip()
         email             = request.POST['email']
         password1         = request.POST['password1']
         password2         = request.POST['password2']
         referral_code_str = request.POST.get('referral_code', '').strip()
         referral_token    = request.POST.get('referral_token', '').strip()
- 
+
         # Validation
         if User.objects.filter(username__iexact=username).exists():
             messages.error(request, "Username already exists!")
@@ -136,25 +125,25 @@ def user_signup(request):
         elif password1 != password2:
             messages.error(request, "Passwords do not match!")
             return render(request, 'accounts/auth/signup.html', context)
- 
+
         with transaction.atomic():
             user = User.objects.create_user(
-                username=email.split("@")[0],
-                email=email,
-                password=password1,
-                role=CustomUser.ROLE_CUSTOMER,
-                is_active=False,
-                email_verified=False,
+                username = email.split("@")[0],
+                email = email,
+                password = password1,
+                role = CustomUser.ROLE_CUSTOMER,
+                is_active = False,
+                email_verified = False,
             )
- 
-        user.otp          = generate_otp()
+
+        user.otp = generate_otp()
         user.otp_created_at = timezone.now()
         user.save()
- 
-        # ── Process referral AFTER user is created ──────────
+
+        # Process referral AFTER user is created 
         if referral_code_str or referral_token:
             try:
-                from shopcore.views.referral_views import process_referral_on_signup
+                
                 process_referral_on_signup(
                     new_user=user,
                     referral_code_str=referral_code_str,
@@ -190,7 +179,16 @@ def user_signup(request):
     return render(request, 'accounts/auth/signup.html',
                   {'error': error, 'success': success, **context})
  
- 
+ #   ────────────────────────────────────────────────── USER LOGOUT ──────────────────────────────────────────────────
+@never_cache
+@user_login_required
+def user_logout(request):
+    logout(request)
+    request.session.flush()
+    response = redirect("shopcore:anonymous_home")
+    response.delete_cookie("remember_user")
+    return response
+
 @never_cache
 def admin_login(request):
     # Already logged in as ADMIN

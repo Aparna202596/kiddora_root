@@ -79,16 +79,17 @@
                 <label>Phone</label>
                 <div class="input-wrapper">
                     <input type="text" name="phone" placeholder="Phone Number"
-                           value="{{ request.user.phone|default:'' }}" disabled>
+                            value="{{ request.user.phone|default:'' }}" disabled>
                 </div>
             </div>
 
             <!-- Referral Code + Shareable Link -->
             <div class="profile-field">
-                <label>Referral Code</label>
+                <label>Referral Code</label> 
                 <div class="input-wrapper">
-                    <input type="text" value="{{ request.user.referral_code|default:'—' }}"
-                           disabled readonly>
+                    <input type="text" 
+                        value="{{ referral_code|default:'—' }}" 
+                        disabled readonly>
                 </div>
                 {% if referral_link %}
                 <div class="ref-link-row">

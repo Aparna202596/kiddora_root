@@ -1,16 +1,11 @@
 {% extends "base_admin.html" %}
 {% load static %}
 {% block title %}Payments – Kiddora Admin{% endblock %}
-
 {% block content %}
 {% include "admin_list_style.html" %}
-
 <div class="container">
   <div class="page-hdr">
     <h2><i class="fa-solid fa-receipt" style="color:#f06292;"></i> Payments</h2>
-    <a href="{% url 'payments:admin_wallet_list' %}" class="btn-add" style="background:#f5f5f5;color:#555;border:1.5px solid #ddd;">
-      <i class="fa-solid fa-wallet"></i> Wallet Transactions
-    </a>
   </div>
 
   {% if messages %}
@@ -29,14 +24,16 @@
     <input type="text" name="search" value="{{ search }}"
            placeholder="Order ID, email, PayPal ID…" style="width:220px;">
 
-    <select name="method" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+    <select name="method"
+            style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
       <option value="">All Methods</option>
       {% for val, label in method_choices %}
       <option value="{{ val }}" {% if method_f == val %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
 
-    <select name="status" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
+    <select name="status"
+            style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
       <option value="">All Statuses</option>
       {% for val, label in status_choices %}
       <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ label }}</option>
@@ -68,58 +65,87 @@
         </tr>
       </thead>
       <tbody>
-      {% for payment in page_obj %}
+      {% for row in page_obj %}
         <tr>
           <td>{{ forloop.counter }}</td>
-          <td style="font-family:monospace;font-size:11px;color:#888;">{{ payment.txn_id_display }}</td>
+
+          <!-- Transaction ID -->
+          <td style="font-family:monospace;font-size:11px;color:#888;">
+            {{ row.txn_id_display }}
+          </td>
+
+          <!-- Order ID -->
           <td>
-            <a href="{% url 'shopcore:admin_order_detail' order_id=payment.order.order_id %}"
+            <a href="{% url 'shopcore:admin_order_detail' order_id=row.order.order_id %}"
                style="color:#f06292;font-weight:600;font-size:13px;text-decoration:none;">
-              {{ payment.order.order_id }}
+              {{ row.order.order_id }}
             </a>
           </td>
+
+          <!-- Customer -->
           <td>
-            {{ payment.order.user.full_name|default:payment.order.user.email }}
-            <br><small style="color:#aaa;">{{ payment.order.user.email }}</small>
+            {% if row.source == "cod" %}
+              {{ row.order.user.full_name|default:row.order.user.email }}
+              <br><small style="color:#aaa;">{{ row.order.user.email }}</small>
+            {% else %}
+              {{ row.order.user.full_name|default:row.order.user.email }}
+              <br><small style="color:#aaa;">{{ row.order.user.email }}</small>
+            {% endif %}
           </td>
+
+          <!-- Method badge -->
           <td>
-            {% if payment.payment_method == "PAYPAL" %}
+            {% if row.payment_method == "PAYPAL" %}
               <span class="badge" style="background:#e8f4fd;color:#003087;">🅿️ PayPal</span>
-            {% elif payment.payment_method == "WALLET" %}
+            {% elif row.payment_method == "WALLET" %}
               <span class="badge" style="background:#f3e5f5;color:#7b1fa2;">💰 Wallet</span>
+            {% elif row.payment_method == "COD" %}
+              <span class="badge" style="background:#fff8e1;color:#b45309;">💵 COD</span>
             {% else %}
-              <span class="badge" style="background:#f5f5f5;color:#666;">{{ payment.get_payment_method_display }}</span>
+              <span class="badge" style="background:#f5f5f5;color:#666;">{{ row.payment_method }}</span>
             {% endif %}
           </td>
-          <td style="font-weight:700;">₹{{ payment.amount|floatformat:2 }}</td>
+
+          <!-- Amount -->
+          <td style="font-weight:700;">₹{{ row.amount|floatformat:2 }}</td>
+
+          <!-- Status badge -->
           <td>
-            {% if payment.payment_status == "PAID" %}
-              <span class="badge" style="background:#e6f9f0;color:#1a7a4a;">Paid</span>
-            {% elif payment.payment_status == "FAILED" %}
-              <span class="badge" style="background:#fdecea;color:#c0392b;">Failed</span>
-            {% elif payment.payment_status == "INITIATED" %}
-              <span class="badge" style="background:#fff8e1;color:#b07d00;">Initiated</span>
-            {% elif payment.payment_status == "PENDING" %}
-              <span class="badge" style="background:#f5f5f5;color:#888;">Pending</span>
-            {% elif payment.payment_status == "REFUNDED" %}
-              <span class="badge" style="background:#e8f4fd;color:#1565c0;">Refunded</span>
-            {% elif payment.payment_status == "CANCELLED" %}
-              <span class="badge" style="background:#f5f5f5;color:#888;">Cancelled</span>
+            {% if row.payment_status == "PAID" %}
+              <span class="badge" style="background:#e6f9f0;color:#1a7a4a;">✔ Paid</span>
+            {% elif row.payment_status == "FAILED" %}
+              <span class="badge" style="background:#fdecea;color:#c0392b;">✕ Failed</span>
+            {% elif row.payment_status == "INITIATED" %}
+              <span class="badge" style="background:#fff8e1;color:#b07d00;">⏳ Initiated</span>
+            {% elif row.payment_status == "PENDING" %}
+              <span class="badge" style="background:#f5f5f5;color:#888;">⏸ Pending</span>
+            {% elif row.payment_status == "REFUNDED" %}
+              <span class="badge" style="background:#e8f4fd;color:#1565c0;">↩ Refunded</span>
+            {% elif row.payment_status == "CANCELLED" %}
+              <span class="badge" style="background:#fdecea;color:#888;">🚫 Cancelled</span>
             {% else %}
-              <span class="badge" style="background:#f5f5f5;color:#666;">{{ payment.get_payment_status_display }}</span>
+              <span class="badge" style="background:#f5f5f5;color:#666;">{{ row.payment_status }}</span>
             {% endif %}
           </td>
+
+          <!-- PayPal Capture ID (blank for COD/Wallet) -->
           <td style="font-family:monospace;font-size:11px;color:#888;">
-            {{ payment.paypal_capture_id|default:"—" }}
+            {{ row.paypal_capture_id|default:"—" }}
           </td>
+
+          <!-- Initiated -->
           <td style="font-size:12px;color:#888;">
-            {{ payment.initiated_at|date:"d M Y, H:i"|default:"—" }}
+            {% if row.initiated_at %}{{ row.initiated_at|date:"d M Y, H:i" }}{% else %}—{% endif %}
           </td>
+
+          <!-- Completed -->
           <td style="font-size:12px;color:#888;">
-            {{ payment.completed_at|date:"d M Y, H:i"|default:"—" }}
+            {% if row.completed_at %}{{ row.completed_at|date:"d M Y, H:i" }}{% else %}—{% endif %}
           </td>
+
+          <!-- Action -->
           <td>
-            <a href="{% url 'shopcore:admin_order_detail' order_id=payment.order.order_id %}"
+            <a href="{% url 'shopcore:admin_order_detail' order_id=row.order.order_id %}"
                style="color:#f06292;font-size:13px;font-weight:600;text-decoration:none;">
               Order ↗
             </a>
@@ -129,7 +155,8 @@
         <tr>
           <td colspan="11">
             <div style="text-align:center;padding:32px;color:#aaa;">
-              <i class="fa-solid fa-receipt" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+              <i class="fa-solid fa-receipt"
+                 style="font-size:2rem;display:block;margin-bottom:8px;"></i>
               No payments found.
             </div>
           </td>
