@@ -89,19 +89,19 @@ def user_signup(request):
         except Exception:
             referral_token = ""   # invalid token — ignore silently
 
-    context["referral_token"]        = referral_token
+    context["referral_token"] = referral_token
     context["prefill_referral_code"] = prefill_referral_code
 
     if request.method == 'POST':
         form_data = request.POST.dict()
         context["form_data"] = form_data
 
-        username          = request.POST.get('username', '').strip()
-        email             = request.POST['email']
-        password1         = request.POST['password1']
-        password2         = request.POST['password2']
+        username = request.POST.get('username', '').strip()
+        email = request.POST['email']
+        password1 = request.POST['password1']
+        password2 = request.POST['password2']
         referral_code_str = request.POST.get('referral_code', '').strip()
-        referral_token    = request.POST.get('referral_token', '').strip()
+        referral_token = request.POST.get('referral_token', '').strip()
 
         # Validation
         if User.objects.filter(username__iexact=username).exists():
@@ -143,16 +143,12 @@ def user_signup(request):
         # Process referral AFTER user is created 
         if referral_code_str or referral_token:
             try:
-                
-                process_referral_on_signup(
-                    new_user=user,
-                    referral_code_str=referral_code_str,
-                    referral_token=referral_token,
-                )
+                process_referral_on_signup(new_user=user, 
+                                            referral_code_str=referral_code_str, 
+                                            referral_token=referral_token)
             except Exception as e:
                 # Referral failure must never block signup
                 print("REFERRAL ERROR:", e)
- 
         try:
             send_mail(
                 subject="Verify your Kiddora account",
@@ -162,8 +158,7 @@ def user_signup(request):
                     f"Your One-Time Password (OTP) is {user.otp}.\n"
                     f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
                     "If you did not request this, please ignore this email.\n\n"
-                    "Best regards,\nKiddora Team"
-                ),
+                    "Best regards,\nKiddora Team"),
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[user.email],
                 fail_silently=False,
@@ -172,14 +167,14 @@ def user_signup(request):
             print("EMAIL ERROR:", e)
             messages.error(request, "Failed to send OTP. Try again later.")
             return redirect("accounts:signup")
- 
+
         request.session["verify_user_id"] = user.id
         return redirect("accounts:verify_signup_otp")
- 
+
     return render(request, 'accounts/auth/signup.html',
                   {'error': error, 'success': success, **context})
- 
- #   ────────────────────────────────────────────────── USER LOGOUT ──────────────────────────────────────────────────
+
+#   ────────────────────────────────────────────────── USER LOGOUT ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def user_logout(request):
@@ -189,9 +184,10 @@ def user_logout(request):
     response.delete_cookie("remember_user")
     return response
 
+#  ────────────────────────────────────────────────── ADMIN LOGIN ──────────────────────────────────────────────────
 @never_cache
 def admin_login(request):
-    # Already logged in as ADMIN
+    # If already logged in as ADMIN
     if request.user.is_authenticated:
         if request.user.role == CustomUser.ROLE_ADMIN:
             return redirect("accounts:admin_dashboard")
@@ -222,7 +218,7 @@ def admin_login(request):
             return redirect("accounts:admin_login")
 
         login(request, user)
-
+        request.session.set_expiry(0)
         response = redirect("accounts:admin_dashboard")
 
         if remember_me:
@@ -231,6 +227,7 @@ def admin_login(request):
         return response
     return render(request, "accounts/admin/admin_login.html")
 
+#  ────────────────────────────────────────────────── ADMIN LOGOUT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_logout(request):

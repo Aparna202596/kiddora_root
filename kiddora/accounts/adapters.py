@@ -7,10 +7,6 @@ from django.contrib import messages
 User = get_user_model()
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
-        """
-        Auto-link social account if a single user with same email exists.
-        Prevent linking if multiple users exist with same email.
-        """
         email = sociallogin.user.email
         if not email:
             return
@@ -21,6 +17,21 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         except MultipleObjectsReturned:
             messages.error(request,"Multiple accounts found with this email. Please contact support.")
             return
+        
+        # Google has already verified the email, so it's safe to activate
+        changed = False
+        if not user.is_active:
+            user.is_active = True
+            changed = True
+        if not user.email_verified:
+            user.email_verified = True
+            changed = True
+        if not user.role:
+            user.role = CustomUser.ROLE_CUSTOMER
+            changed = True
+        if changed:
+            user.save()
+
         if not sociallogin.is_existing:
             sociallogin.connect(request, user)
 

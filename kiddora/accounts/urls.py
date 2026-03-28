@@ -64,6 +64,7 @@ urlpatterns = [
     path("user/addresses/delete/<int:address_id>", address_views.address_delete, name="address_delete"),
 
     #ERROR
+    path('errors/400/',error_views.handler400,name='400'),
     path('errors/403/',error_views.handler403,name='403'),
     path('errors/404/',error_views.handler404,name='404'),
     path('errors/500/',error_views.handler500,name='500'),

@@ -17,6 +17,7 @@ User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 5
 
+#  ────────────────────────────────────────────────── USER PROFILE ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def user_profile(request):
@@ -31,10 +32,10 @@ def user_profile(request):
         {"user": user, 
         "addresses": addresses, 
         "referral_link": referral_link,
-        #"referral_token": rc.token, 
         "referral_code": rc.code,
         "orders": orders,},)
 
+#  ────────────────────────────────────────────────── DELETE PROFILE ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def delete_profile(request):
@@ -63,7 +64,7 @@ def delete_profile(request):
 
     return render(request, "accounts/profile/delete_profile.html", {"user": user})
 
-
+#  ────────────────────────────────────────────────── EDIT PROFILE ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def edit_profile(request):
@@ -91,6 +92,8 @@ def edit_profile(request):
         return redirect("accounts:user_profile")
     return render(request, "accounts/profile/edit_profile.html", {"user": user})
 
+#  ────────────────────────────────────────────────── USER PROFILE ──────────────────────────────────────────────────
+@never_cache
 @user_login_required
 def change_password(request):
     if request.method == "POST":
@@ -122,6 +125,8 @@ def change_password(request):
         return redirect("accounts:user_profile")
     return render(request, "accounts/profile/change_password.html")
 
+#  ────────────────────────────────────────────────── CHANGE EMAIL ──────────────────────────────────────────────────
+@never_cache
 @user_login_required
 def change_email(request):
     if request.method == "POST":
@@ -161,6 +166,8 @@ def change_email(request):
     
     return render(request, "accounts/profile/change_email.html")
 
+#  ────────────────────────────────────────────────── VERIFY EMAIL UPDATE ──────────────────────────────────────────────────
+@never_cache
 @user_login_required
 def verify_email_update(request):
     user = request.user

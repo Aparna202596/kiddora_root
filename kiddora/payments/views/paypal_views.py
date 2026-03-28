@@ -1,41 +1,32 @@
 from __future__ import annotations
 
-import json
-import logging
-import re
-from decimal import Decimal, ROUND_HALF_UP
-
-import requests
-from django.conf import settings
-from django.contrib import messages
-from django.db import transaction
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-
 from accounts.decorators import user_login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.utils import timezone
+from django.http import HttpResponse
+from django.conf import settings
+from django.db import transaction
+from decimal import Decimal, ROUND_HALF_UP
+
 from payments.models import Payment, PaymentLog, Wallet
-from shopcore.models import Order, Coupon
-from accounts.models import UserAddress
+from shopcore.models import Order
+
+import requests
+import logging
+import json
+import re
 
 logger = logging.getLogger(__name__)
 
 
-# ─────────────────────────────────────────────────────────────
-# WALLET HELPER
-# ─────────────────────────────────────────────────────────────
-
+#   ────────────────────────────────────────────────── WALLET HELPER ──────────────────────────────────────────────────
 def _get_wallet_balance(user) -> Decimal:
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet.balance
-
-
-# ─────────────────────────────────────────────────────────────
-# PAYPAL API HELPERS
-# ─────────────────────────────────────────────────────────────
 
 def _paypal_base_url() -> str:
     mode = getattr(settings, "PAYPAL_MODE", "sandbox")
@@ -44,7 +35,6 @@ def _paypal_base_url() -> str:
         if mode == "sandbox"
         else "https://api-m.paypal.com"
     )
-
 
 def _paypal_access_token() -> str:
     url  = f"{_paypal_base_url()}/v1/oauth2/token"
@@ -57,13 +47,11 @@ def _paypal_access_token() -> str:
     resp.raise_for_status()
     return resp.json()["access_token"]
 
-
 def _paypal_headers() -> dict:
     return {
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
         "Authorization": f"Bearer {_paypal_access_token()}",
     }
-
 
 def _sanitise_reference_id(order_id: str) -> str:
     """
@@ -82,19 +70,9 @@ def _format_amount(amount: Decimal) -> str:
     """
     return str(amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
-
 def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> dict:
-    """
-    Create a PayPal order via the v2 Orders API.
 
-    Common 422 causes fixed here:
-    - reference_id sanitised (no special chars)
-    - amount formatted to exactly 2 dp
-    - currency defaults to INR (matches most Indian sandbox accounts)
-    - full error body is logged so you can see PayPal's `details` array
-    """
     url = f"{_paypal_base_url()}/v2/checkout/orders"
-
     body = {
         "intent": "CAPTURE",
         "purchase_units": [
@@ -106,12 +84,26 @@ def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> d
                 },
             }
         ],
+        "application_context": {
+            "return_url": "http://localhost:8000/payments/paypal/callback/",
+            "cancel_url": "http://localhost:8000/payments/paypal/cancel/",
+        },
     }
+    # body = {
+    #     "intent": "CAPTURE",
+    #     "purchase_units": [
+    #         {
+    #             "reference_id": _sanitise_reference_id(reference_id),
+    #             "amount": {
+    #                 "currency_code": currency,
+    #                 "value": _format_amount(amount),
+    #             },
+    #         }
+    #     ],
+    # }
 
     resp = requests.post(url, headers=_paypal_headers(), json=body, timeout=15)
 
-    # Log the full response body BEFORE raise_for_status so we always see
-    # PayPal's `details` array when debugging 4xx errors.
     if not resp.ok:
         logger.error(
             "PayPal create order %s — response body: %s",
@@ -121,7 +113,6 @@ def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> d
 
     resp.raise_for_status()
     return resp.json()
-
 
 def _paypal_capture_order(paypal_order_id: str) -> dict:
     url  = f"{_paypal_base_url()}/v2/checkout/orders/{paypal_order_id}/capture"
@@ -137,10 +128,7 @@ def _paypal_capture_order(paypal_order_id: str) -> dict:
     resp.raise_for_status()
     return resp.json()
 
-# ─────────────────────────────────────────────────────────────
-# STEP 1 – INITIATE PAYPAL PAYMENT
-# ─────────────────────────────────────────────────────────────
-
+#────────────────────────────────────────────────── INITIATE PAYPAL PAYMENT ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def initiate_paypal_payment(request, order_id):
@@ -149,9 +137,7 @@ def initiate_paypal_payment(request, order_id):
     if order.payment_status == "PAID":
         return redirect("shopcore:order_success", order_id=order.order_id)
 
-    # Use INR by default; override in settings.py with PAYPAL_CURRENCY = "USD"
-    # Make sure your PayPal sandbox account's receiving currency matches.
-    currency = getattr(settings, "PAYPAL_CURRENCY", "INR")
+    currency = getattr(settings, "PAYPAL_CURRENCY", "USD")
 
     try:
         pp_data = _paypal_create_order(
@@ -211,10 +197,7 @@ def initiate_paypal_payment(request, order_id):
 
     return redirect(approve_url)
 
-
-# ─────────────────────────────────────────────────────────────
-# STEP 2 – PAYPAL CALLBACK
-# ─────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────── PAYPAL CALLBACK ──────────────────────────────────────────────────
 
 @never_cache
 @user_login_required
@@ -384,7 +367,7 @@ def retry_payment(request, order_id):
 def paypal_webhook(request):
     try:
         payload = json.loads(request.body)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError: 
         return HttpResponse(status=400)
 
     event_type      = payload.get("event_type", "")
