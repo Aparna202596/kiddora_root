@@ -1,10 +1,12 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.core.exceptions import MultipleObjectsReturned
 from django.contrib.auth import get_user_model
-from accounts.models import *
 from django.contrib import messages
 
+from accounts.models import CustomUser
+
 User = get_user_model()
+# This adapter ensures that users logging in via social accounts are properly linked to existing accounts based on email, and that their status is updated accordingly.
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
         email = sociallogin.user.email
@@ -35,11 +37,10 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         if not sociallogin.is_existing:
             sociallogin.connect(request, user)
 
-
+# This method is called when a new social account is being created. 
+# It ensures that the new user is active, has a verified email, and is assigned a default role if not already set.
     def save_user(self, request, sociallogin, form=None):
-        """
-        Ensure social users are active and verified and have a role.
-        """
+
         user = super().save_user(request, sociallogin, form)
         if not user.role:
             user.role = CustomUser.ROLE_CUSTOMER

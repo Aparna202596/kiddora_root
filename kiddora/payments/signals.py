@@ -1,16 +1,15 @@
 from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.utils.timezone import now
+from django.dispatch import receiver
 
-from payments.models import *
-from shopcore.models import *
+from payments.models import Payment, WalletTransaction
 
 @receiver(post_save, sender=Payment)
 def auto_wallet_refund_on_failure(sender, instance, created, **kwargs):
-    # ✅ Only refund wallet payments, not PayPal failures
+
     if instance.payment_status != "FAILED":
         return
-    if instance.payment_method != "WALLET":  # ← ADD THIS CHECK
+    if instance.payment_method != "WALLET":
         return
     
     # Prevent double refund
@@ -22,11 +21,11 @@ def auto_wallet_refund_on_failure(sender, instance, created, **kwargs):
         return
 
     try:
-        wallet = instance.order.user.wallet  # ← can crash; wrap in try/except
+        wallet = instance.order.user.wallet 
     except Exception:
         return
 
-    wallet.balance += instance.amount  # ← use instance.amount, not order.final_amount
+    wallet.balance += instance.amount 
     wallet.save(update_fields=["balance"])
     WalletTransaction.objects.create(
         wallet=wallet,

@@ -1,15 +1,22 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
-from django.contrib import messages
-from products.models import (Category, SubCategory, Product, ProductVariant, ProductImage, Inventory, Color, AgeGroup)
-from shopcore.models import Review, Offer
-from django.db.models import Q, Min, Max, Count, Sum, Prefetch, Avg
-from django.core.paginator import Paginator
+from django.views.decorators.cache import never_cache
 from django.db.models.functions import Coalesce
+from django.core.paginator import Paginator
+from accounts.decorators import user_login_required
+from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Q, Min, Max, Sum, Prefetch, Avg
 from django.db.models import Value
-from shopcore.models import *
+from django.contrib import messages
+from django.utils import timezone
+from django.http import JsonResponse
 
-#  Build sidebar filter options from a filtered QS
+from products.models import Category, SubCategory, Product, Color, AgeGroup, ProductVariant
+from shopcore.models import Review, Offer
+from shopcore.models import Cart, CartItem, Wishlist, Order
+
+
+
+
+#  ────────────────────────────────────────────────── Build sidebar filter options from a filtered QS ──────────────────────────────────────────────────
 def get_filter_options(products_qs):
     colors = (Color.objects.filter(variants__product__in=products_qs, variants__is_active=True).distinct().order_by("color"))
     age_groups = (AgeGroup.objects.filter(variants__product__in=products_qs, variants__is_active=True).distinct().order_by("age"))
@@ -36,7 +43,7 @@ def get_filter_options(products_qs):
         "max_price": price_range["max_price"] or 0,
     }
 
-#  Build category tree from a filtered QS
+#   ────────────────────────────────────────────────── Build category tree from a filtered QS ──────────────────────────────────────────────────
 def build_category_tree(products_qs):
     active_sub_ids = products_qs.values_list("subcategory_id", flat=True).distinct()
     active_subs = SubCategory.objects.filter(id__in=active_sub_ids)
@@ -70,24 +77,18 @@ SORT_MAP = {
 }
 
 def _cart_wishlist_ctx(user):
-    """
-    Returns cart_variant_ids (set), wishlist_product_ids (set),
-    and cart_item_count (int) for authenticated users.
-    Safe for anonymous users — returns empty sets and 0.
-    Called by product_list and product_detail_view.
-    """
     if not user.is_authenticated:
         return {
-            "cart_variant_ids":     set(),
+            "cart_variant_ids": set(),
             "wishlist_product_ids": set(),
-            "cart_item_count":      0,
+            "cart_item_count": 0,
         }
     try:
         cart_variant_ids = set(user.cart.items.values_list("variant_id", flat=True))
-        cart_item_count  = user.cart.items.count()
+        cart_item_count = user.cart.items.count()
     except Cart.DoesNotExist:
         cart_variant_ids = set()
-        cart_item_count  = 0
+        cart_item_count = 0
     try:
         wishlist_product_ids = set(
             user.wishlist.items.values_list("product_id", flat=True)
@@ -95,12 +96,12 @@ def _cart_wishlist_ctx(user):
     except Wishlist.DoesNotExist:
         wishlist_product_ids = set()
     return {
-        "cart_variant_ids":     cart_variant_ids,
+        "cart_variant_ids": cart_variant_ids,
         "wishlist_product_ids": wishlist_product_ids,
-        "cart_item_count":      cart_item_count,
+        "cart_item_count": cart_item_count,
     }
 
-
+#  ────────────────────────────────────────────────── Appy Sort ──────────────────────────────────────────────────
 def _apply_sort(products, sort_by):
     if sort_by == "popularity":
         return products.annotate(
@@ -108,13 +109,16 @@ def _apply_sort(products, sort_by):
         ).order_by("-popularity")
     return products.order_by(SORT_MAP.get(sort_by, "-id"))
 
-#  Category list
+#  ────────────────────────────────────────────────── Category list ──────────────────────────────────────────────────
+@never_cache
+@user_login_required
 def category_list_view(request):
     categories = Category.objects.filter(is_active=True)
     return render(request, "products/catalog/category_list.html", {"categories": categories})
 
-#  VIEW: Subcategory list
-
+#  ────────────────────────────────────────────────── Subcategory list ──────────────────────────────────────────────────
+@never_cache
+@user_login_required
 def subcategory_list_view(request, category_id):
     category = get_object_or_404(Category, id=category_id, is_active=True)
     subcategories = category.subcategories.filter(products__is_active=True).distinct()
@@ -123,6 +127,9 @@ def subcategory_list_view(request, category_id):
         "subcategories": subcategories,
     })
 
+#  ────────────────────────────────────────────────── Product list with filters, sorting, pagination ──────────────────────────────────────────────────
+@never_cache
+@user_login_required
 def product_list(request, category_id=None, subcategory_id=None):
     products = Product.objects.filter(
             is_active=True,
@@ -256,6 +263,8 @@ def product_list(request, category_id=None, subcategory_id=None):
         )
     return render(request, "products/catalog/product_list.html", context)
 
+#  ────────────────────────────────────────────────── Search products (AJAX) ──────────────────────────────────────────────────
+@never_cache
 def search_products(request):
 
     query = request.GET.get("q", "").strip()
@@ -281,10 +290,7 @@ def search_products(request):
             Q(subcategory__category__category_name__icontains=query) |
             Q(about_product__icontains=query)
         )
-        .select_related("subcategory", "subcategory__category")
-        .prefetch_related("images")
-        .distinct()
-        [:8]   # Limit to top 8 results for autocomplete dropdown
+        .select_related("subcategory", "subcategory__category").prefetch_related("images").distinct() [:8]   # Limit to top 8 results for autocomplete dropdown
     )
 
     results = []
@@ -298,18 +304,21 @@ def search_products(request):
                     img_url = val.url
                     break
         results.append({
-            "id":       p.id,
-            "name":     p.product_name,
-            "brand":    p.brand,
-            "price":    str(p.final_price),
-            "base":     str(p.base_price),
+            "id": p.id,
+            "name": p.product_name,
+            "brand": p.brand,
+            "price": str(p.final_price),
+            "base": str(p.base_price),
             "discount": p.discount_percent,
-            "img":      img_url,
-            "url":      f"/products/user/products/{p.id}/",
+            "img": img_url,
+            "url": f"/products/user/products/{p.id}/",
         })
 
     return JsonResponse({"results": results, "query": query})
 
+
+@never_cache
+@user_login_required
 def product_detail_view(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_active=True, is_deleted=False)
     try:
@@ -334,7 +343,7 @@ def product_detail_view(request, product_id):
         )
         return redirect("/products/user/products/")
 
-    # ── Variants ─────────────────────────────────────────────
+    #   ===================================== Variants =====================================
     variants_qs = (
         ProductVariant.objects.filter(product=product, is_active=True)
         .select_related("color", "age_group", "inventory")
@@ -355,18 +364,18 @@ def product_detail_view(request, product_id):
             any_in_stock     = True
             all_out_of_stock = False
         variant_data.append({
-            "id":           v.id,
-            "color_id":     v.color.id,
-            "color_name":   v.color.color,
-            "age":          v.age_group.age,
-            "sku":          v.sku,
-            "qty":          qty,
-            "is_oos":       qty == 0,
+            "id": v.id,
+            "color_id": v.color.id,
+            "color_name": v.color.color,
+            "age": v.age_group.age,
+            "sku": v.sku,
+            "qty": qty,
+            "is_oos": qty == 0,
             "max_cart_qty": min(CartItem.MAX_QTY_PER_PRODUCT, qty) if qty > 0 else 0,
-            "in_cart":      False,
+            "in_cart": False,
         })
 
-    # ── Images ───────────────────────────────────────────────
+    #   ===================================== Images =====================================
     image_urls = []
     for img_obj in product.images.all():
         for field in ("image1", "image2", "image3", "image4", "image5"):
@@ -374,7 +383,7 @@ def product_detail_view(request, product_id):
             if val:
                 image_urls.append(val.url)
 
-    # ── Related products ─────────────────────────────────────
+    #   ===================================== Related products =====================================
     related_products = (
         Product.objects.filter(
             subcategory=product.subcategory,
@@ -386,47 +395,37 @@ def product_detail_view(request, product_id):
         .prefetch_related("images")[:6]
     )
 
-    # ── Cart & Wishlist context ───────────────────────────────
+    # ===================================== Cart & Wishlist context =====================================
     uw = _cart_wishlist_ctx(request.user)
     for vd in variant_data:
         vd["in_cart"] = vd["id"] in uw["cart_variant_ids"]
 
-    # ── Reviews ──────────────────────────────────────────────
+    # ===================================== Reviews =====================================
     reviews_qs = (
         Review.objects.filter(product=product, is_approved=True)
         .select_related("user")
         .order_by("-created_at")
     )
-    review_list    = list(reviews_qs[:20])
-    review_count   = reviews_qs.count()
-    avg_data       = reviews_qs.aggregate(avg=Avg("rating"))
+    review_list = list(reviews_qs[:20])
+    review_count = reviews_qs.count()
+    avg_data = reviews_qs.aggregate(avg=Avg("rating"))
     average_rating = round(avg_data["avg"], 1) if avg_data["avg"] else None
 
-    # ── Review eligibility — SINGLE source of truth ──────────
-    # Do NOT duplicate this logic; compute it once here cleanly.
-    user_review       = None
+    #  Review eligibility — SINGLE source of truth for all review-related logic in the template.
+    user_review = None
     user_has_reviewed = False
-    user_can_review   = False
+    user_can_review  = False
 
     if request.user.is_authenticated:
-        # Check against ALL reviews (approved or pending) so a user who
-        # submitted but is awaiting approval is not shown the button again.
-        user_review = Review.objects.filter(
-            user=request.user, product=product
-        ).first()
+        # Check against ALL reviews (approved or pending) so a user who has submitted a review but is awaiting moderation doesn't get the "Write a Review" button back.
+        user_review = Review.objects.filter(user=request.user, product=product).first()
         user_has_reviewed = user_review is not None
 
         if not user_has_reviewed:
-            # Eligible only if they have a DELIVERED order containing
-            # this product — any variant counts.
-            user_can_review = Order.objects.filter(
-                user=request.user,
-                order_status="DELIVERED",
-                order_items__variant__product=product,
-            ).exists()
+            # Eligible only if they have a DELIVERED order containing this product. This ensures they can only review products they've actually received.
+            user_can_review = Order.objects.filter(user=request.user, order_status="DELIVERED", order_items__variant__product=product).exists()
 
-    # ── Active Offers ─────────────────────────────────────────
-    from django.utils import timezone
+    # ===================================== Active Offers =====================================
     now = timezone.now()
     product_offers = [
         o for o in Offer.objects.filter(
@@ -452,37 +451,42 @@ def product_detail_view(request, product_id):
     best_offer = max(all_offers, key=lambda o: o.discount_percent) if all_offers else None
 
     context = {
-        # ── product core ─────────────────────────────────────
-        "product":          product,
-        "variant_data":     variant_data,
-        "image_urls":       image_urls,
-        "total_stock":      total_stock,
-        "any_in_stock":     any_in_stock,
+        # product core data
+        "product": product,
+        "variant_data": variant_data,
+        "image_urls": image_urls,
+        "total_stock": total_stock,
+        "any_in_stock": any_in_stock,
         "all_out_of_stock": all_out_of_stock,
         "related_products": related_products,
-        # ── cart / wishlist ───────────────────────────────────
-        "cart_variant_ids":     uw["cart_variant_ids"],
+
+        # cart / wishlist context for buttons and JS
+        "cart_variant_ids": uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
-        "cart_item_count":      uw["cart_item_count"],
+        "cart_item_count": uw["cart_item_count"],
         "product_in_wishlist":  product.id in uw["wishlist_product_ids"],
-        "MAX_QTY":              CartItem.MAX_QTY_PER_PRODUCT,
+        "MAX_QTY":CartItem.MAX_QTY_PER_PRODUCT,
         "add_to_cart_url_base": "/shop/cart/add/",
-        # ── reviews ───────────────────────────────────────────
-        "reviews":           review_list,
-        "review_count":      review_count,
-        "average_rating":    average_rating,
-        "user_review":       user_review,
-        "user_has_reviewed": user_has_reviewed,  # ← single clean source
-        "user_can_review":   user_can_review,    # ← single clean source
-        # ── offers ────────────────────────────────────────────
-        "product_offers":  product_offers,
+
+        # reviews 
+        "reviews": review_list,
+        "review_count": review_count,
+        "average_rating": average_rating,
+        "user_review": user_review,
+        "user_has_reviewed": user_has_reviewed,  
+        "user_can_review": user_can_review,
+
+        # offers
+        "product_offers": product_offers,
         "category_offers": category_offers,
-        "all_offers":      all_offers,
-        "best_offer":      best_offer,
+        "all_offers": all_offers,
+        "best_offer": best_offer,
     }
     return render(request, "products/catalog/product_detail.html", context)
-#  AJAX – Variant stock / price info
 
+
+#  ────────────────────────────────────────────────── AJAX: Get variant info for dynamic updates on product detail page ──────────────────────────────────────────────────
+@never_cache
 def ajax_variant_info(request):
     variant_id = request.GET.get("variant_id")
     if not variant_id:
@@ -496,7 +500,7 @@ def ajax_variant_info(request):
         return JsonResponse({"error": "Variant not found or inactive"}, status=404)
 
     inventory = getattr(variant, "inventory", None)
-    qty       = inventory.quantity_available if inventory else 0
+    qty = inventory.quantity_available if inventory else 0
 
     if qty == 0:
         stock_status, stock_label = "out_of_stock", "Out of Stock"
@@ -505,37 +509,35 @@ def ajax_variant_info(request):
     else:
         stock_status, stock_label = "in_stock", f"In Stock ({qty} available)"
 
-    # ADD-ON: is this variant already in the user's cart?
+    # Check if this variant is already in the user's cart to disable "Add to Cart" button if needed
     in_cart = False
     if request.user.is_authenticated:
         try:
-            in_cart = CartItem.objects.filter(
-                cart=request.user.cart, variant=variant
-            ).exists()
+            in_cart = CartItem.objects.filter(cart=request.user.cart, variant=variant).exists()
         except Cart.DoesNotExist:
             pass
 
     data = {
-        # ── original keys (unchanged) ─────────────────────────
-        "variant_id":         variant.id,
-        "sku":                variant.sku,
-        "color":              str(variant.color),
-        "age_group":          str(variant.age_group),
+        #  original keys 
+        "variant_id": variant.id,
+        "sku": variant.sku,
+        "color": str(variant.color),
+        "age_group": str(variant.age_group),
         "quantity_available": qty,
-        "stock_status":       stock_status,
-        "stock_label":        stock_label,
-        "base_price":         str(variant.product.base_price),
-        "final_price":        str(variant.product.final_price),
-        "discount_percent":   variant.product.discount_percent,
-        # ── ADD-ON keys ───────────────────────────────────────
+        "stock_status": stock_status,
+        "stock_label": stock_label,
+        "base_price": str(variant.product.base_price),
+        "final_price": str(variant.product.final_price),
+        "discount_percent": variant.product.discount_percent,
+
         # Used by the product-detail page JS to update button state
-        "in_cart":         in_cart,
-        "max_cart_qty":    min(CartItem.MAX_QTY_PER_PRODUCT, qty),
+        "in_cart": in_cart,
+        "max_cart_qty": min(CartItem.MAX_QTY_PER_PRODUCT, qty),
         "add_to_cart_url": f"/shop/cart/add/{variant.id}/",
     }
     return JsonResponse(data)
-#  VIEW: AJAX – partial product grid 
-
+#  ────────────────────────────────────────────────── AJAX: Get product grid HTML for filters/sorting without full page reload ──────────────────────────────────────────────────
+@never_cache
 def ajax_product_grid(request, category_id=None, subcategory_id=None):
     # Re-use product_list with the AJAX header set
     request.META["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest"

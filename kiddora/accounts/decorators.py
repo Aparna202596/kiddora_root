@@ -1,8 +1,9 @@
 from django.contrib.auth import logout
 from django.shortcuts import redirect
-from accounts.models import *
 from django.urls import reverse
 from functools import wraps
+
+from accounts.models import CustomUser
 
 def user_login_required(view_func):
     @wraps(view_func)

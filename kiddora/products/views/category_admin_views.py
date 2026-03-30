@@ -1,21 +1,20 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.core.paginator import Paginator
-from django.contrib import messages
 from django.views.decorators.cache import never_cache
-from products.models import *
+from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 import os
 
+from products.models import Category, SubCategory, Product, ProductVariant
 
-# ─────────────────────────────────────────────────────────────
-# CATEGORY MANAGEMENT
-# ─────────────────────────────────────────────────────────────
+#   =============================================== CATEGORY MANAGEMENT ===============================================
 
+#   ────────────────────────────────────────────────── CATEGORY LIST ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_category_list(request):
-    search    = request.GET.get("search", "").strip()
-    sort      = request.GET.get("sort", "id")
+    search = request.GET.get("search", "").strip()
+    sort = request.GET.get("sort", "id")
     direction = request.GET.get("dir", "desc")
 
     categories = Category.objects.filter(is_deleted=False)
@@ -25,40 +24,33 @@ def admin_category_list(request):
     allowed_sorts = ["id", "category_name"]
     if sort not in allowed_sorts:
         sort = "id"
-    order_by   = sort if direction == "asc" else f"-{sort}"
+    order_by = sort if direction == "asc" else f"-{sort}"
     categories = categories.order_by(order_by)
 
     paginator = Paginator(categories, 15)
-    page_obj  = paginator.get_page(request.GET.get("page"))
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(request, "products/admin/admin_category_list.html", {
         "page_obj": page_obj,
-        "search":   search,
-        "sort":     sort,
-        "dir":      direction,
+        "search": search,
+        "sort": sort,
+        "dir": direction,
     })
 
-
+#   ────────────────────────────────────────────────── ADD CATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_add_category(request):
     if request.method == "POST":
-        name             = request.POST.get("category_name", "").strip()
+        name = request.POST.get("category_name", "").strip()
         subcategory_name = request.POST.get("subcategory_name", "").strip()
-        # ── ADD-ON: grab the uploaded image ──────────────────
-        category_image   = request.FILES.get("category_image")
-        # ─────────────────────────────────────────────────────
+        category_image = request.FILES.get("category_image")
 
         if Category.objects.filter(category_name__iexact=name, is_active=True).exists():
             messages.error(request, "Category already exists")
             return redirect("products:admin_add_category")
-
-        # ── ADD-ON: save image when creating ─────────────────
-        category = Category.objects.create(
-            category_name=name,
-            category_image=category_image,   # None is fine — field is nullable
-        )
-        # ─────────────────────────────────────────────────────
+        
+        category = Category.objects.create(category_name=name, category_image=category_image)
 
         if subcategory_name:
             SubCategory.objects.create(category=category, subcategory_name=subcategory_name)
@@ -69,7 +61,7 @@ def admin_add_category(request):
     categories = Category.objects.filter(is_active=True)
     return render(request, "products/admin/admin_category_form.html", {"categories": categories})
 
-
+#   ────────────────────────────────────────────────── EDIT CATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_edit_category(request, category_id):
@@ -77,10 +69,8 @@ def admin_edit_category(request, category_id):
     categories = Category.objects.filter(is_active=True)
 
     if request.method == "POST":
-        category_name  = request.POST.get("category_name", "").strip()
-        # ── ADD-ON: grab the uploaded image ──────────────────
+        category_name = request.POST.get("category_name", "").strip()
         new_image = request.FILES.get("category_image")
-        # ─────────────────────────────────────────────────────
 
         if Category.objects.filter(
             category_name__iexact=category_name
@@ -90,9 +80,7 @@ def admin_edit_category(request, category_id):
 
         category.category_name = category_name
 
-        # ── ADD-ON: replace image only when a new one is sent ─
         if new_image:
-            # Remove old image file from disk first
             if category.category_image:
                 try:
                     old_path = category.category_image.path
@@ -101,7 +89,6 @@ def admin_edit_category(request, category_id):
                 except Exception:
                     pass
             category.category_image = new_image
-        # ─────────────────────────────────────────────────────
 
         category.save()
         messages.success(request, "Category updated")
@@ -112,7 +99,7 @@ def admin_edit_category(request, category_id):
         "categories": categories,
     })
 
-
+#   ────────────────────────────────────────────────── DELETE CATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_delete_category(request, category_id):
@@ -126,7 +113,7 @@ def admin_delete_category(request, category_id):
     messages.success(request, "Category deleted safely")
     return redirect("products:admin_category_list")
 
-
+#   ────────────────────────────────────────────────── BLOCK CATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_block_category(request, category_id):
@@ -141,7 +128,7 @@ def admin_block_category(request, category_id):
         return redirect("products:admin_category_list")
     return render(request, "admin_confirm_block.html", {"category": category})
 
-
+#   ────────────────────────────────────────────────── UNBLOCK CATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_unblock_category(request, category_id):
@@ -159,20 +146,18 @@ def admin_unblock_category(request, category_id):
     return render(request, "admin_confirm_unblock.html", {"category": category})
 
 
-# ─────────────────────────────────────────────────────────────
-# SUBCATEGORY MANAGEMENT
-# ─────────────────────────────────────────────────────────────
 
+#   =============================================== SUBCATEGORY MANAGEMENT ===============================================
+
+#   ────────────────────────────────────────────────── SUBCATEGORY LIST ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_subcategory_list(request):
-    search    = request.GET.get("search", "").strip()
-    sort      = request.GET.get("sort", "id")
+    search = request.GET.get("search", "").strip()
+    sort = request.GET.get("sort", "id")
     direction = request.GET.get("dir", "desc")
 
-    subcategories = SubCategory.objects.filter(
-        is_deleted=False, category__is_deleted=False
-    ).select_related("category")
+    subcategories = SubCategory.objects.filter(is_deleted=False, category__is_deleted=False).select_related("category")
 
     if search:
         subcategories = subcategories.filter(subcategory_name__icontains=search)
@@ -180,54 +165,45 @@ def admin_subcategory_list(request):
     allowed_sorts = ["id", "subcategory_name", "category__category_name"]
     if sort not in allowed_sorts:
         sort = "id"
-    order_by      = sort if direction == "asc" else f"-{sort}"
+    order_by = sort if direction == "asc" else f"-{sort}"
     subcategories = subcategories.order_by(order_by)
 
     paginator = Paginator(subcategories, 15)
-    page_obj  = paginator.get_page(request.GET.get("page"))
+    page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(request, "products/admin/admin_subcategory_list.html", {
         "page_obj": page_obj,
-        "search":   search,
-        "sort":     sort,
-        "dir":      direction,
+        "search": search,
+        "sort": sort,
+        "dir": direction,
     })
 
-
+#   ────────────────────────────────────────────────── ADD SUBCATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_add_subcategory(request):
     categories = Category.objects.filter(is_active=True)
 
     if request.method == "POST":
-        name              = request.POST.get("subcategory_name", "").strip()
-        category_id       = request.POST.get("category")
-        # ── ADD-ON: grab the uploaded image ──────────────────
+        name = request.POST.get("subcategory_name", "").strip()
+        category_id = request.POST.get("category")
         subcategory_image = request.FILES.get("subcategory_image")
-        # ─────────────────────────────────────────────────────
 
         category = get_object_or_404(Category, id=category_id, is_active=True)
 
         if SubCategory.objects.filter(
-            category=category, subcategory_name__iexact=name
-        ).exists():
+            category=category, subcategory_name__iexact=name).exists():
             messages.error(request, "SubCategory already exists in this category")
             return redirect("products:admin_add_subcategory")
 
-        # ── ADD-ON: save image when creating ─────────────────
-        SubCategory.objects.create(
-            category=category,
-            subcategory_name=name,
-            subcategory_image=subcategory_image,  # None is fine — field is nullable
-        )
-        # ─────────────────────────────────────────────────────
+        SubCategory.objects.create(category=category, subcategory_name=name, subcategory_image=subcategory_image)
 
         messages.success(request, "SubCategory added")
         return redirect("products:admin_subcategory_list")
 
     return render(request, "products/admin/admin_subcategory_form.html", {"categories": categories})
 
-
+#   ────────────────────────────────────────────────── EDIT SUBCATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_edit_subcategory(request, subcategory_id):
@@ -235,11 +211,9 @@ def admin_edit_subcategory(request, subcategory_id):
     categories  = Category.objects.filter(is_active=True)
 
     if request.method == "POST":
-        name        = request.POST.get("subcategory_name", "").strip()
+        name = request.POST.get("subcategory_name", "").strip()
         category_id = request.POST.get("category")
-        # ── ADD-ON: grab the uploaded image ──────────────────
         new_image   = request.FILES.get("subcategory_image")
-        # ─────────────────────────────────────────────────────
 
         category = get_object_or_404(Category, id=category_id, is_active=True)
 
@@ -250,9 +224,8 @@ def admin_edit_subcategory(request, subcategory_id):
             return redirect("products:admin_edit_subcategory", subcategory_id=subcategory.id)
 
         subcategory.subcategory_name = name
-        subcategory.category         = category
+        subcategory.category = category
 
-        # ── ADD-ON: replace image only when a new one is sent ─
         if new_image:
             if subcategory.subcategory_image:
                 try:
@@ -261,8 +234,8 @@ def admin_edit_subcategory(request, subcategory_id):
                         os.remove(old_path)
                 except Exception:
                     pass
+
             subcategory.subcategory_image = new_image
-        # ─────────────────────────────────────────────────────
 
         subcategory.save()
         messages.success(request, "SubCategory updated")
@@ -270,23 +243,24 @@ def admin_edit_subcategory(request, subcategory_id):
 
     return render(request, "products/admin/admin_subcategory_form.html", {
         "subcategory": subcategory,
-        "categories":  categories,
+        "categories": categories,
     })
 
-
+#   ────────────────────────────────────────────────── DELETE SUBCATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_delete_subcategory(request, subcategory_id):
     subcategory = get_object_or_404(SubCategory, id=subcategory_id)
     subcategory.is_deleted = True
-    subcategory.is_active  = False
+    subcategory.is_active = False
     subcategory.save()
+
     Product.objects.filter(subcategory=subcategory).update(is_active=False, is_deleted=True)
     ProductVariant.objects.filter(product__subcategory=subcategory).update(is_active=False)
     messages.success(request, "SubCategory deleted safely")
     return redirect("products:admin_subcategory_list")
 
-
+#   ────────────────────────────────────────────────── BLOCK SUBCATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_block_subcategory(request, subcategory_id):
@@ -300,7 +274,7 @@ def admin_block_subcategory(request, subcategory_id):
         return redirect("products:admin_subcategory_list")
     return render(request, "admin_confirm_block.html", {"subcategory": subcategory})
 
-
+#   ────────────────────────────────────────────────── UNBLOCK SUBCATEGORY ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_unblock_subcategory(request, subcategory_id):

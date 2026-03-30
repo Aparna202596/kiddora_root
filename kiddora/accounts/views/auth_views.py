@@ -5,12 +5,13 @@ from accounts.decorators import user_login_required,admin_login_required
 from django.utils.crypto import get_random_string
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
-from accounts.models import CustomUser
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
 from django.db import transaction 
 import re
+
+from accounts.models import CustomUser
 
 User = get_user_model()
 

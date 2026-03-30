@@ -1,29 +1,31 @@
+from django.views.decorators.cache import never_cache
+from products.utils.search_utils import apply_search
+from products.utils.pagination import paginate_queryset
+from accounts.decorators import admin_login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
-from django.views.decorators.cache import never_cache
-from accounts.decorators import admin_login_required
+
 from products.models import Inventory, ProductVariant
-from products.utils.search_utils import apply_search
-from products.utils.pagination import paginate_queryset
 
+#   =============================================== INVENTORY MANAGEMENT ===============================================
 
+#   ────────────────────────────────────────────────── INVENTORY LIST ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_inventory_list(request):
-    search   = request.GET.get("search", "").strip()
-    sort     = request.GET.get("sort", "-updated")  # default: newest first
-    stock_f  = request.GET.get("stock_filter", "")  # "low" | "out" | ""
+    search = request.GET.get("search", "").strip()
+    sort = request.GET.get("sort", "-updated")  
+    stock_f = request.GET.get("stock_filter", "") 
 
-    # ADD-ON: map URL sort param → ORM order_by expression
     SORT_MAP = {
-        "product":  "variant__product__product_name",
+        "product": "variant__product__product_name",
         "-product": "-variant__product__product_name",
-        "stock":    "quantity_available",
-        "-stock":   "-quantity_available",
-        "sold":     "quantity_sold",
-        "-sold":    "-quantity_sold",
-        "updated":  "updated_at",
+        "stock": "quantity_available",
+        "-stock": "-quantity_available",
+        "sold": "quantity_sold",
+        "-sold": "-quantity_sold",
+        "updated": "updated_at",
         "-updated": "-updated_at",
     }
     order_field = SORT_MAP.get(sort, "-updated_at")
@@ -38,10 +40,10 @@ def admin_inventory_list(request):
             "variant__age_group",
         )
         .filter(
-            variant__product__is_deleted=False,
-            variant__product__is_active=True,
-            variant__product__subcategory__is_deleted=False,
-            variant__product__subcategory__category__is_deleted=False,
+            variant__product__is_deleted = False,
+            variant__product__is_active = True,
+            variant__product__subcategory__is_deleted = False,
+            variant__product__subcategory__category__is_deleted = False,
         )
         .order_by(order_field)
     )
@@ -54,12 +56,11 @@ def admin_inventory_list(request):
             | inventories.filter(variant__product__brand__icontains=search)
         )
 
-    # ADD-ON: filter by stock level when the toolbar dropdown is used
     if stock_f == "out":
-        inventories = inventories.filter(quantity_available=0)
+        inventories = inventories.filter(quantity_available = 0)
     elif stock_f == "low":
         inventories = inventories.filter(
-            quantity_available__gt=0, quantity_available__lte=5
+            quantity_available__gt=0, quantity_available__lte = 5
         )
 
     page_obj = paginate_queryset(request, inventories, 20)
@@ -68,22 +69,21 @@ def admin_inventory_list(request):
         request,
         "products/admin/admin_inventory_list.html",
         {
-            "inventories": page_obj,   # key name unchanged
-            "page_obj":    page_obj,
-            "search":      search,
-            # ADD-ON: pass state back so toolbar stays in sync across pages
-            "sort":        sort,
-            "stock_f":     stock_f,
+            "inventories": page_obj,
+            "page_obj": page_obj,
+            "search":   search,
+
+            "sort": sort,
+            "stock_f": stock_f,
         },
     )
 
-
-
+#   ────────────────────────────────────────────────── UPDATE STOCK ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 @transaction.atomic
-def update_stock(request, inventory_id):   # inventory_id is now passed as a parameter
-    inventory = get_object_or_404(Inventory, id=inventory_id)  # fetch the inventory record based on the provided ID
+def update_stock(request, inventory_id):   
+    inventory = get_object_or_404(Inventory, id=inventory_id)  
 
     if request.method == "POST":
         try:

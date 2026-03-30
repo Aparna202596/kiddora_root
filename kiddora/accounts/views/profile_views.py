@@ -4,14 +4,16 @@ from accounts.views.otp_views import generate_otp
 from accounts.decorators import user_login_required
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth import get_user_model, logout
-from shopcore.models import *
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
-from accounts.models import *
+
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
+
+from shopcore.models import Order
+from accounts.models import CustomUser, UserAddress
 
 User = get_user_model()
 

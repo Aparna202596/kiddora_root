@@ -3,10 +3,9 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 
 User = get_user_model()
+
+# Custom authentication backend to allow users to log in using their email address instead of username.
 class EmailBackend(ModelBackend):
-    """
-    Authenticate using email + password
-    """
 
     def authenticate(self, request, username=None, password=None, **kwargs):
         if not username or not password:

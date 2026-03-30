@@ -1,18 +1,20 @@
 from django.views.decorators.cache import never_cache
 from django.utils.dateparse import parse_datetime
 from django.utils.crypto import get_random_string
-from accounts.decorators import user_login_required
 from django.contrib.auth import get_user_model
 from django.core .mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
-from accounts.models import CustomUser
 from django.contrib import messages
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime, timedelta
+
+from accounts.models import CustomUser
+
 User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 5
+
 #  ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────
 def generate_otp():
     """Return a 6-digit numeric OTP."""

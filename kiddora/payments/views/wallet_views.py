@@ -1,36 +1,26 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-
+from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required, user_login_required
-from payments.models import Payment, Wallet, WalletTransaction
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.utils import timezone
+from decimal import Decimal
+
 from payments.views.wallet_helpers import debit_from_wallet
+from payments.models import Payment, Wallet, WalletTransaction
 from shopcore.models import Order
 
-import itertools
-
-# ─────────────────────────────────────────────────────────────
-# INTERNAL HELPER
-# ─────────────────────────────────────────────────────────────
+#   ────────────────────────────────────────────────── INTERNAL HELPER ──────────────────────────────────────────────────
 
 def _wallet_balance(user) -> Decimal:
-    """Return the user's wallet balance, creating the wallet row if absent."""
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet.balance
 
-
-# ─────────────────────────────────────────────────────────────
-# USER: PAY WITH WALLET
-# ─────────────────────────────────────────────────────────────
-
+#   ────────────────────────────────────────────────── USER: PAY WITH WALLET ────────────────────────────────────────────────── 
 @never_cache
 @user_login_required
 @require_POST
@@ -84,10 +74,7 @@ def pay_with_wallet(request, order_id):
     return redirect("shopcore:order_success", order_id=order.order_id)
 
 
-# ─────────────────────────────────────────────────────────────
-# USER: WALLET PAYMENT FAILURE PAGE
-# ─────────────────────────────────────────────────────────────
-
+#   ────────────────────────────────────────────────── USER: WALLET PAYMENT FAILURE ──────────────────────────────────────────────────  
 @never_cache
 @user_login_required
 def wallet_payment_failure(request, order_id):
@@ -97,17 +84,13 @@ def wallet_payment_failure(request, order_id):
         "wallet_balance": _wallet_balance(request.user),
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: WALLET TRANSACTION LIST
-# ─────────────────────────────────────────────────────────────
-
+#   ────────────────────────────────────────────────── ADMIN: WALLET TRANSACTIONS LIST ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_wallet_list(request):
     search = request.GET.get("search", "").strip()
     type_f = request.GET.get("type", "")
-    ref_f  = request.GET.get("ref", "")
+    ref_f = request.GET.get("ref", "")
 
     qs = (
         WalletTransaction.objects
@@ -130,19 +113,15 @@ def admin_wallet_list(request):
     page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
 
     return render(request, "payments/admin_wallet_list.html", {
-        "page_obj":  page_obj,
-        "search":    search,
-        "type_f":    type_f,
-        "ref_f":     ref_f,
+        "page_obj": page_obj,
+        "search": search,
+        "type_f": type_f,
+        "ref_f": ref_f,
         "txn_types": WalletTransaction.TRANSACTION_TYPE_CHOICES,
         "ref_types": WalletTransaction.REFERENCE_TYPE_CHOICES,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: WALLET TRANSACTION DETAIL
-# ─────────────────────────────────────────────────────────────
-
+#   ────────────────────────────────────────────────── ADMIN: WALLET TRANSACTION DETAIL ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_wallet_detail(request, txn_id):
@@ -158,26 +137,21 @@ def admin_wallet_detail(request, txn_id):
     )
 
     return render(request, "payments/admin_wallet_detail.html", {
-        "txn":         txn,
-        "user":        txn.wallet.user,
-        "wallet":      txn.wallet,
+        "txn": txn,
+        "user": txn.wallet.user,
+        "wallet": txn.wallet,
         "recent_txns": recent_txns,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: PAYMENT LIST
-# ─────────────────────────────────────────────────────────────
-
+#   ───────────────────────────────── DEBIT  (used when customer pays with wallet) ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_payment_list(request):
 
-    search   = request.GET.get("search", "").strip()
+    search = request.GET.get("search", "").strip()
     method_f = request.GET.get("method", "")
     status_f = request.GET.get("status", "")
- 
-    # ── 1. Online payments (PayPal + Wallet) from Payment model ──
+
     payment_qs = (
         Payment.objects
         .select_related("order__user")
@@ -194,28 +168,27 @@ def admin_payment_list(request):
     if method_f and method_f != "COD":
         payment_qs = payment_qs.filter(payment_method=method_f)
     elif method_f == "COD":
-        payment_qs = payment_qs.none()   # COD has no Payment rows
- 
+        payment_qs = payment_qs.none() 
+
     if status_f:
         payment_qs = payment_qs.filter(payment_status=status_f)
- 
+
     # Convert Payment queryset rows to unified dicts
     online_rows = []
     for p in payment_qs:
         online_rows.append({
-            "source":           "payment",
-            "txn_id_display":   p.txn_id_display,
-            "order":            p.order,
-            "payment_method":   p.payment_method,
-            "amount":           p.amount,
-            "payment_status":   p.payment_status,
+            "source": "payment",
+            "txn_id_display": p.txn_id_display,
+            "order": p.order,
+            "payment_method": p.payment_method,
+            "amount": p.amount,
+            "payment_status": p.payment_status,
             "paypal_capture_id": p.paypal_capture_id or "",
-            "initiated_at":     p.initiated_at,
-            "completed_at":     p.completed_at,
-            "sort_dt":          p.created_at,
+            "initiated_at": p.initiated_at,
+            "completed_at": p.completed_at,
+            "sort_dt": p.created_at,
         })
- 
-    # ── 2. COD orders (no Payment row — derive from Order) ──
+
     cod_rows = []
     if not method_f or method_f == "COD":
         cod_qs = (
@@ -230,16 +203,14 @@ def admin_payment_list(request):
                 | Q(user__email__icontains=search)
                 | Q(user__full_name__icontains=search)
             )
-        # Map order status → payment status for filtering
-        # COD: PENDING/CONFIRMED/SHIPPED/OUT_FOR_DELIVERY → PENDING
-        #      DELIVERED → PAID   CANCELLED → CANCELLED
+
         def _cod_pay_status(order):
             if order.order_status == "DELIVERED":
                 return "PAID"
             elif order.order_status == "CANCELLED":
                 return "CANCELLED"
             return "PENDING"
- 
+
         for o in cod_qs:
             ps = _cod_pay_status(o)
             if status_f and ps != status_f:
@@ -256,7 +227,7 @@ def admin_payment_list(request):
                 "completed_at":     o.delivered_at,
                 "sort_dt":          o.order_date,
             })
- 
+
     # ── 3. Merge + sort by date descending ──────────────────
     all_rows = sorted(
         online_rows + cod_rows,

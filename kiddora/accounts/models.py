@@ -1,8 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.db import models
-import uuid
 
+
+# #  ────────────────────────────────────────────────── CUSTOM USER ──────────────────────────────────────────────────
 class CustomUser(AbstractUser):
     ROLE_ADMIN = "ADMIN"
     ROLE_CUSTOMER = "CUSTOMER"
@@ -86,16 +87,16 @@ class CustomUser(AbstractUser):
         """Soft delete the user"""
         self.is_deleted = True
         self.deleted_at = timezone.now()
-        self.is_active = False          # Important: prevent login
+        self.is_active = False         
         self.save(update_fields=['is_deleted', 'deleted_at', 'is_active'])
 
     def hard_delete(self):
-        """Real delete (use with caution)"""
         super().delete()
 
     def __str__(self):
         return self.email
 
+#  ────────────────────────────────────────────────── USER ADDRESS ──────────────────────────────────────────────────
 class UserAddress(models.Model):
     ADDRESS_HOME = "home"
     ADDRESS_WORK = "work"

@@ -231,7 +231,8 @@ class Order(models.Model):
         ("OUT_FOR_DELIVERY", "Out for Delivery"),
         ("DELIVERED", "Delivered"),
         ("CANCELLED", "Cancelled"),
-        ("RETURNED", "Returned")
+        ("RETURNED", "Returned"),
+        ("ORDER NOT PLACED", "Order Not Placed"),
     )
     PAYMENT_METHOD_CHOICES = (
         ("COD", "Cash on Delivery"),
@@ -241,10 +242,12 @@ class Order(models.Model):
     )
     PAYMENT_STATUS_CHOICES = (
         ("PENDING", "Pending"),
+        ("INITIATED", "Initiated"),
         ("PAID", "Paid"),
         ("FAILED", "Failed"),
         ("REFUNDED", "Refunded"),
         ("PARTIALLY_REFUNDED", "Partially Refunded"),
+        ("CANCELLED", "Cancelled"),
     )
     order_id = models.CharField(max_length=20, unique=True, editable=False)
 
@@ -301,6 +304,7 @@ class OrderItem(models.Model):
         ("ACTIVE", "Active"),
         ("PENDING", "Pending"),
         ("CANCELLED", "Cancelled"),
+        ("ORDER NOT PLACED", "Order Not Placed"),
         ("RETURN_REQUESTED", "Return Requested"),
         ("RETURN_APPROVED", "Return Approved"),
         ("RETURN_REJECTED", "Return Rejected"),

@@ -1,18 +1,19 @@
 from django.views.decorators.cache import never_cache
 from products.utils.queryset_utils import apply_product_filters, apply_sorting
 from products.utils.search_utils import apply_search
-from products.utils.pagination import paginate_queryset
 from django.db.models.functions import Coalesce
-from utils.image_utils import process_image
+from products.utils.pagination import paginate_queryset
 from accounts.decorators import admin_login_required
+from utils.image_utils import process_image
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Avg, Count, Sum, F, Value
-from shopcore.models import *
-from products.models import *
+from django.db.models import Sum, F, Value
 from django.contrib import messages
 from django.db import transaction
 from decimal import Decimal
 
+from products.models import Product, ProductImage, ProductVariant, Inventory, Color, AgeGroup, SubCategory, Category
+
+#  ──────────────────────────────────────── CALCULATE FINAL PRICE (helper) ──────────────────────────────────────────────────
 def calculate_final_price(base_price, discount_percent):
     try:
         base = Decimal(base_price or 0)
@@ -20,17 +21,17 @@ def calculate_final_price(base_price, discount_percent):
         return base - (base * discount / 100)
     except Exception:
         return 0
+    
+#   =============================================== PRODUCT MANAGEMENT ===============================================
 
-# PRODUCT DETAILS
-
+#   ──────────────────────────────────────────────── PRODUCT DETAILS ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_product_details(request, product_id):
 
     product = get_object_or_404(
         Product.objects.select_related("subcategory","subcategory__category"),
-        id=product_id
-    )
+        id=product_id)
 
     images = ProductImage.objects.filter(product=product)
 
@@ -49,7 +50,6 @@ def admin_product_details(request, product_id):
         total_sold=Coalesce(Sum("sold"), Value(0)),
         total_reserved=Coalesce(Sum("reserved"), Value(0)),
     )
-    # coupons = Coupon.objects.filter(is_active=True,products=product)
 
     final_price = product.base_price - (product.base_price * product.discount_percent / 100)
 
@@ -60,12 +60,12 @@ def admin_product_details(request, product_id):
         "images": images,
         "variants": variants,
         "stock_summary": stock_summary,
-        # "coupons": coupons,
         "final_price": final_price,
         "last_updated": product.updated_at if hasattr(product, "updated_at") else product.id,
     }
     return render(request, "products/admin/admin_product_details.html",context  )
 
+#  ──────────────────────────────────────────────── PRODUCT LIST ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_product_list(request):
@@ -81,10 +81,10 @@ def admin_product_list(request):
 
     queryset = Product.objects.select_related("subcategory", "subcategory__category").filter(
         is_deleted=False, subcategory__category__is_deleted=False)
-# SEARCH
+
     queryset = apply_search(queryset, search, ["product_name", "brand"])
 
-    # POPULARITY (BASED ON SOLD QTY)
+    # POPULARITY 
     queryset = queryset.annotate(
         popularity_score=Coalesce(
             Sum("variants__inventory__quantity_sold"), Value(0)
@@ -134,8 +134,7 @@ def admin_product_list(request):
 
     return render(request, "products/admin/admin_product_lists.html", context)
 
-# ADD PRODUCT
-
+#   ────────────────────────────────────────────────── ADD PRODUCT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_add_product(request):
@@ -147,13 +146,12 @@ def admin_add_product(request):
         discount_percent = request.POST.get("discount_percent")
         preview_final_price = calculate_final_price(base_price, discount_percent)
 
-        # Collect images by individual field names matching the HTML
         image1 = request.FILES.get("productImage1")
         image2 = request.FILES.get("productImage2")
         image3 = request.FILES.get("productImage3")
         image4 = request.FILES.get("productImage4")
         image5 = request.FILES.get("productImage5")
-        # Validate minimum 3 images BEFORE touching the database
+
         if not (image1 and image2 and image3):
             messages.error(request, "Minimum 3 images required")
             return render(
@@ -168,18 +166,14 @@ def admin_add_product(request):
             )
         
         name = request.POST.get("product_name").strip()
-        subcategory = get_object_or_404(
-            SubCategory, id=request.POST.get("subcategory")
-        )
+        subcategory = get_object_or_404(SubCategory, id=request.POST.get("subcategory"))
 
-        # Process images before DB writes — fail fast if process_image errors
         processed1 = process_image(image1)
         processed2 = process_image(image2)
         processed3 = process_image(image3)
         processed4 = process_image(image4) if image4 else None
         processed5 = process_image(image5) if image5 else None
 
-        # Now write to DB inside a single clean transaction
         with transaction.atomic():
             product = Product.objects.create(
                 product_name=name,
@@ -222,8 +216,7 @@ def admin_add_product(request):
         },
     )
 
-# EDIT PRODUCT
-
+#   ────────────────────────────────────────────────── EDIT PRODUCT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_edit_product(request, product_id):
@@ -244,7 +237,6 @@ def admin_edit_product(request, product_id):
         product.discount_percent = discount_percent
         product.about_product = request.POST.get("about_product")
         product.subcategory_id = request.POST.get("subcategory")
-        # product.is_active = bool(request.POST.get("is_active"))
         product.save()
 
         messages.success(request, "Product updated")
@@ -261,8 +253,7 @@ def admin_edit_product(request, product_id):
         },
     )
 
-# SOFT DELETE PRODUCT
-
+#   ────────────────────────────────────────────────── DELETE PRODUCT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_delete_product(request, product_id):
@@ -274,8 +265,7 @@ def admin_delete_product(request, product_id):
     messages.success(request, "Product deleted safely")
     return redirect("products:admin_product_list")
 
-
-# BLOCK PRODUCT (also blocks all variants)
+#   ────────────────────────────────────────────────── BLOCK PRODUCT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_block_product(request, product_id):
@@ -288,7 +278,7 @@ def admin_block_product(request, product_id):
         return redirect("products:admin_product_list")
     return render(request, "admin_confirm_block.html", {"product": product})
 
-
+#   ────────────────────────────────────────────────── UNBLOCK PRODUCT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_unblock_product(request, product_id):
@@ -318,8 +308,9 @@ def admin_unblock_product(request, product_id):
         return redirect("products:admin_product_list")
     return render(request, "admin_confirm_unblock.html", {"product": product})
 
-# VARIANT MANAGEMENT
+#   =============================================== VARIANT MANAGEMENT ===============================================
 
+#   ────────────────────────────────────────────────── ADD VARIANT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_add_variant(request, product_id):
@@ -350,8 +341,9 @@ def admin_add_variant(request, product_id):
         },
     )
 
-@admin_login_required
+#   ────────────────────────────────────────────────── EDIT VARIANT ────────────────────────────────────────────────── 
 @never_cache
+@admin_login_required
 def admin_edit_variant(request, variant_id, product_id):
 
     variant = get_object_or_404(ProductVariant, id=variant_id,product_id=product_id)
@@ -376,9 +368,9 @@ def admin_edit_variant(request, variant_id, product_id):
         },
     )
 
-
-@admin_login_required
+#   ────────────────────────────────────────────────── DELETE VARIANT ──────────────────────────────────────────────────
 @never_cache
+@admin_login_required
 def admin_delete_variant(request, product_id, variant_id):
     variant = get_object_or_404(ProductVariant, id=variant_id, product_id=product_id)
     variant.delete()
@@ -387,7 +379,7 @@ def admin_delete_variant(request, product_id, variant_id):
         "products:admin_product_details", product_id=product_id
     )
 
-# BLOCK VARIANT
+#  ────────────────────────────────────────────────── BLOCK VARIANT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_block_variant(request, product_id, variant_id):
@@ -399,7 +391,7 @@ def admin_block_variant(request, product_id, variant_id):
         return redirect("products:admin_product_details", product_id=product_id)
     return render(request, "admin_confirm_block.html", {"variant": variant, "product_id": product_id})
 
-
+#  ────────────────────────────────────────────────── UNBLOCK VARIANT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_unblock_variant(request, product_id, variant_id):

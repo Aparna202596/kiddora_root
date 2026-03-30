@@ -3,14 +3,15 @@ from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
-from shopcore.models import OrderItem, Order
-from accounts.models import CustomUser
-from payments.models import Payment
 from products.models import Inventory
 from django.db.models import Q, Sum
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
+
+from shopcore.models import OrderItem, Order
+from accounts.models import CustomUser
+from payments.models import Payment
 
 User = get_user_model()
 
