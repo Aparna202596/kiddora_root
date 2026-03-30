@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from utils.currency import convert_currency
 from accounts.decorators import user_login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
@@ -89,18 +90,6 @@ def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> d
             "cancel_url": "http://localhost:8000/payments/paypal/cancel/",
         },
     }
-    # body = {
-    #     "intent": "CAPTURE",
-    #     "purchase_units": [
-    #         {
-    #             "reference_id": _sanitise_reference_id(reference_id),
-    #             "amount": {
-    #                 "currency_code": currency,
-    #                 "value": _format_amount(amount),
-    #             },
-    #         }
-    #     ],
-    # }
 
     resp = requests.post(url, headers=_paypal_headers(), json=body, timeout=15)
 
@@ -128,22 +117,35 @@ def _paypal_capture_order(paypal_order_id: str) -> dict:
     resp.raise_for_status()
     return resp.json()
 
-#────────────────────────────────────────────────── INITIATE PAYPAL PAYMENT ──────────────────────────────────────────────────
+#   ────────────────────────────────────────────────── INITIATE PAYPAL PAYMENT ──────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 def initiate_paypal_payment(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
-
     if order.payment_status == "PAID":
         return redirect("shopcore:order_success", order_id=order.order_id)
 
     currency = getattr(settings, "PAYPAL_CURRENCY", "USD")
 
     try:
-        pp_data = _paypal_create_order(
+        amount_usd = Decimal(str(convert_currency(
             amount=order.final_amount,
-            currency=currency,
-            reference_id=order.order_id,
+            from_currency="INR",
+            to_currency=currency,
+        )))
+    except Exception as exc:
+        logger.exception("Currency conversion failed: %s", exc)
+        # Fallback: use a safe hardcoded rate
+        amount_usd = (order.final_amount * Decimal("0.012")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+    try:
+        pp_data = _paypal_create_order(
+            amount=amount_usd,      
+            currency=currency,      
+            reference_id=str(order.order_id),
         )
     except Exception as exc:
         logger.exception("PayPal create order failed for order %s: %s", order_id, exc)
@@ -294,7 +296,6 @@ def paypal_callback(request):
 # ─────────────────────────────────────────────────────────────
 
 @never_cache
-@user_login_required
 def paypal_cancel(request):
     kiddora_order_id = request.session.get("pending_kiddora_order_id")
     if kiddora_order_id:

@@ -15,6 +15,7 @@ from payments.models import Payment, Wallet, WalletTransaction
 from payments.views.wallet_helpers import debit_from_wallet
 from shopcore.models import Order
 
+import itertools
 
 # ─────────────────────────────────────────────────────────────
 # INTERNAL HELPER
@@ -171,9 +172,7 @@ def admin_wallet_detail(request, txn_id):
 @never_cache
 @admin_login_required
 def admin_payment_list(request):
-    from shopcore.models import Order as ShopOrder
-    import itertools
- 
+
     search   = request.GET.get("search", "").strip()
     method_f = request.GET.get("method", "")
     status_f = request.GET.get("status", "")
@@ -220,7 +219,7 @@ def admin_payment_list(request):
     cod_rows = []
     if not method_f or method_f == "COD":
         cod_qs = (
-            ShopOrder.objects
+            Order.objects
             .filter(payment_method="COD")
             .select_related("user")
             .order_by("-order_date")
@@ -267,7 +266,7 @@ def admin_payment_list(request):
  
     # ── 4. Manual pagination ─────────────────────────────────
     from django.core.paginator import Paginator as DjPaginator
-    paginator = DjPaginator(all_rows, 20)
+    paginator = DjPaginator(all_rows, 12)
     page_obj  = paginator.get_page(request.GET.get("page"))
  
     # Build method choices including COD

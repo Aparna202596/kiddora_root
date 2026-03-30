@@ -157,3 +157,5 @@ PAYPAL_CLIENT_ID =os.getenv('PAYPAL_CLIENT_ID')
 PAYPAL_CLIENT_SECRET =os.getenv('PAYPAL_CLIENT_SECRET')
 PAYPAL_MODE = "sandbox"   # → "live" in production
 PAYPAL_CURRENCY = "USD" 
+PAYPAL_RETURN_URL = "http://localhost:8000/payments/paypal/callback/"
+PAYPAL_CANCEL_URL = "http://localhost:8000/payments/paypal/cancel/"

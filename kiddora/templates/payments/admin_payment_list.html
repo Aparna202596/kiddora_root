@@ -51,7 +51,6 @@
     <table class="data-table">
       <thead>
         <tr>
-          <th>#</th>
           <th>Transaction ID</th>
           <th>Order ID</th>
           <th>Customer</th>
@@ -67,7 +66,6 @@
       <tbody>
       {% for row in page_obj %}
         <tr>
-          <td>{{ forloop.counter }}</td>
 
           <!-- Transaction ID -->
           <td style="font-family:monospace;font-size:11px;color:#888;">
@@ -166,7 +164,7 @@
     </table>
   </div>
 
-  {% include "pagination.html" with page_obj=page_obj %}
+  {% include "pagination.html" %}
 </div>
 
 <script src="{% static 'js/ui-utils.js' %}"></script>

@@ -134,6 +134,7 @@ def forgot_password(request):
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[user.email],
                     fail_silently=False
+      
                 )
             except Exception as e:
                 messages.error(request, "Failed to send OTP. Try again later.")
@@ -181,7 +182,6 @@ def verify_forgot_password_otp(request):
 
 #  ────────────────────────────────────────────────── RESET PASSWORD ──────────────────────────────────────────────────
 @never_cache
-@user_login_required
 def reset_password(request):
     if request.method == "POST":
         fp_user_id = request.session.get("fp_user_id")
@@ -223,7 +223,7 @@ def reset_password(request):
 
 #  ────────────────────────────────────────────────── RESEND RESET PASSWORD OTP ──────────────────────────────────────────────────
 @never_cache
-@user_login_required
+
 def resend_reset_password_otp(request):
 
     user_id = request.session.get("fp_user_id")

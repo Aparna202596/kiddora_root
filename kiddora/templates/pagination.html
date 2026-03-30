@@ -90,8 +90,8 @@
     <nav class="pagination" aria-label="Pagination">
         {% if page_obj.has_previous %}
             <a href="?{% querystring request.GET page=page_obj.previous_page_number %}"
-               class="pg-btn pg-nav" aria-label="Previous page">
-               <i class="fa-solid fa-chevron-left" style="font-size:11px; margin-right:4px;"></i> Prev
+                class="pg-btn pg-nav" aria-label="Previous page">
+                <i class="fa-solid fa-chevron-left" style="font-size:11px; margin-right:4px;"></i> Prev
             </a>
         {% else %}
             <span class="pg-disabled pg-nav" aria-disabled="true">
@@ -124,12 +124,12 @@
 
         {% if page_obj.has_next %}
             <a href="?{% querystring request.GET page=page_obj.next_page_number %}"
-               class="pg-btn pg-nav" aria-label="Next page">
-               Next <i class="fa-solid fa-chevron-right" style="font-size:11px; margin-left:4px;"></i>
+                class="pg-btn pg-nav" aria-label="Next page">
+                Next <i class="fa-solid fa-chevron-right" style="font-size:11px; margin-left:4px;"></i>
             </a>
         {% else %}
             <span class="pg-disabled pg-nav" aria-disabled="true">
-               Next <i class="fa-solid fa-chevron-right" style="font-size:11px; margin-left:4px;"></i>
+                Next <i class="fa-solid fa-chevron-right" style="font-size:11px; margin-left:4px;"></i>
             </span>
         {% endif %}
     </nav>
