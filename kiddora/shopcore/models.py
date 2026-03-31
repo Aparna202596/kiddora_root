@@ -13,9 +13,16 @@ class Coupon(models.Model):
         ("PERCENT", "Percentage"),
         ("FLAT", "Flat Amount"),
     )
+
+    COUPON_TYPE_CHOICES = (
+        ("PUBLIC", "Public"), 
+        ("REFERRAL", "Referral"),
+    )
     #   PERCENT type → discount_value = 10  means 10%
     #   FLAT type    → discount_value = 100 means ₹100 off
     code = models.CharField(max_length=20, unique=True)
+
+    coupon_type = models.CharField(max_length=20, choices=COUPON_TYPE_CHOICES,default="PUBLIC")
 
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
 

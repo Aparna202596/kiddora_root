@@ -13,8 +13,8 @@
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-size:13px; font-weight:700; color:#444; margin-bottom:7px; }
 .form-group input, .form-group select {
-  width:100%; padding:10px 13px; border:1.5px solid #e0e0e0;
-  border-radius:9px; font-size:13px; outline:none; background:#fafafa;
+    width:100%; padding:10px 13px; border:1.5px solid #e0e0e0;
+    border-radius:9px; font-size:13px; outline:none; background:#fafafa;
 }
 .form-group input:focus, .form-group select:focus { border-color:#f06292; background:#fff; }
 .form-group .hint { font-size:11px; color:#aaa; margin-top:5px; }
@@ -59,8 +59,8 @@
                 <div class="form-group">
                     <label>Code <span style="color:#e91e63;">*</span></label>
                     <input type="text" name="code" maxlength="20" style="text-transform:uppercase;"
-                           value="{{ coupon.code|default:form_data.code|default:'' }}"
-                           placeholder="e.g. SAVE20" required>
+                            value="{{ coupon.code|default:form_data.code|default:'' }}"
+                            placeholder="e.g. SAVE20" required>
                     <div class="hint">Uppercase alphanumeric, max 20 chars.</div>
                 </div>
                 <div class="form-group">
@@ -122,6 +122,20 @@
                 </div>
             </div>
         </div>
+        <div class="form-group">
+        <label>Coupon Type <span style="color:#e91e63;">*</span></label>
+        <select name="coupon_type">
+            <option value="PUBLIC"
+                {% if coupon.coupon_type == "PUBLIC" or not coupon %}selected{% endif %}>
+                Public (visible to all users)
+            </option>
+            <option value="REFERRAL"
+                {% if coupon.coupon_type == "REFERRAL" %}selected{% endif %}>
+                Referral (awarded to specific user only)
+            </option>
+        </select>
+        <div class="hint">Public coupons appear in checkout for all users. Referral coupons are only visible to the referred user.</div>
+    </div>
         <div class="form-actions">
             <button type="button" class="btn-save" id="btnSaveTrigger">
                 <i class="fa fa-check"></i> {{ action }} Coupon

@@ -9,11 +9,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-
+from django.db.models import Q
 from accounts.decorators import user_login_required
 from accounts.models import UserAddress
 from payments.models import Wallet
-from shopcore.models import Cart, Coupon, CouponUsage, Order, OrderItem
+from shopcore.models import Cart, Coupon, CouponUsage, Order, OrderItem, ReferralUse
 from shopcore.views.coupon_views import compute_coupon_discount
 from shopcore.views.offer_views import get_max_offer_discount_percent
 
@@ -294,13 +294,23 @@ def checkout(request):
     wallet_sufficient = wallet_balance >= grand_total
 
     now = timezone.now()
+    user_referral_coupon_ids = ReferralUse.objects.filter(
+        referred_user=request.user
+    ).values_list("coupon_awarded_id", flat=True)
+
+    exhausted_ids = _exhausted_coupon_ids(request.user)
+
     available_coupons = Coupon.objects.filter(
         is_active=True,
         is_deleted=False,
         start_date__lte=now,
         expiry_date__gte=now,
-    ).exclude(id__in=_exhausted_coupon_ids(request.user))
-
+    ).filter(
+        Q(coupon_type="PUBLIC") |
+        Q(coupon_type="REFERRAL", id__in=user_referral_coupon_ids)
+    ).exclude(
+        id__in=exhausted_ids
+    )
     addresses       = UserAddress.objects.filter(user=request.user, is_deleted=False)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
 
@@ -438,7 +448,7 @@ def place_order(request):
             user            = request.user,
             address         = address,
             payment_method  = "COD",
-            payment_status  = "PAID",
+            payment_status  = "PENDING",
             order_status    = "PENDING",
             coupon          = applied_coupon,
             coupon_discount = coupon_discount,
@@ -469,10 +479,9 @@ def place_order(request):
         Payment.objects.create(
             order          = order,
             payment_method = "COD",
-            payment_status = "PAID",
+            payment_status = "PENDING",
             amount         = final_amount,
             initiated_at   = tz.now(),
-            completed_at   = tz.now(),
         )
 
         if applied_coupon:
@@ -494,8 +503,8 @@ def place_order(request):
         user            = request.user,
         address         = address,
         payment_method  = payment_method,
-        payment_status  = "PENDING",
-        order_status    = "PENDING",
+        payment_status  = "INITIATED",
+        order_status    = "ORDER NOT PLACED",
         coupon          = applied_coupon,
         coupon_discount = coupon_discount,
         total_amount    = subtotal,
@@ -513,32 +522,23 @@ def place_order(request):
             quantity        = item.quantity,
             unit_price      = base_price,
             discount_amount = item_disc,
+            item_status     = "PENDING",
         )
         inv = variant.inventory
         inv.quantity_available = max(0, inv.quantity_available - item.quantity)
         inv.quantity_sold     += item.quantity
         inv.save(update_fields=["quantity_available", "quantity_sold"])
 
-    if applied_coupon:
-        usage, _ = CouponUsage.objects.get_or_create(coupon=applied_coupon, user=request.user)
-        usage.times_used += 1
-        usage.save(update_fields=["times_used"])
-        applied_coupon.used_count += 1
-        applied_coupon.save(update_fields=["used_count"])
-
-    cart.items.all().delete()
-    request.session.pop("applied_coupon_code", None)
-    request.session.pop("applied_coupon_discount", None)
-
-    # Store order_id in session for the payment views
     request.session["pending_kiddora_order_id"] = order.order_id
 
+    if applied_coupon:
+        request.session["pending_coupon_id"] = applied_coupon.id
+
     if payment_method == "WALLET":
-        # Redirect to wallet pay with the real order_id in URL
         return redirect("payments:pay_with_wallet", order_id=order.order_id)
     else:
-        # Redirect directly to initiate_paypal_payment (order already exists)
         return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
+
 # ─────────────────────────────────────────────────────────────
 # ORDER SUCCESS
 # ─────────────────────────────────────────────────────────────

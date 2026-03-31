@@ -10,7 +10,8 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from accounts.decorators import admin_login_required, user_login_required
-from shopcore.models import Cart, Coupon, CouponUsage
+from shopcore.models import Cart, Coupon, CouponUsage, ReferralUse
+from django.db.models import Q
 
 # ─────────────────────────────────────────────────────────────
 # HELPERS
@@ -173,9 +174,15 @@ def remove_coupon(request):
 @user_login_required
 def user_coupon_list(request):
     now     = timezone.now()
+    user_referral_coupon_ids = ReferralUse.objects.filter(
+        referred_user=request.user
+    ).values_list("coupon_awarded_id", flat=True)
     coupons = Coupon.objects.filter(
         is_active=True, is_deleted=False,
         start_date__lte=now, expiry_date__gte=now,
+    ).filter(
+        Q(coupon_type="PUBLIC") |
+        Q(coupon_type="REFERRAL", id__in=user_referral_coupon_ids)
     )
 
     coupon_data = []
@@ -406,6 +413,7 @@ def admin_edit_coupon(request, coupon_id):
 
 def _save_coupon(request, instance):
     code          = request.POST.get("code", "").strip().upper()
+    coupon_type   = request.POST.get("coupon_type", "PUBLIC")
     discount_type = request.POST.get("discount_type", "PERCENT")
     discount_val  = request.POST.get("discount_value", "")
     max_discount  = request.POST.get("max_discount", "") or None
@@ -449,6 +457,7 @@ def _save_coupon(request, instance):
 
     obj                  = instance or Coupon()
     obj.code             = code
+    obj.coupon_type  = coupon_type 
     obj.discount_type    = discount_type
     obj.discount_value   = Decimal(discount_val)
     obj.max_discount     = Decimal(max_discount) if max_discount else None

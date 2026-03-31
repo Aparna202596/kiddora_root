@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import timedelta
-
+from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
@@ -54,14 +54,15 @@ def _award_referral_coupon(referrer) -> Coupon | None:
     # Auto-generate a personal one-time 10% coupon valid 30 days
     code = f"REF-{referrer.referral_record.code[-6:]}-{uuid.uuid4().hex[:4].upper()}"
     coupon = Coupon.objects.create(
-        code             = code,
-        discount_type    = "PERCENT",
-        discount_value   = 10,
-        min_order_amount = 0,
-        start_date       = now,
-        expiry_date      = now + timedelta(days=30),
-        usage_limit      = 1,
-        is_active        = True,
+        code = f"REF-{uuid.uuid4().hex[:8].upper()}",   # or your existing code generator
+        coupon_type = "REFERRAL",                       # ← THIS IS THE ONLY CHANGE YOU NEED
+        discount_type = "FLAT",
+        discount_value = Decimal("100"),
+        min_order_amount = Decimal("0"),
+        start_date = timezone.now(),
+        expiry_date = timezone.now() + timedelta(days=30),
+        usage_limit = 1,
+        is_active = True,
     )
     return coupon
 

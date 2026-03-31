@@ -414,9 +414,9 @@
                     </label>
                 </div>
             </label>
-            {% comment %} <div class="payment-blocked-note {% if cod_blocked %}show{% endif %}" id="codBlockedNote">
+            <div class="payment-blocked-note {% if cod_blocked %}show{% endif %}" id="codBlockedNote">
                 ⚠️ COD is not available for orders above ₹1,000.
-            </div> {% endcomment %}
+            </div>
 
             <!-- PAYPAL -->
             <label class="payment-option {% if cod_blocked %}selected{% endif %}"
@@ -541,22 +541,21 @@
 </div>
 
 <script>
-const CSRF           = '{{ csrf_token }}';
-const SUBTOTAL       = parseFloat('{{ price_after_offers|floatformat:2 }}');  // after offer discounts
-const SHIPPING       = parseFloat('{{ shipping_charge|floatformat:2 }}');
-const COD_LIMIT      = 1000;
+const CSRF = '{{ csrf_token }}';
+const SUBTOTAL = parseFloat('{{ price_after_offers|floatformat:2 }}');
+const SHIPPING = parseFloat('{{ shipping_charge|floatformat:2 }}');
+const COD_LIMIT = 1000;
 const WALLET_BALANCE = parseFloat('{{ wallet_balance|floatformat:2|default:"0" }}');
 
 let currentCouponDiscount = parseFloat('{{ coupon_discount|floatformat:2|default:"0" }}');
-let appliedCouponCode     = '{% if applied_coupon %}{{ applied_coupon.code }}{% endif %}';
-let currentGrandTotal     = parseFloat('{{ grand_total|floatformat:2 }}');
-
+let appliedCouponCode = '{% if applied_coupon %}{{ applied_coupon.code }}{% endif %}';
+let currentGrandTotal = parseFloat('{{ grand_total|floatformat:2 }}');
 /* ── AJAX helper ──────────────────────────────────── */
 function ajaxFetch(url, formData) {
     return fetch(url, {
-        method:  'POST',
+        method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body:    formData,
+        body: formData,
     });
 }
 
@@ -567,6 +566,7 @@ function selectAddress(el) {
     const radio = el.querySelector('input[type="radio"]');
     if (radio) radio.checked = true;
 }
+
 function toggleAddressForm(forceClose) {
     const panel = document.getElementById('newAddressForm');
     if (forceClose || panel.classList.contains('open')) {
@@ -626,7 +626,7 @@ function injectAddressCard(addr, selectIt) {
         </div>
         <div class="addr-type">📍 ${addr.address_type}</div>
         <span class="default-badge" id="addr-badge-${addr.id}"
-              style="${addr.is_default ? '' : 'display:none;'}">Default</span>
+                style="${addr.is_default ? '' : 'display:none;'}">Default</span>
         <button type="button" class="addr-edit-btn"
                 onclick="event.stopPropagation(); openEditModal(
                     ${addr.id},'${esc(addr.address_line1)}','${esc(addr.address_line2)}',
@@ -689,92 +689,119 @@ function saveEditAddress() {
         .catch(() => { document.getElementById('eaError').textContent = 'Something went wrong.'; });
 }
 
-/* ── Coupon modal ─────────────────────────────────── */
-function openCouponModal()  { document.getElementById('couponModal').classList.add('open'); }
-function closeCouponModal() { document.getElementById('couponModal').classList.remove('open'); }
-function useCoupon(code)    { document.getElementById('couponCodeInput').value = code; closeCouponModal(); applyCoupon(); }
-
-/* ── Apply coupon ─────────────────────────────────── */
-function applyCoupon() {
-    const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
-    const msg  = document.getElementById('couponMsg');
-    if (!code) { msg.className = 'coupon-msg error'; msg.textContent = 'Please enter a coupon code.'; return; }
-    const fd = new FormData();
-    fd.append('csrfmiddlewaretoken', CSRF);
-    fd.append('coupon_code', code);
-    fd.append('subtotal',    SUBTOTAL);
-    ajaxFetch('{% url "shopcore:apply_coupon" %}', fd)
-        .then(r => { if (!r.ok && r.status !== 400) throw new Error(''); return r.json(); })
-        .then(res => {
-            if (!res.success) { msg.className = 'coupon-msg error'; msg.textContent = res.error; return; }
-            currentCouponDiscount = parseFloat(res.discount);
-            appliedCouponCode     = res.coupon_code;
-            msg.className = 'coupon-msg success';
-            msg.textContent = res.message;
-            updateSummary();
-            showAppliedStrip(res.coupon_code, res.discount);
-        })
-        .catch(() => { msg.className = 'coupon-msg error'; msg.textContent = 'Could not apply coupon.'; });
-}
-
-/* ── Remove coupon ────────────────────────────────── */
-function removeCoupon() {
-    const fd = new FormData();
-    fd.append('csrfmiddlewaretoken', CSRF);
-    ajaxFetch('{% url "shopcore:remove_coupon" %}', fd)
-        .then(r => r.json())
-        .then(res => {
-            if (!res.success) return;
-            currentCouponDiscount = 0;
-            appliedCouponCode     = '';
-            hideAppliedStrip();
-            updateSummary();
-            document.getElementById('couponCodeInput').value = '';
-            document.getElementById('couponMsg').textContent = '';
-        });
-}
+/* ── Coupon helper functions ────────────────────────────── */
 function showAppliedStrip(code, discount) {
     const strip = document.getElementById('couponAppliedStrip');
-    strip.innerHTML = `🎉 <strong>${code}</strong> applied — You save <strong>₹${parseFloat(discount).toFixed(2)}</strong>
+    const inputSection = document.getElementById('couponInputSection');
+
+    strip.innerHTML = `🎉 <strong>${code}</strong> applied — You save <strong>₹${parseFloat(discount || 0).toFixed(2)}</strong>
         <button type="button" class="btn-remove-coupon" onclick="removeCoupon()">✕ Remove</button>`;
+
     strip.style.display = 'flex';
-    document.getElementById('couponInputSection').style.display = 'none';
+    inputSection.style.display = 'none';
 }
+
 function hideAppliedStrip() {
     document.getElementById('couponAppliedStrip').style.display = 'none';
     document.getElementById('couponInputSection').style.display = 'block';
 }
 
+/* ── Apply coupon ─────────────────────────────────── */
+function applyCoupon() {
+    const code = document.getElementById('couponCodeInput').value.trim().toUpperCase();
+    const msgEl = document.getElementById('couponMsg');
+    
+    if (!code) {
+        msgEl.className = 'coupon-msg error';
+        msgEl.textContent = 'Please enter a coupon code.';
+        return;
+    }
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('coupon_code', code);
+    fd.append('subtotal', SUBTOTAL);
+
+    ajaxFetch('{% url "shopcore:apply_coupon" %}', fd)
+        .then(r => {
+            if (!r.ok && r.status !== 400) throw new Error('Network error');
+            return r.json();
+        })
+        .then(res => {
+            if (!res.success) {
+                msgEl.className = 'coupon-msg error';
+                msgEl.textContent = res.error || 'Failed to apply coupon.';
+                return;
+            }
+
+            currentCouponDiscount = parseFloat(res.discount || 0);
+            appliedCouponCode = res.coupon_code || code;
+
+            msgEl.className = 'coupon-msg success';
+            msgEl.textContent = res.message || `Coupon "${res.coupon_code}" applied successfully!`;
+
+            updateSummary();
+            showAppliedStrip(res.coupon_code, res.discount);
+
+            setTimeout(() => {
+                if (msgEl.classList.contains('success')) msgEl.textContent = '';
+            }, 4000);
+        })
+        .catch(() => {
+            msgEl.className = 'coupon-msg error';
+            msgEl.textContent = 'Could not apply coupon. Please try again.';
+        });
+}
+/* ── Remove coupon ────────────────────────────────── */
+function removeCoupon() {
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+
+    ajaxFetch('{% url "shopcore:remove_coupon" %}', fd)
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success) {
+                console.warn('Remove coupon failed on backend');
+                return;
+            }
+
+            currentCouponDiscount = 0;
+            appliedCouponCode = '';
+
+            hideAppliedStrip();
+            updateSummary();
+
+            const msgEl = document.getElementById('couponMsg');
+            if (msgEl) msgEl.textContent = '';
+
+            const input = document.getElementById('couponCodeInput');
+            if (input) input.value = '';
+        })
+        .catch(err => {
+            console.error('Failed to remove coupon:', err);
+            // Still update UI
+            currentCouponDiscount = 0;
+            appliedCouponCode = '';
+            hideAppliedStrip();
+            updateSummary();
+        });
+}
+
 /* ── Update summary + payment guards ─────────────── */
 function updateSummary() {
-    // SUBTOTAL here is price_after_offers (already offer-discounted)
     currentGrandTotal = SUBTOTAL - currentCouponDiscount + SHIPPING;
     document.getElementById('summGrandTotal').textContent = currentGrandTotal.toFixed(2);
 
-    // Coupon row
-    const row  = document.getElementById('summCouponRow');
-    const amt  = document.getElementById('summCouponAmt');
-    const code = document.getElementById('summCouponCode');
+    const row = document.getElementById('summCouponRow');
+    const amt = document.getElementById('summCouponAmt');
+    const codeEl = document.getElementById('summCouponCode');
+
     if (currentCouponDiscount > 0) {
         row.style.display = 'flex';
-        amt.textContent   = currentCouponDiscount.toFixed(2);
-        code.textContent  = appliedCouponCode;
+        amt.textContent = currentCouponDiscount.toFixed(2);
+        codeEl.textContent = appliedCouponCode;
     } else {
         row.style.display = 'none';
-    }
-
-    // Wallet sub-note
-    const walletNote = document.getElementById('walletSubNote');
-    const walletGrandDisplay = document.getElementById('walletGrandDisplay');
-    if (walletNote) {
-        if (walletGrandDisplay) walletGrandDisplay.textContent = currentGrandTotal.toFixed(2);
-        if (WALLET_BALANCE >= currentGrandTotal) {
-            walletNote.textContent = '✅ Sufficient to cover this order';
-            walletNote.className   = 'wallet-sub';
-        } else {
-            walletNote.textContent = `⚠️ ₹${WALLET_BALANCE.toFixed(2)} available — order total ₹${currentGrandTotal.toFixed(2)}`;
-            walletNote.className   = 'wallet-sub low';
-        }
     }
 
     updatePaymentAvailability(currentGrandTotal);
@@ -782,49 +809,59 @@ function updateSummary() {
 
 /* ── Payment availability ─────────────────────────── */
 function updatePaymentAvailability(grand) {
-    // COD: blocked above ₹1,000
     const codBlocked = grand > COD_LIMIT;
-    const codOpt   = document.getElementById('codOption');
-    const codNote  = document.getElementById('codBlockedNote');
+    const codOpt = document.getElementById('codOption');
     const codRadio = document.getElementById('radio_COD');
-    codRadio.disabled = codBlocked;
-    codOpt.classList.toggle('disabled-option', codBlocked);
-    codNote.classList.toggle('show', codBlocked);
-    if (codBlocked && codRadio.checked) {
+    const codNote = document.getElementById('codBlockedNote');
+
+    if (codOpt) codOpt.classList.toggle('disabled-option', codBlocked);
+    if (codRadio) codRadio.disabled = codBlocked;
+    if (codNote) codNote.classList.toggle('show', codBlocked);
+
+    if (codBlocked && codRadio && codRadio.checked) {
         selectPayment(document.getElementById('paypalOption'), 'PAYPAL');
     }
 
-    // Wallet: disabled when balance < grand total or no balance
     const walletBlocked = WALLET_BALANCE < grand || WALLET_BALANCE <= 0;
-    const walletOpt   = document.getElementById('walletOption');
-    const walletNote  = document.getElementById('walletBlockedNote');
+    const walletOpt = document.getElementById('walletOption');
     const walletRadio = document.getElementById('radio_WALLET');
-    walletRadio.disabled = walletBlocked;
-    walletOpt.classList.toggle('disabled-option', walletBlocked);
-    walletNote.classList.toggle('show', WALLET_BALANCE > 0 && WALLET_BALANCE < grand);
-    if (walletBlocked && walletRadio.checked) {
+    const walletNote = document.getElementById('walletBlockedNote');
+
+    if (walletOpt) walletOpt.classList.toggle('disabled-option', walletBlocked);
+    if (walletRadio) walletRadio.disabled = walletBlocked;
+    if (walletNote) walletNote.classList.toggle('show', WALLET_BALANCE > 0 && WALLET_BALANCE < grand);
+
+    if (walletBlocked && walletRadio && walletRadio.checked) {
         selectPayment(document.getElementById('paypalOption'), 'PAYPAL');
     }
+}
+/* ── Coupon modal ─────────────────────────────────── */
+
+function openCouponModal() { document.getElementById('couponModal').classList.add('open'); }
+function closeCouponModal() { document.getElementById('couponModal').classList.remove('open'); }
+function useCoupon(code) {
+    document.getElementById('couponCodeInput').value = code;
+    closeCouponModal();
+    applyCoupon();
 }
 
 /* ── Payment option selection ─────────────────────── */
 function selectPayment(el, method) {
     const radio = el.querySelector('input[type=radio]');
     if (radio && radio.disabled) return;
+
     document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
     el.classList.add('selected');
     if (radio) radio.checked = true;
 
-    // Update place-order button label
     const btn = document.getElementById('placeOrderBtn');
     const labels = {
-        COD:    '🛒 Place Order (Cash on Delivery)',
+        COD: '🛒 Place Order (Cash on Delivery)',
         PAYPAL: '🅿️ Continue to PayPal',
         WALLET: '👛 Pay with Wallet',
     };
     btn.textContent = labels[method] || '🛒 Place Order';
 }
-
 /* ── Form submit guard ────────────────────────────── */
 document.getElementById('checkoutForm').addEventListener('submit', function(e) {
     if (!document.querySelector('input[name="address_id"]:checked')) {
@@ -834,7 +871,6 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
     if (!pay) { e.preventDefault(); alert('Please select a payment method.'); return; }
 
     const grand = SUBTOTAL - currentCouponDiscount + SHIPPING;
-
     if (pay.value === 'COD' && grand > COD_LIMIT) {
         e.preventDefault();
         alert('COD is not available for orders above ₹1,000. Please choose PayPal.');
@@ -846,15 +882,10 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
         return;
     }
 
-    // Loading feedback
     const btn = document.getElementById('placeOrderBtn');
-    const labels = {
-        COD:    '⏳ Placing your order…',
-        WALLET: '⏳ Processing wallet payment…',
-        PAYPAL: '⏳ Redirecting to PayPal…',
-    };
+    const labels = { COD: '⏳ Placing your order…', WALLET: '⏳ Processing wallet payment…', PAYPAL: '⏳ Redirecting to PayPal…' };
     btn.textContent = labels[pay.value] || '⏳ Processing…';
-    btn.disabled    = true;
+    btn.disabled = true;
 });
 
 /* ── Backdrop close ───────────────────────────────── */
@@ -866,16 +897,21 @@ document.getElementById('checkoutForm').addEventListener('submit', function(e) {
 
 /* ── Init ─────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', function() {
-    // Ensure one address is selected
     const checked = document.querySelector('input[name="address_id"]:checked');
     if (!checked) {
         const first = document.querySelector('input[name="address_id"]');
-        if (first) { first.checked = true; first.closest('.address-card')?.classList.add('selected'); }
+        if (first) { 
+            first.checked = true; 
+            first.closest('.address-card')?.classList.add('selected'); 
+        }
     }
-    if (currentCouponDiscount > 0) updateSummary();
-    else updatePaymentAvailability(currentGrandTotal);
 
-    // Set initial button label based on pre-selected payment
+    if (currentCouponDiscount > 0) {
+        updateSummary();
+    } else {
+        updatePaymentAvailability(currentGrandTotal);
+    }
+
     const preSelected = document.querySelector('input[name="payment_method"]:checked');
     if (preSelected) selectPayment(preSelected.closest('.payment-option'), preSelected.value);
 });

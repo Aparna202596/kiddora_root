@@ -24,6 +24,8 @@
   .status-OUT_FOR_DELIVERY { background:#ede9fe; color:#6d28d9; }
   .status-DELIVERED        { background:#dcfce7; color:#15803d; }
   .status-CANCELLED        { background:#fee2e2; color:#991b1b; }
+  .status-ORDER_NOT_PLACED { background:#fee2e2; color:#7f1d1d; }
+  .status-INITIATED        { background:#fef9c3; color:#92400e; }
   .oi-row { display:flex; gap:14px; align-items:center; padding:12px 0; border-bottom:1px solid #f5f5f5; }
   .oi-row:last-child { border-bottom:none; }
   .oi-img { width:64px; height:80px; border-radius:8px; overflow:hidden; background:#f8f8f8; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
@@ -175,7 +177,7 @@
 
     <!-- UPDATE STATUS -->
     {# FIXED: was {% if order.order_status not in "DELIVERED,CANCELLED" %} — invalid Django template syntax #}
-    {% if order.order_status != 'DELIVERED' and order.order_status != 'CANCELLED' %}
+    {% if order.order_status not in 'DELIVERED,CANCELLED' and order.order_status != 'ORDER NOT PLACED' %}
     <div class="od-card">
       <div class="od-card-title"><i class="fa fa-rotate"></i> Update Status</div>
       <form method="post"

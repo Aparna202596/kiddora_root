@@ -187,16 +187,19 @@ def user_order_detail(request, order_id):
 def cancel_order(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
 
-    if order.order_status not in ("PENDING", "CONFIRMED"):
+    if order.order_status == "OUT_FOR_DELIVERY":
+        messages.error(
+            request,
+            "Your order is out for delivery. You cannot cancel the order now."
+        )
+        return redirect("shopcore:user_order_detail", order_id=order.order_id)
+
+    if order.order_status not in ("PENDING", "CONFIRMED", "SHIPPED"):
         messages.error(request, "This order cannot be cancelled at its current stage.")
         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
     if request.method != "POST":
-        return render(
-            request,
-            "orders/user/confirm_cancel_order.html",
-            {"order": order},
-        )
+        return render(request, "orders/user/confirm_cancel_order.html", {"order": order})
 
     reason = request.POST.get("cancel_reason", "").strip()
 
@@ -208,7 +211,7 @@ def cancel_order(request, order_id):
             inv.save()
         except Exception:
             pass
-        oi.item_status  = "CANCELLED"
+        oi.item_status   = "CANCELLED"
         oi.cancel_reason = reason or "Order cancelled by user"
         oi.cancelled_at  = timezone.now()
         oi.save()
@@ -216,11 +219,26 @@ def cancel_order(request, order_id):
     order.order_status  = "CANCELLED"
     order.cancel_reason = reason or "Cancelled by user"
     order.cancelled_at  = timezone.now()
+
+    if order.payment_status == "PAID":
+        if order.payment_method in ("PAYPAL", "WALLET"):
+            from payments.views.wallet_helpers import credit_refund_to_wallet
+            credit_refund_to_wallet(
+                user=order.user,
+                amount=order.final_amount,
+                description=f"Refund for cancelled order {order.order_id}",
+                reference_type="CANCEL",
+                reference_id=str(order.order_id),
+                order=order,
+            )
+            order.payment_status = "REFUNDED"
+        elif order.payment_method == "COD":
+            order.payment_status = "CANCELLED"
+
     order.save()
 
     messages.success(request, f"Order {order.order_id} has been cancelled.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
-
 
 # ─────────────────────────────────────────────────────────────
 # USER: CANCEL SINGLE ITEM
@@ -231,24 +249,26 @@ def cancel_order(request, order_id):
 @transaction.atomic
 def cancel_order_item(request, order_id, item_id):
     order      = get_object_or_404(Order, order_id=order_id, user=request.user)
-    order_item = get_object_or_404(
-        OrderItem, id=item_id, order=order, item_status="ACTIVE"
-    )
+    order_item = get_object_or_404(OrderItem, id=item_id, order=order, item_status="ACTIVE")
 
-    if order.order_status not in ("PENDING", "CONFIRMED"):
+    if order.order_status == "OUT_FOR_DELIVERY":
+        messages.error(
+            request,
+            "Your order is out for delivery. You cannot cancel the order now."
+        )
+        return redirect("shopcore:user_order_detail", order_id=order.order_id)
+
+    if order.order_status not in ("PENDING", "CONFIRMED", "SHIPPED"):
         messages.error(request, "Items in this order can no longer be cancelled.")
         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
     if request.method != "POST":
-        return render(
-            request,
-            "orders/user/confirm_cancel_item.html",
-            {"order": order, "order_item": order_item},
-        )
+        return render(request, "orders/user/confirm_cancel_item.html", {
+            "order": order, "order_item": order_item,
+        })
 
     reason = request.POST.get("cancel_reason", "").strip()
 
-    # Restore stock
     try:
         inv = order_item.variant.inventory
         inv.quantity_available += order_item.quantity
@@ -257,27 +277,54 @@ def cancel_order_item(request, order_id, item_id):
     except Exception:
         pass
 
-    order_item.item_status  = "CANCELLED"
+    item_refund_amount = order_item.total_price
+    if order.payment_status == "PAID" and order.payment_method in ("PAYPAL", "WALLET"):
+        from payments.views.wallet_helpers import credit_refund_to_wallet
+        credit_refund_to_wallet(
+            user=order.user,
+            amount=item_refund_amount,
+            description=(
+                f"Partial refund for cancelled item "
+                f"'{order_item.variant.product.product_name}' "
+                f"in order {order.order_id}"
+            ),
+            reference_type="CANCEL",
+            reference_id=str(order.order_id),
+            order=order,
+        )
+
+    order_item.item_status   = "CANCELLED"
     order_item.cancel_reason = reason or "Item cancelled by user"
     order_item.cancelled_at  = timezone.now()
     order_item.save()
 
-    # Recalculate order totals after item removal
     _recalculate_order_amount(order)
 
-    # If every item is now cancelled, cancel the whole order
-    if not order.order_items.filter(item_status="ACTIVE").exists():
-        order.order_status  = "CANCELLED"
-        order.cancel_reason = "All items cancelled"
-        order.cancelled_at  = timezone.now()
-        order.save(update_fields=["order_status", "cancel_reason", "cancelled_at"])
+    # Check if all items are now cancelled
+    remaining_active = order.order_items.filter(item_status="ACTIVE")
+    if not remaining_active.exists():
+        order.order_status   = "CANCELLED"
+        order.cancel_reason  = "All items cancelled"
+        order.cancelled_at   = timezone.now()
+
+        if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
+            order.payment_status = "REFUNDED"
+        elif order.payment_method == "COD":
+            order.payment_status = "CANCELLED"
+        order.save(update_fields=["order_status", "cancel_reason", "cancelled_at", "payment_status"])
+    else:
+
+        if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
+            order.payment_status = "PARTIALLY_REFUNDED"
+            order.save(update_fields=["payment_status"])
 
     messages.success(
         request,
-        f"Item '{order_item.variant.product.product_name}' cancelled.",
+        f"Item '{order_item.variant.product.product_name}' cancelled."
+        + (f" ₹{item_refund_amount:.2f} refunded to your wallet." 
+           if order.payment_method in ("PAYPAL", "WALLET") else ""),
     )
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
-
 
 # ─────────────────────────────────────────────────────────────
 # USER: REQUEST RETURN (only after DELIVERED)
@@ -526,7 +573,7 @@ def admin_update_order_status(request, order_id):
         "PENDING":          ["CONFIRMED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
         "CONFIRMED":        ["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
         "SHIPPED":          ["OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
-        "OUT_FOR_DELIVERY": ["DELIVERED", "CANCELLED"],
+        "OUT_FOR_DELIVERY": ["DELIVERED"],
         "DELIVERED":        [],
         "CANCELLED":        [],
         "RETURNED":         [],
@@ -545,19 +592,27 @@ def admin_update_order_status(request, order_id):
     order.order_status = new_status
 
     if new_status == "DELIVERED":
-        order.delivered_at   = timezone.now()
-        order.payment_status = "PAID"
-        # Mark all active items delivered
+        order.delivered_at = timezone.now()
         order.order_items.filter(item_status="ACTIVE").update(
-            item_status="ACTIVE",  # stays ACTIVE; delivered_at set per item
             delivered_at=timezone.now(),
         )
+        # ✅ Only COD gets marked PAID on delivery
+        if order.payment_method == "COD":
+            order.payment_status = "PAID"
+            # Update the COD Payment record too
+            from payments.models import Payment
+            Payment.objects.filter(
+                order=order,
+                payment_method="COD",
+                payment_status="PENDING"
+            ).update(
+                payment_status="PAID",
+                completed_at=timezone.now(),
+            )
 
     elif new_status == "CANCELLED":
         order.cancelled_at  = timezone.now()
-        order.cancel_reason = request.POST.get(
-            "cancel_reason", "Cancelled by admin"
-        ).strip()
+        order.cancel_reason = request.POST.get("cancel_reason", "Cancelled by admin").strip()
         for oi in order.order_items.filter(item_status="ACTIVE"):
             try:
                 inv = oi.variant.inventory
@@ -566,11 +621,27 @@ def admin_update_order_status(request, order_id):
                 inv.save()
             except Exception:
                 pass
-            oi.item_status  = "CANCELLED"
+            oi.item_status   = "CANCELLED"
             oi.cancel_reason = order.cancel_reason
             oi.cancelled_at  = timezone.now()
             oi.save()
 
+        # ✅ Refund if already paid
+        if order.payment_status == "PAID":
+            if order.payment_method in ("PAYPAL", "WALLET"):
+                from payments.views.wallet_helpers import credit_refund_to_wallet
+                credit_refund_to_wallet(
+                    user=order.user,
+                    amount=order.final_amount,
+                    description=f"Admin refund for cancelled order {order.order_id}",
+                    reference_type="CANCEL",
+                    reference_id=str(order.order_id),
+                    order=order,
+                )
+                order.payment_status = "REFUNDED"
+            elif order.payment_method == "COD":
+                order.payment_status = "CANCELLED"
+                
     order.save()
     messages.success(
         request,

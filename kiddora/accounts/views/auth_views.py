@@ -129,7 +129,7 @@ def user_signup(request):
 
         with transaction.atomic():
             user = User.objects.create_user(
-                username = email.split("@")[0],
+                username = username,
                 email = email,
                 password = password1,
                 role = CustomUser.ROLE_CUSTOMER,

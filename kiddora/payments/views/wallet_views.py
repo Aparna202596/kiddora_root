@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.utils import timezone
 from decimal import Decimal
 
-from payments.views.wallet_helpers import debit_from_wallet
+from payments.views.wallet_helpers import debit_from_wallet, _restore_inventory_for_order
 from payments.models import Payment, Wallet, WalletTransaction
 from shopcore.models import Order
 
@@ -32,13 +32,17 @@ def pay_with_wallet(request, order_id):
         return redirect("shopcore:order_success", order_id=order.order_id)
 
     balance = _wallet_balance(request.user)
-
     if balance < order.final_amount:
         messages.error(
             request,
             f"Insufficient wallet balance (₹{balance:.2f}). "
             "Please choose another payment method.",
         )
+        # ✅ Mark order as not placed on insufficient balance
+        order.order_status   = "ORDER NOT PLACED"
+        order.payment_status = "FAILED"
+        order.save(update_fields=["order_status", "payment_status"])
+        _restore_inventory_for_order(order)
         return redirect("payments:wallet_payment_failure", order_id=order.order_id)
 
     success, msg, txn = debit_from_wallet(
@@ -52,23 +56,27 @@ def pay_with_wallet(request, order_id):
 
     if not success:
         messages.error(request, msg)
+        order.order_status   = "ORDER NOT PLACED"
+        order.payment_status = "FAILED"
+        order.save(update_fields=["order_status", "payment_status"])
+        _restore_inventory_for_order(order)
         return redirect("payments:wallet_payment_failure", order_id=order.order_id)
 
     Payment.objects.create(
-        order=order,
-        payment_method="WALLET",
-        payment_status="PAID",
-        amount=order.final_amount,
-        initiated_at=timezone.now(),
-        completed_at=timezone.now(),
+        order          = order,
+        payment_method = "WALLET",
+        payment_status = "PAID",
+        amount         = order.final_amount,
+        initiated_at   = timezone.now(),
+        completed_at   = timezone.now(),
     )
 
     order.payment_status = "PAID"
-    order.payment_method = "WALLET"
-    order.save(update_fields=["payment_status", "payment_method"])
+    order.save(update_fields=["payment_status"])
 
-    request.session.pop("applied_coupon_code", None)
-    request.session.pop("applied_coupon_discount", None)
+    # ✅ Finalize the order (same helper as PayPal)
+    from payments.views.paypal_views import _finalize_order_after_payment
+    _finalize_order_after_payment(request, order)
 
     messages.success(request, f"₹{order.final_amount} paid from wallet. Order confirmed!")
     return redirect("shopcore:order_success", order_id=order.order_id)
