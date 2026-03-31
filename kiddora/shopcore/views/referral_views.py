@@ -156,7 +156,7 @@ def admin_referral_list(request):
             | Q(user__email__icontains=search)
             | Q(user__full_name__icontains=search)
         )
-    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+    page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
     return render(request, "referral/admin_referral_list.html", {
         "page_obj": page_obj,
         "search":   search,
@@ -174,7 +174,7 @@ def admin_referral_uses(request, referral_id):
     uses = referral_code.uses.select_related(
         "referred_user", "coupon_awarded"
     ).order_by("-created_at")
-    page_obj = Paginator(uses, 20).get_page(request.GET.get("page"))
+    page_obj = Paginator(uses, 15).get_page(request.GET.get("page"))
     return render(request, "referral/admin_referral_uses.html", {
         "referral_code": referral_code,
         "page_obj":      page_obj,

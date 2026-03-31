@@ -35,7 +35,6 @@ urlpatterns = [
     path("admin/banners/block/<int:banner_id>/", store_views.admin_block_banner, name="admin_block_banner"),
     path("admin/banners/unblock/<int:banner_id>/", store_views.admin_unblock_banner, name="admin_unblock_banner"),
     path("admin/banners/<int:banner_id>/delete/", store_views.admin_delete_banner, name="admin_delete_banner"),
-    path("admin/banners/<int:banner_id>/toggle/", store_views.admin_toggle_banner, name="admin_toggle_banner"),
 
     # ── CART — USER ───────────────────────────────────────────────────────────
     path("cart/", cart_views.cart_view, name="cart"),

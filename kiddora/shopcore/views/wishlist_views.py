@@ -1,50 +1,41 @@
-from django.contrib import messages
-from accounts.decorators import user_login_required 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from accounts.decorators import user_login_required 
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.http import JsonResponse
 from django.db import transaction
+
 from products.models import Product, ProductVariant
 from shopcore.models import Cart, CartItem, Wishlist, WishlistItem
 
 MAX_QTY = CartItem.MAX_QTY_PER_PRODUCT
 
-
-# ─────────────────────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────────────────────
-
+#  ────────────────────────────────────────────────── HELPER FUNCTION ──────────────────────────────────────────────────
 def _stock_for(variant):
     try:
         return variant.inventory.quantity_available
     except Exception:
         return 0
 
-
 def _variant_is_available(variant):
     try:
-        p   = variant.product
+        p = variant.product
         sub = p.subcategory
         cat = sub.category
         return (
             variant.is_active
-            and p.is_active   and not p.is_deleted
+            and p.is_active and not p.is_deleted
             and sub.is_active and not sub.is_deleted
             and cat.is_active and not cat.is_deleted
         )
     except Exception:
         return False
 
-
 def _is_ajax(request) -> bool:
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
 
-
-# ─────────────────────────────────────────────────────────────
-# WISHLIST PAGE
-# ─────────────────────────────────────────────────────────────
-
+#  ────────────────────────────────────────────────── WISHLIST ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def wishlist_view(request):
@@ -84,10 +75,10 @@ def wishlist_view(request):
 
         item_data.append({
             "wishlist_item": wi,
-            "product":       product,
-            "img_url":       img_url,
-            "total_stock":   total_stock,
-            "available":     available,
+            "product": product,
+            "img_url": img_url,
+            "total_stock": total_stock,
+            "available": available,
         })
 
     return render(request, "wishlist/wishlist.html", {
@@ -95,11 +86,7 @@ def wishlist_view(request):
         "item_data": item_data,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# REMOVE FROM WISHLIST  (AJAX-aware)
-# ─────────────────────────────────────────────────────────────
-
+#  ────────────────────────────────────────────────── ADD/REMOVE WISHLIST ITEMS ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @require_POST
@@ -119,16 +106,7 @@ def remove_from_wishlist(request, product_id):
     messages.success(request, f'"{product.product_name}" removed from wishlist.')
     return redirect("shopcore:wishlist")
 
-
-# ─────────────────────────────────────────────────────────────
-# VARIANT POPUP  (GET — renders partial HTML for modal)
-#
-# Shows ALL active variants (including OOS) for selection.
-# OOS variants are shown but cannot be added to cart.
-# First in-stock variant is auto-selected as default.
-# Cart add uses the existing add_to_cart view (POST to /shop/cart/add/<variant_id>/).
-# ─────────────────────────────────────────────────────────────
-
+#  ────────────────────────────────────────────────── VARIANT SELECTION POPUP ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def wishlist_variant_popup(request, product_id):
@@ -144,7 +122,6 @@ def wishlist_variant_popup(request, product_id):
         is_deleted=False,
     )
 
-    # Resolve product image URL in Python (can't call .filter() in Django templates)
     img_url = None
     img_obj = product.images.filter(is_default=True).first() or product.images.first()
     if img_obj:
@@ -156,48 +133,47 @@ def wishlist_variant_popup(request, product_id):
 
     # Build variant_data — ALL active variants regardless of stock
     variant_data = []
-    first_in_stock = None  # default selection: first variant that has stock
+    first_in_stock = None
 
     for v in product.variants.filter(is_active=True).select_related(
         "inventory", "color", "age_group"
     ):
         if not _variant_is_available(v):
             continue
-        stock      = _stock_for(v)
-        color_id   = v.color_id if v.color else None
+        stock = _stock_for(v)
+        color_id = v.color_id if v.color else None
         color_name = v.color.color if v.color else "N/A"
         age_label = v.age_group.age if v.age_group else "N/A"
 
         variant_data.append({
-            "id":         v.id,
-            "color_id":   color_id,
+            "id": v.id,
+            "color_id": color_id,
             "color_name": color_name,
-            "age":        age_label,
-            "qty":        stock,
-            "is_oos":     stock == 0,
+            "age": age_label,
+            "qty": stock,
+            "is_oos": stock == 0,
         })
 
         if first_in_stock is None and stock > 0:
             first_in_stock = {
-                "id":       v.id,
+                "id": v.id,
                 "color_id": color_id,
-                "age":      age_label,
-                "qty":      stock,
+                "age": age_label,
+                "qty": stock,
             }
 
     return render(request, "wishlist/wishlist_product_variant.html", {
-        "product":       product,
-        "variant_data":  variant_data,
+        "product": product,
+        "variant_data": variant_data,
         "first_in_stock": first_in_stock,
     })
 
-# NEW: MOVE FROM WISHLIST TO CART (variant + remove from wishlist)
-# ─────────────────────────────────────────────────────────────
+#  ────────────────────────────────────────────────── MOVE TO CART ──────────────────────────────────────────────────
 @never_cache
-@user_login_required                     # ← Changed to standard login_required
+@user_login_required 
 @require_POST
 def move_to_cart(request, variant_id):
-    """Add selected variant to cart and remove the product from wishlist."""
+    # Add selected variant to cart and remove the product from wishlist
     try:
         with transaction.atomic():
             variant = get_object_or_404(
@@ -206,9 +182,7 @@ def move_to_cart(request, variant_id):
                 is_active=True
             )
             product = variant.product
-
             cart, _ = Cart.objects.get_or_create(user=request.user)
-
             cart_item, created = CartItem.objects.get_or_create(
                 cart=cart,
                 variant=variant,

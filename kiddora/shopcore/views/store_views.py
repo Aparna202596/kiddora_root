@@ -1,26 +1,63 @@
-from django.contrib.auth import get_user_model
 from django.views.decorators.cache import never_cache
-from accounts.decorators import user_login_required
-from products.models import Category, Product
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.views.decorators.cache import never_cache
-from django.db.models import Sum, Avg, Count
 from django.db.models.functions import Coalesce
-from django.db.models import Value
+from accounts.decorators import admin_login_required, user_login_required
+from django.contrib.auth import get_user_model
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Sum, Avg, Count, Value
+from django.contrib import messages
 from types import SimpleNamespace
 
-from accounts.decorators import admin_login_required, user_login_required
 from shopcore.models import Banner, Cart, CartItem, Wishlist, Review
 from products.models import Category, Product
 
 User = get_user_model()
 
-def anonymous_home(request):
-    live_banners      = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
-    hero_banners      = [b for b in live_banners if b.slot == "HERO"][:6]
-    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
+# ────────────────────────────────────────────────── HELPER FUNCTIONS ─────────────────────────────────────────────────────────────
+def _cart_wishlist_ctx(user):
+    if not user.is_authenticated:
+        return {"cart_variant_ids": set(), "wishlist_product_ids": set(), "cart_item_count": 0}
+    try:
+        cart_variant_ids = set(user.cart.items.values_list("variant_id", flat=True))
+        cart_item_count = user.cart.items.count()
+    except Cart.DoesNotExist:
+        cart_variant_ids = set()
+        cart_item_count = 0
+    try:
+        wishlist_product_ids = set(user.wishlist.items.values_list("product_id", flat=True))
+    except Wishlist.DoesNotExist:
+        wishlist_product_ids = set()
+    return {
+        "cart_variant_ids": cart_variant_ids,
+        "wishlist_product_ids": wishlist_product_ids,
+        "cart_item_count": cart_item_count,
+    }
 
+def _active_products():
+    return Product.objects.filter(
+        is_active=True, is_deleted=False,
+        subcategory__is_active=True, subcategory__is_deleted=False,
+        subcategory__category__is_active=True, subcategory__category__is_deleted=False,
+    ).select_related("subcategory", "subcategory__category").prefetch_related("images")
+
+def _attach_reviews(product_list):
+    pids = [p.id for p in product_list]
+    review_map = {
+        r["product_id"]: r
+        for r in Review.objects.filter(product_id__in=pids, is_approved=True)
+                                .values("product_id")
+                                .annotate(avg=Avg("rating"), cnt=Count("id"))
+    }
+    for p in product_list:
+        rd = review_map.get(p.id, {})
+        p.avg_rating = round(rd.get("avg") or 0, 1)
+        p.review_count = rd.get("cnt", 0)
+    return product_list
+
+# ────────────────────────────────────────────────── PUBLIC VIEWS (USER-FACING) ─────────────────────────────────────────────────────────────
+def anonymous_home(request):
+    live_banners = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
+    hero_banners = [b for b in live_banners if b.slot == "HERO"][:6]
+    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
     categories = Category.objects.filter(is_active=True).order_by("category_name")
     top_products = list(
         _active_products()
@@ -33,67 +70,22 @@ def anonymous_home(request):
 
     uw = _cart_wishlist_ctx(request.user)
     return render(request, "store/anonymous_home.html", {
-        "hero_banners":         hero_banners,
-        "secondary_banners":    secondary_banners,
-        "categories":           categories,
-        "top_products":         top_products,
-        "new_arrivals":         new_arrivals,
-        "cart_variant_ids":     uw["cart_variant_ids"],
+        "hero_banners": hero_banners,
+        "secondary_banners": secondary_banners,
+        "categories": categories,
+        "top_products": top_products,
+        "new_arrivals": new_arrivals,
+        "cart_variant_ids": uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
         "wishlist_product_ids": set(uw["wishlist_product_ids"]),
-        "cart_item_count":      uw["cart_item_count"],
+        "cart_item_count": uw["cart_item_count"],
     })
 
-
-# HELPERS
-
-def _cart_wishlist_ctx(user):
-    if not user.is_authenticated:
-        return {"cart_variant_ids": set(), "wishlist_product_ids": set(), "cart_item_count": 0}
-    try:
-        cart_variant_ids = set(user.cart.items.values_list("variant_id", flat=True))
-        cart_item_count  = user.cart.items.count()
-    except Cart.DoesNotExist:
-        cart_variant_ids = set()
-        cart_item_count  = 0
-    try:
-        wishlist_product_ids = set(user.wishlist.items.values_list("product_id", flat=True))
-    except Wishlist.DoesNotExist:
-        wishlist_product_ids = set()
-    return {
-        "cart_variant_ids":     cart_variant_ids,
-        "wishlist_product_ids": wishlist_product_ids,
-        "cart_item_count":      cart_item_count,
-    }
-
-
-def _active_products():
-    return Product.objects.filter(
-        is_active=True, is_deleted=False,
-        subcategory__is_active=True, subcategory__is_deleted=False,
-        subcategory__category__is_active=True, subcategory__category__is_deleted=False,
-    ).select_related("subcategory", "subcategory__category").prefetch_related("images")
-
-
-def _attach_reviews(product_list):
-    pids = [p.id for p in product_list]
-    review_map = {
-        r["product_id"]: r
-        for r in Review.objects.filter(product_id__in=pids, is_approved=True)
-                                .values("product_id")
-                                .annotate(avg=Avg("rating"), cnt=Count("id"))
-    }
-    for p in product_list:
-        rd = review_map.get(p.id, {})
-        p.avg_rating   = round(rd.get("avg") or 0, 1)
-        p.review_count = rd.get("cnt", 0)
-    return product_list
-
-# HOME PAGE VIEW  (user-facing)
+# ────────────────────────────────────────────────── USER HOME (AFTER LOGIN) ─────────────────────────────────────────────────────────────
 @user_login_required
 def home(request):
-    live_banners      = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
-    hero_banners      = [b for b in live_banners if b.slot == "HERO"][:6]
+    live_banners = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
+    hero_banners = [b for b in live_banners if b.slot == "HERO"][:6]
     secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
 
     categories = Category.objects.filter(is_active=True).order_by("category_name")
@@ -108,21 +100,18 @@ def home(request):
 
     uw = _cart_wishlist_ctx(request.user)
     return render(request, "store/home.html", {
-        "hero_banners":         hero_banners,
-        "secondary_banners":    secondary_banners,
-        "categories":           categories,
-        "top_products":         top_products,
-        "new_arrivals":         new_arrivals,
-        "cart_variant_ids":     uw["cart_variant_ids"],
+        "hero_banners": hero_banners,
+        "secondary_banners": secondary_banners,
+        "categories": categories,
+        "top_products": top_products,
+        "new_arrivals": new_arrivals,
+        "cart_variant_ids": uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
         "wishlist_product_ids": set(uw["wishlist_product_ids"]),
-        "cart_item_count":      uw["cart_item_count"],
+        "cart_item_count": uw["cart_item_count"],
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN — LIST
-# ─────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────── ADMIN — BANNER LIST ─────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_banner_list(request):
@@ -140,10 +129,7 @@ def admin_banner_list(request):
         "slot_choices": Banner.SLOT_CHOICES,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN — ADD
-# ─────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────── ADMIN — ADD BANNER ─────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_add_banner(request):
@@ -185,10 +171,7 @@ def admin_add_banner(request):
         ),
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN — EDIT
-# ─────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────── ADMIN — EDIT BANNER ─────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_edit_banner(request, banner_id):
@@ -230,9 +213,7 @@ def admin_edit_banner(request, banner_id):
         ),
     })
 
-# ─────────────────────────────────────────────────────────────
-# ADMIN — BLOCK BANNER
-# ─────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────── ADMIN — BLOCK BANNER ─────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_block_banner(request, banner_id):
@@ -248,9 +229,7 @@ def admin_block_banner(request, banner_id):
         "banner": banner
     })
 
-# ─────────────────────────────────────────────────────────────
-# ADMIN — UNBLOCK BANNER
-# ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_unblock_banner(request, banner_id):
@@ -266,9 +245,6 @@ def admin_unblock_banner(request, banner_id):
         "banner": banner
     })
 
-# ─────────────────────────────────────────────────────────────
-# ADMIN — DELETE
-# ─────────────────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_delete_banner(request, banner_id):
@@ -290,20 +266,6 @@ def admin_delete_banner(request, banner_id):
         "delete_target": banner,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN — TOGGLE ACTIVE
-# ─────────────────────────────────────────────────────────────
-@never_cache
-@admin_login_required
-def admin_toggle_banner(request, banner_id):
-    banner = get_object_or_404(Banner, id=banner_id)
-    if request.method == "POST":
-        banner.is_active = not banner.is_active
-        banner.save()
-        state = "activated" if banner.is_active else "deactivated"
-        messages.success(request, f'Banner "{banner.title}" {state}.')
-    return redirect("shopcore:admin_banner_list")
 
 def size_chart(request):
     return render(request, 'products/catalog/kids_size_chart.html')

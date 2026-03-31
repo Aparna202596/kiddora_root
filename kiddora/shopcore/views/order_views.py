@@ -144,7 +144,7 @@ def user_order_list(request):
             | Q(order_items__variant__product__product_name__icontains=query)
         ).distinct()
 
-    page_obj = Paginator(orders, 10).get_page(request.GET.get("page"))
+    page_obj = Paginator(orders, 15).get_page(request.GET.get("page"))
     return render(request, "orders/user/user_order_list.html", {
         "page_obj": page_obj,
         "query":    query,
@@ -514,7 +514,7 @@ def admin_order_list(request):
         order_field = f"-{sort}" if direction == "desc" else sort
         orders = orders.order_by(order_field)
 
-    page_obj = Paginator(orders, 20).get_page(request.GET.get("page"))
+    page_obj = Paginator(orders, 15).get_page(request.GET.get("page"))
 
     return render(request, "orders/admin/admin_order_list.html", {
         "page_obj":       page_obj,

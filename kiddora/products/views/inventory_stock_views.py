@@ -63,7 +63,7 @@ def admin_inventory_list(request):
             quantity_available__gt=0, quantity_available__lte = 5
         )
 
-    page_obj = paginate_queryset(request, inventories, 20)
+    page_obj = paginate_queryset(request, inventories, 15)
 
     return render(
         request,

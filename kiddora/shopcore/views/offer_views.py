@@ -1,50 +1,37 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-
-from django.contrib import messages
+from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator
+from accounts.decorators import admin_login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 from django.utils import timezone
-from django.views.decorators.cache import never_cache
+from types import SimpleNamespace
 
-from accounts.decorators import admin_login_required
 from products.models import Category, Product
 from shopcore.models import Coupon, Offer
 
-
-# ─────────────────────────────────────────────────────────────
-# SHARED UTILITY  (imported by checkout_views & order_views)
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── HELPER FUNCTION ──────────────────────────────────────────────────
 def get_max_offer_discount_percent(product) -> int:
-    """
-    Return the highest applicable offer percentage for *product*.
-
-    Rules:
-    • Considers PRODUCT-specific offers and CATEGORY-specific offers.
-    • When both exist for the same item, the larger discount wins.
-    • Returns 0 when no valid offer exists.
-    """
     if not product:
         return 0
 
     now = timezone.now()
     active_offers = Offer.objects.filter(
-        is_active=True, is_deleted=False, start_date__lte=now
+        is_active = True, is_deleted=False, start_date__lte = now
     )
 
     product_offer = active_offers.filter(
-        offer_type="PRODUCT", product=product
+        offer_type="PRODUCT", product = product
     ).first()
 
     category_offer = None
     try:
         if product.subcategory and product.subcategory.category:
             category_offer = active_offers.filter(
-                offer_type="CATEGORY",
-                category=product.subcategory.category,
+                offer_type = "CATEGORY",
+                category = product.subcategory.category,
             ).first()
     except Exception:
         pass
@@ -57,11 +44,7 @@ def get_max_offer_discount_percent(product) -> int:
 
     return max_pct
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: LIST
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── ADMIN: LIST + FILTER + PAGINATION ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_offer_list(request):

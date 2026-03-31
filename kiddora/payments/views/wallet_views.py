@@ -118,7 +118,7 @@ def admin_wallet_list(request):
     if ref_f:
         qs = qs.filter(reference_type=ref_f)
 
-    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+    page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
 
     return render(request, "payments/admin_wallet_list.html", {
         "page_obj": page_obj,

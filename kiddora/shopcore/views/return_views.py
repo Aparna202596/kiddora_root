@@ -112,7 +112,7 @@ def admin_return_list(request):
         qs = qs.filter(status=status_f)
 
     status_choices = Return.STATUS_CHOICES
-    page_obj = Paginator(qs, 20).get_page(request.GET.get("page"))
+    page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
 
     return render(request, "returns/admin_return_list.html", {
         "page_obj":       page_obj,
