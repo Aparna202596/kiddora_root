@@ -1,18 +1,18 @@
-from django.contrib import messages
-from accounts.decorators import user_login_required
-from django.db import transaction
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from accounts.decorators import user_login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.http import JsonResponse
+from django.db import transaction
 from decimal import Decimal
-from products.models import ProductVariant, Product, Category, SubCategory
-from shopcore.models import Cart, CartItem, Wishlist, WishlistItem
 
-# HELPERS
+from products.models import ProductVariant, Product
+from shopcore.models import Cart, CartItem, Wishlist, WishlistItem, Order
 
 MAX_QTY = CartItem.MAX_QTY_PER_PRODUCT
 
+# ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
 def _get_or_create_cart(user):
     cart, _ = Cart.objects.get_or_create(user=user)
     return cart
@@ -30,18 +30,15 @@ def _variant_is_available(variant: ProductVariant) -> bool:
         )
     except Exception:
         return False
-    
-#available stock quantity
+
 def _stock_for(variant: ProductVariant) -> int:
     try:
         return variant.inventory.quantity_available
     except Exception:
-        return 0           #No stock available
-
+        return 0 
 
 def _is_ajax(request) -> bool:
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
-
 
 def _cart_subtotal(cart) -> float:
     total = 0
@@ -55,8 +52,7 @@ def _cart_subtotal(cart) -> float:
             total += float(item.variant.product.final_price) * item.quantity
     return total
 
-# CART LIST
-
+# ────────────────────────────────────────────────── CART VIEWS ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def cart_view(request):
@@ -115,19 +111,18 @@ def cart_view(request):
         if available:
             subtotal += item_total
 
-    DEFAULT_SHIPPING = Decimal("100") 
-
-    shipping_charge = Decimal("0")
-    if subtotal < 1000:
-        shipping_charge = DEFAULT_SHIPPING
-
+    temp_order = Order(
+        total_amount=subtotal, 
+        discount_amount=Decimal("0"),    
+        coupon_discount=Decimal("0"),    
+    )
+    shipping_charge = temp_order.calculate_shipping()
     grand_total = subtotal + shipping_charge
     checkout_blocked = (
         any_unavailable
         or any_out_of_stock
         or any(d["exceeds_stock"] for d in cart_data)
     )
-
     return render(request, "cart/cart.html", {
         "cart": cart,
         "cart_data": cart_data,
@@ -140,8 +135,7 @@ def cart_view(request):
         "MAX_QTY": MAX_QTY,
     })
 
-# ADD TO CART
-
+#   ────────────────────────────────────────────────── ADD TO CART  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -158,10 +152,7 @@ def add_to_cart(request, variant_id):
             "product",
             "product__subcategory",
             "product__subcategory__category",
-            "inventory",
-        ),
-        id=variant_id,
-    )
+            "inventory"), id=variant_id)
 
     if not _variant_is_available(variant):
         msg = "This product is currently unavailable."
@@ -178,7 +169,7 @@ def add_to_cart(request, variant_id):
         messages.error(request, msg)
         return redirect("products:product_detail", product_id=variant.product.id)
 
-    cart     = _get_or_create_cart(request.user)
+    cart = _get_or_create_cart(request.user)
     new_item = False
 
     try:
@@ -227,8 +218,7 @@ def add_to_cart(request, variant_id):
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or ""
     return redirect(next_url) if next_url.startswith("/") else redirect("shopcore:cart")
 
-# REMOVE FROM CART  (AJAX, optional save-to-wishlist)
-
+#   ────────────────────────────────────────────────── REMOVE FROM CART  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @require_POST
@@ -264,8 +254,7 @@ def remove_from_cart(request, item_id):
     messages.success(request, msg)
     return redirect("shopcore:cart")
 
-# UPDATE QUANTITY
-
+#   ────────────────────────────────────────────────── UPDATE CART QUANTITY  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -328,8 +317,7 @@ def update_cart_quantity(request, item_id):
         messages.warning(request, warning)
     return redirect("shopcore:cart")
 
-# CLEAR CART
-
+#   ────────────────────────────────────────────────── CLEAR CART  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def clear_cart(request):
@@ -338,8 +326,7 @@ def clear_cart(request):
         messages.success(request, "Cart cleared.")
     return redirect("shopcore:cart")
 
-# TOGGLE WISHLIST  (AJAX-aware)
-
+#   ────────────────────────────────────────────────── TOGGLE WISHLIST  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def toggle_wishlist(request, product_id):

@@ -3,8 +3,8 @@ from django.core.exceptions import ValidationError
 from accounts.models import CustomUser, UserAddress
 from products.models import Product, Category, ProductVariant
 from django.utils import timezone
-from django.conf import settings
 from django.db import models
+from decimal import Decimal
 import uuid
 
 #   ────────────────────────────────────────────────── COUPON ──────────────────────────────────────────────────
@@ -200,7 +200,9 @@ class WishlistItem(models.Model):
 #   ────────────────────────────────────────────────── CART ──────────────────────────────────────────────────
 class Cart(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="cart")
+
     coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="carts")
+
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -208,9 +210,13 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     MAX_QTY_PER_PRODUCT = 5   # handle maximum quantity per product
+
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+
     variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="cart_items")
+
     quantity = models.PositiveIntegerField(default=1)
+
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -256,6 +262,8 @@ class Order(models.Model):
         ("PARTIALLY_REFUNDED", "Partially Refunded"),
         ("CANCELLED", "Cancelled"),
     )
+    FREE_SHIPPING_THRESHOLD = Decimal("1000")
+    DEFAULT_SHIPPING_CHARGE = Decimal("100")
     order_id = models.CharField(max_length=20, unique=True, editable=False)
 
     user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name="orders")
@@ -300,7 +308,23 @@ class Order(models.Model):
                 if not Order.objects.filter(order_id=oid).exists():
                     self.order_id = oid
                     break
+
+        if self.shipping_charge is None or self.shipping_charge == Decimal("100"):  # only override default
+            self.shipping_charge = self.calculate_shipping()
+
+        if self.final_amount == 0 or self.final_amount is None:
+            self.final_amount = self.total_amount - self.discount_amount - self.coupon_discount + self.shipping_charge
+
         super().save(*args, **kwargs)
+
+    def calculate_shipping(self) -> Decimal:
+        if self.total_amount >= self.FREE_SHIPPING_THRESHOLD:
+            return Decimal("0")
+        return self.DEFAULT_SHIPPING_CHARGE
+
+    @property
+    def is_free_shipping(self) -> bool:
+        return self.shipping_charge == 0
 
     def __str__(self):
         return self.order_id

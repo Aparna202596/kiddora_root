@@ -24,11 +24,7 @@ from shopcore.models import Order
 
 logger = logging.getLogger(__name__)
 
-
 #   ────────────────────────────────────────────────── WALLET HELPER ──────────────────────────────────────────────────
-
-
-        
 def _get_wallet_balance(user) -> Decimal:
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet.balance

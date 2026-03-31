@@ -4,7 +4,7 @@ from decimal import Decimal
 import logging
 
 from payments.models import Wallet, WalletTransaction
-from shopcore.models import Order
+from shopcore.models import Order, CouponUsage
 
 logger = logging.getLogger(__name__)
 
@@ -98,9 +98,9 @@ def credit_to_wallet(
     logger.info("Wallet credit: user=%s amount=%s txn=%s", user.email, amount, txn.txn_id)
     return txn
 
-
+#   ────────────────────────────────────────────────── INTERNAL HELPERS ──────────────────────────────────────────────────
 def _restore_inventory_for_order(order) -> None:
-    """Restore stock when payment fails for a not-yet-placed order."""
+
     for oi in order.order_items.filter(item_status="PENDING"):
         try:
             inv = oi.variant.inventory
@@ -113,14 +113,6 @@ def _restore_inventory_for_order(order) -> None:
         oi.save(update_fields=["item_status"])
 
 def _finalize_order_after_payment(request, order):
-    """
-    Called after payment is confirmed (PayPal or Wallet).
-    - Sets order_status to PENDING (placed)
-    - Marks all items ACTIVE
-    - Clears cart and session
-    - Applies coupon usage
-    """
-    from shopcore.models import Cart, CouponUsage
 
     order.order_status = "PENDING"   # ← now officially placed
     order.save(update_fields=["order_status"])

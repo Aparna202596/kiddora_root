@@ -76,20 +76,23 @@ def _img_url_for(product) -> str | None:
 
 
 def _recalculate_order_amount(order: Order) -> None:
-    """Recalculate totals after an item is cancelled."""
+    """Recalculate totals after an item is cancelled or returned."""
     active_items = order.order_items.filter(item_status="ACTIVE")
+    
     subtotal = sum(item.unit_price * item.quantity for item in active_items)
-
-    shipping_charge = Decimal("100") if Decimal("0") < subtotal < Decimal("1000") else Decimal("0")
-
-    order.total_amount    = subtotal
-    order.shipping_charge = shipping_charge
-
-    total_deductions  = order.discount_amount + order.coupon_discount
-    order.final_amount = max(Decimal("0"), subtotal - total_deductions + shipping_charge)
-
-    order.save(update_fields=["total_amount", "shipping_charge", "final_amount"])
-
+    
+    # Use the centralized model logic
+    order.total_amount = subtotal
+    order.discount_amount = Decimal("0")  # reset if needed, or keep existing offer logic
+    order.shipping_charge = order.calculate_shipping()  # ← uses model method
+    
+    total_deductions = order.discount_amount + order.coupon_discount
+    order.final_amount = max(
+        Decimal("0"), 
+        subtotal - total_deductions + order.shipping_charge
+    )
+    
+    order.save(update_fields=["total_amount", "shipping_charge", "final_amount", "final_amount"])
 
 def get_max_offer_discount_percent(product) -> int:
     """

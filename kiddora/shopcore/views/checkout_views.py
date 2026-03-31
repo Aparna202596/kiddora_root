@@ -1,26 +1,24 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
-from django.contrib import messages
-from django.db import transaction
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from django.db.models import Q
 from accounts.decorators import user_login_required
-from accounts.models import UserAddress
-from payments.models import Wallet
-from shopcore.models import Cart, Coupon, CouponUsage, Order, OrderItem, ReferralUse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q
+from django.contrib import messages
+from django.utils import timezone
+from django.http import JsonResponse
+from django.db import transaction
+from decimal import Decimal
+
 from shopcore.views.coupon_views import compute_coupon_discount
 from shopcore.views.offer_views import get_max_offer_discount_percent
 
+from accounts.models import UserAddress
+from payments.models import Wallet, Payment
+from shopcore.models import Cart, Coupon, CouponUsage, Order, OrderItem, ReferralUse
 
-# ─────────────────────────────────────────────────────────────
-# PRIVATE HELPERS
-# ─────────────────────────────────────────────────────────────
+#   ────────────────────────────────────────────────── HELPER FUNCTIONS ─────────────────────────────────────────────
 
 def _get_cart(user):
     try:
@@ -28,28 +26,25 @@ def _get_cart(user):
     except Cart.DoesNotExist:
         return None
 
-
 def _variant_is_available(variant) -> bool:
     try:
-        p   = variant.product
+        p = variant.product
         sub = p.subcategory
         cat = sub.category
         return (
             variant.is_active
-            and p.is_active   and not p.is_deleted
+            and p.is_active and not p.is_deleted
             and sub.is_active and not sub.is_deleted
             and cat.is_active and not cat.is_deleted
         )
     except Exception:
         return False
 
-
 def _stock_for(variant) -> int:
     try:
         return variant.inventory.quantity_available
     except Exception:
         return 0
-
 
 def _img_url_for(product) -> str | None:
     img_obj = (
@@ -63,22 +58,20 @@ def _img_url_for(product) -> str | None:
                 return val.url
     return None
 
-
 def _address_to_dict(addr) -> dict:
     return {
-        "id":            addr.id,
+        "id": addr.id,
         "address_line1": addr.address_line1,
         "address_line2": addr.address_line2 or "",
-        "city":          addr.city,
-        "state":         addr.state,
-        "country":       addr.country,
-        "pincode":       addr.pincode,
-        "address_type":  addr.address_type,
-        "is_default":    addr.is_default,
-        "display_name":  addr.user.full_name or addr.user.email,
+        "city": addr.city,
+        "state": addr.state,
+        "country": addr.country,
+        "pincode": addr.pincode,
+        "address_type": addr.address_type,
+        "is_default": addr.is_default,
+        "display_name": addr.user.full_name or addr.user.email,
         "display_phone": addr.user.phone or "",
     }
-
 
 def _validate_address_post(post) -> list[str]:
     errors = []
@@ -97,12 +90,9 @@ def _validate_address_post(post) -> list[str]:
         errors.append("Address type must be Home, Work, or Other.")
     return errors
 
-
 def _wallet_balance(user) -> Decimal:
-    """Return wallet balance. Creates the wallet row if it doesn't exist yet."""
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet.balance
-
 
 def _user_has_exhausted_coupon(coupon: Coupon, user) -> bool:
     try:
@@ -110,7 +100,6 @@ def _user_has_exhausted_coupon(coupon: Coupon, user) -> bool:
         return usage.times_used >= coupon.usage_limit
     except CouponUsage.DoesNotExist:
         return False
-
 
 def _session_coupon(request, subtotal: Decimal):
     code = request.session.get("applied_coupon_code")
@@ -135,7 +124,6 @@ def _session_coupon(request, subtotal: Decimal):
     request.session.pop("applied_coupon_discount", None)
     return None, Decimal("0")
 
-
 def _exhausted_coupon_ids(user) -> list[int]:
     return [
         cu.coupon_id
@@ -143,11 +131,7 @@ def _exhausted_coupon_ids(user) -> list[int]:
         if cu.times_used >= cu.coupon.usage_limit
     ]
 
-
-# ─────────────────────────────────────────────────────────────
-# AJAX: SAVE NEW ADDRESS
-# ─────────────────────────────────────────────────────────────
-
+# ───────────────────────────────────────────────────────────── SAVE NEW ADDRESS ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @require_POST
@@ -163,23 +147,19 @@ def save_new_address(request):
         ).update(is_default=False)
 
     address = UserAddress.objects.create(
-        user          = request.user,
+        user = request.user,
         address_line1 = request.POST.get("address_line1", "").strip(),
         address_line2 = request.POST.get("address_line2", "").strip(),
-        city          = request.POST.get("city", "").strip(),
-        state         = request.POST.get("state", "").strip(),
-        country       = request.POST.get("country", "").strip(),
-        pincode       = request.POST.get("pincode", "").strip(),
-        address_type  = request.POST.get("address_type", "home").strip(),
-        is_default    = set_default,
+        city = request.POST.get("city", "").strip(),
+        state = request.POST.get("state", "").strip(),
+        country = request.POST.get("country", "").strip(),
+        pincode = request.POST.get("pincode", "").strip(),
+        address_type = request.POST.get("address_type", "home").strip(),
+        is_default = set_default,
     )
     return JsonResponse({"success": True, "address": _address_to_dict(address)})
 
-
-# ─────────────────────────────────────────────────────────────
-# AJAX: EDIT EXISTING ADDRESS
-# ─────────────────────────────────────────────────────────────
-
+# ───────────────────────────────────────────────────────────── EDIT ADDRESS ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @require_POST
@@ -199,20 +179,16 @@ def edit_address(request, address_id):
 
     address.address_line1 = request.POST.get("address_line1", "").strip()
     address.address_line2 = request.POST.get("address_line2", "").strip()
-    address.city          = request.POST.get("city", "").strip()
-    address.state         = request.POST.get("state", "").strip()
-    address.country       = request.POST.get("country", "").strip()
-    address.pincode       = request.POST.get("pincode", "").strip()
-    address.address_type  = request.POST.get("address_type", "home").strip()
-    address.is_default    = set_default
+    address.city = request.POST.get("city", "").strip()
+    address.state = request.POST.get("state", "").strip()
+    address.country = request.POST.get("country", "").strip()
+    address.pincode = request.POST.get("pincode", "").strip()
+    address.address_type = request.POST.get("address_type", "home").strip()
+    address.is_default = set_default
     address.save()
     return JsonResponse({"success": True, "address": _address_to_dict(address)})
 
-
-# ─────────────────────────────────────────────────────────────
-# CHECKOUT  (GET)
-# ─────────────────────────────────────────────────────────────
-
+# ───────────────────────────────────────────────────────────── CHECKOUT PAGE (GET) ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def checkout(request):
@@ -230,45 +206,45 @@ def checkout(request):
         "variant__inventory",
     ).prefetch_related("variant__product__images").order_by("-added_at")
 
-    checkout_items       = []
-    subtotal             = Decimal("0")
+    checkout_items = []
+    subtotal = Decimal("0")
     offer_discount_total = Decimal("0")
-    blocked              = False
+    blocked = False
 
     for item in items:
-        variant   = item.variant
-        product   = variant.product
+        variant = item.variant
+        product = variant.product
         available = _variant_is_available(variant)
-        stock     = _stock_for(variant)
+        stock = _stock_for(variant)
 
         if not available or stock == 0 or item.quantity > stock:
             blocked = True
 
-        base_price       = product.final_price
-        offer_pct        = get_max_offer_discount_percent(product)
-        offer_pct_dec    = Decimal(str(offer_pct))
+        base_price = product.final_price
+        offer_pct  = get_max_offer_discount_percent(product)
+        offer_pct_dec = Decimal(str(offer_pct))
         discounted_price = base_price * (Decimal("1") - offer_pct_dec / 100)
 
-        item_base_total     = base_price * item.quantity
+        item_base_total = base_price * item.quantity
         item_offer_discount = (base_price - discounted_price) * item.quantity
-        item_final_total    = discounted_price * item.quantity
+        item_final_total = discounted_price * item.quantity
 
-        subtotal             += item_base_total
+        subtotal += item_base_total
         offer_discount_total += item_offer_discount
 
         checkout_items.append({
-            "item":             item,
-            "variant":          variant,
-            "product":          product,
-            "unit_price":       base_price,
+            "item": item,
+            "variant": variant,
+            "product": product,
+            "unit_price": base_price,
             "discounted_price": discounted_price,
-            "item_total":       item_final_total,
-            "base_item_total":  item_base_total,
-            "offer_discount":   item_offer_discount,
-            "offer_pct":        offer_pct,
-            "available":        available,
-            "stock":            stock,
-            "img_url":          _img_url_for(product),
+            "item_total": item_final_total,
+            "base_item_total": item_base_total,
+            "offer_discount": item_offer_discount,
+            "offer_pct": offer_pct,
+            "available": available,
+            "stock": stock,
+            "img_url": _img_url_for(product),
         })
 
     if blocked:
@@ -280,17 +256,17 @@ def checkout(request):
         return redirect("shopcore:cart")
 
     price_after_offers = subtotal - offer_discount_total
-    shipping_charge = (
-        Decimal("0") if price_after_offers >= Decimal("1000") else Decimal("100")
+    temp_order = Order(
+        total_amount=price_after_offers,
+        discount_amount=offer_discount_total,   
+        coupon_discount=coupon_discount,
     )
-
+    shipping_charge = temp_order.calculate_shipping()
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
     grand_total = price_after_offers - coupon_discount + shipping_charge
-
     cod_blocked = grand_total > Decimal("1000")
 
-    # Safe wallet lookup — creates wallet row if user has none yet
-    wallet_balance    = _wallet_balance(request.user)
+    wallet_balance = _wallet_balance(request.user)
     wallet_sufficient = wallet_balance >= grand_total
 
     now = timezone.now()
@@ -311,38 +287,28 @@ def checkout(request):
     ).exclude(
         id__in=exhausted_ids
     )
-    addresses       = UserAddress.objects.filter(user=request.user, is_deleted=False)
+    addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
 
     return render(request, "cart/checkout.html", {
-        "checkout_items":       checkout_items,
-        "addresses":            addresses,
-        "default_address":      default_address,
-        "subtotal":             subtotal,
+        "checkout_items": checkout_items,
+        "addresses": addresses,
+        "default_address": default_address,
+        "subtotal": subtotal,
         "offer_discount_total": offer_discount_total,
-        "price_after_offers":   price_after_offers,
-        "shipping_charge":      shipping_charge,
-        "coupon_discount":      coupon_discount,
-        "applied_coupon":       applied_coupon,
-        "grand_total":          grand_total,
-        "cod_blocked":          cod_blocked,
-        "wallet_balance":       wallet_balance,
-        "wallet_sufficient":    wallet_sufficient,
-        "available_coupons":    available_coupons,
+        "price_after_offers": price_after_offers,
+        "shipping_charge": shipping_charge,
+        "coupon_discount": coupon_discount,
+        "applied_coupon": applied_coupon,
+        "grand_total": grand_total,
+        "cod_blocked": cod_blocked,
+        "wallet_balance": wallet_balance,
+        "wallet_sufficient": wallet_sufficient,
+        "available_coupons": available_coupons,
         "address_type_choices": UserAddress.ADDRESS_TYPE_CHOICES,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# PLACE ORDER  (POST)
-# COD    → shopcore:order_success
-# WALLET → payments:pay_with_wallet
-# PAYPAL → payments:initiate_paypal_payment
-# ─────────────────────────────────────────────────────────────
-
-# ─────────────────────────────────────────────────────────────
-# PLACE ORDER  (POST)
-# ─────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────── PLACE ORDER (POST) ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -360,7 +326,7 @@ def place_order(request):
         messages.error(request, "Invalid payment method selected.")
         return redirect("shopcore:checkout")
 
-    # ── Address ───────────────────────────────────────────────
+    # HANDLE ADDRESS
     address_id = request.POST.get("address_id")
     if address_id:
         address = get_object_or_404(
@@ -377,15 +343,15 @@ def place_order(request):
                 user=request.user, is_deleted=False
             ).update(is_default=False)
         address = UserAddress.objects.create(
-            user          = request.user,
+            user = request.user,
             address_line1 = request.POST.get("address_line1", "").strip(),
             address_line2 = request.POST.get("address_line2", "").strip(),
-            city          = request.POST.get("city", "").strip(),
-            state         = request.POST.get("state", "").strip(),
-            country       = request.POST.get("country", "").strip(),
-            pincode       = request.POST.get("pincode", "").strip(),
+            city  = request.POST.get("city", "").strip(),
+            state  = request.POST.get("state", "").strip(),
+            country  = request.POST.get("country", "").strip(),
+            pincode  = request.POST.get("pincode", "").strip(),
             address_type  = request.POST.get("address_type", "home").strip(),
-            is_default    = set_default,
+            is_default = set_default,
         )
     else:
         address = (
@@ -396,7 +362,6 @@ def place_order(request):
             messages.error(request, "Please add a delivery address before placing an order.")
             return redirect("shopcore:checkout")
 
-    # ── Re-validate cart items ────────────────────────────────
     items = cart.items.select_related(
         "variant__product",
         "variant__product__subcategory",
@@ -413,25 +378,30 @@ def place_order(request):
             messages.error(request, f"Only {stock} unit(s) of '{item.variant.product.product_name}' left.")
             return redirect("shopcore:cart")
 
-    # ── Calculate Totals ──────────────────────────────────────
-    subtotal             = Decimal("0")
+    # Calculate totals and discounts
+    subtotal = Decimal("0")
     offer_discount_total = Decimal("0")
     item_offer_data: dict[int, Decimal] = {}
 
     for item in items:
-        base      = item.variant.product.final_price * item.quantity
+        base = item.variant.product.final_price * item.quantity
         offer_pct = get_max_offer_discount_percent(item.variant.product)
         item_disc = base * Decimal(str(offer_pct)) / 100
-        subtotal             += base
+        subtotal += base
         offer_discount_total += item_disc
         item_offer_data[item.variant_id] = item_disc
 
     price_after_offers = subtotal - offer_discount_total
-    shipping_charge    = Decimal("100") if price_after_offers < Decimal("1000") else Decimal("0")
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
+    temp_order = Order(
+        total_amount=price_after_offers,
+        discount_amount=offer_discount_total,
+        coupon_discount=coupon_discount,
+    )
+    shipping_charge = temp_order.calculate_shipping()
+
     final_amount = price_after_offers - coupon_discount + shipping_charge
 
-    # ── Guards ────────────────────────────────────────────────
     if payment_method == "COD" and final_amount > Decimal("1000"):
         messages.error(request, "Cash on Delivery is not available for orders above ₹1,000.")
         return redirect("shopcore:checkout")
@@ -442,46 +412,42 @@ def place_order(request):
             messages.error(request, f"Insufficient wallet balance (₹{balance:.2f}).")
             return redirect("shopcore:checkout")
 
-    # ── COD: create order + payment record immediately ────────
     if payment_method == "COD":
         order = Order.objects.create(
-            user            = request.user,
-            address         = address,
-            payment_method  = "COD",
-            payment_status  = "PENDING",
-            order_status    = "PENDING",
-            coupon          = applied_coupon,
+            user = request.user,
+            address = address,
+            payment_method = "COD",
+            payment_status = "PENDING",
+            order_status = "PENDING",
+            coupon = applied_coupon,
             coupon_discount = coupon_discount,
-            total_amount    = subtotal,
+            total_amount = subtotal,
             discount_amount = offer_discount_total,
             shipping_charge = shipping_charge,
-            final_amount    = final_amount,
+            final_amount = final_amount,
         )
         for item in items:
-            variant    = item.variant
+            variant = item.variant
             base_price = variant.product.final_price
-            item_disc  = item_offer_data.get(item.variant_id, Decimal("0"))
+            item_disc = item_offer_data.get(item.variant_id, Decimal("0"))
             OrderItem.objects.create(
-                order           = order,
-                variant         = variant,
-                quantity        = item.quantity,
-                unit_price      = base_price,
+                order = order,
+                variant = variant,
+                quantity = item.quantity,
+                unit_price = base_price,
                 discount_amount = item_disc,
             )
             inv = variant.inventory
             inv.quantity_available = max(0, inv.quantity_available - item.quantity)
-            inv.quantity_sold     += item.quantity
+            inv.quantity_sold += item.quantity
             inv.save(update_fields=["quantity_available", "quantity_sold"])
 
-        # ── COD Payment record ────────────────────────────────
-        from payments.models import Payment
-        from django.utils import timezone as tz
         Payment.objects.create(
-            order          = order,
+            order = order,
             payment_method = "COD",
             payment_status = "PENDING",
-            amount         = final_amount,
-            initiated_at   = tz.now(),
+            amount = final_amount,
+            initiated_at = timezone.now(),
         )
 
         if applied_coupon:
@@ -496,37 +462,34 @@ def place_order(request):
         request.session.pop("applied_coupon_discount", None)
         return redirect("shopcore:order_success", order_id=order.order_id)
 
-    # ── PAYPAL / WALLET: create order first, then route to payment ──
-    # Order is created here with PENDING payment_status.
-    # Payment record is only created AFTER successful payment.
     order = Order.objects.create(
-        user            = request.user,
-        address         = address,
-        payment_method  = payment_method,
-        payment_status  = "INITIATED",
-        order_status    = "ORDER NOT PLACED",
-        coupon          = applied_coupon,
+        user = request.user,
+        address = address,
+        payment_method = payment_method,
+        payment_status = "INITIATED",
+        order_status = "ORDER NOT PLACED",
+        coupon = applied_coupon,
         coupon_discount = coupon_discount,
-        total_amount    = subtotal,
+        total_amount = subtotal,
         discount_amount = offer_discount_total,
         shipping_charge = shipping_charge,
-        final_amount    = final_amount,
+        final_amount = final_amount,
     )
     for item in items:
-        variant    = item.variant
+        variant = item.variant
         base_price = item.variant.product.final_price
-        item_disc  = item_offer_data.get(item.variant_id, Decimal("0"))
+        item_disc = item_offer_data.get(item.variant_id, Decimal("0"))
         OrderItem.objects.create(
-            order           = order,
-            variant         = variant,
-            quantity        = item.quantity,
-            unit_price      = base_price,
+            order = order,
+            variant = variant,
+            quantity = item.quantity,
+            unit_price = base_price,
             discount_amount = item_disc,
-            item_status     = "PENDING",
+            item_status = "PENDING",
         )
         inv = variant.inventory
         inv.quantity_available = max(0, inv.quantity_available - item.quantity)
-        inv.quantity_sold     += item.quantity
+        inv.quantity_sold += item.quantity
         inv.save(update_fields=["quantity_available", "quantity_sold"])
 
     request.session["pending_kiddora_order_id"] = order.order_id
@@ -538,11 +501,8 @@ def place_order(request):
         return redirect("payments:pay_with_wallet", order_id=order.order_id)
     else:
         return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
-
-# ─────────────────────────────────────────────────────────────
-# ORDER SUCCESS
-# ─────────────────────────────────────────────────────────────
-
+    
+# ───────────────────────────────────────────────────────────── ORDER SUCCESS PAGE ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def order_success(request, order_id):

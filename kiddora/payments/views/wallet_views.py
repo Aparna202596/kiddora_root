@@ -224,43 +224,39 @@ def admin_payment_list(request):
             if status_f and ps != status_f:
                 continue
             cod_rows.append({
-                "source":           "cod",
-                "txn_id_display":   f"COD-{o.order_id}",
-                "order":            o,
-                "payment_method":   "COD",
-                "amount":           o.final_amount,
-                "payment_status":   ps,
+                "source": "cod",
+                "txn_id_display": f"COD-{o.order_id}",
+                "order": o,
+                "payment_method": "COD",
+                "amount": o.final_amount,
+                "payment_status": ps,
                 "paypal_capture_id": "",
-                "initiated_at":     o.order_date,
-                "completed_at":     o.delivered_at,
-                "sort_dt":          o.order_date,
+                "initiated_at": o.order_date,
+                "completed_at": o.delivered_at,
+                "sort_dt": o.order_date,
             })
 
-    # ── 3. Merge + sort by date descending ──────────────────
     all_rows = sorted(
         online_rows + cod_rows,
         key=lambda r: r["sort_dt"] if r["sort_dt"] else timezone.now().replace(year=2000),
         reverse=True,
     )
- 
-    # ── 4. Manual pagination ─────────────────────────────────
-    from django.core.paginator import Paginator as DjPaginator
-    paginator = DjPaginator(all_rows, 12)
-    page_obj  = paginator.get_page(request.GET.get("page"))
- 
-    # Build method choices including COD
+
+    paginator = Paginator(all_rows, 15)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
     method_choices = [
         ("PAYPAL", "PayPal"),
         ("WALLET", "Wallet"),
-        ("COD",    "Cash on Delivery"),
+        ("COD", "Cash on Delivery"),
     ]
     status_choices = Payment.PAYMENT_STATUS_CHOICES
 
     return render(request, "payments/admin_payment_list.html", {
-        "page_obj":       page_obj,
-        "search":         search,
-        "method_f":       method_f,
-        "status_f":       status_f,
+        "page_obj": page_obj,
+        "search": search,
+        "method_f": method_f,
+        "status_f": status_f,
         "method_choices": method_choices,
         "status_choices": status_choices,
     })
