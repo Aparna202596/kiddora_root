@@ -263,18 +263,15 @@ def admin_payment_list(request):
 @never_cache
 @user_login_required
 def wallet_balance(request):
-    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    wallet, _ = Wallet.objects.get_or_create(user=request.user)
     
-    # Get all transactions for this wallet, newest first
     transactions = WalletTransaction.objects.filter(
         wallet=wallet
     ).select_related('order').order_by('-created_at')
 
-    # Optional: Paginate if user has many transactions
     page_obj = Paginator(transactions, 15).get_page(request.GET.get('page'))
 
     return render(request, "payments/wallet_balance.html", {
         "wallet": wallet,
-        "transactions": page_obj,   # we'll use page_obj in template
         "page_obj": page_obj,
     })

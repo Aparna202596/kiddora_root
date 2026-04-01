@@ -1,18 +1,11 @@
-from __future__ import annotations
+from __future__ import annotations   # ← MUST BE THE FIRST LINE
+
 from django.db import transaction
 from decimal import Decimal
 import logging
 
 from payments.models import Wallet, WalletTransaction
 from shopcore.models import Order, CouponUsage
-
-logger = logging.getLogger(__name__)
-
-from __future__ import annotations
-from django.db import transaction
-from decimal import Decimal
-import logging
-from payments.models import Wallet, WalletTransaction
 
 logger = logging.getLogger(__name__)
 
