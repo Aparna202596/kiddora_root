@@ -1,0 +1,77 @@
+{% extends "base_products.html" %}
+{% load static %}
+{% block title %}My Wallet – Kiddora{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;margin:40px auto;">
+    <div style="background:#fff;border:1.5px solid #eee;border-radius:16px;padding:32px;">
+        <h2 style="margin-bottom:8px;">
+            <i class="fa-solid fa-wallet" style="color:#f06292;"></i> My Wallet
+        </h2>
+        
+        <div style="font-size:28px;font-weight:800;color:#222;margin:20px 0;">
+            ₹{{ wallet.balance|floatformat:2 }}
+        </div>
+        <p style="color:#16a34a;font-weight:600;">Available Balance</p>
+
+        <hr style="margin:30px 0;">
+
+        <h3 style="margin-bottom:16px;">Transaction History</h3>
+        
+        {% if page_obj %}
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f9f9f9;">
+                    <th style="text-align:left;padding:12px;">Date</th>
+                    <th style="text-align:left;padding:12px;">Description</th>
+                    <th style="text-align:right;padding:12px;">Amount</th>
+                    <th style="text-align:center;padding:12px;">Type</th>
+                    <th style="text-align:right;padding:12px;">Balance After</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for txn in page_obj %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:12px;">{{ txn.created_at|date:"d M Y, g:i A" }}</td>
+                    <td style="padding:12px;">{{ txn.description }}</td>
+                    <td style="padding:12px;text-align:right;">
+                        {% if txn.txn_type == "CREDIT" or txn.txn_type == "REFUND" %}
+                            <span style="color:#16a34a;">+₹{{ txn.amount|floatformat:2 }}</span>
+                        {% else %}
+                            <span style="color:#ef4444;">-₹{{ txn.amount|floatformat:2 }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:12px;text-align:center;">
+                        <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;
+                            {% if txn.txn_type in 'CREDIT,REFUND' %}background:#dcfce7;color:#15803d;
+                            {% else %}background:#fee2e2;color:#991b1b;{% endif %}">
+                            {{ txn.get_txn_type_display }}
+                        </span>
+                    </td>
+                    <td style="padding:12px;text-align:right;font-weight:600;">
+                        ₹{{ txn.balance_after|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div style="text-align:center;margin-top:20px;">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+            <span style="margin:0 15px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Next</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <p style="text-align:center;color:#888;padding:40px;">No transactions yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

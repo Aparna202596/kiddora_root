@@ -30,6 +30,7 @@ urlpatterns = [
 # ────────────────────── WALLET ──────────────────────
     path("wallet/pay/<str:order_id>/", wallet_views.pay_with_wallet, name="pay_with_wallet"),
     path("wallet/failure/<str:order_id>/", wallet_views.wallet_payment_failure, name="wallet_payment_failure"),
+    path('wallet/', wallet_views.wallet_balance, name='wallet_balance'),
 
     path("admin/payments/",wallet_views.admin_payment_list, name="admin_payment_list"),
 

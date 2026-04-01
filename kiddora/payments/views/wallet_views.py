@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from payments.views.paypal_views import _finalize_order_after_payment
 from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required, user_login_required
 from django.db.models import Q
@@ -38,7 +39,7 @@ def pay_with_wallet(request, order_id):
             f"Insufficient wallet balance (₹{balance:.2f}). "
             "Please choose another payment method.",
         )
-        # ✅ Mark order as not placed on insufficient balance
+
         order.order_status   = "ORDER NOT PLACED"
         order.payment_status = "FAILED"
         order.save(update_fields=["order_status", "payment_status"])
@@ -63,19 +64,17 @@ def pay_with_wallet(request, order_id):
         return redirect("payments:wallet_payment_failure", order_id=order.order_id)
 
     Payment.objects.create(
-        order          = order,
+        order  = order,
         payment_method = "WALLET",
         payment_status = "PAID",
-        amount         = order.final_amount,
-        initiated_at   = timezone.now(),
-        completed_at   = timezone.now(),
+        amount  = order.final_amount,
+        initiated_at = timezone.now(),
+        completed_at = timezone.now(),
     )
 
     order.payment_status = "PAID"
     order.save(update_fields=["payment_status"])
 
-    # ✅ Finalize the order (same helper as PayPal)
-    from payments.views.paypal_views import _finalize_order_after_payment
     _finalize_order_after_payment(request, order)
 
     messages.success(request, f"₹{order.final_amount} paid from wallet. Order confirmed!")
@@ -259,4 +258,23 @@ def admin_payment_list(request):
         "status_f": status_f,
         "method_choices": method_choices,
         "status_choices": status_choices,
+    })
+#   ────────────────────────────────────────────────── INTERNAL HELPERS ──────────────────────────────────────────────────
+@never_cache
+@user_login_required
+def wallet_balance(request):
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    
+    # Get all transactions for this wallet, newest first
+    transactions = WalletTransaction.objects.filter(
+        wallet=wallet
+    ).select_related('order').order_by('-created_at')
+
+    # Optional: Paginate if user has many transactions
+    page_obj = Paginator(transactions, 15).get_page(request.GET.get('page'))
+
+    return render(request, "payments/wallet_balance.html", {
+        "wallet": wallet,
+        "transactions": page_obj,   # we'll use page_obj in template
+        "page_obj": page_obj,
     })
