@@ -1,24 +1,19 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
-from django.contrib import messages
+from payments.views.wallet_helpers import credit_refund_to_wallet
+from django.views.decorators.cache import never_cache
 from django.core.paginator import Paginator
-from django.db import transaction
+from accounts.decorators import admin_login_required, user_login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 from django.utils import timezone
-from django.views.decorators.cache import never_cache
+from django.db import transaction
+from decimal import Decimal
 
-from accounts.decorators import admin_login_required, user_login_required
-from payments.views.wallet_helpers import credit_refund_to_wallet
 from shopcore.models import Order, OrderItem, Return
 
-
-# ─────────────────────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
 def _restore_inventory(order_item: OrderItem) -> None:
     try:
         inv = order_item.variant.inventory
@@ -28,16 +23,12 @@ def _restore_inventory(order_item: OrderItem) -> None:
     except Exception:
         pass
 
-
-# ─────────────────────────────────────────────────────────────
-# USER: REQUEST RETURN
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── RETURN REQUEST VIEWS ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
 def request_return(request, order_id, item_id):
-    order      = get_object_or_404(Order, order_id=order_id, user=request.user)
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
     order_item = get_object_or_404(OrderItem, id=item_id, order=order)
 
     if order.order_status != "DELIVERED":
@@ -54,7 +45,7 @@ def request_return(request, order_id, item_id):
 
     if request.method == "GET":
         return render(request, "returns/request_return.html", {
-            "order":      order,
+            "order": order,
             "order_item": order_item,
         })
 
@@ -62,15 +53,15 @@ def request_return(request, order_id, item_id):
     if not reason:
         messages.error(request, "Please provide a reason for the return.")
         return render(request, "returns/request_return.html", {
-            "order":      order,
+            "order": order,
             "order_item": order_item,
-            "error":      "Reason is required.",
+            "error": "Reason is required.",
         })
 
     Return.objects.create(
-        order_item    = order_item,
-        reason        = reason,
-        status        = "REQUESTED",
+        order_item = order_item,
+        reason = reason,
+        status = "REQUESTED",
         refund_amount = order_item.total_price,
     )
 
@@ -86,10 +77,7 @@ def request_return(request, order_id, item_id):
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
 
-# ─────────────────────────────────────────────────────────────
-# ADMIN: RETURN REQUEST LIST
-# ─────────────────────────────────────────────────────────────
-
+# ──────────────────────────────────────────────── ADMIN: RETURN REQUEST LIST ────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_return_list(request):
@@ -115,17 +103,13 @@ def admin_return_list(request):
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
 
     return render(request, "returns/admin_return_list.html", {
-        "page_obj":       page_obj,
-        "search":         search,
-        "status_f":       status_f,
+        "page_obj": page_obj,
+        "search": search,
+        "status_f": status_f,
         "status_choices": status_choices,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: RETURN REQUEST DETAIL
-# ─────────────────────────────────────────────────────────────
-
+# ─────────────────────────────────────────────── ADMIN: RETURN REQUEST DETAIL ───────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_return_detail(request, return_id):
@@ -140,7 +124,7 @@ def admin_return_detail(request, return_id):
         id=return_id,
     )
 
-    oi      = ret.order_item
+    oi  = ret.order_item
     img_url = None
     img_obj = (
         oi.variant.product.images.filter(is_default=True).first()
@@ -154,15 +138,11 @@ def admin_return_detail(request, return_id):
                 break
 
     return render(request, "returns/admin_return_detail.html", {
-        "ret":     ret,
+        "ret":  ret,
         "img_url": img_url,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: APPROVE RETURN  →  refund to wallet + restock
-# ─────────────────────────────────────────────────────────────
-
+# ─────────────────────────────────────────────── ADMIN: APPROVE RETURN ───────────────────────────────────────────────
 @never_cache
 @admin_login_required
 @transaction.atomic

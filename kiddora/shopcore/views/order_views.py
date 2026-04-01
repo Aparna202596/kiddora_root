@@ -1,66 +1,56 @@
 from __future__ import annotations
 
+from django.views.decorators.cache import never_cache
+from django.core.paginator import Paginator
+from accounts.decorators import admin_login_required, user_login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q
+from django.contrib import messages
+from django.utils import timezone
+from django.http import HttpResponse
+from django.conf import settings
+from django.db import transaction
+from decimal import Decimal
 import io
 import os
-from decimal import Decimal
 
-from django.conf import settings
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db import transaction
-from django.db.models import Q
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-from django.views.decorators.cache import never_cache
-
-from reportlab.lib import colors
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import (
-    Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle,
-)
+from reportlab.lib import colors
 
-from accounts.decorators import admin_login_required, user_login_required
-from accounts.models import UserAddress
-from shopcore.models import Cart, Order, OrderItem, Offer
+from shopcore.models import Cart, Order, OrderItem, Offer, Return
 from products.models import ProductVariant
+from payments.models import Payment
 
-
-# ─────────────────────────────────────────────────────────────
-# SHARED HELPERS
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── HELPER FUNCTIONS ─────────────────────────────────────────────────────────────
 def _get_cart(user):
     try:
         return user.cart
     except Cart.DoesNotExist:
         return None
 
-
 def _variant_is_available(variant: ProductVariant) -> bool:
     try:
-        p   = variant.product
+        p = variant.product
         sub = p.subcategory
         cat = sub.category
         return (
             variant.is_active
-            and p.is_active   and not p.is_deleted
+            and p.is_active and not p.is_deleted
             and sub.is_active and not sub.is_deleted
             and cat.is_active and not cat.is_deleted
         )
     except Exception:
         return False
 
-
 def _stock_for(variant: ProductVariant) -> int:
     try:
         return variant.inventory.quantity_available
     except Exception:
         return 0
-
 
 def _img_url_for(product) -> str | None:
     img_obj = (
@@ -74,39 +64,29 @@ def _img_url_for(product) -> str | None:
                 return val.url
     return None
 
-
 def _recalculate_order_amount(order: Order) -> None:
-    """Recalculate totals after an item is cancelled or returned."""
-    active_items = order.order_items.filter(item_status="ACTIVE")
-    
+    active_items = order.order_items.filter(item_status="ACTIVE")   
     subtotal = sum(item.unit_price * item.quantity for item in active_items)
     
     # Use the centralized model logic
     order.total_amount = subtotal
-    order.discount_amount = Decimal("0")  # reset if needed, or keep existing offer logic
-    order.shipping_charge = order.calculate_shipping()  # ← uses model method
-    
+    order.discount_amount = Decimal("0")  
+    order.shipping_charge = order.calculate_shipping()  
     total_deductions = order.discount_amount + order.coupon_discount
     order.final_amount = max(
         Decimal("0"), 
         subtotal - total_deductions + order.shipping_charge
     )
-    
     order.save(update_fields=["total_amount", "shipping_charge", "final_amount", "final_amount"])
 
 def get_max_offer_discount_percent(product) -> int:
-    """
-    Returns the highest applicable offer percentage for this product.
-    Compares product-specific and category-specific offers; picks the larger.
-    """
     if not product:
         return 0
-
+    
     now = timezone.now()
     active_offers = Offer.objects.filter(
         is_active=True, is_deleted=False, start_date__lte=now
     )
-
     product_offer  = active_offers.filter(offer_type="PRODUCT", product=product).first()
     category_offer = None
     try:
@@ -126,11 +106,7 @@ def get_max_offer_discount_percent(product) -> int:
 
     return max_pct
 
-
-# ─────────────────────────────────────────────────────────────
-# USER: ORDER LIST
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── USER: ORDER LIST ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def user_order_list(request):
@@ -150,11 +126,7 @@ def user_order_list(request):
         "query":    query,
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# USER: ORDER DETAIL
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── USER: ORDER DETAIL ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def user_order_detail(request, order_id):
@@ -164,26 +136,20 @@ def user_order_detail(request, order_id):
             "order_items__variant__color",
             "order_items__variant__age_group",
         ),
-        order_id=order_id,
-        user=request.user,
+        order_id = order_id,
+        user = request.user,
     )
-
     items_with_img = [
         {"order_item": oi, "img_url": _img_url_for(oi.variant.product)}
         for oi in order.order_items.all()
     ]
-
     return render(request, "orders/user/user_order_detail.html", {
-        "order":            order,
-        "items_with_img":   items_with_img,
+        "order": order,
+        "items_with_img": items_with_img,
         "can_cancel_order": order.order_status in ("PENDING", "CONFIRMED"),
     })
 
-
-# ─────────────────────────────────────────────────────────────
-# USER: CANCEL ENTIRE ORDER
-# ─────────────────────────────────────────────────────────────
-
+#   ────────────────────────────────────────────────── USER: CANCEL ORDER ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -214,25 +180,25 @@ def cancel_order(request, order_id):
             inv.save()
         except Exception:
             pass
-        oi.item_status   = "CANCELLED"
+        oi.item_status = "CANCELLED"
         oi.cancel_reason = reason or "Order cancelled by user"
-        oi.cancelled_at  = timezone.now()
+        oi.cancelled_at = timezone.now()
         oi.save()
 
-    order.order_status  = "CANCELLED"
+    order.order_status = "CANCELLED"
     order.cancel_reason = reason or "Cancelled by user"
-    order.cancelled_at  = timezone.now()
+    order.cancelled_at = timezone.now()
 
     if order.payment_status == "PAID":
         if order.payment_method in ("PAYPAL", "WALLET"):
             from payments.views.wallet_helpers import credit_refund_to_wallet
             credit_refund_to_wallet(
-                user=order.user,
-                amount=order.final_amount,
-                description=f"Refund for cancelled order {order.order_id}",
-                reference_type="CANCEL",
-                reference_id=str(order.order_id),
-                order=order,
+                user = order.user,
+                amount = order.final_amount,
+                description = f"Refund for cancelled order {order.order_id}",
+                reference_type = "CANCEL",
+                reference_id = str(order.order_id),
+                order = order,
             )
             order.payment_status = "REFUNDED"
         elif order.payment_method == "COD":
@@ -243,15 +209,12 @@ def cancel_order(request, order_id):
     messages.success(request, f"Order {order.order_id} has been cancelled.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-# ─────────────────────────────────────────────────────────────
-# USER: CANCEL SINGLE ITEM
-# ─────────────────────────────────────────────────────────────
-
+# ───────────────────────────────────────────────────────────── CANCEL ORDER ITEM (partial cancellation) ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
 def cancel_order_item(request, order_id, item_id):
-    order      = get_object_or_404(Order, order_id=order_id, user=request.user)
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
     order_item = get_object_or_404(OrderItem, id=item_id, order=order, item_status="ACTIVE")
 
     if order.order_status == "OUT_FOR_DELIVERY":
@@ -284,62 +247,56 @@ def cancel_order_item(request, order_id, item_id):
     if order.payment_status == "PAID" and order.payment_method in ("PAYPAL", "WALLET"):
         from payments.views.wallet_helpers import credit_refund_to_wallet
         credit_refund_to_wallet(
-            user=order.user,
-            amount=item_refund_amount,
-            description=(
+            user = order.user,
+            amount = item_refund_amount,
+            description = (
                 f"Partial refund for cancelled item "
                 f"'{order_item.variant.product.product_name}' "
                 f"in order {order.order_id}"
             ),
-            reference_type="CANCEL",
-            reference_id=str(order.order_id),
-            order=order,
+            reference_type = "CANCEL",
+            reference_id = str(order.order_id),
+            order = order,
         )
 
-    order_item.item_status   = "CANCELLED"
+    order_item.item_status = "CANCELLED"
     order_item.cancel_reason = reason or "Item cancelled by user"
-    order_item.cancelled_at  = timezone.now()
+    order_item.cancelled_at = timezone.now()
     order_item.save()
 
     _recalculate_order_amount(order)
 
-    # Check if all items are now cancelled
     remaining_active = order.order_items.filter(item_status="ACTIVE")
     if not remaining_active.exists():
-        order.order_status   = "CANCELLED"
-        order.cancel_reason  = "All items cancelled"
-        order.cancelled_at   = timezone.now()
+        order.order_status = "CANCELLED"
+        order.cancel_reason = "All items cancelled"
+        order.cancelled_at = timezone.now()
 
         if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
             order.payment_status = "REFUNDED"
         elif order.payment_method == "COD":
             order.payment_status = "CANCELLED"
-        order.save(update_fields=["order_status", "cancel_reason", "cancelled_at", "payment_status"])
+        order.save(update_fields = ["order_status", "cancel_reason", "cancelled_at", "payment_status"])
     else:
 
         if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
             order.payment_status = "PARTIALLY_REFUNDED"
-            order.save(update_fields=["payment_status"])
+            order.save(update_fields = ["payment_status"])
 
     messages.success(
         request,
         f"Item '{order_item.variant.product.product_name}' cancelled."
         + (f" ₹{item_refund_amount:.2f} refunded to your wallet." 
-           if order.payment_method in ("PAYPAL", "WALLET") else ""),
+            if order.payment_method in ("PAYPAL", "WALLET") else ""),
     )
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-# ─────────────────────────────────────────────────────────────
-# USER: REQUEST RETURN (only after DELIVERED)
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────────────── REQUEST RETURN ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
-def request_return(request, order_id, item_id):
-    from shopcore.models import Return  # local import to avoid circular
-
-    order      = get_object_or_404(Order, order_id=order_id, user=request.user)
+def request_return(request, order_id, item_id): 
+    order = get_object_or_404(Order, order_id=order_id, user=request.user)
     order_item = get_object_or_404(OrderItem, id=item_id, order=order)
 
     if order.order_status != "DELIVERED":
@@ -378,22 +335,264 @@ def request_return(request, order_id, item_id):
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
 
-# ─────────────────────────────────────────────────────────────
-# USER: DOWNLOAD INVOICE (PDF)
-# ─────────────────────────────────────────────────────────────
+# ───────────────────────────────────────────────────────────── ADMIN: ORDER LIST ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_order_list(request):
+    search = request.GET.get("search", "").strip()
+    status_f = request.GET.get("status", "").strip()
+    sort = request.GET.get("sort", "order_date")
+    direction = request.GET.get("dir", "desc")
 
+    orders = (
+        Order.objects
+        .select_related("user", "address")
+        .prefetch_related("order_items")
+        .order_by("-order_date")
+    )
+
+    if search:
+        orders = orders.filter(
+            Q(order_id__icontains=search)
+            | Q(user__email__icontains=search)
+            | Q(user__full_name__icontains=search)
+        )
+    if status_f:
+        orders = orders.filter(order_status=status_f)
+
+    if sort in ("order_date", "final_amount", "order_status"):
+        order_field = f"-{sort}" if direction == "desc" else sort
+        orders = orders.order_by(order_field)
+
+    page_obj = Paginator(orders, 15).get_page(request.GET.get("page"))
+
+    return render(request, "orders/admin/admin_order_list.html", {
+        "page_obj": page_obj,
+        "search": search,
+        "status_f": status_f,
+        "sort": sort,
+        "dir": direction,
+        "status_choices": Order.ORDER_STATUS_CHOICES,
+    })
+
+# ───────────────────────────────────────────────────────────── ADMIN: ORDER DETAIL ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+def admin_order_detail(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("user", "address", "coupon").prefetch_related(
+            "order_items__variant__product__images",
+            "order_items__variant__color",
+            "order_items__variant__age_group",
+        ),
+        order_id=order_id,
+    )
+    items_with_img = [
+        {"order_item": oi, "img_url": _img_url_for(oi.variant.product)}
+        for oi in order.order_items.all()
+    ]
+    return render(request, "orders/admin/admin_order_detail.html", {
+        "order": order,
+        "items_with_img": items_with_img,
+        "status_choices": Order.ORDER_STATUS_CHOICES,
+        "item_status_choices": OrderItem.ITEM_STATUS_CHOICES,
+    })
+
+# ───────────────────────────────────────────────────────────── ADMIN: UPDATE ORDER STATUS ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+@transaction.atomic
+def admin_update_order_status(request, order_id):
+    if request.method != "POST":
+        return redirect("shopcore:admin_order_detail", order_id=order_id)
+
+    order = get_object_or_404(Order, order_id=order_id)
+    new_status = request.POST.get("order_status", "").strip()
+
+    valid_transitions = {
+        "PENDING": ["CONFIRMED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
+        "CONFIRMED": ["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
+        "SHIPPED": ["OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
+        "OUT_FOR_DELIVERY": ["DELIVERED"],
+        "DELIVERED": [],
+        "CANCELLED": [],
+        "RETURNED": [],
+    }
+
+    allowed = valid_transitions.get(order.order_status, [])
+    if new_status not in allowed:
+        messages.error(
+            request,
+            f"Cannot change status from "
+            f"'{order.get_order_status_display()}' to '{new_status}'.",
+        )
+        return redirect("shopcore:admin_order_detail", order_id=order.order_id)
+
+    old_status = order.order_status
+    order.order_status = new_status
+
+    if new_status == "DELIVERED":
+        order.delivered_at = timezone.now()
+        order.order_items.filter(item_status="ACTIVE").update(
+            delivered_at=timezone.now(),
+        )
+        if order.payment_method == "COD":
+            order.payment_status = "PAID"
+
+            Payment.objects.filter(
+                order=order,
+                payment_method="COD",
+                payment_status="PENDING"
+            ).update(
+                payment_status="PAID",
+                completed_at=timezone.now(),
+            )
+
+    elif new_status == "CANCELLED":
+        order.cancelled_at  = timezone.now()
+        order.cancel_reason = request.POST.get("cancel_reason", "Cancelled by admin").strip()
+        for oi in order.order_items.filter(item_status="ACTIVE"):
+            try:
+                inv = oi.variant.inventory
+                inv.quantity_available += oi.quantity
+                inv.quantity_sold = max(0, inv.quantity_sold - oi.quantity)
+                inv.save()
+            except Exception:
+                pass
+            oi.item_status   = "CANCELLED"
+            oi.cancel_reason = order.cancel_reason
+            oi.cancelled_at  = timezone.now()
+            oi.save()
+
+        if order.payment_status == "PAID":
+            if order.payment_method in ("PAYPAL", "WALLET"):
+                from payments.views.wallet_helpers import credit_refund_to_wallet
+                credit_refund_to_wallet(
+                    user=order.user,
+                    amount=order.final_amount,
+                    description=f"Admin refund for cancelled order {order.order_id}",
+                    reference_type="CANCEL",
+                    reference_id=str(order.order_id),
+                    order=order,
+                )
+                order.payment_status = "REFUNDED"
+            elif order.payment_method == "COD":
+                order.payment_status = "CANCELLED"
+    order.save()
+    messages.success(
+        request,
+        f"Order {order.order_id} status updated: {old_status} → {new_status}",
+    )
+    return redirect("shopcore:admin_order_detail", order_id=order.order_id)
+
+# ───────────────────────────────────────────────────────────── ADMIN: UPDATE ORDER ITEM STATUS ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+@transaction.atomic
+def admin_update_item_status(request, order_id, item_id):
+    if request.method != "POST":
+        return redirect("shopcore:admin_order_detail", order_id=order_id)
+
+    order = get_object_or_404(Order, order_id=order_id)
+    order_item = get_object_or_404(OrderItem, id=item_id, order=order)
+    new_status = request.POST.get("item_status", "")
+
+    if new_status not in dict(OrderItem.ITEM_STATUS_CHOICES):
+        messages.error(request, "Invalid item status.")
+        return redirect("shopcore:admin_order_detail", order_id=order_id)
+
+    order_item.item_status = new_status
+    order_item.save()
+
+    if new_status == "CANCELLED":
+        _recalculate_order_amount(order)
+
+    messages.success(
+        request,
+        f"Item '{order_item.variant.product.product_name}' updated to {new_status}.",
+    )
+    return redirect("shopcore:admin_order_detail", order_id=order_id)
+
+# ───────────────────────────────────────────────────────────── ADMIN: HANDLE RETURN REQUEST ─────────────────────────────────────────────────────────────
+@never_cache
+@admin_login_required
+@transaction.atomic
+def admin_handle_return(request, return_id):
+    from shopcore.models import Return  # local import
+
+    ret = get_object_or_404(Return, id=return_id)
+    order_item = ret.order_item
+    order = order_item.order
+
+    if request.method != "POST":
+        return render(
+            request,
+            "orders/admin/admin_handle_return.html",
+            {"ret": ret, "order": order, "order_item": order_item},
+        )
+
+    action = request.POST.get("action", "")
+    admin_note = request.POST.get("admin_note", "").strip()
+
+    if action == "APPROVE":
+        ret.status = "APPROVED"
+        ret.admin_note = admin_note
+        ret.updated_at = timezone.now()
+        ret.save()
+
+        order_item.item_status = "RETURN_APPROVED"
+        order_item.save(update_fields=["item_status"])
+
+        # Refund to wallet
+        refund_amount = order_item.total_price
+        try:
+            wallet = order.user.wallet
+            wallet.balance += refund_amount
+            wallet.save(update_fields=["balance"])
+        except Exception:
+            pass
+
+        ret.refund_amount = refund_amount
+        ret.status = "REFUNDED"
+        ret.refunded_at = timezone.now()
+        ret.save()
+
+        order_item.item_status = "REFUNDED"
+        order_item.save(update_fields=["item_status"])
+
+        messages.success(
+            request,
+            f"Return approved and ₹{refund_amount:.2f} refunded to wallet.",
+        )
+
+    elif action == "REJECT":
+        ret.status = "REJECTED"
+        ret.admin_note = admin_note
+        ret.updated_at = timezone.now()
+        ret.save()
+        order_item.item_status = "RETURN_REJECTED"
+        order_item.save(update_fields=["item_status"])
+
+        messages.success(request, "Return request rejected.")
+
+    else:
+        messages.error(request, "Invalid action.")
+
+    return redirect("shopcore:admin_order_detail", order_id=order.order_id)
+
+# ───────────────────────────────────────────────────────────── DOWNLOAD INVOICE ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def download_invoice(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
 
     buffer = io.BytesIO()
-    doc    = SimpleDocTemplate(buffer, pagesize=A4)
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
 
     font_path = "C:/Windows/Fonts/arial.ttf"
     pdfmetrics.registerFont(TTFont("Arial", font_path))
 
-    styles        = getSampleStyleSheet()
+    styles = getSampleStyleSheet()
     normal_style  = ParagraphStyle(
         "CustomNormal", parent=styles["Normal"],
         fontName="Arial", spaceAfter=8, leading=14,
@@ -402,10 +601,8 @@ def download_invoice(request, order_id):
         "Heading", parent=styles["Heading2"],
         fontName="Arial", spaceAfter=12,
     )
-
     elements = []
 
-    # Logo
     logo_path = os.path.join(settings.BASE_DIR, "static/images/kiddora_logo.PNG")
     if os.path.exists(logo_path):
         elements.append(Image(logo_path, width=120, height=50))
@@ -427,8 +624,8 @@ def download_invoice(request, order_id):
 
     # Customer details
     address = order.address
-    name    = getattr(address, "full_name", None) or getattr(order.user, "full_name", "")
-    phone   = getattr(address, "phone", None) or getattr(order.user, "phone", "")
+    name = getattr(address, "full_name", None) or getattr(order.user, "full_name", "")
+    phone = getattr(address, "phone", None) or getattr(order.user, "phone", "")
     full_address = (
         f"{getattr(address, 'address_line1', '')}, "
         f"{getattr(address, 'address_line2', '')}, "
@@ -456,17 +653,17 @@ def download_invoice(request, order_id):
 
     table = Table(data, colWidths=[100, 200, 60, 100])
     table.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0),  (-1, 0),  colors.HexColor("#f06292")),
-        ("TEXTCOLOR",     (0, 0),  (-1, 0),  colors.white),
-        ("FONTNAME",      (0, 0),  (-1, -1), "Arial"),
-        ("ALIGN",         (0, 0),  (-1, 0),  "CENTER"),
-        ("GRID",          (0, 0),  (-1, -1), 0.5, colors.grey),
-        ("ROWBACKGROUNDS",(0, 1),  (-1, -2), [colors.whitesmoke, colors.lightgrey]),
-        ("ALIGN",         (2, 1),  (2, -1),  "CENTER"),
-        ("ALIGN",         (3, 1),  (3, -1),  "RIGHT"),
+        ("BACKGROUND", (0, 0),  (-1, 0),  colors.HexColor("#f06292")),
+        ("TEXTCOLOR", (0, 0),  (-1, 0),  colors.white),
+        ("FONTNAME", (0, 0),  (-1, -1), "Arial"),
+        ("ALIGN", (0, 0),  (-1, 0),  "CENTER"),
+        ("GRID", (0, 0),  (-1, -1), 0.5, colors.grey),
+        ("ROWBACKGROUNDS", (0, 1),  (-1, -2), [colors.whitesmoke, colors.lightgrey]),
+        ("ALIGN", (2, 1),  (2, -1),  "CENTER"),
+        ("ALIGN", (3, 1),  (3, -1),  "RIGHT"),
         ("BOTTOMPADDING", (0, 0),  (-1, -1), 10),
-        ("TOPPADDING",    (0, 0),  (-1, -1), 10),
-        ("BACKGROUND",    (0, -1), (-1, -1), colors.HexColor("#f06292")),
+        ("TOPPADDING", (0, 0),  (-1, -1), 10),
+        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f06292")),
     ]))
     elements.append(table)
 
@@ -480,278 +677,3 @@ def download_invoice(request, order_id):
             "Content-Disposition": f'attachment; filename="invoice_{order.order_id}.pdf"'
         },
     )
-
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: ORDER LIST
-# ─────────────────────────────────────────────────────────────
-
-@never_cache
-@admin_login_required
-def admin_order_list(request):
-    search   = request.GET.get("search", "").strip()
-    status_f = request.GET.get("status", "").strip()
-    sort     = request.GET.get("sort", "order_date")
-    direction= request.GET.get("dir", "desc")
-
-    orders = (
-        Order.objects
-        .select_related("user", "address")
-        .prefetch_related("order_items")
-        .order_by("-order_date")
-    )
-
-    if search:
-        orders = orders.filter(
-            Q(order_id__icontains=search)
-            | Q(user__email__icontains=search)
-            | Q(user__full_name__icontains=search)
-        )
-    if status_f:
-        orders = orders.filter(order_status=status_f)
-
-    if sort in ("order_date", "final_amount", "order_status"):
-        order_field = f"-{sort}" if direction == "desc" else sort
-        orders = orders.order_by(order_field)
-
-    page_obj = Paginator(orders, 15).get_page(request.GET.get("page"))
-
-    return render(request, "orders/admin/admin_order_list.html", {
-        "page_obj":       page_obj,
-        "search":         search,
-        "status_f":       status_f,
-        "sort":           sort,
-        "dir":            direction,
-        "status_choices": Order.ORDER_STATUS_CHOICES,
-    })
-
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: ORDER DETAIL
-# ─────────────────────────────────────────────────────────────
-
-@never_cache
-@admin_login_required
-def admin_order_detail(request, order_id):
-    order = get_object_or_404(
-        Order.objects.select_related("user", "address", "coupon").prefetch_related(
-            "order_items__variant__product__images",
-            "order_items__variant__color",
-            "order_items__variant__age_group",
-        ),
-        order_id=order_id,
-    )
-
-    items_with_img = [
-        {"order_item": oi, "img_url": _img_url_for(oi.variant.product)}
-        for oi in order.order_items.all()
-    ]
-
-    return render(request, "orders/admin/admin_order_detail.html", {
-        "order":              order,
-        "items_with_img":     items_with_img,
-        "status_choices":     Order.ORDER_STATUS_CHOICES,
-        "item_status_choices": OrderItem.ITEM_STATUS_CHOICES,
-    })
-
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: UPDATE ORDER STATUS
-# Allowed transitions: PENDING → CONFIRMED → SHIPPED →
-#                      OUT_FOR_DELIVERY → DELIVERED → (terminal)
-#                      Any non-terminal → CANCELLED
-# ─────────────────────────────────────────────────────────────
-
-@never_cache
-@admin_login_required
-@transaction.atomic
-def admin_update_order_status(request, order_id):
-    if request.method != "POST":
-        return redirect("shopcore:admin_order_detail", order_id=order_id)
-
-    order      = get_object_or_404(Order, order_id=order_id)
-    new_status = request.POST.get("order_status", "").strip()
-
-    valid_transitions = {
-        "PENDING":          ["CONFIRMED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
-        "CONFIRMED":        ["SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
-        "SHIPPED":          ["OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
-        "OUT_FOR_DELIVERY": ["DELIVERED"],
-        "DELIVERED":        [],
-        "CANCELLED":        [],
-        "RETURNED":         [],
-    }
-
-    allowed = valid_transitions.get(order.order_status, [])
-    if new_status not in allowed:
-        messages.error(
-            request,
-            f"Cannot change status from "
-            f"'{order.get_order_status_display()}' to '{new_status}'.",
-        )
-        return redirect("shopcore:admin_order_detail", order_id=order.order_id)
-
-    old_status        = order.order_status
-    order.order_status = new_status
-
-    if new_status == "DELIVERED":
-        order.delivered_at = timezone.now()
-        order.order_items.filter(item_status="ACTIVE").update(
-            delivered_at=timezone.now(),
-        )
-        # ✅ Only COD gets marked PAID on delivery
-        if order.payment_method == "COD":
-            order.payment_status = "PAID"
-            # Update the COD Payment record too
-            from payments.models import Payment
-            Payment.objects.filter(
-                order=order,
-                payment_method="COD",
-                payment_status="PENDING"
-            ).update(
-                payment_status="PAID",
-                completed_at=timezone.now(),
-            )
-
-    elif new_status == "CANCELLED":
-        order.cancelled_at  = timezone.now()
-        order.cancel_reason = request.POST.get("cancel_reason", "Cancelled by admin").strip()
-        for oi in order.order_items.filter(item_status="ACTIVE"):
-            try:
-                inv = oi.variant.inventory
-                inv.quantity_available += oi.quantity
-                inv.quantity_sold = max(0, inv.quantity_sold - oi.quantity)
-                inv.save()
-            except Exception:
-                pass
-            oi.item_status   = "CANCELLED"
-            oi.cancel_reason = order.cancel_reason
-            oi.cancelled_at  = timezone.now()
-            oi.save()
-
-        # ✅ Refund if already paid
-        if order.payment_status == "PAID":
-            if order.payment_method in ("PAYPAL", "WALLET"):
-                from payments.views.wallet_helpers import credit_refund_to_wallet
-                credit_refund_to_wallet(
-                    user=order.user,
-                    amount=order.final_amount,
-                    description=f"Admin refund for cancelled order {order.order_id}",
-                    reference_type="CANCEL",
-                    reference_id=str(order.order_id),
-                    order=order,
-                )
-                order.payment_status = "REFUNDED"
-            elif order.payment_method == "COD":
-                order.payment_status = "CANCELLED"
-                
-    order.save()
-    messages.success(
-        request,
-        f"Order {order.order_id} status updated: {old_status} → {new_status}",
-    )
-    return redirect("shopcore:admin_order_detail", order_id=order.order_id)
-
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: UPDATE INDIVIDUAL ITEM STATUS
-# ─────────────────────────────────────────────────────────────
-
-@never_cache
-@admin_login_required
-@transaction.atomic
-def admin_update_item_status(request, order_id, item_id):
-    if request.method != "POST":
-        return redirect("shopcore:admin_order_detail", order_id=order_id)
-
-    order      = get_object_or_404(Order, order_id=order_id)
-    order_item = get_object_or_404(OrderItem, id=item_id, order=order)
-    new_status = request.POST.get("item_status", "")
-
-    if new_status not in dict(OrderItem.ITEM_STATUS_CHOICES):
-        messages.error(request, "Invalid item status.")
-        return redirect("shopcore:admin_order_detail", order_id=order_id)
-
-    order_item.item_status = new_status
-    order_item.save()
-
-    if new_status == "CANCELLED":
-        _recalculate_order_amount(order)
-
-    messages.success(
-        request,
-        f"Item '{order_item.variant.product.product_name}' updated to {new_status}.",
-    )
-    return redirect("shopcore:admin_order_detail", order_id=order_id)
-
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: HANDLE RETURN REQUEST
-# ─────────────────────────────────────────────────────────────
-
-@never_cache
-@admin_login_required
-@transaction.atomic
-def admin_handle_return(request, return_id):
-    from shopcore.models import Return  # local import
-
-    ret        = get_object_or_404(Return, id=return_id)
-    order_item = ret.order_item
-    order      = order_item.order
-
-    if request.method != "POST":
-        return render(
-            request,
-            "orders/admin/admin_handle_return.html",
-            {"ret": ret, "order": order, "order_item": order_item},
-        )
-
-    action     = request.POST.get("action", "")
-    admin_note = request.POST.get("admin_note", "").strip()
-
-    if action == "APPROVE":
-        ret.status     = "APPROVED"
-        ret.admin_note = admin_note
-        ret.updated_at = timezone.now()
-        ret.save()
-
-        order_item.item_status = "RETURN_APPROVED"
-        order_item.save(update_fields=["item_status"])
-
-        # Refund to wallet
-        refund_amount = order_item.total_price
-        try:
-            wallet = order.user.wallet
-            wallet.balance += refund_amount
-            wallet.save(update_fields=["balance"])
-        except Exception:
-            pass
-
-        ret.refund_amount = refund_amount
-        ret.status        = "REFUNDED"
-        ret.refunded_at   = timezone.now()
-        ret.save()
-
-        order_item.item_status = "REFUNDED"
-        order_item.save(update_fields=["item_status"])
-
-        messages.success(
-            request,
-            f"Return approved and ₹{refund_amount:.2f} refunded to wallet.",
-        )
-
-    elif action == "REJECT":
-        ret.status     = "REJECTED"
-        ret.admin_note = admin_note
-        ret.updated_at = timezone.now()
-        ret.save()
-
-        order_item.item_status = "RETURN_REJECTED"
-        order_item.save(update_fields=["item_status"])
-
-        messages.success(request, "Return request rejected.")
-
-    else:
-        messages.error(request, "Invalid action.")
-
-    return redirect("shopcore:admin_order_detail", order_id=order.order_id)
