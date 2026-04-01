@@ -221,7 +221,7 @@ def checkout(request):
             blocked = True
 
         base_price = product.final_price
-        offer_pct  = get_max_offer_discount_percent(product)
+        offer_pct = get_max_offer_discount_percent(product)
         offer_pct_dec = Decimal(str(offer_pct))
         discounted_price = base_price * (Decimal("1") - offer_pct_dec / 100)
 
@@ -256,19 +256,25 @@ def checkout(request):
         return redirect("shopcore:cart")
 
     price_after_offers = subtotal - offer_discount_total
+
+    # FIRST: Get applied coupon and coupon_discount
+    applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
+
+    # NOW create temp_order for shipping calculation
     temp_order = Order(
         total_amount=price_after_offers,
-        discount_amount=offer_discount_total,   
+        discount_amount=offer_discount_total,
         coupon_discount=coupon_discount,
     )
     shipping_charge = temp_order.calculate_shipping()
-    applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
+
     grand_total = price_after_offers - coupon_discount + shipping_charge
     cod_blocked = grand_total > Decimal("1000")
 
     wallet_balance = _wallet_balance(request.user)
     wallet_sufficient = wallet_balance >= grand_total
 
+    # Available coupons
     now = timezone.now()
     user_referral_coupon_ids = ReferralUse.objects.filter(
         referred_user=request.user
@@ -284,9 +290,8 @@ def checkout(request):
     ).filter(
         Q(coupon_type="PUBLIC") |
         Q(coupon_type="REFERRAL", id__in=user_referral_coupon_ids)
-    ).exclude(
-        id__in=exhausted_ids
-    )
+    ).exclude(id__in=exhausted_ids)
+
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
 
@@ -307,7 +312,6 @@ def checkout(request):
         "available_coupons": available_coupons,
         "address_type_choices": UserAddress.ADDRESS_TYPE_CHOICES,
     })
-
 # ───────────────────────────────────────────────────────────── PLACE ORDER (POST) ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -392,7 +396,9 @@ def place_order(request):
         item_offer_data[item.variant_id] = item_disc
 
     price_after_offers = subtotal - offer_discount_total
+    
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
+
     temp_order = Order(
         total_amount=price_after_offers,
         discount_amount=offer_discount_total,

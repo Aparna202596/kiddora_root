@@ -389,6 +389,8 @@ class Return(models.Model):
 
     updated_at = models.DateTimeField(null=True, blank=True)
 
+    approved_at = models.DateTimeField(null=True, blank=True)
+
     refunded_at = models.DateTimeField(null=True, blank=True)
 
     locked = models.BooleanField(default=False)

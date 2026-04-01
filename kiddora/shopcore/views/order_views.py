@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from django.views.decorators.cache import never_cache
+from payments.views.wallet_helpers import credit_refund_to_wallet
+from shopcore.views.coupon_views import compute_coupon_discount
 from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required, user_login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -64,20 +66,57 @@ def _img_url_for(product) -> str | None:
                 return val.url
     return None
 
+def _restore_inventory(order_item):
+    """Restore stock when an item is returned or cancelled."""
+    try:
+        inv = order_item.variant.inventory
+        inv.quantity_available += order_item.quantity
+        inv.quantity_sold = max(0, inv.quantity_sold - order_item.quantity)
+        inv.save(update_fields=["quantity_available", "quantity_sold"])
+    except Exception as e:
+        # Log in production, but don't crash the transaction
+        print(f"Warning: Could not restore inventory for item {order_item.id}: {e}")
+        
 def _recalculate_order_amount(order: Order) -> None:
-    active_items = order.order_items.filter(item_status="ACTIVE")   
-    subtotal = sum(item.unit_price * item.quantity for item in active_items)
+    """
+    Recalculate totals after item cancellation or return.
+    Handles coupon removal/re-application and shipping automatically.
+    """
+    active_items = order.order_items.filter(item_status="ACTIVE")
     
-    # Use the centralized model logic
+    # Recalculate subtotal from active items only
+    subtotal = sum(item.unit_price * item.quantity for item in active_items)
     order.total_amount = subtotal
-    order.discount_amount = Decimal("0")  
-    order.shipping_charge = order.calculate_shipping()  
+
+    # === COUPON LOGIC (Safe handling) ===
+    if order.coupon:
+        # Check if coupon is still valid after reduction
+        if subtotal < order.coupon.min_order_amount:
+            # Remove coupon completely
+            order.coupon = None
+            order.coupon_discount = Decimal("0")
+        else:
+            # Re-apply coupon with new subtotal
+            order.coupon_discount = compute_coupon_discount(order.coupon, subtotal)
+    else:
+        order.coupon_discount = Decimal("0")
+
+    # === SHIPPING LOGIC ===
+    order.shipping_charge = order.calculate_shipping()
+
+    # === FINAL AMOUNT ===
     total_deductions = order.discount_amount + order.coupon_discount
     order.final_amount = max(
-        Decimal("0"), 
+        Decimal("0"),
         subtotal - total_deductions + order.shipping_charge
     )
-    order.save(update_fields=["total_amount", "shipping_charge", "final_amount", "final_amount"])
+
+    # Save only changed fields
+    order.save(update_fields=[
+        'total_amount', 'coupon', 'coupon_discount',
+        'shipping_charge', 'final_amount'
+    ])
+
 
 def get_max_offer_discount_percent(product) -> int:
     if not product:
@@ -191,7 +230,7 @@ def cancel_order(request, order_id):
 
     if order.payment_status == "PAID":
         if order.payment_method in ("PAYPAL", "WALLET"):
-            from payments.views.wallet_helpers import credit_refund_to_wallet
+            
             credit_refund_to_wallet(
                 user = order.user,
                 amount = order.final_amount,
@@ -266,22 +305,21 @@ def cancel_order_item(request, order_id, item_id):
 
     _recalculate_order_amount(order)
 
+    # Check if order should be fully cancelled
     remaining_active = order.order_items.filter(item_status="ACTIVE")
     if not remaining_active.exists():
         order.order_status = "CANCELLED"
         order.cancel_reason = "All items cancelled"
         order.cancelled_at = timezone.now()
-
         if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
             order.payment_status = "REFUNDED"
         elif order.payment_method == "COD":
             order.payment_status = "CANCELLED"
-        order.save(update_fields = ["order_status", "cancel_reason", "cancelled_at", "payment_status"])
+        order.save(update_fields=["order_status", "cancel_reason", "cancelled_at", "payment_status"])
     else:
-
         if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
             order.payment_status = "PARTIALLY_REFUNDED"
-            order.save(update_fields = ["payment_status"])
+            order.save(update_fields=["payment_status"])
 
     messages.success(
         request,
@@ -518,67 +556,71 @@ def admin_update_item_status(request, order_id, item_id):
 @admin_login_required
 @transaction.atomic
 def admin_handle_return(request, return_id):
-    from shopcore.models import Return  # local import
+    from shopcore.models import Return
+    from shopcore.views.order_views import _restore_inventory   # Import from same app
 
     ret = get_object_or_404(Return, id=return_id)
     order_item = ret.order_item
     order = order_item.order
 
     if request.method != "POST":
-        return render(
-            request,
-            "orders/admin/admin_handle_return.html",
-            {"ret": ret, "order": order, "order_item": order_item},
-        )
+        return render(request, "orders/admin/admin_handle_return.html", {
+            "ret": ret,
+            "order": order,
+            "order_item": order_item,
+        })
 
-    action = request.POST.get("action", "")
+    action = request.POST.get("action", "").strip()
     admin_note = request.POST.get("admin_note", "").strip()
 
     if action == "APPROVE":
         ret.status = "APPROVED"
-        ret.admin_note = admin_note
+        ret.admin_note = admin_note or "Return approved by admin."
         ret.updated_at = timezone.now()
-        ret.save()
-
-        order_item.item_status = "RETURN_APPROVED"
-        order_item.save(update_fields=["item_status"])
-
-        # Refund to wallet
-        refund_amount = order_item.total_price
-        try:
-            wallet = order.user.wallet
-            wallet.balance += refund_amount
-            wallet.save(update_fields=["balance"])
-        except Exception:
-            pass
-
-        ret.refund_amount = refund_amount
-        ret.status = "REFUNDED"
-        ret.refunded_at = timezone.now()
-        ret.save()
+        ret.save(update_fields=["status", "admin_note", "updated_at"])
 
         order_item.item_status = "REFUNDED"
         order_item.save(update_fields=["item_status"])
 
-        messages.success(
-            request,
-            f"Return approved and ₹{refund_amount:.2f} refunded to wallet.",
+        # Restore inventory
+        _restore_inventory(order_item)
+
+        # Refund
+        refund_amount = order_item.unit_price * order_item.quantity
+        credit_refund_to_wallet(
+            user=order.user,
+            amount=refund_amount,
+            description=f"Refund for approved return of '{order_item.variant.product.product_name}' in order {order.order_id}",
+            reference_type="RETURN",
+            reference_id=str(order.order_id),
+            order=order,
         )
+
+        # Recalculate coupon, shipping, final amount
+        _recalculate_order_amount(order)
+
+        # Update payment status
+        if not order.order_items.filter(item_status="ACTIVE").exists():
+            order.payment_status = "REFUNDED"
+        else:
+            order.payment_status = "PARTIALLY_REFUNDED"
+        order.save(update_fields=["payment_status"])
+
+        messages.success(request, f"Return approved and ₹{refund_amount:.2f} refunded.")
 
     elif action == "REJECT":
         ret.status = "REJECTED"
-        ret.admin_note = admin_note
+        ret.admin_note = admin_note or "Return rejected by admin."
         ret.updated_at = timezone.now()
-        ret.save()
+        ret.save(update_fields=["status", "admin_note", "updated_at"])
+
         order_item.item_status = "RETURN_REJECTED"
         order_item.save(update_fields=["item_status"])
 
         messages.success(request, "Return request rejected.")
 
-    else:
-        messages.error(request, "Invalid action.")
-
     return redirect("shopcore:admin_order_detail", order_id=order.order_id)
+
 
 # ───────────────────────────────────────────────────────────── DOWNLOAD INVOICE ─────────────────────────────────────────────────────────────
 @never_cache

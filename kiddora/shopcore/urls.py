@@ -1,3 +1,4 @@
+from django import views
 from django.urls import path
 from shopcore.views import store_views
 from shopcore.views import cart_views
@@ -109,7 +110,7 @@ urlpatterns = [
     path("admin/returns/<int:return_id>/", return_views.admin_return_detail, name="admin_return_detail"),
     path("admin/returns/<int:return_id>/approve/", return_views.admin_approve_return, name="admin_approve_return"),
     path("admin/returns/<int:return_id>/reject/", return_views.admin_reject_return, name="admin_reject_return"),
-
+    path("admin/returns/<int:return_id>/process-refund/", return_views.admin_process_refund, name="admin_process_refund"),
     # ── REVIEWS — USER ────────────────────────────────────────────────────────
     # FIX: removed duplicate <int:product_id> from submit_review URL
     path("user/products/<int:product_id>/reviews/", review_views.my_reviews, name="my_reviews"),

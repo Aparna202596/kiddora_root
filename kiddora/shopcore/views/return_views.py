@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from payments.views.wallet_helpers import credit_refund_to_wallet
 from django.views.decorators.cache import never_cache
+from shopcore.views.order_views import _recalculate_order_amount
 from django.core.paginator import Paginator
 from accounts.decorators import admin_login_required, user_login_required
 from django.db.models import Q
@@ -151,10 +152,11 @@ def admin_approve_return(request, return_id):
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
     ret = get_object_or_404(Return, id=return_id, status="REQUESTED")
-    oi  = ret.order_item
+    oi = ret.order_item
+    order = oi.order
 
     # Mark return approved
-    ret.status     = "APPROVED"
+    ret.status = "APPROVED"
     ret.admin_note = request.POST.get("admin_note", "Return approved.").strip()
     ret.updated_at = timezone.now()
     ret.save(update_fields=["status", "admin_note", "updated_at"])
@@ -166,40 +168,81 @@ def admin_approve_return(request, return_id):
     # Restore inventory
     _restore_inventory(oi)
 
-    # Credit wallet using the shared helper from payments.views.wallet_helpers
-    # This correctly uses payments.models.Wallet / WalletTransaction
+    # Refund to wallet
     credit_refund_to_wallet(
-        user           = oi.order.user,
-        amount         = ret.refund_amount,
-        description    = (
-            f"Refund for return of '{oi.variant.product.product_name}' "
-            f"in order {oi.order.order_id}"
-        ),
-        reference_type = "RETURN",
-        reference_id   = str(oi.order.order_id),
-        order          = oi.order,
+        user=order.user,
+        amount=ret.refund_amount or oi.unit_price * oi.quantity,
+        description=f"Refund for return of '{oi.variant.product.product_name}' in order {order.order_id}",
+        reference_type="RETURN",
+        reference_id=str(order.order_id),
+        order=order,
     )
 
-    # Update order-level payment status
+    # CRITICAL: Recalculate order totals (coupon + shipping)
+    _recalculate_order_amount(order)
+
+    # Update payment status
+    active_items_count = order.order_items.filter(item_status="ACTIVE").count()
+    if active_items_count == 0:
+        order.payment_status = "REFUNDED"
+    else:
+        order.payment_status = "PARTIALLY_REFUNDED"
+    
+    order.save(update_fields=["payment_status"])
+
+    messages.success(
+        request,
+        f"Return approved for '{oi.variant.product.product_name}'. "
+        f"Order totals recalculated (coupon/shipping updated if needed)."
+    )
+    return redirect("shopcore:admin_return_detail", return_id=return_id)
+
+# ─────────────────────────────────────────────── ADMIN: PROCESS REFUND ───────────────────────────────────────────────
+@never_cache
+@admin_login_required
+@transaction.atomic
+def admin_process_refund(request, return_id):
+    if request.method != "POST":
+        return redirect("shopcore:admin_return_detail", return_id=return_id)
+
+    ret = get_object_or_404(Return, id=return_id, status="APPROVED")
+    oi = ret.order_item
     order = oi.order
+
+    # Final processing
+    _restore_inventory(oi)
+
+    refund_amount = oi.unit_price * oi.quantity
+    credit_refund_to_wallet(
+        user=order.user,
+        amount=refund_amount,
+        description=f"Refund for approved return of '{oi.variant.product.product_name}' in order {order.order_id}",
+        reference_type="RETURN",
+        reference_id=str(order.order_id),
+        order=order,
+    )
+
+    # Update statuses
+    ret.status = "REFUNDED"
+    ret.refunded_at = timezone.now()
+    ret.refund_amount = refund_amount
+    ret.save()
+
+    oi.item_status = "REFUNDED"
+    oi.save(update_fields=["item_status"])
+
+    _recalculate_order_amount(order)
+
+    # Update order payment status
     if not order.order_items.filter(item_status="ACTIVE").exists():
         order.payment_status = "REFUNDED"
     else:
         order.payment_status = "PARTIALLY_REFUNDED"
     order.save(update_fields=["payment_status"])
 
-    messages.success(
-        request,
-        f"Return approved. ₹{ret.refund_amount} credited to "
-        f"{oi.order.user.email}'s wallet.",
-    )
+    messages.success(request, f"Refund processed successfully. ₹{refund_amount} credited.")
     return redirect("shopcore:admin_return_detail", return_id=return_id)
-
-
-# ─────────────────────────────────────────────────────────────
-# ADMIN: REJECT RETURN
-# ─────────────────────────────────────────────────────────────
-
+# ─────────────────────────────────────────────── ADMIN: REJECT RETURN ───────────────────────────────────────────────
 @never_cache
 @admin_login_required
 @transaction.atomic
@@ -215,7 +258,7 @@ def admin_reject_return(request, return_id):
         messages.error(request, "Please provide a reason for rejection.")
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
-    ret.status     = "REJECTED"
+    ret.status = "REJECTED"
     ret.admin_note = admin_note
     ret.updated_at = timezone.now()
     ret.save(update_fields=["status", "admin_note", "updated_at"])

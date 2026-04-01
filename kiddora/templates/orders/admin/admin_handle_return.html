@@ -1,0 +1,236 @@
+{% extends "base_admin.html" %}
+{% load static %}
+{% block title %}Handle Return #{{ ret.id }} – Admin{% endblock %}
+
+{% block content %}
+<style>
+    .return-wrap {
+        max-width: 560px;
+        margin: 40px auto;
+    }
+    
+    .return-card {
+        background: #fff;
+        border: 1.5px solid #eee;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    
+    .return-icon {
+        font-size: 3.2rem;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .return-card h2 {
+        font-size: 22px;
+        font-weight: 800;
+        text-align: center;
+        color: #222;
+        margin-bottom: 8px;
+    }
+    
+    .return-card p {
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    
+    .item-preview {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        background: #f9f9f9;
+        border: 1.5px solid #f0f0f0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .item-preview .no-img {
+        width: 72px;
+        height: 88px;
+        background: #eee;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+    
+    .item-preview .details {
+        flex: 1;
+    }
+    
+    .item-preview .name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #222;
+        margin-bottom: 4px;
+    }
+    
+    .item-preview .meta {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+    }
+    
+    .item-preview .price {
+        font-size: 15px;
+        font-weight: 700;
+        color: #f06292;
+        margin-top: 8px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 8px;
+    }
+    
+    .required-label .req {
+        color: #ef4444;
+    }
+    
+    textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1.5px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 120px;
+        outline: none;
+        font-family: inherit;
+    }
+    
+    textarea:focus {
+        border-color: #f06292;
+        background: #fff;
+    }
+    
+    .info-note {
+        background: #fff0f5;
+        border-left: 4px solid #f06292;
+        padding: 12px 16px;
+        font-size: 13.5px;
+        color: #555;
+        border-radius: 8px;
+        margin-bottom: 24px;
+    }
+    
+    .action-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 28px;
+    }
+    
+    .btn-approve {
+        flex: 1;
+        padding: 12px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    
+    .btn-approve:hover {
+        opacity: 0.95;
+    }
+    
+    .btn-reject {
+        flex: 1;
+        padding: 12px;
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1.5px solid #fca5a5;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    
+    .btn-reject:hover {
+        background: #fca5a5;
+        color: #7f1d1d;
+    }
+    
+    .btn-cancel {
+        flex: 1;
+        padding: 12px;
+        background: #f5f5f5;
+        color: #555;
+        border: 1.5px solid #ddd;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        text-decoration: none;
+        text-align: center;
+    }
+</style>
+
+<div class="return-wrap">
+    <div class="return-card">
+        <div class="return-icon">↩️</div>
+        <h2>Handle Return Request</h2>
+        <p>Review and take action on this return request.</p>
+
+        <div class="item-preview">
+            <div class="no-img">👕</div>
+            <div class="details">
+                <div class="name">{{ order_item.variant.product.product_name }}</div>
+                <div class="meta">
+                    {{ order_item.variant.color }} · {{ order_item.variant.age_group }}<br>
+                    Quantity: {{ order_item.quantity }} · Unit Price: ₹{{ order_item.unit_price }}
+                </div>
+                <div class="price">Total: ₹{{ order_item.total_price }}</div>
+            </div>
+        </div>
+
+        <div class="info-note">
+            ℹ️ Approving will refund the customer and restock the inventory.<br>
+            Rejecting will keep the item status unchanged.
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="required-label">
+                    Admin Note <span class="req">(optional)</span>
+                </label>
+                <textarea name="admin_note" placeholder="Add any internal notes or reason for rejection..."></textarea>
+            </div>
+
+            <div class="action-row">
+                <button type="submit" name="action" value="APPROVE" class="btn-approve">
+                    <i class="fa fa-check"></i> Approve & Refund
+                </button>
+                
+                <button type="submit" name="action" value="REJECT" class="btn-reject"
+                        onclick="return confirm('Are you sure you want to reject this return?')">
+                    <i class="fa fa-times"></i> Reject Return
+                </button>
+            </div>
+            
+            <div style="text-align:center; margin-top:16px;">
+                <a href="{% url 'shopcore:admin_order_detail' order_id=order.order_id %}" class="btn-cancel">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
