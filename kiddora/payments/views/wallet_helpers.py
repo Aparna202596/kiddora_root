@@ -1,14 +1,13 @@
-from __future__ import annotations   # ← MUST BE THE FIRST LINE
+from __future__ import annotations   
 
 from django.db import transaction
 from decimal import Decimal
 import logging
 
 from payments.models import Wallet, WalletTransaction
-from shopcore.models import Order, CouponUsage
+from shopcore.models import CouponUsage
 
 logger = logging.getLogger(__name__)
-
 
 @transaction.atomic
 def debit_from_wallet(
