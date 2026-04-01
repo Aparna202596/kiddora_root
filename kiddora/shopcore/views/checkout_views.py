@@ -504,7 +504,9 @@ def place_order(request):
         request.session["pending_coupon_id"] = applied_coupon.id
 
     if payment_method == "WALLET":
-        return redirect("payments:pay_with_wallet", order_id=order.order_id)
+        return render(request, "payments/wallet_pay_confirm.html", {
+            "order": order,
+        })
     else:
         return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
     

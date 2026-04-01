@@ -1,0 +1,23 @@
+{% extends "base_products.html" %}
+{% block content %}
+<div style="max-width:500px;margin:80px auto;text-align:center;">
+    <h2>Pay with Wallet</h2>
+    <p>You are about to pay <strong>₹{{ order.final_amount }}</strong> from your wallet for order <strong>#{{ order.order_id }}</strong>.</p>
+    
+    <form method="post" action="{% url 'payments:pay_with_wallet' order_id=order.order_id %}">
+        {% csrf_token %}
+        <button type="submit" style="padding:14px 32px; background:#f06292; color:white; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;">
+            Confirm Payment from Wallet
+        </button>
+    </form>
+    
+    <p style="margin-top:20px;">
+        <a href="{% url 'shopcore:checkout' %}">Cancel</a>
+    </p>
+</div>
+
+<script>
+    // Optional: Auto submit after 1 second for smoother UX
+    // setTimeout(() => document.querySelector('form').submit(), 800);
+</script>
+{% endblock %}
