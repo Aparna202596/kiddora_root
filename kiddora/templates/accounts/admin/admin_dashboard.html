@@ -1,303 +1,731 @@
 {% extends "base_admin.html" %}
 {% block title %}Admin Dashboard | Kiddora{% endblock %}
 {% block content %}
-
 <style>
-.dashboard-wrapper {
-    padding: 24px;
-    background: linear-gradient(135deg,#f4f7fb,#eef2f7);
-    min-height: 100vh;
+:root {
+    --pink:#e8a1c6;--pink-dark:#d98ab2;--pink-light:#f3e1ec;
+    --blue:#3b82f6;--green:#16a34a;--amber:#f59e0b;--red:#dc2626;
+    --purple:#7c3aed;--teal:#0d9488;--indigo:#4f46e5;--orange:#f97316;--cyan:#06b6d4;
+    --surface:#ffffff;--bg:#f5f7fa;--border:#e8ecf0;--text:#1e293b;--muted:#64748b;
+    --radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.07);--shadow-lg:0 8px 32px rgba(0,0,0,0.10);
 }
-.dashboard-title { font-size: 24px; font-weight: 600; margin-bottom: 24px; }
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 20px; }
-.stat-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-.stat-label { font-size: 13px; color: #777; }
-.stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; }
-.stat-extra { font-size: 12px; margin-top: 6px; }
-.bg-blue   { background: linear-gradient(135deg,#dbeafe,#eff6ff); }
-.bg-green  { background: linear-gradient(135deg,#dcfce7,#f0fdf4); }
-.bg-yellow { background: linear-gradient(135deg,#fef3c7,#fffbeb); }
-.bg-red    { background: linear-gradient(135deg,#fee2e2,#fff1f2); }
-.section { margin-top: 40px; }
-.section-title { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
-.chart-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 24px; }
-.chart-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-.chart-card canvas { max-height: 280px; }
-.table-wrapper { overflow-x: auto; background: #fff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #eee; text-align: left; }
-th { background: #f8fafc; font-weight: 600; }
-.badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; color: #fff; }
-.badge-green  { background:#16a34a; }
-.badge-yellow { background:#f59e0b; }
-.badge-red    { background:#dc2626; }
-
-/* Donut centre-text overlay — pure HTML, no canvas plugin */
-.donut-wrapper { position: relative; display: inline-block; width: 100%; }
-.donut-center-label {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -58%);
-    text-align: center;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    width: 120px;          /* constrain to fit inside the cutout */
-}
-.dcl-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.2;
-}
-.dcl-title  { font-size: 9px;  color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; }
-.dcl-value  { font-size: 13px; font-weight: 700; color: #374151; }
-.dcl-sub    { font-size: 8px;  color: #b0b8c1; }
-.dcl-divider {
-    width: 30px; height: 1px;
-    background: #e5e7eb;
-    margin: 2px 0;
-}
-@media(max-width:768px){ .dashboard-title { font-size: 20px; } }
+.db-wrap{padding:28px 0;background:var(--bg);min-height:100vh;}
+.db-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:24px;}
+.db-title{font-size:22px;font-weight:700;color:var(--text);}
+.db-subtitle{font-size:13px;color:var(--muted);margin-top:2px;}
+.filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:28px;box-shadow:var(--shadow);}
+.filter-bar label{font-size:13px;font-weight:600;color:var(--muted);}
+.filter-bar input[type="date"]{padding:7px 11px;border-radius:8px;border:1px solid var(--border);font-size:13px;color:var(--text);background:var(--bg);outline:none;}
+.filter-bar input[type="date"]:focus{border-color:var(--pink);}
+.btn-apply{padding:7px 18px;border-radius:8px;background:var(--pink);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
+.btn-apply:hover{background:var(--pink-dark);}
+.btn-reset{padding:7px 14px;border-radius:8px;background:var(--muted);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;}
+.btn-download{margin-left:auto;padding:7px 16px;border-radius:8px;background:#1e293b;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;transition:background .2s;}
+.btn-download:hover{background:#334155;}
+.range-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+.range-pill:hover{background:var(--pink);color:#fff;border-color:var(--pink);}
+.section{margin-top:36px;}
+.section-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--pink-light);display:flex;align-items:center;gap:8px;}
+.section-title i{color:var(--pink-dark);}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}
+.kpi-card{background:var(--surface);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-left:4px solid transparent;position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s;}
+.kpi-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+.kpi-icon{position:absolute;right:14px;top:12px;font-size:20px;opacity:0.13;}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);}
+.kpi-value{font-size:22px;font-weight:800;color:var(--text);margin:5px 0 3px;line-height:1;}
+.kpi-sub{font-size:11px;color:var(--muted);}
+.kpi-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:4px;}
+.kpi-badge.up{background:#dcfce7;color:#166534;}.kpi-badge.down{background:#fee2e2;color:#991b1b;}
+.kpi-spark{margin-top:8px;height:34px;}
+.kpi-spark canvas{width:100%!important;height:34px!important;}
+/* Accents */
+.accent-pink{border-left-color:var(--pink-dark);}.accent-blue{border-left-color:var(--blue);}.accent-green{border-left-color:var(--green);}.accent-amber{border-left-color:var(--amber);}.accent-red{border-left-color:var(--red);}.accent-purple{border-left-color:var(--purple);}.accent-teal{border-left-color:var(--teal);}.accent-indigo{border-left-color:var(--indigo);}.accent-orange{border-left-color:var(--orange);}.accent-cyan{border-left-color:var(--cyan);}
+/* Charts */
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+.chart-card h4{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:7px;}
+.chart-card h4 i{font-size:11px;color:var(--muted);}
+.chart-meta{font-size:11px;color:var(--muted);margin-bottom:12px;}
+.chart-card canvas{max-height:230px;}
+.chart-wide{grid-column:span 2;}
+.chart-full{grid-column:1/-1;}
+/* Funnel */
+.funnel-wrap{display:flex;flex-direction:column;gap:8px;padding-top:8px;}
+.funnel-row{display:flex;align-items:center;gap:10px;}
+.funnel-label{font-size:12px;color:var(--text);width:140px;flex-shrink:0;text-align:right;font-weight:600;}
+.funnel-bar-outer{flex:1;background:#f1f5f9;border-radius:6px;overflow:hidden;height:30px;position:relative;}
+.funnel-bar-inner{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:700;color:#fff;min-width:24px;}
+.funnel-pct{font-size:11px;color:var(--muted);width:44px;text-align:right;}
+/* Health bars */
+.health-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.health-label{font-size:12px;color:var(--text);width:120px;flex-shrink:0;font-weight:600;}
+.health-bar-outer{flex:1;background:#f1f5f9;border-radius:4px;height:10px;overflow:hidden;}
+.health-bar-inner{height:100%;border-radius:4px;}
+.health-val{font-size:12px;font-weight:700;color:var(--text);width:60px;text-align:right;}
+/* Radial */
+.radial-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:16px;margin-top:8px;}
+.radial-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.radial-svg{width:80px;height:80px;}
+.radial-label{font-size:11px;color:var(--muted);text-align:center;font-weight:600;}
+/* Donut center */
+.donut-wrap{position:relative;}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
+.donut-center .dc-val{font-size:18px;font-weight:800;color:var(--text);line-height:1;}
+.donut-center .dc-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+/* Table */
+.table-wrap{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:#f8fafc;padding:11px 14px;font-weight:700;color:var(--muted);text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f8fafc;}
+/* Badges */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.badge-delivered,.badge-paid{background:#dcfce7;color:#166534;}
+.badge-pending{background:#fef3c7;color:#92400e;}
+.badge-cancelled{background:#fee2e2;color:#991b1b;}
+.badge-shipped{background:#dbeafe;color:#1e40af;}
+.badge-returned{background:#ede9fe;color:#5b21b6;}
+.badge-confirmed{background:#f0fdf4;color:#14532d;}
+/* Stock bar */
+.stock-bar-wrap{display:flex;align-items:center;gap:8px;}
+.stock-bar{height:6px;border-radius:3px;background:#e5e7eb;flex:1;overflow:hidden;}
+.stock-bar-fill{height:100%;border-radius:3px;}
+@media(max-width:900px){.chart-wide,.chart-full{grid-column:span 1;}.db-header{flex-direction:column;align-items:flex-start;}.btn-download{margin-left:0;}}
 </style>
 
-<div class="dashboard-wrapper">
-    <h2 class="dashboard-title">Admin Dashboard</h2>
+<div class="db-wrap" id="dashboardRoot">
 
-    <!-- ===== KPI CARDS ===== -->
-    <div class="stats-grid">
-        <div class="stat-card bg-blue">
-            <div class="stat-label">Total Orders</div>
-            <div class="stat-value">{{ total_orders }}</div>
+<!-- HEADER -->
+<div class="db-header">
+    <div>
+        <div class="db-title"><i class="fa-solid fa-chart-pie" style="color:var(--pink-dark);margin-right:8px;"></i>Admin Dashboard</div>
+        <div class="db-subtitle">Data from <strong>{{ start_date }}</strong> → <strong>{{ end_date }}</strong></div>
+    </div>
+    <button class="btn-download" onclick="downloadDashboard()"><i class="fa-solid fa-download"></i> Download CSV</button>
+</div>
+
+<!-- FILTER -->
+<form method="get" class="filter-bar" id="filterForm">
+    <button type="button" class="range-pill" onclick="setRange(10)">Last 10d</button>
+    <button type="button" class="range-pill" onclick="setRange(7)">7d</button>
+    <button type="button" class="range-pill" onclick="setRange(30)">30d</button>
+    <label>From</label><input type="date" name="start_date" id="sDate" value="{{ start_date }}" required>
+    <label>To</label><input type="date" name="end_date" id="eDate" value="{{ end_date }}" required>
+    <button type="submit" class="btn-apply"><i class="fa-solid fa-filter"></i> Apply</button>
+    <a href="?" class="btn-reset">Reset</a>
+</form>
+
+<!-- KPIs: ORDERS -->
+<div class="section-title" style="margin-top:0;"><i class="fa-solid fa-bag-shopping"></i> Order Analytics</div>
+<div class="kpi-grid">
+    <div class="kpi-card accent-blue"><i class="fa-solid fa-bag-shopping kpi-icon"></i><div class="kpi-label">Total Orders</div><div class="kpi-value">{{ total_orders }}</div><span class="kpi-badge {% if order_growth >= 0 %}up{% else %}down{% endif %}"><i class="fa-solid fa-arrow-{% if order_growth >= 0 %}up{% else %}down{% endif %}"></i> {{ order_growth }}%</span><div class="kpi-spark"><canvas id="sk_orders"></canvas></div></div>
+    <div class="kpi-card accent-green"><i class="fa-solid fa-circle-check kpi-icon"></i><div class="kpi-label">Delivered</div><div class="kpi-value">{{ completed_orders }}</div><div class="kpi-sub">{{ completion_rate }}% rate</div></div>
+    <div class="kpi-card accent-amber"><i class="fa-solid fa-clock kpi-icon"></i><div class="kpi-label">Pending</div><div class="kpi-value">{{ pending_orders }}</div></div>
+    <div class="kpi-card accent-indigo"><i class="fa-solid fa-truck kpi-icon"></i><div class="kpi-label">Shipped</div><div class="kpi-value">{{ shipped_orders }}</div></div>
+    <div class="kpi-card accent-red"><i class="fa-solid fa-xmark kpi-icon"></i><div class="kpi-label">Cancelled</div><div class="kpi-value">{{ cancelled_orders }}</div><div class="kpi-sub">{{ cancellation_rate }}% rate</div></div>
+    <div class="kpi-card accent-purple"><i class="fa-solid fa-rotate-left kpi-icon"></i><div class="kpi-label">Returned</div><div class="kpi-value">{{ returned_orders }}</div></div>
+</div>
+
+<!-- KPIs: REVENUE -->
+<div class="section"><div class="section-title"><i class="fa-solid fa-indian-rupee-sign"></i> Revenue Analytics</div>
+<div class="kpi-grid">
+    <div class="kpi-card accent-green"><i class="fa-solid fa-sack-dollar kpi-icon"></i><div class="kpi-label">Total Revenue</div><div class="kpi-value">₹{{ total_revenue|floatformat:0 }}</div><span class="kpi-badge {% if revenue_growth >= 0 %}up{% else %}down{% endif %}"><i class="fa-solid fa-arrow-{% if revenue_growth >= 0 %}up{% else %}down{% endif %}"></i> {{ revenue_growth }}%</span><div class="kpi-spark"><canvas id="sk_rev"></canvas></div></div>
+    <div class="kpi-card accent-teal"><i class="fa-solid fa-calculator kpi-icon"></i><div class="kpi-label">Avg Order Value</div><div class="kpi-value">₹{{ avg_order_value|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-amber"><i class="fa-solid fa-tag kpi-icon"></i><div class="kpi-label">Total Discounts</div><div class="kpi-value">₹{{ total_discount|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-pink"><i class="fa-solid fa-ticket kpi-icon"></i><div class="kpi-label">Coupon Savings</div><div class="kpi-value">₹{{ coupon_discount|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-indigo"><i class="fa-solid fa-truck-fast kpi-icon"></i><div class="kpi-label">Shipping Revenue</div><div class="kpi-value">₹{{ shipping_revenue|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-red"><i class="fa-solid fa-rotate-left kpi-icon"></i><div class="kpi-label">Refunded</div><div class="kpi-value">₹{{ total_refund_amount|floatformat:0 }}</div></div>
+</div></div>
+
+<!-- KPIs: CUSTOMERS -->
+<div class="section"><div class="section-title"><i class="fa-solid fa-users"></i> Customer Analytics</div>
+<div class="kpi-grid">
+    <div class="kpi-card accent-blue"><i class="fa-solid fa-users kpi-icon"></i><div class="kpi-label">Total Customers</div><div class="kpi-value">{{ total_customers }}</div></div>
+    <div class="kpi-card accent-green"><i class="fa-solid fa-user-check kpi-icon"></i><div class="kpi-label">Active</div><div class="kpi-value">{{ active_customers }}</div></div>
+    <div class="kpi-card accent-red"><i class="fa-solid fa-user-slash kpi-icon"></i><div class="kpi-label">Blocked</div><div class="kpi-value">{{ blocked_customers }}</div></div>
+    <div class="kpi-card accent-pink"><i class="fa-solid fa-user-plus kpi-icon"></i><div class="kpi-label">New (Period)</div><div class="kpi-value">{{ new_customers }}</div><span class="kpi-badge {% if customer_growth >= 0 %}up{% else %}down{% endif %}"><i class="fa-solid fa-arrow-{% if customer_growth >= 0 %}up{% else %}down{% endif %}"></i> {{ customer_growth }}%</span></div>
+    <div class="kpi-card accent-indigo"><i class="fa-solid fa-cart-shopping kpi-icon"></i><div class="kpi-label">Ordering</div><div class="kpi-value">{{ ordering_customers }}</div></div>
+    <div class="kpi-card accent-purple"><i class="fa-solid fa-repeat kpi-icon"></i><div class="kpi-label">Repeat</div><div class="kpi-value">{{ repeat_customers }}</div></div>
+</div></div>
+
+<!-- KPIs: PRODUCTS -->
+<div class="section"><div class="section-title"><i class="fa-solid fa-box-open"></i> Product & Inventory Analytics</div>
+<div class="kpi-grid">
+    <div class="kpi-card accent-blue"><i class="fa-solid fa-box kpi-icon"></i><div class="kpi-label">Total Products</div><div class="kpi-value">{{ total_products }}</div><div class="kpi-sub">{{ active_products }} active · {{ inactive_products }} inactive</div></div>
+    <div class="kpi-card accent-teal"><i class="fa-solid fa-layer-group kpi-icon"></i><div class="kpi-label">Categories</div><div class="kpi-value">{{ total_categories }}</div><div class="kpi-sub">{{ total_subcategories }} subcategories</div></div>
+    <div class="kpi-card accent-indigo"><i class="fa-solid fa-sitemap kpi-icon"></i><div class="kpi-label">Variants</div><div class="kpi-value">{{ total_variants }}</div></div>
+    <div class="kpi-card accent-green"><i class="fa-solid fa-cubes kpi-icon"></i><div class="kpi-label">Total Stock</div><div class="kpi-value">{{ total_stock }}</div><div class="kpi-sub">{{ total_reserved }} reserved</div></div>
+    <div class="kpi-card accent-pink"><i class="fa-solid fa-shopping-cart kpi-icon"></i><div class="kpi-label">Items Sold</div><div class="kpi-value">{{ products_sold }}</div></div>
+    <div class="kpi-card accent-amber"><i class="fa-solid fa-triangle-exclamation kpi-icon"></i><div class="kpi-label">Low Stock</div><div class="kpi-value">{{ low_stock_count }}</div><div class="kpi-sub">{{ out_of_stock_count }} OOS</div></div>
+</div></div>
+
+<!-- KPIs: PAYMENTS -->
+<div class="section"><div class="section-title"><i class="fa-solid fa-money-bill-wave"></i> Payment & Wallet Analytics</div>
+<div class="kpi-grid">
+    <div class="kpi-card accent-green"><i class="fa-brands fa-paypal kpi-icon"></i><div class="kpi-label">PayPal Revenue</div><div class="kpi-value">₹{{ paypal_revenue|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-amber"><i class="fa-solid fa-hand-holding-dollar kpi-icon"></i><div class="kpi-label">COD Revenue</div><div class="kpi-value">₹{{ cod_revenue|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-teal"><i class="fa-solid fa-wallet kpi-icon"></i><div class="kpi-label">Wallet Revenue</div><div class="kpi-value">₹{{ wallet_revenue|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-indigo"><i class="fa-solid fa-piggy-bank kpi-icon"></i><div class="kpi-label">Wallet Balance</div><div class="kpi-value">₹{{ total_wallet_balance|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-cyan"><i class="fa-solid fa-arrow-up kpi-icon"></i><div class="kpi-label">Wallet Credits</div><div class="kpi-value">₹{{ wallet_credits|floatformat:0 }}</div></div>
+    <div class="kpi-card accent-red"><i class="fa-solid fa-circle-xmark kpi-icon"></i><div class="kpi-label">Failed Payments</div><div class="kpi-value">{{ failed_payments }}</div></div>
+</div></div>
+
+<!-- KPIs: COUPONS ETC. -->
+<div class="section"><div class="section-title"><i class="fa-solid fa-percent"></i> Coupons, Offers & Referrals</div>
+<div class="kpi-grid">
+    <div class="kpi-card accent-pink"><i class="fa-solid fa-ticket kpi-icon"></i><div class="kpi-label">Coupons</div><div class="kpi-value">{{ total_coupons }}</div><div class="kpi-sub">{{ active_coupons }} active</div></div>
+    <div class="kpi-card accent-blue"><i class="fa-solid fa-hand-pointer kpi-icon"></i><div class="kpi-label">Coupon Uses</div><div class="kpi-value">{{ coupon_uses }}</div></div>
+    <div class="kpi-card accent-amber"><i class="fa-solid fa-percent kpi-icon"></i><div class="kpi-label">Offers</div><div class="kpi-value">{{ total_offers }}</div><div class="kpi-sub">{{ active_offers }} active</div></div>
+    <div class="kpi-card accent-teal"><i class="fa-solid fa-share-nodes kpi-icon"></i><div class="kpi-label">Referrals</div><div class="kpi-value">{{ total_referrals }}</div><div class="kpi-sub">{{ referral_uses }} uses</div></div>
+    <div class="kpi-card accent-green"><i class="fa-solid fa-star kpi-icon"></i><div class="kpi-label">Reviews</div><div class="kpi-value">{{ total_reviews }}</div><div class="kpi-sub">{{ avg_rating }}★ avg</div></div>
+    <div class="kpi-card accent-red"><i class="fa-solid fa-rotate-left kpi-icon"></i><div class="kpi-label">Returns</div><div class="kpi-value">{{ total_returns }}</div><div class="kpi-sub">{{ pending_returns }} pending</div></div>
+</div></div>
+
+<!-- ══════════ SECTION 1: DAILY TRENDS ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-chart-line"></i> Daily Trends — Revenue, Orders & Items Sold</div>
+    <div class="chart-grid">
+        <div class="chart-card chart-full">
+            <h4><i class="fa-solid fa-chart-area"></i> Revenue (₹) + Orders + Items Sold — Dual Axis</h4>
+            <div class="chart-meta">Combined view across selected period</div>
+            <canvas id="combinedDailyChart" style="max-height:260px;"></canvas>
         </div>
-        <div class="stat-card bg-green">
-            <div class="stat-label">Completed Orders</div>
-            <div class="stat-value">{{ completed_orders }}</div>
+        <div class="chart-card chart-wide">
+            <h4><i class="fa-solid fa-layer-group"></i> Stacked Revenue Breakdown Per Day</h4>
+            <div class="chart-meta">Net revenue, discounts, coupon savings, shipping stacked</div>
+            <canvas id="stackedRevenueChart" style="max-height:240px;"></canvas>
         </div>
-        <div class="stat-card bg-yellow">
-            <div class="stat-label">Total Revenue</div>
-            <div class="stat-value">₹ {{ total_revenue }}</div>
-        </div>
-        <div class="stat-card bg-red">
-            <div class="stat-label">Low Stock Products</div>
-            <div class="stat-value">{{ low_stock_count }}</div>
-        </div>
-        <div class="stat-card bg-green">
-            <div class="stat-label">Products Sold</div>
-            <div class="stat-value">{{ products_sold }}</div>
-        </div>
-        <div class="stat-card bg-blue">
-            <div class="stat-label">New Customers (Last 30 Days)</div>
-            <div class="stat-value">{{ new_customers }}</div>
-            <div class="stat-extra">Growth: {{ customer_growth_30days }}%</div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-bar"></i> Orders Per Day</h4>
+            <div class="chart-meta">Daily order volume</div>
+            <canvas id="ordersBarChart" style="max-height:220px;"></canvas>
         </div>
     </div>
+</div>
 
-    <!-- ===== TOP PERFORMANCE ===== -->
-    <div class="section">
-        <h3 class="section-title">Top Performance Analytics</h3>
-        <div class="chart-grid">
-            <div class="chart-card">
-                <h4>Top Products Sold</h4>
-                <canvas id="productChart"></canvas>
-            </div>
-            <div class="chart-card">
-                <h4>Top Categories</h4>
-                <canvas id="categoryChart"></canvas>
-            </div>
-            <div class="chart-card">
-                <h4>Top Brands</h4>
-                <canvas id="brandChart"></canvas>
-            </div>
+<!-- ══════════ SECTION 2: ORDER ANALYTICS ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-filter"></i> Order Fulfilment & Status</div>
+    <div class="chart-grid">
+        <div class="chart-card chart-wide">
+            <h4><i class="fa-solid fa-arrow-down-wide-short"></i> Order Lifecycle Funnel</h4>
+            <div class="chart-meta">Drop-off from placed → delivered</div>
+            <div class="funnel-wrap" id="funnelWrap"></div>
         </div>
-    </div>
-
-    <!-- ===== ADVANCED ANALYTICS ===== -->
-    <div class="section">
-        <h3 class="section-title">Advanced Analytics</h3>
-        <div class="chart-grid">
-
-            <div class="chart-card">
-                <h4>Total Orders / Cust. Growth in last 10 days / Revenue (₹)</h4>
-                <div class="donut-wrapper">
-                    <canvas id="donutChart"></canvas>
-                    <div class="donut-center-label">
-                        <div class="dcl-row">
-                            <span class="dcl-title">Total Orders</span>
-                            <span class="dcl-value">{{ total_orders }}</span>
-                        </div>
-                        <div class="dcl-divider"></div>
-                        <div class="dcl-row">
-                            <span class="dcl-title">Cust. Growth</span>
-                            <span class="dcl-value">{{ customer_growth_10days }}%</span>
-                            <span class="dcl-sub">last 10 days</span>
-                        </div>
-                        <div class="dcl-divider"></div>
-                        <div class="dcl-row">
-                            <span class="dcl-title">Revenue</span>
-                            <span class="dcl-value">₹{{ total_revenue }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chart-card">
-                <h4>Products Sold (Last 7 Days)</h4>
-                <canvas id="areaChart"></canvas>
-            </div>
-            <div class="chart-card">
-                <h4>Total Revenue (Monthly)</h4>
-                <canvas id="lineChart"></canvas>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-pie"></i> Order Status Distribution</h4>
+            <div class="chart-meta">Proportional breakdown of all states</div>
+            <div class="donut-wrap">
+                <canvas id="statusDonut" style="max-height:220px;"></canvas>
+                <div class="donut-center"><div class="dc-val">{{ total_orders }}</div><div class="dc-lbl">orders</div></div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- ══════════ SECTION 3: REVENUE ANALYSIS ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-indian-rupee-sign"></i> Revenue Analysis</div>
+    <div class="chart-grid">
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-pie"></i> Revenue Source Mix</h4>
+            <div class="chart-meta">PayPal vs COD vs Wallet</div>
+            <div class="donut-wrap">
+                <canvas id="revSourceDonut" style="max-height:220px;"></canvas>
+                <div class="donut-center"><div class="dc-val">₹{{ total_revenue|floatformat:0 }}</div><div class="dc-lbl">net</div></div>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-bar"></i> Payment Revenue Comparison</h4>
+            <div class="chart-meta">Revenue amount per method</div>
+            <canvas id="payRevBar" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-arrow-right-arrow-left"></i> Current vs Previous Period</h4>
+            <div class="chart-meta">Key KPIs this period vs prior</div>
+            <canvas id="periodCompareBar" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-credit-card"></i> Payment Method — Order Count</h4>
+            <div class="chart-meta">How customers prefer to pay</div>
+            <canvas id="paymentDonut" style="max-height:220px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SECTION 4: CUSTOMER INSIGHTS ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-users"></i> Customer Insights</div>
+    <div class="chart-grid">
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-user-group"></i> Customer Segments (Polar)</h4>
+            <div class="chart-meta">Active · Blocked · New · Repeat</div>
+            <canvas id="customerSegPolar" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-bar"></i> Customer Volume Breakdown</h4>
+            <div class="chart-meta">All segment counts side-by-side</div>
+            <canvas id="custCompareBar" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-venus-mars"></i> Sales by Gender</h4>
+            <div class="chart-meta">Items sold split by product gender</div>
+            <div class="donut-wrap">
+                <canvas id="genderChart" style="max-height:220px;"></canvas>
+                <div class="donut-center"><div class="dc-val">{{ products_sold }}</div><div class="dc-lbl">items</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SECTION 5: PRODUCTS & INVENTORY ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-box-open"></i> Product & Inventory Insights</div>
+    <div class="chart-grid">
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-ranking-star"></i> Top 10 Products (Qty Sold)</h4>
+            <div class="chart-meta">Best-selling products this period</div>
+            <canvas id="productChart" style="max-height:240px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-layer-group"></i> Top Categories (Qty Sold)</h4>
+            <div class="chart-meta">Category performance ranking</div>
+            <canvas id="categoryChart" style="max-height:240px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-trademark"></i> Top Brands (Qty Sold)</h4>
+            <div class="chart-meta">Brand performance this period</div>
+            <canvas id="brandChart" style="max-height:240px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-palette"></i> Top Colors Sold (Pie)</h4>
+            <div class="chart-meta">Most popular colour variants</div>
+            <canvas id="colorChart" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-child"></i> Top Age Groups (Radar)</h4>
+            <div class="chart-meta">Best-selling age range segments</div>
+            <canvas id="ageChart" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-warehouse"></i> Inventory Status Donut</h4>
+            <div class="chart-meta">Healthy vs low vs out-of-stock</div>
+            <canvas id="inventoryDonut" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card chart-wide">
+            <h4><i class="fa-solid fa-bars-progress"></i> Inventory Health Bars</h4>
+            <div class="chart-meta" style="margin-bottom:14px;">Available · Reserved · Sold · Low Stock · OOS</div>
+            <div id="inventoryHealthBars"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SECTION 6: WALLET & PAYMENTS ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-wallet"></i> Wallet Flow</div>
+    <div class="chart-grid">
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-bar"></i> Wallet Credits vs Debits vs Refunds</h4>
+            <div class="chart-meta">Wallet transaction flow this period</div>
+            <canvas id="walletFlowBar" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-ticket"></i> Coupon & Offer Status</h4>
+            <div class="chart-meta">Active vs inactive counts</div>
+            <canvas id="couponStatusBar" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-share-nodes"></i> Referral Activity</h4>
+            <div class="chart-meta">Codes issued vs redemptions</div>
+            <canvas id="referralBar" style="max-height:220px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SECTION 7: REVIEWS & RETURNS ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-rotate-left"></i> Reviews & Returns</div>
+    <div class="chart-grid">
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-star"></i> Reviews Breakdown</h4>
+            <div class="chart-meta">Total vs Approved vs Pending</div>
+            <canvas id="reviewBar" style="max-height:220px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-pie"></i> Return Status Split</h4>
+            <div class="chart-meta">Requested · Approved · Refunded · Rejected</div>
+            <div class="donut-wrap">
+                <canvas id="returnStatusDonut" style="max-height:220px;"></canvas>
+                <div class="donut-center"><div class="dc-val">{{ total_returns }}</div><div class="dc-lbl">returns</div></div>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-chart-bar"></i> Refund Impact vs Revenue</h4>
+            <div class="chart-meta">Revenue · Refunded · Net after refunds</div>
+            <canvas id="returnRevenueBar" style="max-height:220px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ SECTION 8: MONTHLY + KPI RADIALS ══════════ -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-calendar"></i> Monthly Trend & KPI Radials</div>
+    <div class="chart-grid">
+        <div class="chart-card chart-wide">
+            <h4><i class="fa-solid fa-chart-line"></i> 12-Month Revenue Trend</h4>
+            <div class="chart-meta">Rolling 12-month paid revenue</div>
+            <canvas id="monthlyChart" style="max-height:240px;"></canvas>
+        </div>
+        <div class="chart-card">
+            <h4><i class="fa-solid fa-circle-half-stroke"></i> KPI Rate Radials</h4>
+            <div class="chart-meta">Key % rates at a glance</div>
+            <div class="radial-grid" id="radialGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TABLE: RECENT ORDERS -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-list"></i> Recent Orders</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Order ID</th><th>Customer</th><th>Date</th><th>Amount</th><th>Payment</th><th>Status</th></tr></thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td>{{ forloop.counter }}</td><td><strong>{{ order.order_id }}</strong></td>
+                    <td>{{ order.user.full_name|default:order.user.email }}</td>
+                    <td>{{ order.order_date|date:"d M Y" }}</td>
+                    <td>₹{{ order.final_amount|floatformat:2 }}</td>
+                    <td>{{ order.payment_method }}</td>
+                    <td><span class="badge badge-{{ order.order_status|lower }}">{{ order.order_status }}</span></td>
+                </tr>
+                {% empty %}<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">No orders in this range.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- TABLE: LOW STOCK -->
+<div class="section">
+    <div class="section-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--amber);"></i> Low Stock Alerts</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Product</th><th>Color</th><th>Age Group</th><th>SKU</th><th>Available</th><th>Reserved</th><th>Bar</th></tr></thead>
+            <tbody>
+                {% for inv in low_stock_items %}
+                <tr>
+                    <td>{{ inv.variant.product.product_name }}</td>
+                    <td>{{ inv.variant.color.color }}</td>
+                    <td>{{ inv.variant.age_group.age }}</td>
+                    <td style="font-family:monospace;font-size:11px;">{{ inv.variant.sku }}</td>
+                    <td><strong style="color:{% if inv.quantity_available == 0 %}var(--red){% elif inv.quantity_available <= 2 %}var(--amber){% else %}var(--text){% endif %};">{{ inv.quantity_available }}</strong></td>
+                    <td>{{ inv.quantity_reserved }}</td>
+                    <td><div class="stock-bar-wrap"><div class="stock-bar"><div class="stock-bar-fill" style="width:{% widthratio inv.quantity_available 20 100 %}%;background:{% if inv.quantity_available == 0 %}var(--red){% elif inv.quantity_available <= 2 %}var(--amber){% else %}var(--green){% endif %};"></div></div></div></td>
+                </tr>
+                {% empty %}<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">No low-stock items 🎉</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+const DAILY_LABELS  = {{ daily_labels_json|safe }};
+const DAILY_REV     = {{ daily_revenue_json|safe }};
+const ORDERS_PD     = {{ orders_per_day_json|safe }};
+const PROD_PD       = {{ products_per_day_json|safe }};
+const MONTHLY_LABELS= {{ monthly_labels_json|safe }};
+const MONTHLY_REV   = {{ monthly_revenue_json|safe }};
+const STATUS_DATA   = {{ order_status_json|safe }};
+const PAY_DATA      = {{ payment_methods_json|safe }};
+const GENDER_DATA   = {{ gender_data_json|safe }};
+const TP_L = {{ top_products_labels_json|safe }};
+const TP_D = {{ top_products_data_json|safe }};
+const TC_L = {{ top_categories_labels_json|safe }};
+const TC_D = {{ top_categories_data_json|safe }};
+const TB_L = {{ top_brands_labels_json|safe }};
+const TB_D = {{ top_brands_data_json|safe }};
+const COL_L= {{ top_colors_labels_json|safe }};
+const COL_D= {{ top_colors_data_json|safe }};
+const AGE_L= {{ top_ages_labels_json|safe }};
+const AGE_D= {{ top_ages_data_json|safe }};
 
-/* ── TOP PRODUCTS ── */
-new Chart(document.getElementById('productChart'), {
-    type: 'bar',
-    data: {
-        labels: [{% for p in top_products %}'{{ p.variant__product__product_name }}',{% endfor %}],
-        datasets: [{
-            label: 'Quantity Sold',
-            data: [{% for p in top_products %}{{ p.total }},{% endfor %}],
-            backgroundColor: 'rgba(79,70,229,0.7)',
-            borderRadius: 6
-        }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+const TOT_ORD  = {{ total_orders }};
+const DEL_ORD  = {{ completed_orders }};
+const SHIP_ORD = {{ shipped_orders }};
+const PEND_ORD = {{ pending_orders }};
+const CANC_ORD = {{ cancelled_orders }};
+const RET_ORD  = {{ returned_orders }};
+const TOT_REV  = parseFloat("{{ total_revenue|floatformat:2 }}");
+const PREV_REV = parseFloat("{{ prev_revenue|floatformat:2 }}");
+const TOT_DISC = parseFloat("{{ total_discount|floatformat:2 }}");
+const CPN_DISC = parseFloat("{{ coupon_discount|floatformat:2 }}");
+const SHIP_REV = parseFloat("{{ shipping_revenue|floatformat:2 }}");
+const REF_AMT  = parseFloat("{{ total_refund_amount|floatformat:2 }}");
+const PAYPAL_R = parseFloat("{{ paypal_revenue|floatformat:2 }}");
+const COD_R    = parseFloat("{{ cod_revenue|floatformat:2 }}");
+const WAL_R    = parseFloat("{{ wallet_revenue|floatformat:2 }}");
+const W_CR     = parseFloat("{{ wallet_credits|floatformat:2 }}");
+const W_DB     = parseFloat("{{ wallet_debits|floatformat:2 }}");
+const W_RF     = parseFloat("{{ wallet_refunds|floatformat:2 }}");
+const TOT_CUST = {{ total_customers }};
+const ACT_CUST = {{ active_customers }};
+const BLK_CUST = {{ blocked_customers }};
+const NEW_CUST = {{ new_customers }};
+const PREV_CUS = {{ prev_customers|default:0 }};
+const ORD_CUST = {{ ordering_customers }};
+const REP_CUST = {{ repeat_customers }};
+const TOT_STCK = {{ total_stock }};
+const TOT_RES  = {{ total_reserved }};
+const SOLD_ST  = {{ total_sold_stock }};
+const LOW_ST   = {{ low_stock_count }};
+const OOS      = {{ out_of_stock_count }};
+const TOT_CPN  = {{ total_coupons }};
+const ACT_CPN  = {{ active_coupons }};
+const TOT_OFR  = {{ total_offers }};
+const ACT_OFR  = {{ active_offers }};
+const TOT_REFF = {{ total_referrals }};
+const REF_USES = {{ referral_uses }};
+const TOT_REVW = {{ total_reviews }};
+const APP_REVW = {{ approved_reviews }};
+const AVG_RAT  = {{ avg_rating }};
+const TOT_RET  = {{ total_returns }};
+const APP_RET  = {{ approved_returns }};
+const PEND_RET = {{ pending_returns }};
+const REF_RET  = {{ refunded_returns }};
+const COMPL_R  = {{ completion_rate }};
+const CANC_R   = {{ cancellation_rate }};
+const TOT_PROD = {{ total_products }};
+const ACT_PROD = {{ active_products }};
+
+const P = ['#e879a0','#3b82f6','#16a34a','#f59e0b','#7c3aed','#0d9488','#dc2626','#f97316','#06b6d4','#84cc16','#ec4899','#8b5cf6'];
+const SC = { DELIVERED:'#16a34a',PENDING:'#f59e0b',CANCELLED:'#dc2626',SHIPPED:'#3b82f6',RETURNED:'#7c3aed',CONFIRMED:'#0d9488','OUT_FOR_DELIVERY':'#06b6d4','ORDER NOT PLACED':'#94a3b8' };
+
+/* 1. COMBINED DAILY DUAL-AXIS */
+new Chart(document.getElementById('combinedDailyChart'),{
+    type:'bar',
+    data:{ labels:DAILY_LABELS, datasets:[
+        { type:'line', label:'Revenue ₹', data:DAILY_REV, borderColor:'#e879a0', backgroundColor:'rgba(232,161,198,0.12)', fill:true, tension:0.4, pointRadius:4, borderWidth:2, yAxisID:'yR' },
+        { type:'bar',  label:'Orders',    data:ORDERS_PD, backgroundColor:'rgba(59,130,246,0.7)', borderRadius:5, yAxisID:'yC' },
+        { type:'line', label:'Items Sold',data:PROD_PD,   borderColor:'#16a34a', tension:0.4, pointRadius:3, borderWidth:2, borderDash:[4,3], yAxisID:'yC' }
+    ]},
+    options:{ responsive:true, plugins:{ legend:{ position:'top', labels:{ font:{ size:11 } } } },
+        scales:{ yR:{ type:'linear', position:'left', ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN'), font:{size:11} }, grid:{ color:'rgba(0,0,0,0.04)' } }, yC:{ type:'linear', position:'right', ticks:{ font:{size:11} }, grid:{ drawOnChartArea:false } } } }
 });
 
-/* ── TOP CATEGORIES ── */
-new Chart(document.getElementById('categoryChart'), {
-    type: 'bar',
-    data: {
-        labels: [{% for c in top_categories %}'{{ c.variant__product__subcategory__category__category_name }}',{% endfor %}],
-        datasets: [{
-            label: 'Quantity Sold',
-            data: [{% for c in top_categories %}{{ c.total }},{% endfor %}],
-            backgroundColor: 'rgba(16,185,129,0.7)',
-            borderRadius: 6
-        }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+/* 2. STACKED REVENUE */
+const dDisc = DAILY_REV.map(r => TOT_REV>0 ? +((TOT_DISC/TOT_REV)*r).toFixed(2) : 0);
+const dCpn  = DAILY_REV.map(r => TOT_REV>0 ? +((CPN_DISC/TOT_REV)*r).toFixed(2) : 0);
+const dShip = DAILY_REV.map(r => TOT_REV>0 ? +((SHIP_REV/TOT_REV)*r).toFixed(2) : 0);
+const dNet  = DAILY_REV.map((r,i)=>Math.max(0, r-dDisc[i]-dCpn[i]));
+new Chart(document.getElementById('stackedRevenueChart'),{
+    type:'bar',
+    data:{ labels:DAILY_LABELS, datasets:[
+        { label:'Net Revenue', data:dNet,  backgroundColor:'#16a34a', borderRadius:4 },
+        { label:'Discounts',   data:dDisc, backgroundColor:'#f59e0b', borderRadius:4 },
+        { label:'Coupon',      data:dCpn,  backgroundColor:'#e879a0', borderRadius:4 },
+        { label:'Shipping',    data:dShip, backgroundColor:'#3b82f6', borderRadius:4 },
+    ]},
+    options:{ responsive:true, scales:{ x:{stacked:true}, y:{stacked:true, ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')}} }, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
 });
 
-/* ── TOP BRANDS ── */
-new Chart(document.getElementById('brandChart'), {
-    type: 'bar',
-    data: {
-        labels: [{% for b in top_brands %}'{{ b.variant__product__brand }}',{% endfor %}],
-        datasets: [{
-            label: 'Quantity Sold',
-            data: [{% for b in top_brands %}{{ b.total }},{% endfor %}],
-            backgroundColor: 'rgba(234,179,8,0.7)',
-            borderRadius: 6
-        }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+/* 3. ORDERS PER DAY */
+new Chart(document.getElementById('ordersBarChart'),{
+    type:'bar', data:{ labels:DAILY_LABELS, datasets:[{ data:ORDERS_PD, backgroundColor:'#3b82f6', borderRadius:6 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}} }
 });
 
-/* ── DONUT CHART ── */
-(function () {
-    const totalOrders    = {{ total_orders }};
-    const custGrowthRaw  = {{ customer_growth_10days }};   // may be 0 or negative
-    const revenueRaw     = {{ total_revenue|floatformat:0 }};
+/* 4. FUNNEL (HTML) */
+const fStages=[
+    {label:'Total Orders', val:TOT_ORD,  color:'#3b82f6'},
+    {label:'Confirmed',    val:TOT_ORD-PEND_ORD, color:'#0d9488'},
+    {label:'Shipped',      val:SHIP_ORD, color:'#7c3aed'},
+    {label:'Delivered',    val:DEL_ORD,  color:'#16a34a'},
+];
+const fW=document.getElementById('funnelWrap'), fB=fStages[0].val||1;
+fStages.forEach(s=>{ const pct=Math.round((s.val/fB)*100);
+    fW.innerHTML+=`<div class="funnel-row"><div class="funnel-label">${s.label}</div><div class="funnel-bar-outer"><div class="funnel-bar-inner" style="width:${pct}%;background:${s.color};">${s.val}</div></div><div class="funnel-pct">${pct}%</div></div>`;
+});
 
-    // Arc size must be > 0; use absolute value so negative growth still shows a segment
-    const arcOrders  = Math.max(totalOrders, 1);
-    const arcGrowth  = Math.max(Math.abs(custGrowthRaw), 1);
-    const arcRevenue = Math.max(revenueRaw, 1);
-
-    // Normalise to 0–100 so all three arcs are proportionally visible
-    const maxArc = Math.max(arcOrders, arcGrowth, arcRevenue);
-    const normOrders  = (arcOrders  / maxArc) * 100;
-    const normGrowth  = (arcGrowth  / maxArc) * 100;
-    const normRevenue = (arcRevenue / maxArc) * 100;
-
-    new Chart(document.getElementById('donutChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Total Orders', 'Customer Growth (10d %)', 'Total Revenue (₹)'],
-            
-            datasets: [{
-                data: [normOrders, normGrowth, normRevenue],
-                backgroundColor: ['#aaa7e7', '#9ce4cc', '#fcaa7f'],
-                hoverOffset: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '58%',
-            plugins: {
-                legend: { display: true, position: 'bottom' },
-                tooltip: {
-                    callbacks: {
-                        // Always display the real, un-normalised values in the tooltip
-                        label: function (context) {
-                            const i = context.dataIndex;
-                            if (i === 0) return '  Total Orders: ' + totalOrders;
-                            if (i === 1) {
-                                const sign = custGrowthRaw >= 0 ? '+' : '';
-                                return '  Customer Growth (10d): ' + sign + custGrowthRaw + '%';
-                            }
-                            return '  Total Revenue: ₹' + revenueRaw.toLocaleString('en-IN');
-                        }
-                    }
-                }
-            }
-        }
-    });
+/* 5. STATUS DONUT */
+(function(){ const sl=Object.keys(STATUS_DATA),sd=Object.values(STATUS_DATA);
+    new Chart(document.getElementById('statusDonut'),{ type:'doughnut', data:{ labels:sl, datasets:[{ data:sd, backgroundColor:sl.map(l=>SC[l]||'#94a3b8'), hoverOffset:6 }] }, options:{ responsive:true, cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
 })();
 
-/* ── AREA CHART — Products Sold Last 7 Days ── */
-new Chart(document.getElementById('areaChart'), {
-    type: 'line',
-    data: {
-        labels: [{% for day in last_7_days_labels %}'{{ day }}',{% endfor %}],
-        datasets: [{
-            label: 'Products Sold',
-            data: [{% for qty in products_sold_per_day %}{{ qty }},{% endfor %}],
-            fill: true,
-            backgroundColor: 'rgba(59,130,246,0.2)',
-            borderColor: 'rgba(59,130,246,1)',
-            tension: 0.3
-        }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+/* 6. REVENUE SOURCE DONUT */
+new Chart(document.getElementById('revSourceDonut'),{ type:'doughnut',
+    data:{ labels:['PayPal','COD','Wallet'], datasets:[{ data:[PAYPAL_R,COD_R,WAL_R], backgroundColor:['#003087','#f59e0b','#0d9488'], hoverOffset:6 }] },
+    options:{ responsive:true, cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
 });
 
-/* ── LINE CHART — Revenue Trend ──
-   Currently shows a flat line because total_revenue is a cumulative scalar,
-   not a per-month breakdown. To make this dynamic, aggregate monthly revenue
-   in the view and pass it as `monthly_revenue` (list of 12 values).
-*/
-new Chart(document.getElementById('lineChart'), {
-    type: 'line',
-    data: {
-        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-        datasets: [{
-            label: 'Total Revenue (₹)',
-            data: [
-                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }},
-                {{ total_revenue|floatformat:0 }}, {{ total_revenue|floatformat:0 }}
-            ],
-            borderColor: 'rgba(220,38,38,1)',
-            backgroundColor: 'rgba(220,38,38,0.1)',
-            fill: true,
-            tension: 0.3
-        }]
-    },
-    options: { responsive: true }
+/* 7. PAY REVENUE BAR */
+new Chart(document.getElementById('payRevBar'),{ type:'bar',
+    data:{ labels:['PayPal','COD','Wallet'], datasets:[{ data:[PAYPAL_R,COD_R,WAL_R], backgroundColor:['#003087','#f59e0b','#0d9488'], borderRadius:8 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
 });
+
+/* 8. PERIOD COMPARE */
+new Chart(document.getElementById('periodCompareBar'),{ type:'bar',
+    data:{ labels:['Orders','Revenue(÷100)','New Custs'],
+        datasets:[
+            { label:'Current',  data:[TOT_ORD, TOT_REV/100, NEW_CUST],  backgroundColor:'#e879a0', borderRadius:5 },
+            { label:'Previous', data:[TOT_ORD,  PREV_REV/100, PREV_CUS], backgroundColor:'#cbd5e1', borderRadius:5 }
+        ]},
+    options:{ responsive:true, plugins:{ legend:{ position:'top', labels:{font:{size:11}} } } }
+});
+
+/* 9. PAYMENT METHOD DONUT */
+(function(){ const pl=Object.keys(PAY_DATA),pd=Object.values(PAY_DATA);
+    new Chart(document.getElementById('paymentDonut'),{ type:'doughnut', data:{ labels:pl, datasets:[{ data:pd, backgroundColor:['#003087','#f59e0b','#0d9488'], hoverOffset:6 }] }, options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
+})();
+
+/* 10. CUSTOMER POLAR */
+new Chart(document.getElementById('customerSegPolar'),{ type:'polarArea',
+    data:{ labels:['Active','Blocked','New','Repeat'],
+        datasets:[{ data:[ACT_CUST,BLK_CUST,NEW_CUST,REP_CUST], backgroundColor:['rgba(22,163,74,.7)','rgba(220,38,38,.7)','rgba(232,161,198,.85)','rgba(124,58,237,.7)'] }]},
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
+});
+
+/* 11. CUSTOMER BAR */
+new Chart(document.getElementById('custCompareBar'),{ type:'bar',
+    data:{ labels:['Total','Active','Blocked','New','Ordering','Repeat'],
+        datasets:[{ data:[TOT_CUST,ACT_CUST,BLK_CUST,NEW_CUST,ORD_CUST,REP_CUST], backgroundColor:['#3b82f6','#16a34a','#dc2626','#e879a0','#7c3aed','#f59e0b'], borderRadius:6 }]},
+    options:{ responsive:true, plugins:{legend:{display:false}} }
+});
+
+/* 12. GENDER DONUT */
+(function(){ const gl=Object.keys(GENDER_DATA),gd=Object.values(GENDER_DATA);
+    new Chart(document.getElementById('genderChart'),{ type:'doughnut', data:{ labels:gl, datasets:[{ data:gd, backgroundColor:['#e879a0','#3b82f6','#16a34a'], hoverOffset:6 }] }, options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
+})();
+
+/* 13-15. TOP PRODUCTS / CATEGORIES / BRANDS */
+new Chart(document.getElementById('productChart'),{ type:'bar', data:{ labels:TP_L, datasets:[{ data:TP_D, backgroundColor:P, borderRadius:5 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ticks:{font:{size:10}}}, x:{ticks:{font:{size:10}}} } } });
+new Chart(document.getElementById('categoryChart'),{ type:'bar', data:{ labels:TC_L, datasets:[{ data:TC_D, backgroundColor:P, borderRadius:5 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ticks:{font:{size:10}}} } } });
+new Chart(document.getElementById('brandChart'),{ type:'bar', data:{ labels:TB_L, datasets:[{ data:TB_D, backgroundColor:'#f59e0b', borderRadius:5 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ticks:{font:{size:10}}} } } });
+
+/* 16. TOP COLORS PIE */
+new Chart(document.getElementById('colorChart'),{ type:'pie', data:{ labels:COL_L, datasets:[{ data:COL_D, backgroundColor:P, hoverOffset:6 }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
+
+/* 17. AGE RADAR */
+new Chart(document.getElementById('ageChart'),{ type:'radar',
+    data:{ labels:AGE_L, datasets:[{ label:'Items Sold', data:AGE_D, backgroundColor:'rgba(124,58,237,0.18)', borderColor:'#7c3aed', pointBackgroundColor:'#7c3aed', borderWidth:2 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ r:{ ticks:{font:{size:9}} } } }
+});
+
+/* 18. INVENTORY DONUT */
+const healthyStock=Math.max(TOT_STCK-LOW_ST*5,0);
+new Chart(document.getElementById('inventoryDonut'),{ type:'doughnut',
+    data:{ labels:['Healthy','Low Stock (≤5)','Out of Stock'], datasets:[{ data:[healthyStock, LOW_ST*5, OOS], backgroundColor:['#16a34a','#f59e0b','#dc2626'], hoverOffset:6 }] },
+    options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
+});
+
+/* 19. INVENTORY HEALTH BARS (HTML) */
+const invMax=Math.max(TOT_STCK,TOT_RES,SOLD_ST,1);
+[{label:'Available',val:TOT_STCK,color:'#16a34a'},{label:'Reserved',val:TOT_RES,color:'#f59e0b'},{label:'Total Sold',val:SOLD_ST,color:'#3b82f6'},{label:'Low Stock',val:LOW_ST,color:'#f97316'},{label:'Out of Stock',val:OOS,color:'#dc2626'}].forEach(it=>{
+    const pct=Math.round((it.val/invMax)*100);
+    document.getElementById('inventoryHealthBars').innerHTML+=`<div class="health-row"><div class="health-label">${it.label}</div><div class="health-bar-outer"><div class="health-bar-inner" style="width:${pct}%;background:${it.color};"></div></div><div class="health-val">${it.val.toLocaleString()}</div></div>`;
+});
+
+/* 20. WALLET FLOW */
+new Chart(document.getElementById('walletFlowBar'),{ type:'bar',
+    data:{ labels:['Credits','Debits','Refunds'], datasets:[{ data:[W_CR,W_DB,W_RF], backgroundColor:['#16a34a','#dc2626','#f59e0b'], borderRadius:8 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+});
+
+/* 21. COUPON STATUS */
+new Chart(document.getElementById('couponStatusBar'),{ type:'bar',
+    data:{ labels:['Coupons Active','Coupons Inactive','Offers Active','Offers Inactive'],
+        datasets:[{ data:[ACT_CPN,TOT_CPN-ACT_CPN,ACT_OFR,TOT_OFR-ACT_OFR], backgroundColor:['#16a34a','#94a3b8','#f59e0b','#cbd5e1'], borderRadius:6 }]},
+    options:{ responsive:true, plugins:{legend:{display:false}} }
+});
+
+/* 22. REFERRAL */
+new Chart(document.getElementById('referralBar'),{ type:'bar',
+    data:{ labels:['Codes Issued','Referral Uses'], datasets:[{ data:[TOT_REFF,REF_USES], backgroundColor:['#0d9488','#e879a0'], borderRadius:8 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}} }
+});
+
+/* 23. REVIEWS */
+new Chart(document.getElementById('reviewBar'),{ type:'bar',
+    data:{ labels:['Total','Approved','Pending'],
+        datasets:[{ data:[TOT_REVW,APP_REVW,TOT_REVW-APP_REVW], backgroundColor:['#3b82f6','#16a34a','#f59e0b'], borderRadius:6 }]},
+    options:{ responsive:true, plugins:{legend:{display:false}} }
+});
+
+/* 24. RETURN STATUS DONUT */
+new Chart(document.getElementById('returnStatusDonut'),{ type:'doughnut',
+    data:{ labels:['Requested','Approved','Refunded','Rejected'],
+        datasets:[{ data:[PEND_RET,APP_RET,REF_RET, Math.max(TOT_RET-PEND_RET-APP_RET-REF_RET,0)], backgroundColor:['#f59e0b','#3b82f6','#16a34a','#dc2626'], hoverOffset:6 }]},
+    options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
+});
+
+/* 25. RETURN vs REVENUE */
+new Chart(document.getElementById('returnRevenueBar'),{ type:'bar',
+    data:{ labels:['Total Revenue','Refund Amount','Net Revenue'],
+        datasets:[{ data:[TOT_REV, REF_AMT, Math.max(TOT_REV-REF_AMT,0)], backgroundColor:['#16a34a','#dc2626','#3b82f6'], borderRadius:8 }]},
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+});
+
+/* 26. MONTHLY */
+new Chart(document.getElementById('monthlyChart'),{ type:'line',
+    data:{ labels:MONTHLY_LABELS, datasets:[{ label:'Revenue ₹', data:MONTHLY_REV, borderColor:'#dc2626', backgroundColor:'rgba(220,38,38,0.07)', fill:true, tension:0.4, pointRadius:4, borderWidth:2 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{ maxRotation:45, font:{size:10} } }, y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+});
+
+/* 27. RADIAL SVGs */
+const radials=[
+    {label:'Completion',    val:COMPL_R,  color:'#16a34a'},
+    {label:'Cancellation',  val:CANC_R,   color:'#dc2626'},
+    {label:'Review Approval',val:TOT_REVW ? Math.round(APP_REVW/TOT_REVW*100) : 0, color:'#3b82f6'},
+    {label:'Active Products',val:TOT_PROD ? Math.round(ACT_PROD/TOT_PROD*100) : 0,  color:'#7c3aed'},
+    {label:'Active Customers',val:TOT_CUST ? Math.round(ACT_CUST/TOT_CUST*100) : 0, color:'#0d9488'},
+    {label:'Return Rate',   val:TOT_RET && PROD_PD.reduce((a,b)=>a+b,0) ? Math.min(Math.round(TOT_RET/Math.max(PROD_PD.reduce((a,b)=>a+b,0),1)*100),100) : 0, color:'#f59e0b'},
+];
+const rG=document.getElementById('radialGrid'),r=34,cx=40,cy=40,circ=2*Math.PI*r;
+radials.forEach(it=>{
+    const dash=(it.val/100)*circ;
+    rG.innerHTML+=`<div class="radial-item"><svg class="radial-svg" viewBox="0 0 80 80"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#f1f5f9" stroke-width="7"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${it.color}" stroke-width="7" stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/><text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="800" fill="${it.color}">${it.val}%</text></svg><div class="radial-label">${it.label}</div></div>`;
+});
+
+/* 28. SPARKLINES */
+function sparkline(id, data, color) {
+    const ctx=document.getElementById(id); if(!ctx) return;
+    new Chart(ctx,{ type:'line', data:{ labels:DAILY_LABELS, datasets:[{ data, borderColor:color, backgroundColor:'transparent', borderWidth:1.5, pointRadius:0, tension:0.4 }] }, options:{ responsive:false, animation:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{ x:{display:false}, y:{display:false} } } });
+}
+sparkline('sk_orders', ORDERS_PD, '#3b82f6');
+sparkline('sk_rev',    DAILY_REV,  '#16a34a');
+
+/* RANGE PILLS */
+function setRange(days) {
+    const t=new Date();
+    document.getElementById('eDate').value=t.toISOString().split('T')[0];
+    t.setDate(t.getDate()-days+1);
+    document.getElementById('sDate').value=t.toISOString().split('T')[0];
+    document.getElementById('filterForm').submit();
+}
+
+/* DOWNLOAD */
+function downloadDashboard() {
+    const rows=[
+        ['Kiddora Dashboard Report'],['Period','{{ start_date }}','to','{{ end_date }}'],[''],
+        ['ORDERS'],['Total Orders',{{ total_orders }}],['Delivered',{{ completed_orders }}],['Pending',{{ pending_orders }}],['Shipped',{{ shipped_orders }}],['Cancelled',{{ cancelled_orders }}],['Returned',{{ returned_orders }}],['Completion Rate (%)',{{ completion_rate }}],['Cancellation Rate (%)',{{ cancellation_rate }}],['Order Growth (%)',{{ order_growth }}],[''],
+        ['REVENUE'],['Total Revenue (₹)',{{ total_revenue|floatformat:2 }}],['Avg Order Value (₹)',{{ avg_order_value|floatformat:2 }}],['Discounts (₹)',{{ total_discount|floatformat:2 }}],['Coupon Savings (₹)',{{ coupon_discount|floatformat:2 }}],['Shipping (₹)',{{ shipping_revenue|floatformat:2 }}],['Refunded (₹)',{{ total_refund_amount|floatformat:2 }}],['Revenue Growth (%)',{{ revenue_growth }}],[''],
+        ['CUSTOMERS'],['Total',{{ total_customers }}],['Active',{{ active_customers }}],['Blocked',{{ blocked_customers }}],['New',{{ new_customers }}],['Ordering',{{ ordering_customers }}],['Repeat',{{ repeat_customers }}],['Growth (%)',{{ customer_growth }}],[''],
+        ['INVENTORY'],['Total Products',{{ total_products }}],['Active',{{ active_products }}],['Total Stock',{{ total_stock }}],['Reserved',{{ total_reserved }}],['Sold Stock',{{ total_sold_stock }}],['Low Stock',{{ low_stock_count }}],['OOS',{{ out_of_stock_count }}],[''],
+        ['PAYMENTS'],['PayPal (₹)',{{ paypal_revenue|floatformat:2 }}],['COD (₹)',{{ cod_revenue|floatformat:2 }}],['Wallet (₹)',{{ wallet_revenue|floatformat:2 }}],['Wallet Balance (₹)',{{ total_wallet_balance|floatformat:2 }}],['Credits (₹)',{{ wallet_credits|floatformat:2 }}],['Debits (₹)',{{ wallet_debits|floatformat:2 }}],['Failed Payments',{{ failed_payments }}],[''],
+        ['COUPONS/OFFERS/REFERRALS'],['Total Coupons',{{ total_coupons }}],['Active Coupons',{{ active_coupons }}],['Coupon Uses',{{ coupon_uses }}],['Total Offers',{{ total_offers }}],['Active Offers',{{ active_offers }}],['Referral Codes',{{ total_referrals }}],['Referral Uses',{{ referral_uses }}],[''],
+        ['REVIEWS & RETURNS'],['Total Reviews',{{ total_reviews }}],['Approved',{{ approved_reviews }}],['Avg Rating',{{ avg_rating }}],['Total Returns',{{ total_returns }}],['Pending',{{ pending_returns }}],['Approved Returns',{{ approved_returns }}],['Refunded Returns',{{ refunded_returns }}],['Refund Amount (₹)',{{ total_refund_amount|floatformat:2 }}],
+    ];
+    const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+    a.download=`kiddora_dashboard_{{ start_date }}_{{ end_date }}.csv`;
+    a.click();
+}
 </script>
 {% endblock %}

@@ -303,6 +303,7 @@ def cancel_order_item(request, order_id, item_id):
     order_item.cancelled_at = timezone.now()
     order_item.save()
 
+
     _recalculate_order_amount(order)
 
     # Check if order should be fully cancelled

@@ -6,6 +6,7 @@ from accounts.views import otp_views
 from accounts.views import profile_views
 from accounts.views import address_views
 from accounts.views import error_views
+from accounts.views import report_views
 from django.views.generic import TemplateView
 
 app_name = "accounts"
@@ -25,8 +26,8 @@ urlpatterns = [
     path("admin/admin-logout/", auth_views.admin_logout, name="admin_logout"),
 
     # ────────────────────── AUTHENTICATION – ADMIN ──────────────────────
-    path("admin/admin-dashboard/", admin_views.admin_dashboard_view, name="admin_dashboard"),
-    path("admin/sales-report/",admin_views.admin_sales_report,name="sales_report"),
+    path("admin/admin-dashboard/", report_views.admin_dashboard_view, name="admin_dashboard"),
+    path("admin/sales-report/",report_views.admin_sales_report,name="sales_report"),
     
     path("admin/admin-profile/",admin_profile_views.admin_profile, name="admin_profile"),
     path("admin/admin-profile/edit/",admin_profile_views.admin_edit_profile,name="admin_edit_profile"),
