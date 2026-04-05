@@ -1,3 +1,4 @@
+from django import views
 from django.urls import path
 from accounts.views import auth_views
 from accounts.views import admin_views
@@ -28,7 +29,9 @@ urlpatterns = [
     # ────────────────────── AUTHENTICATION – ADMIN ──────────────────────
     path("admin/admin-dashboard/", report_views.admin_dashboard_view, name="admin_dashboard"),
     path("admin/sales-report/",report_views.admin_sales_report,name="sales_report"),
-    
+    path('admin/dashboard/pdf/', report_views.download_dashboard_pdf, name='download_dashboard_pdf'),
+    path('admin/sales/pdf/',report_views.download_sales_report_pdf, name='download_sales_report_pdf'),
+
     path("admin/admin-profile/",admin_profile_views.admin_profile, name="admin_profile"),
     path("admin/admin-profile/edit/",admin_profile_views.admin_edit_profile,name="admin_edit_profile"),
     path("admin/admin-profile/activity/",admin_profile_views.admin_activity_info,name="admin_activity_info"),

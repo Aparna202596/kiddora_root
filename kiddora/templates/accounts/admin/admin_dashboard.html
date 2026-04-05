@@ -6,7 +6,7 @@
     --pink:#e8a1c6;--pink-dark:#d98ab2;--pink-light:#f3e1ec;
     --blue:#3b82f6;--green:#16a34a;--amber:#f59e0b;--red:#dc2626;
     --purple:#7c3aed;--teal:#0d9488;--indigo:#4f46e5;--orange:#f97316;--cyan:#06b6d4;
-    --surface:#ffffff;--bg:#f5f7fa;--border:#e8ecf0;--text:#1e293b;--muted:#64748b;
+    --surface:#ffffff;--bg:#ffffff;--border:#e8ecf0;--text:#1e293b;--muted:#64748b;
     --radius:12px;--shadow:0 2px 12px rgba(0,0,0,0.07);--shadow-lg:0 8px 32px rgba(0,0,0,0.10);
 }
 .db-wrap{padding:28px 0;background:var(--bg);min-height:100vh;}
@@ -22,6 +22,10 @@
 .btn-reset{padding:7px 14px;border-radius:8px;background:var(--muted);color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;}
 .btn-download{margin-left:auto;padding:7px 16px;border-radius:8px;background:#1e293b;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;transition:background .2s;}
 .btn-download:hover{background:#334155;}
+/* NEW: PDF download button */
+.btn-pdf{padding:7px 16px;border-radius:8px;background:#dc2626;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:background .2s;}
+.btn-pdf:hover{background:#b91c1c;}
+.btn-group{display:flex;gap:8px;align-items:center;margin-left:auto;}
 .range-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
 .range-pill:hover{background:var(--pink);color:#fff;border-color:var(--pink);}
 .section{margin-top:36px;}
@@ -92,7 +96,39 @@ tbody tr:hover{background:#f8fafc;}
 .stock-bar-wrap{display:flex;align-items:center;gap:8px;}
 .stock-bar{height:6px;border-radius:3px;background:#e5e7eb;flex:1;overflow:hidden;}
 .stock-bar-fill{height:100%;border-radius:3px;}
-@media(max-width:900px){.chart-wide,.chart-full{grid-column:span 1;}.db-header{flex-direction:column;align-items:flex-start;}.btn-download{margin-left:0;}}
+
+/* ══════════ NEW: KPI FILTER PANEL ══════════ */
+.kpi-filter-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+}
+.kpi-filter-title {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.kpi-filter-title i { color: var(--pink-dark); }
+.kpi-filter-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+}
+.kpi-chip {
+    padding: 5px 13px; border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--bg); font-size: 12px; font-weight: 600;
+    cursor: pointer; color: var(--muted); transition: all .15s;
+    display: inline-flex; align-items: center; gap: 5px;
+    user-select: none;
+}
+.kpi-chip:hover { border-color: var(--pink); color: var(--pink-dark); background: var(--pink-light); }
+.kpi-chip.active { background: var(--pink); color: #fff; border-color: var(--pink-dark); }
+.kpi-chip.active i { color: #fff; }
+.kpi-section-block { display: block; }
+.kpi-section-block.kpi-hidden { display: none; }
+
+@media(max-width:900px){.chart-wide,.chart-full{grid-column:span 1;}.db-header{flex-direction:column;align-items:flex-start;}.btn-group{margin-left:0;}}
 </style>
 
 <div class="db-wrap" id="dashboardRoot">
@@ -103,7 +139,13 @@ tbody tr:hover{background:#f8fafc;}
         <div class="db-title"><i class="fa-solid fa-chart-pie" style="color:var(--pink-dark);margin-right:8px;"></i>Admin Dashboard</div>
         <div class="db-subtitle">Data from <strong>{{ start_date }}</strong> → <strong>{{ end_date }}</strong></div>
     </div>
-    <button class="btn-download" onclick="downloadDashboard()"><i class="fa-solid fa-download"></i> Download CSV</button>
+    <!-- NEW: Button group with both CSV and PDF -->
+    <div class="btn-group">
+        <button class="btn-download" onclick="downloadDashboard()"><i class="fa-solid fa-file-csv"></i> CSV</button>
+        <a class="btn-pdf" href="{% url 'accounts:download_dashboard_pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}" target="_blank">
+            <i class="fa-solid fa-file-pdf"></i> Download PDF
+        </a>
+    </div>
 </div>
 
 <!-- FILTER -->
@@ -117,7 +159,33 @@ tbody tr:hover{background:#f8fafc;}
     <a href="?" class="btn-reset">Reset</a>
 </form>
 
+<!-- ══════════ NEW: KPI SECTION FILTER ══════════ -->
+<div class="kpi-filter-panel">
+    <div class="kpi-filter-title"><i class="fa-solid fa-sliders"></i> Filter KPI Sections — click to show/hide</div>
+    <div class="kpi-filter-grid" id="kpiChipContainer">
+        <span class="kpi-chip active" data-target="sec-orders"    onclick="toggleSection(this)"><i class="fa-solid fa-bag-shopping"></i> Orders</span>
+        <span class="kpi-chip active" data-target="sec-revenue"   onclick="toggleSection(this)"><i class="fa-solid fa-indian-rupee-sign"></i> Revenue</span>
+        <span class="kpi-chip active" data-target="sec-customers" onclick="toggleSection(this)"><i class="fa-solid fa-users"></i> Customers</span>
+        <span class="kpi-chip active" data-target="sec-products"  onclick="toggleSection(this)"><i class="fa-solid fa-box-open"></i> Products</span>
+        <span class="kpi-chip active" data-target="sec-payments"  onclick="toggleSection(this)"><i class="fa-solid fa-money-bill-wave"></i> Payments</span>
+        <span class="kpi-chip active" data-target="sec-coupons"   onclick="toggleSection(this)"><i class="fa-solid fa-percent"></i> Coupons & Referrals</span>
+        <span class="kpi-chip active" data-target="sec-trends"    onclick="toggleSection(this)"><i class="fa-solid fa-chart-line"></i> Daily Trends</span>
+        <span class="kpi-chip active" data-target="sec-funnel"    onclick="toggleSection(this)"><i class="fa-solid fa-filter"></i> Order Funnel</span>
+        <span class="kpi-chip active" data-target="sec-revcharts" onclick="toggleSection(this)"><i class="fa-solid fa-chart-pie"></i> Revenue Charts</span>
+        <span class="kpi-chip active" data-target="sec-custcharts"onclick="toggleSection(this)"><i class="fa-solid fa-user-group"></i> Customer Charts</span>
+        <span class="kpi-chip active" data-target="sec-prodinv"   onclick="toggleSection(this)"><i class="fa-solid fa-warehouse"></i> Product Charts</span>
+        <span class="kpi-chip active" data-target="sec-wallet"    onclick="toggleSection(this)"><i class="fa-solid fa-wallet"></i> Wallet Charts</span>
+        <span class="kpi-chip active" data-target="sec-returns"   onclick="toggleSection(this)"><i class="fa-solid fa-rotate-left"></i> Reviews & Returns</span>
+        <span class="kpi-chip active" data-target="sec-monthly"   onclick="toggleSection(this)"><i class="fa-solid fa-calendar"></i> Monthly Trend</span>
+        <span class="kpi-chip active" data-target="sec-tables"    onclick="toggleSection(this)"><i class="fa-solid fa-list"></i> Tables</span>
+        <span class="kpi-chip active" data-target="sec-lowstock"  onclick="toggleSection(this)"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock</span>
+        <span class="kpi-chip" style="background:#f1f5f9;border-color:#cbd5e1;" onclick="showAll()"><i class="fa-solid fa-eye"></i> Show All</span>
+        <span class="kpi-chip" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b;" onclick="hideAll()"><i class="fa-solid fa-eye-slash"></i> Hide All</span>
+    </div>
+</div>
+
 <!-- KPIs: ORDERS -->
+<div id="sec-orders" class="kpi-section-block">
 <div class="section-title" style="margin-top:0;"><i class="fa-solid fa-bag-shopping"></i> Order Analytics</div>
 <div class="kpi-grid">
     <div class="kpi-card accent-blue"><i class="fa-solid fa-bag-shopping kpi-icon"></i><div class="kpi-label">Total Orders</div><div class="kpi-value">{{ total_orders }}</div><span class="kpi-badge {% if order_growth >= 0 %}up{% else %}down{% endif %}"><i class="fa-solid fa-arrow-{% if order_growth >= 0 %}up{% else %}down{% endif %}"></i> {{ order_growth }}%</span><div class="kpi-spark"><canvas id="sk_orders"></canvas></div></div>
@@ -127,8 +195,10 @@ tbody tr:hover{background:#f8fafc;}
     <div class="kpi-card accent-red"><i class="fa-solid fa-xmark kpi-icon"></i><div class="kpi-label">Cancelled</div><div class="kpi-value">{{ cancelled_orders }}</div><div class="kpi-sub">{{ cancellation_rate }}% rate</div></div>
     <div class="kpi-card accent-purple"><i class="fa-solid fa-rotate-left kpi-icon"></i><div class="kpi-label">Returned</div><div class="kpi-value">{{ returned_orders }}</div></div>
 </div>
+</div>
 
 <!-- KPIs: REVENUE -->
+<div id="sec-revenue" class="kpi-section-block">
 <div class="section"><div class="section-title"><i class="fa-solid fa-indian-rupee-sign"></i> Revenue Analytics</div>
 <div class="kpi-grid">
     <div class="kpi-card accent-green"><i class="fa-solid fa-sack-dollar kpi-icon"></i><div class="kpi-label">Total Revenue</div><div class="kpi-value">₹{{ total_revenue|floatformat:0 }}</div><span class="kpi-badge {% if revenue_growth >= 0 %}up{% else %}down{% endif %}"><i class="fa-solid fa-arrow-{% if revenue_growth >= 0 %}up{% else %}down{% endif %}"></i> {{ revenue_growth }}%</span><div class="kpi-spark"><canvas id="sk_rev"></canvas></div></div>
@@ -138,8 +208,10 @@ tbody tr:hover{background:#f8fafc;}
     <div class="kpi-card accent-indigo"><i class="fa-solid fa-truck-fast kpi-icon"></i><div class="kpi-label">Shipping Revenue</div><div class="kpi-value">₹{{ shipping_revenue|floatformat:0 }}</div></div>
     <div class="kpi-card accent-red"><i class="fa-solid fa-rotate-left kpi-icon"></i><div class="kpi-label">Refunded</div><div class="kpi-value">₹{{ total_refund_amount|floatformat:0 }}</div></div>
 </div></div>
+</div>
 
 <!-- KPIs: CUSTOMERS -->
+<div id="sec-customers" class="kpi-section-block">
 <div class="section"><div class="section-title"><i class="fa-solid fa-users"></i> Customer Analytics</div>
 <div class="kpi-grid">
     <div class="kpi-card accent-blue"><i class="fa-solid fa-users kpi-icon"></i><div class="kpi-label">Total Customers</div><div class="kpi-value">{{ total_customers }}</div></div>
@@ -149,8 +221,10 @@ tbody tr:hover{background:#f8fafc;}
     <div class="kpi-card accent-indigo"><i class="fa-solid fa-cart-shopping kpi-icon"></i><div class="kpi-label">Ordering</div><div class="kpi-value">{{ ordering_customers }}</div></div>
     <div class="kpi-card accent-purple"><i class="fa-solid fa-repeat kpi-icon"></i><div class="kpi-label">Repeat</div><div class="kpi-value">{{ repeat_customers }}</div></div>
 </div></div>
+</div>
 
 <!-- KPIs: PRODUCTS -->
+<div id="sec-products" class="kpi-section-block">
 <div class="section"><div class="section-title"><i class="fa-solid fa-box-open"></i> Product & Inventory Analytics</div>
 <div class="kpi-grid">
     <div class="kpi-card accent-blue"><i class="fa-solid fa-box kpi-icon"></i><div class="kpi-label">Total Products</div><div class="kpi-value">{{ total_products }}</div><div class="kpi-sub">{{ active_products }} active · {{ inactive_products }} inactive</div></div>
@@ -160,8 +234,10 @@ tbody tr:hover{background:#f8fafc;}
     <div class="kpi-card accent-pink"><i class="fa-solid fa-shopping-cart kpi-icon"></i><div class="kpi-label">Items Sold</div><div class="kpi-value">{{ products_sold }}</div></div>
     <div class="kpi-card accent-amber"><i class="fa-solid fa-triangle-exclamation kpi-icon"></i><div class="kpi-label">Low Stock</div><div class="kpi-value">{{ low_stock_count }}</div><div class="kpi-sub">{{ out_of_stock_count }} OOS</div></div>
 </div></div>
+</div>
 
 <!-- KPIs: PAYMENTS -->
+<div id="sec-payments" class="kpi-section-block">
 <div class="section"><div class="section-title"><i class="fa-solid fa-money-bill-wave"></i> Payment & Wallet Analytics</div>
 <div class="kpi-grid">
     <div class="kpi-card accent-green"><i class="fa-brands fa-paypal kpi-icon"></i><div class="kpi-label">PayPal Revenue</div><div class="kpi-value">₹{{ paypal_revenue|floatformat:0 }}</div></div>
@@ -171,8 +247,10 @@ tbody tr:hover{background:#f8fafc;}
     <div class="kpi-card accent-cyan"><i class="fa-solid fa-arrow-up kpi-icon"></i><div class="kpi-label">Wallet Credits</div><div class="kpi-value">₹{{ wallet_credits|floatformat:0 }}</div></div>
     <div class="kpi-card accent-red"><i class="fa-solid fa-circle-xmark kpi-icon"></i><div class="kpi-label">Failed Payments</div><div class="kpi-value">{{ failed_payments }}</div></div>
 </div></div>
+</div>
 
 <!-- KPIs: COUPONS ETC. -->
+<div id="sec-coupons" class="kpi-section-block">
 <div class="section"><div class="section-title"><i class="fa-solid fa-percent"></i> Coupons, Offers & Referrals</div>
 <div class="kpi-grid">
     <div class="kpi-card accent-pink"><i class="fa-solid fa-ticket kpi-icon"></i><div class="kpi-label">Coupons</div><div class="kpi-value">{{ total_coupons }}</div><div class="kpi-sub">{{ active_coupons }} active</div></div>
@@ -182,8 +260,10 @@ tbody tr:hover{background:#f8fafc;}
     <div class="kpi-card accent-green"><i class="fa-solid fa-star kpi-icon"></i><div class="kpi-label">Reviews</div><div class="kpi-value">{{ total_reviews }}</div><div class="kpi-sub">{{ avg_rating }}★ avg</div></div>
     <div class="kpi-card accent-red"><i class="fa-solid fa-rotate-left kpi-icon"></i><div class="kpi-label">Returns</div><div class="kpi-value">{{ total_returns }}</div><div class="kpi-sub">{{ pending_returns }} pending</div></div>
 </div></div>
+</div>
 
 <!-- ══════════ SECTION 1: DAILY TRENDS ══════════ -->
+<div id="sec-trends" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-chart-line"></i> Daily Trends — Revenue, Orders & Items Sold</div>
     <div class="chart-grid">
@@ -204,8 +284,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
-<!-- ══════════ SECTION 2: ORDER ANALYTICS ══════════ -->
+<!-- ══════════ SECTION 2: ORDER FUNNEL ══════════ -->
+<div id="sec-funnel" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-filter"></i> Order Fulfilment & Status</div>
     <div class="chart-grid">
@@ -224,8 +306,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
-<!-- ══════════ SECTION 3: REVENUE ANALYSIS ══════════ -->
+<!-- ══════════ SECTION 3: REVENUE CHARTS ══════════ -->
+<div id="sec-revcharts" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-indian-rupee-sign"></i> Revenue Analysis</div>
     <div class="chart-grid">
@@ -254,8 +338,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
-<!-- ══════════ SECTION 4: CUSTOMER INSIGHTS ══════════ -->
+<!-- ══════════ SECTION 4: CUSTOMER CHARTS ══════════ -->
+<div id="sec-custcharts" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-users"></i> Customer Insights</div>
     <div class="chart-grid">
@@ -279,8 +365,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
-<!-- ══════════ SECTION 5: PRODUCTS & INVENTORY ══════════ -->
+<!-- ══════════ SECTION 5: PRODUCT & INVENTORY ══════════ -->
+<div id="sec-prodinv" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-box-open"></i> Product & Inventory Insights</div>
     <div class="chart-grid">
@@ -321,8 +409,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
-<!-- ══════════ SECTION 6: WALLET & PAYMENTS ══════════ -->
+<!-- ══════════ SECTION 6: WALLET & COUPONS ══════════ -->
+<div id="sec-wallet" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-wallet"></i> Wallet Flow</div>
     <div class="chart-grid">
@@ -343,8 +433,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
 <!-- ══════════ SECTION 7: REVIEWS & RETURNS ══════════ -->
+<div id="sec-returns" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-rotate-left"></i> Reviews & Returns</div>
     <div class="chart-grid">
@@ -368,8 +460,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
-<!-- ══════════ SECTION 8: MONTHLY + KPI RADIALS ══════════ -->
+<!-- ══════════ SECTION 8: MONTHLY TREND ══════════ -->
+<div id="sec-monthly" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-calendar"></i> Monthly Trend & KPI Radials</div>
     <div class="chart-grid">
@@ -385,8 +479,10 @@ tbody tr:hover{background:#f8fafc;}
         </div>
     </div>
 </div>
+</div>
 
 <!-- TABLE: RECENT ORDERS -->
+<div id="sec-tables" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-list"></i> Recent Orders</div>
     <div class="table-wrap">
@@ -407,8 +503,10 @@ tbody tr:hover{background:#f8fafc;}
         </table>
     </div>
 </div>
+</div>
 
 <!-- TABLE: LOW STOCK -->
+<div id="sec-lowstock" class="kpi-section-block">
 <div class="section">
     <div class="section-title"><i class="fa-solid fa-triangle-exclamation" style="color:var(--amber);"></i> Low Stock Alerts</div>
     <div class="table-wrap">
@@ -432,6 +530,8 @@ tbody tr:hover{background:#f8fafc;}
 </div>
 </div>
 
+</div><!-- /db-wrap -->
+
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -454,7 +554,6 @@ const COL_L= {{ top_colors_labels_json|safe }};
 const COL_D= {{ top_colors_data_json|safe }};
 const AGE_L= {{ top_ages_labels_json|safe }};
 const AGE_D= {{ top_ages_data_json|safe }};
-
 const TOT_ORD  = {{ total_orders }};
 const DEL_ORD  = {{ completed_orders }};
 const SHIP_ORD = {{ shipped_orders }};
@@ -502,10 +601,8 @@ const COMPL_R  = {{ completion_rate }};
 const CANC_R   = {{ cancellation_rate }};
 const TOT_PROD = {{ total_products }};
 const ACT_PROD = {{ active_products }};
-
 const P = ['#e879a0','#3b82f6','#16a34a','#f59e0b','#7c3aed','#0d9488','#dc2626','#f97316','#06b6d4','#84cc16','#ec4899','#8b5cf6'];
 const SC = { DELIVERED:'#16a34a',PENDING:'#f59e0b',CANCELLED:'#dc2626',SHIPPED:'#3b82f6',RETURNED:'#7c3aed',CONFIRMED:'#0d9488','OUT_FOR_DELIVERY':'#06b6d4','ORDER NOT PLACED':'#94a3b8' };
-
 /* 1. COMBINED DAILY DUAL-AXIS */
 new Chart(document.getElementById('combinedDailyChart'),{
     type:'bar',
@@ -517,7 +614,6 @@ new Chart(document.getElementById('combinedDailyChart'),{
     options:{ responsive:true, plugins:{ legend:{ position:'top', labels:{ font:{ size:11 } } } },
         scales:{ yR:{ type:'linear', position:'left', ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN'), font:{size:11} }, grid:{ color:'rgba(0,0,0,0.04)' } }, yC:{ type:'linear', position:'right', ticks:{ font:{size:11} }, grid:{ drawOnChartArea:false } } } }
 });
-
 /* 2. STACKED REVENUE */
 const dDisc = DAILY_REV.map(r => TOT_REV>0 ? +((TOT_DISC/TOT_REV)*r).toFixed(2) : 0);
 const dCpn  = DAILY_REV.map(r => TOT_REV>0 ? +((CPN_DISC/TOT_REV)*r).toFixed(2) : 0);
@@ -533,13 +629,11 @@ new Chart(document.getElementById('stackedRevenueChart'),{
     ]},
     options:{ responsive:true, scales:{ x:{stacked:true}, y:{stacked:true, ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')}} }, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
 });
-
 /* 3. ORDERS PER DAY */
 new Chart(document.getElementById('ordersBarChart'),{
     type:'bar', data:{ labels:DAILY_LABELS, datasets:[{ data:ORDERS_PD, backgroundColor:'#3b82f6', borderRadius:6 }] },
     options:{ responsive:true, plugins:{legend:{display:false}} }
 });
-
 /* 4. FUNNEL (HTML) */
 const fStages=[
     {label:'Total Orders', val:TOT_ORD,  color:'#3b82f6'},
@@ -551,24 +645,20 @@ const fW=document.getElementById('funnelWrap'), fB=fStages[0].val||1;
 fStages.forEach(s=>{ const pct=Math.round((s.val/fB)*100);
     fW.innerHTML+=`<div class="funnel-row"><div class="funnel-label">${s.label}</div><div class="funnel-bar-outer"><div class="funnel-bar-inner" style="width:${pct}%;background:${s.color};">${s.val}</div></div><div class="funnel-pct">${pct}%</div></div>`;
 });
-
 /* 5. STATUS DONUT */
 (function(){ const sl=Object.keys(STATUS_DATA),sd=Object.values(STATUS_DATA);
     new Chart(document.getElementById('statusDonut'),{ type:'doughnut', data:{ labels:sl, datasets:[{ data:sd, backgroundColor:sl.map(l=>SC[l]||'#94a3b8'), hoverOffset:6 }] }, options:{ responsive:true, cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
 })();
-
 /* 6. REVENUE SOURCE DONUT */
 new Chart(document.getElementById('revSourceDonut'),{ type:'doughnut',
     data:{ labels:['PayPal','COD','Wallet'], datasets:[{ data:[PAYPAL_R,COD_R,WAL_R], backgroundColor:['#003087','#f59e0b','#0d9488'], hoverOffset:6 }] },
     options:{ responsive:true, cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
 });
-
 /* 7. PAY REVENUE BAR */
 new Chart(document.getElementById('payRevBar'),{ type:'bar',
     data:{ labels:['PayPal','COD','Wallet'], datasets:[{ data:[PAYPAL_R,COD_R,WAL_R], backgroundColor:['#003087','#f59e0b','#0d9488'], borderRadius:8 }] },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
 });
-
 /* 8. PERIOD COMPARE */
 new Chart(document.getElementById('periodCompareBar'),{ type:'bar',
     data:{ labels:['Orders','Revenue(÷100)','New Custs'],
@@ -578,105 +668,88 @@ new Chart(document.getElementById('periodCompareBar'),{ type:'bar',
         ]},
     options:{ responsive:true, plugins:{ legend:{ position:'top', labels:{font:{size:11}} } } }
 });
-
 /* 9. PAYMENT METHOD DONUT */
 (function(){ const pl=Object.keys(PAY_DATA),pd=Object.values(PAY_DATA);
     new Chart(document.getElementById('paymentDonut'),{ type:'doughnut', data:{ labels:pl, datasets:[{ data:pd, backgroundColor:['#003087','#f59e0b','#0d9488'], hoverOffset:6 }] }, options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
 })();
-
 /* 10. CUSTOMER POLAR */
 new Chart(document.getElementById('customerSegPolar'),{ type:'polarArea',
     data:{ labels:['Active','Blocked','New','Repeat'],
         datasets:[{ data:[ACT_CUST,BLK_CUST,NEW_CUST,REP_CUST], backgroundColor:['rgba(22,163,74,.7)','rgba(220,38,38,.7)','rgba(232,161,198,.85)','rgba(124,58,237,.7)'] }]},
     options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
 });
-
 /* 11. CUSTOMER BAR */
 new Chart(document.getElementById('custCompareBar'),{ type:'bar',
     data:{ labels:['Total','Active','Blocked','New','Ordering','Repeat'],
         datasets:[{ data:[TOT_CUST,ACT_CUST,BLK_CUST,NEW_CUST,ORD_CUST,REP_CUST], backgroundColor:['#3b82f6','#16a34a','#dc2626','#e879a0','#7c3aed','#f59e0b'], borderRadius:6 }]},
     options:{ responsive:true, plugins:{legend:{display:false}} }
 });
-
 /* 12. GENDER DONUT */
 (function(){ const gl=Object.keys(GENDER_DATA),gd=Object.values(GENDER_DATA);
     new Chart(document.getElementById('genderChart'),{ type:'doughnut', data:{ labels:gl, datasets:[{ data:gd, backgroundColor:['#e879a0','#3b82f6','#16a34a'], hoverOffset:6 }] }, options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
 })();
-
 /* 13-15. TOP PRODUCTS / CATEGORIES / BRANDS */
 new Chart(document.getElementById('productChart'),{ type:'bar', data:{ labels:TP_L, datasets:[{ data:TP_D, backgroundColor:P, borderRadius:5 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ticks:{font:{size:10}}}, x:{ticks:{font:{size:10}}} } } });
 new Chart(document.getElementById('categoryChart'),{ type:'bar', data:{ labels:TC_L, datasets:[{ data:TC_D, backgroundColor:P, borderRadius:5 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ticks:{font:{size:10}}} } } });
 new Chart(document.getElementById('brandChart'),{ type:'bar', data:{ labels:TB_L, datasets:[{ data:TB_D, backgroundColor:'#f59e0b', borderRadius:5 }] }, options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ticks:{font:{size:10}}} } } });
-
 /* 16. TOP COLORS PIE */
 new Chart(document.getElementById('colorChart'),{ type:'pie', data:{ labels:COL_L, datasets:[{ data:COL_D, backgroundColor:P, hoverOffset:6 }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } } });
-
 /* 17. AGE RADAR */
 new Chart(document.getElementById('ageChart'),{ type:'radar',
     data:{ labels:AGE_L, datasets:[{ label:'Items Sold', data:AGE_D, backgroundColor:'rgba(124,58,237,0.18)', borderColor:'#7c3aed', pointBackgroundColor:'#7c3aed', borderWidth:2 }] },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ r:{ ticks:{font:{size:9}} } } }
 });
-
 /* 18. INVENTORY DONUT */
 const healthyStock=Math.max(TOT_STCK-LOW_ST*5,0);
 new Chart(document.getElementById('inventoryDonut'),{ type:'doughnut',
     data:{ labels:['Healthy','Low Stock (≤5)','Out of Stock'], datasets:[{ data:[healthyStock, LOW_ST*5, OOS], backgroundColor:['#16a34a','#f59e0b','#dc2626'], hoverOffset:6 }] },
     options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
 });
-
 /* 19. INVENTORY HEALTH BARS (HTML) */
 const invMax=Math.max(TOT_STCK,TOT_RES,SOLD_ST,1);
 [{label:'Available',val:TOT_STCK,color:'#16a34a'},{label:'Reserved',val:TOT_RES,color:'#f59e0b'},{label:'Total Sold',val:SOLD_ST,color:'#3b82f6'},{label:'Low Stock',val:LOW_ST,color:'#f97316'},{label:'Out of Stock',val:OOS,color:'#dc2626'}].forEach(it=>{
     const pct=Math.round((it.val/invMax)*100);
     document.getElementById('inventoryHealthBars').innerHTML+=`<div class="health-row"><div class="health-label">${it.label}</div><div class="health-bar-outer"><div class="health-bar-inner" style="width:${pct}%;background:${it.color};"></div></div><div class="health-val">${it.val.toLocaleString()}</div></div>`;
 });
-
 /* 20. WALLET FLOW */
 new Chart(document.getElementById('walletFlowBar'),{ type:'bar',
     data:{ labels:['Credits','Debits','Refunds'], datasets:[{ data:[W_CR,W_DB,W_RF], backgroundColor:['#16a34a','#dc2626','#f59e0b'], borderRadius:8 }] },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
 });
-
 /* 21. COUPON STATUS */
 new Chart(document.getElementById('couponStatusBar'),{ type:'bar',
     data:{ labels:['Coupons Active','Coupons Inactive','Offers Active','Offers Inactive'],
         datasets:[{ data:[ACT_CPN,TOT_CPN-ACT_CPN,ACT_OFR,TOT_OFR-ACT_OFR], backgroundColor:['#16a34a','#94a3b8','#f59e0b','#cbd5e1'], borderRadius:6 }]},
     options:{ responsive:true, plugins:{legend:{display:false}} }
 });
-
 /* 22. REFERRAL */
 new Chart(document.getElementById('referralBar'),{ type:'bar',
     data:{ labels:['Codes Issued','Referral Uses'], datasets:[{ data:[TOT_REFF,REF_USES], backgroundColor:['#0d9488','#e879a0'], borderRadius:8 }] },
     options:{ responsive:true, plugins:{legend:{display:false}} }
 });
-
 /* 23. REVIEWS */
 new Chart(document.getElementById('reviewBar'),{ type:'bar',
     data:{ labels:['Total','Approved','Pending'],
         datasets:[{ data:[TOT_REVW,APP_REVW,TOT_REVW-APP_REVW], backgroundColor:['#3b82f6','#16a34a','#f59e0b'], borderRadius:6 }]},
     options:{ responsive:true, plugins:{legend:{display:false}} }
 });
-
 /* 24. RETURN STATUS DONUT */
 new Chart(document.getElementById('returnStatusDonut'),{ type:'doughnut',
     data:{ labels:['Requested','Approved','Refunded','Rejected'],
         datasets:[{ data:[PEND_RET,APP_RET,REF_RET, Math.max(TOT_RET-PEND_RET-APP_RET-REF_RET,0)], backgroundColor:['#f59e0b','#3b82f6','#16a34a','#dc2626'], hoverOffset:6 }]},
     options:{ responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{font:{size:11}} } } }
 });
-
 /* 25. RETURN vs REVENUE */
 new Chart(document.getElementById('returnRevenueBar'),{ type:'bar',
     data:{ labels:['Total Revenue','Refund Amount','Net Revenue'],
         datasets:[{ data:[TOT_REV, REF_AMT, Math.max(TOT_REV-REF_AMT,0)], backgroundColor:['#16a34a','#dc2626','#3b82f6'], borderRadius:8 }]},
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
 });
-
 /* 26. MONTHLY */
 new Chart(document.getElementById('monthlyChart'),{ type:'line',
     data:{ labels:MONTHLY_LABELS, datasets:[{ label:'Revenue ₹', data:MONTHLY_REV, borderColor:'#dc2626', backgroundColor:'rgba(220,38,38,0.07)', fill:true, tension:0.4, pointRadius:4, borderWidth:2 }] },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{ maxRotation:45, font:{size:10} } }, y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
 });
-
 /* 27. RADIAL SVGs */
 const radials=[
     {label:'Completion',    val:COMPL_R,  color:'#16a34a'},
@@ -691,7 +764,6 @@ radials.forEach(it=>{
     const dash=(it.val/100)*circ;
     rG.innerHTML+=`<div class="radial-item"><svg class="radial-svg" viewBox="0 0 80 80"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#f1f5f9" stroke-width="7"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${it.color}" stroke-width="7" stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/><text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle" font-size="13" font-weight="800" fill="${it.color}">${it.val}%</text></svg><div class="radial-label">${it.label}</div></div>`;
 });
-
 /* 28. SPARKLINES */
 function sparkline(id, data, color) {
     const ctx=document.getElementById(id); if(!ctx) return;
@@ -700,7 +772,7 @@ function sparkline(id, data, color) {
 sparkline('sk_orders', ORDERS_PD, '#3b82f6');
 sparkline('sk_rev',    DAILY_REV,  '#16a34a');
 
-/* RANGE PILLS */
+/* ══ RANGE PILLS ══ */
 function setRange(days) {
     const t=new Date();
     document.getElementById('eDate').value=t.toISOString().split('T')[0];
@@ -709,7 +781,27 @@ function setRange(days) {
     document.getElementById('filterForm').submit();
 }
 
-/* DOWNLOAD */
+/* ══ NEW: KPI SECTION TOGGLE ══ */
+function toggleSection(chip) {
+    const target = document.getElementById(chip.dataset.target);
+    if (!target) return;
+    chip.classList.toggle('active');
+    if (chip.classList.contains('active')) {
+        target.classList.remove('kpi-hidden');
+    } else {
+        target.classList.add('kpi-hidden');
+    }
+}
+function showAll() {
+    document.querySelectorAll('.kpi-section-block').forEach(el => el.classList.remove('kpi-hidden'));
+    document.querySelectorAll('.kpi-chip[data-target]').forEach(c => c.classList.add('active'));
+}
+function hideAll() {
+    document.querySelectorAll('.kpi-section-block').forEach(el => el.classList.add('kpi-hidden'));
+    document.querySelectorAll('.kpi-chip[data-target]').forEach(c => c.classList.remove('active'));
+}
+
+/* ══ CSV DOWNLOAD (unchanged) ══ */
 function downloadDashboard() {
     const rows=[
         ['Kiddora Dashboard Report'],['Period','{{ start_date }}','to','{{ end_date }}'],[''],
