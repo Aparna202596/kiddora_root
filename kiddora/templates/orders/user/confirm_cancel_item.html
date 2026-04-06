@@ -46,16 +46,33 @@
     </div>
 
     <form method="post">
-      {% csrf_token %}
-      <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">
-        Reason <span style="color:#aaa;">(optional)</span>
-      </label>
-      <textarea name="cancel_reason" placeholder="Why are you cancelling this item?"></textarea>
-      <div class="action-row">
-        <a href="{% url 'shopcore:user_order_detail' order_id=order.order_id %}" class="btn-back">Go Back</a>
-        <button type="submit" class="btn-confirm"><i class="fa fa-times"></i> Cancel Item</button>
-      </div>
-    </form>
+  {% csrf_token %}
+  {% if order_item.active_quantity > 1 %}
+  <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">
+    Quantity to Cancel
+  </label>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+    <input type="number"
+            name="cancel_quantity"
+            min="1"
+            max="{{ order_item.active_quantity }}"
+            value="{{ order_item.active_quantity }}"
+            style="width:80px;padding:8px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;text-align:center;">
+    <span style="font-size:13px;color:#888;">of {{ order_item.active_quantity }} active unit(s)</span>
+  </div>
+  {% else %}
+  <input type="hidden" name="cancel_quantity" value="1">
+  {% endif %}
+
+  <label style="font-size:13px;font-weight:600;color:#444;display:block;margin-bottom:6px;">
+    Reason <span style="color:#aaa;">(optional)</span>
+  </label>
+  <textarea name="cancel_reason" placeholder="Why are you cancelling?"></textarea>
+  <div class="action-row">
+    <a href="{% url 'shopcore:user_order_detail' order_id=order.order_id %}" class="btn-back">Go Back</a>
+    <button type="submit" class="btn-confirm"><i class="fa fa-times"></i> Cancel</button>
+  </div>
+</form>
   </div>
 </div>
 {% endblock %}

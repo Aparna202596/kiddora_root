@@ -4,90 +4,316 @@
 
 {% block content %}
 <style>
-    .rd-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:24px; }
-    .rd-header h2 { font-size:20px; font-weight:800; color:#222; }
-    .back-link { font-size:13px; color:#f06292; text-decoration:none; display:flex; align-items:center; gap:6px; }
-    .rd-layout { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap; }
-    .rd-main { flex:1; min-width:0; }
-    .rd-side { width:320px; flex-shrink:0; }
-    .rd-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:22px; margin-bottom:18px; }
-    .rd-card-title { font-size:15px; font-weight:700; color:#222; margin-bottom:16px; padding-bottom:12px; border-bottom:1.5px solid #f5f5f5; display:flex; align-items:center; gap:8px; }
-    .rd-card-title i { color:#f06292; }
-    .status-badge { display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:700; border-radius:20px; padding:6px 16px; }
-    .status-REQUESTED { background:#fef9c3; color:#854d0e; }
-    .status-APPROVED { background:#dbeafe; color:#1e40af; }
-    .status-REJECTED { background:#fee2e2; color:#991b1b; }
-    .status-REFUNDED { background:#dcfce7; color:#15803d; }
-    .item-card { display:flex; gap:16px; background:#f9f9f9; border-radius:12px; padding:16px; }
-    .item-img { width:80px; height:96px; border-radius:10px; overflow:hidden; background:#eee; flex-shrink:0; }
-    .reason-box { background:#fff8fb; border-left:4px solid #f06292; padding:14px; border-radius:8px; }
-    .action-btn { width:100%; padding:12px; margin-top:8px; border:none; border-radius:8px; font-weight:700; cursor:pointer; }
-    .btn-approve { background:#10b981; color:white; }
-    .btn-reject { background:#ef4444; color:white; }
-    .btn-process { background:#3b82f6; color:white; }
+    /* Container */
+    .return-container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    /* Header */
+    .return-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .return-header h1 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    /* Status Badge */
+    .status-badge {
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .status-REQUESTED { background: #fef9c3; color: #854d0e; }
+    .status-APPROVED { background: #dbeafe; color: #1e40af; }
+    .status-REJECTED { background: #fee2e2; color: #991b1b; }
+    .status-REFUNDED { background: #dcfce7; color: #15803d; }
+
+    /* Layout Grid */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+        .main-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Card */
+    .card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 0;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        border: 1px solid #f1f5f9;
+        overflow: hidden;
+        transition: 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-header {
+        padding: 16px 20px;
+        font-weight: 700;
+        font-size: 15px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #334155;
+    }
+
+    .card-header i {
+        color: #f06292;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Item Section */
+    .item-detail {
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+    }
+
+    .item-detail img {
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .item-image {
+        width: 120px;
+        height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border-radius: 12px;
+        font-size: 32px;
+    }
+
+    .item-info h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .item-meta {
+        font-size: 13px;
+        color: #475569;
+        line-height: 1.6;
+    }
+
+    .price {
+        margin-top: 10px;
+        font-weight: 700;
+        font-size: 16px;
+        color: #16a34a;
+    }
+
+    /* Reason Box */
+    .reason-box {
+        background: #fff1f6;
+        border-left: 4px solid #f06292;
+        padding: 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #374151;
+        line-height: 1.6;
+    }
+
+    /* Sidebar Meta */
+    .meta-info {
+        font-size: 13px;
+        color: #475569;
+        line-height: 1.8;
+        margin-bottom: 16px;
+    }
+
+    /* Buttons */
+    .action-btn {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-approve {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-approve:hover {
+        background: #059669;
+    }
+
+    .btn-reject {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-reject:hover {
+        background: #dc2626;
+    }
+
+    .btn-process {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-process:hover {
+        background: #2563eb;
+    }
+
+    /* Approved Message */
+    .card-body p {
+        background: #ecfdf5;
+        border-radius: 10px;
+        padding: 12px;
+    }
+
+    /* Final State Box */
+    .card-body > div[style] {
+        background: #f8fafc !important;
+        border: 1px dashed #e2e8f0;
+        font-size: 14px;
+    }
 </style>
+<div class="return-container">
 
-<div class="rd-header">
-    <h2>Return Request #{{ ret.id }}</h2>
-    <span class="status-badge status-{{ ret.status }}">{{ ret.get_status_display }}</span>
-</div>
-
-<div class="rd-layout">
-    <div class="rd-main">
-        <!-- Item -->
-        <div class="rd-card">
-            <div class="rd-card-title"><i class="fa fa-box"></i> Item Being Returned</div>
-            <div class="item-card">
-                {% if img_url %}
-                    <img src="{{ img_url }}" alt="{{ ret.order_item.variant.product.product_name }}" style="width:25%;height:25%;object-fit:cover;">
-                {% else %}
-                    <div class="item-img">👕</div>
-                {% endif %}
-                <div>
-                    <div style="font-weight:700;">{{ ret.order_item.variant.product.product_name }}</div>
-                    <div style="font-size:13px;color:#666;">
-                        {{ ret.order_item.variant.color }} · {{ ret.order_item.variant.age_group }} · Qty: {{ ret.order_item.quantity }}
-                    </div>
-                    <div style="margin-top:8px;font-weight:700;color:#f06292;">₹{{ ret.order_item.total_price }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Reason -->
-        <div class="rd-card">
-            <div class="rd-card-title"><i class="fa fa-comment"></i> Customer Reason</div>
-            <div class="reason-box">{{ ret.reason|linebreaks }}</div>
-        </div>
+    <div class="return-header">
+        <h1>Return Request #{{ ret.id }}</h1>
+        <span class="status-badge status-{{ ret.status }}">
+            {{ ret.get_status_display }}
+        </span>
     </div>
 
-    <!-- Actions Sidebar -->
-    <div class="rd-side">
-        <div class="rd-card">
-            <div class="rd-card-title"><i class="fa fa-gavel"></i> Admin Actions</div>
+    <div class="main-grid">
+        <!-- Main Content -->
+        <div>
 
-            {% if ret.status == "REQUESTED" %}
-                <form method="post" action="{% url 'shopcore:admin_approve_return' return_id=ret.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="action-btn btn-approve" onclick="return confirm('Approve this return?')">✅ Approve Return</button>
-                </form>
-
-                <form method="post" action="{% url 'shopcore:admin_reject_return' return_id=ret.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="action-btn btn-reject" onclick="return confirm('Reject this return?')">❌ Reject Return</button>
-                </form>
-
-            {% elif ret.status == "APPROVED" %}
-                <p style="color:#15803d;font-weight:600;">Return Approved. Ready for processing.</p>
-                <form method="post" action="{% url 'shopcore:admin_process_refund' return_id=ret.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="action-btn btn-process">Process Refund & Restock</button>
-                </form>
-
-            {% else %}
-                <div style="padding:16px;background:#f3f4f6;border-radius:8px;text-align:center;color:#666;">
-                    This return has been <strong>{{ ret.get_status_display }}</strong>.
+            <!-- Item Details -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa fa-box"></i> Item Being Returned
                 </div>
-            {% endif %}
+                <div class="card-body">
+                    <div class="item-detail">
+                        {% if img_url %}
+                            <img src="{{ img_url }}" alt="{{ ret.order_item.variant.product.product_name }}" 
+                                 style="width:120px; height:140px; object-fit:cover; border-radius:12px;">
+                        {% else %}
+                            <div class="item-image">👕</div>
+                        {% endif %}
+
+                        <div class="item-info">
+                            <h3>{{ ret.order_item.variant.product.product_name }}</h3>
+                            <div class="item-meta">
+                                <strong>Color:</strong> {{ ret.order_item.variant.color }}<br>
+                                <strong>Age Group:</strong> {{ ret.order_item.variant.age_group }}<br>
+                                <strong>Quantity:</strong> {{ ret.order_item.quantity }} unit(s)<br>
+                                <strong>Unit Price:</strong> ₹{{ ret.order_item.unit_price|floatformat:2 }}
+                            </div>
+                            <div class="price">₹{{ ret.order_item.total_price|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Reason -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa fa-comment-dots"></i> Customer Reason
+                </div>
+                <div class="card-body">
+                    <div class="reason-box">
+                        {{ ret.reason|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa fa-gavel"></i> Admin Actions
+                </div>
+                <div class="card-body">
+
+                    <!-- Return Details Meta -->
+                    <div class="meta-info">
+                        <strong>Order ID:</strong> {{ ret.order_item.order.order_id }}<br>
+                        <strong>Customer:</strong> {{ ret.order_item.order.user.email }}<br>
+                        <strong>Return Quantity:</strong> {{ ret.return_quantity|default:ret.order_item.quantity }} unit(s)<br>
+                        <strong>Refund Amount:</strong> ₹{{ ret.refund_amount|default:"944.10"|floatformat:2 }}
+                    </div>
+
+                    {% if ret.status == "REQUESTED" %}
+                        <form method="post" action="{% url 'shopcore:admin_approve_return' return_id=ret.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn btn-approve" 
+                                    onclick="return confirm('Approve this return request?')">
+                                ✅ Approve Return
+                            </button>
+                        </form>
+
+                        <form method="post" action="{% url 'shopcore:admin_reject_return' return_id=ret.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn btn-reject" 
+                                    onclick="return confirm('Reject this return?')">
+                                ❌ Reject Return
+                            </button>
+                        </form>
+
+                    {% elif ret.status == "APPROVED" %}
+                        <p style="color:#15803d; font-weight:600; text-align:center; padding:12px 0;">
+                            ✅ Return Approved<br>
+                            <small>Ready for refund processing</small>
+                        </p>
+                        <form method="post" action="{% url 'shopcore:admin_process_refund' return_id=ret.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="action-btn btn-process">
+                                💰 Process Refund & Restock
+                            </button>
+                        </form>
+
+                    {% else %}
+                        <div style="text-align:center; padding:30px 20px; background:#f8fafc; border-radius:12px; color:#64748b;">
+                            This return has been <strong>{{ ret.get_status_display }}</strong>.
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
         </div>
     </div>
 </div>

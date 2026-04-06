@@ -172,7 +172,10 @@
           </div>
           <div class="oi-meta">
             {{ oi.variant.color }} · {{ oi.variant.age_group }}
-            &nbsp;·&nbsp; Qty: {{ oi.quantity }}
+            &nbsp;·&nbsp; Qty: {{ oi.active_quantity }}
+            {% if oi.cancelled_quantity > 0 %}
+              <span style="font-size:11px;color:#e65100;">({{ oi.cancelled_quantity }} cancelled)</span>
+            {% endif %}
             &nbsp;·&nbsp; ₹{{ oi.unit_price }} each
           </div>
           <span class="item-status is-{{ oi.item_status }}">{{ oi.get_item_status_display }}</span>
@@ -186,20 +189,20 @@
           <div class="oi-actions">
             {% if oi.item_status == 'ACTIVE' and can_cancel_order %}
             <a href="{% url 'shopcore:cancel_order_item' order_id=order.order_id item_id=oi.id %}"
-               class="btn-sm btn-danger"
-               onclick="return confirm('Cancel this item?')">
+                class="btn-sm btn-danger"
+                onclick="return confirm('Cancel this item?')">
               <i class="fa fa-times"></i> Cancel Item
             </a>
             {% endif %}
             {% if oi.item_status == 'ACTIVE' and order.order_status == 'DELIVERED' %}
             <a href="{% url 'shopcore:request_return' order_id=order.order_id item_id=oi.id %}"
-               class="btn-sm btn-warning">
+                class="btn-sm btn-warning">
               <i class="fa fa-undo"></i> Return
             </a>
             {% endif %}
           </div>
         </div>
-        <div class="oi-price">₹{{ oi.total_price }}</div>
+        <div class="oi-price">₹{{ oi.active_total }}</div>
       </div>
       {% endwith %}
       {% endfor %}

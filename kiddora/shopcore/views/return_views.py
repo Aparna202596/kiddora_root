@@ -15,16 +15,17 @@ from decimal import Decimal
 from shopcore.models import Order, OrderItem, Return
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
-def _restore_inventory(order_item: OrderItem) -> None:
+def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
+    """Restore exactly `qty` units to inventory — used for partial returns."""
     try:
         inv = order_item.variant.inventory
-        inv.quantity_available += order_item.quantity
-        inv.quantity_sold       = max(0, inv.quantity_sold - order_item.quantity)
+        inv.quantity_available += qty
+        inv.quantity_sold = max(0, inv.quantity_sold - qty)
         inv.save(update_fields=["quantity_available", "quantity_sold"])
     except Exception:
         pass
-
 # ────────────────────────────────────────────────── RETURN REQUEST VIEWS ──────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -48,22 +49,41 @@ def request_return(request, order_id, item_id):
         return render(request, "returns/request_return.html", {
             "order": order,
             "order_item": order_item,
+            "max_qty": order_item.active_quantity,
         })
 
+    # ── POST ──────────────────────────────────────────────────────────────
     reason = request.POST.get("reason", "").strip()
     if not reason:
         messages.error(request, "Please provide a reason for the return.")
         return render(request, "returns/request_return.html", {
             "order": order,
             "order_item": order_item,
+            "max_qty": order_item.active_quantity,
             "error": "Reason is required.",
         })
 
+    # ── Quantity to return ────────────────────────────────────────────────
+    try:
+        return_qty = int(request.POST.get("return_quantity", order_item.active_quantity))
+    except (ValueError, TypeError):
+        return_qty = order_item.active_quantity
+
+    return_qty = max(1, min(return_qty, order_item.active_quantity))
+
+    # Per-unit net refund amount
+    per_unit_net = (
+        order_item.total_price / order_item.quantity
+        if order_item.quantity else Decimal("0")
+    )
+    refund_amount = (per_unit_net * return_qty).quantize(Decimal("0.01"))
+
     Return.objects.create(
-        order_item = order_item,
-        reason = reason,
-        status = "REQUESTED",
-        refund_amount = order_item.total_price,
+        order_item=order_item,
+        reason=reason,
+        status="REQUESTED",
+        return_quantity=return_qty,
+        refund_amount=refund_amount,
     )
 
     order_item.item_status = "RETURN_REQUESTED"
@@ -71,14 +91,13 @@ def request_return(request, order_id, item_id):
 
     messages.success(
         request,
-        f"Return request submitted for "
-        f"'{order_item.variant.product.product_name}'. "
-        "We will review it shortly.",
+        f"Return request submitted for {return_qty} unit(s) of "
+        f"'{order_item.variant.product.product_name}'. We will review it shortly.",
     )
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-
 # ──────────────────────────────────────────────── ADMIN: RETURN REQUEST LIST ────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_return_list(request):
@@ -100,17 +119,16 @@ def admin_return_list(request):
     if status_f:
         qs = qs.filter(status=status_f)
 
-    status_choices = Return.STATUS_CHOICES
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
-
     return render(request, "returns/admin_return_list.html", {
         "page_obj": page_obj,
         "search": search,
         "status_f": status_f,
-        "status_choices": status_choices,
+        "status_choices": Return.STATUS_CHOICES,
     })
 
 # ─────────────────────────────────────────────── ADMIN: RETURN REQUEST DETAIL ───────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_return_detail(request, return_id):
@@ -125,7 +143,7 @@ def admin_return_detail(request, return_id):
         id=return_id,
     )
 
-    oi  = ret.order_item
+    oi = ret.order_item
     img_url = None
     img_obj = (
         oi.variant.product.images.filter(is_default=True).first()
@@ -139,7 +157,7 @@ def admin_return_detail(request, return_id):
                 break
 
     return render(request, "returns/admin_return_detail.html", {
-        "ret":  ret,
+        "ret": ret,
         "img_url": img_url,
     })
 
@@ -155,45 +173,56 @@ def admin_approve_return(request, return_id):
     oi = ret.order_item
     order = oi.order
 
-    # Mark return approved
+    return_qty = ret.return_quantity or oi.active_quantity
+    refund_amount = ret.calculated_refund_amount
+
+    # ── Update return record ──────────────────────────────────────────────
     ret.status = "APPROVED"
     ret.admin_note = request.POST.get("admin_note", "Return approved.").strip()
+    ret.refund_amount = refund_amount
     ret.updated_at = timezone.now()
-    ret.save(update_fields=["status", "admin_note", "updated_at"])
+    ret.approved_at = timezone.now()
+    ret.save(update_fields=["status", "admin_note", "refund_amount", "updated_at", "approved_at"])
 
-    # Update item status
-    oi.item_status = "REFUNDED"
-    oi.save(update_fields=["item_status"])
+    # ── Determine new item status ─────────────────────────────────────────
+    is_full_return = (return_qty >= oi.active_quantity)
+    if is_full_return:
+        oi.item_status = "RETURN_APPROVED"
+    else:
+        # Partial return: reduce active quantity by return_qty
+        # We track this via cancelled_quantity (returned units leave circulation)
+        oi.cancelled_quantity = (oi.cancelled_quantity or 0) + return_qty
+        oi.item_status = "ACTIVE"   # remaining units still active
+    oi.save(update_fields=["item_status", "cancelled_quantity"])
 
-    # Restore inventory
-    _restore_inventory(oi)
+    # ── Restore inventory for returned qty only ───────────────────────────
+    _restore_inventory_partial(oi, return_qty)
 
-    # Refund to wallet
+    # ── Refund wallet — unique key per return record ──────────────────────
     credit_refund_to_wallet(
         user=order.user,
-        amount=ret.refund_amount or oi.unit_price * oi.quantity,
-        description=f"Refund for return of '{oi.variant.product.product_name}' in order {order.order_id}",
+        amount=refund_amount,
+        description=(
+            f"Refund for return of {return_qty} unit(s) of "
+            f"'{oi.variant.product.product_name}' in order {order.order_id}"
+        ),
         reference_type="RETURN",
-        reference_id=str(order.order_id),
+        reference_id=f"{order.order_id}-return-{ret.id}",
         order=order,
     )
 
-    # CRITICAL: Recalculate order totals (coupon + shipping)
+    # ── Recalculate order totals ──────────────────────────────────────────
     _recalculate_order_amount(order)
 
-    # Update payment status
-    active_items_count = order.order_items.filter(item_status="ACTIVE").count()
-    if active_items_count == 0:
-        order.payment_status = "REFUNDED"
-    else:
-        order.payment_status = "PARTIALLY_REFUNDED"
-    
+    active_count = order.order_items.filter(item_status="ACTIVE").count()
+    order.payment_status = "REFUNDED" if active_count == 0 else "PARTIALLY_REFUNDED"
     order.save(update_fields=["payment_status"])
 
     messages.success(
         request,
-        f"Return approved for '{oi.variant.product.product_name}'. "
-        f"Order totals recalculated (coupon/shipping updated if needed)."
+        f"Return approved for {return_qty} unit(s) of "
+        f"'{oi.variant.product.product_name}'. "
+        f"₹{refund_amount} refunded to wallet.",
     )
     return redirect("shopcore:admin_return_detail", return_id=return_id)
 
@@ -209,39 +238,39 @@ def admin_process_refund(request, return_id):
     oi = ret.order_item
     order = oi.order
 
-    # Final processing
-    _restore_inventory(oi)
+    refund_amount = ret.refund_amount or ret.calculated_refund_amount
 
-    refund_amount = oi.unit_price * oi.quantity
+    # Attempt wallet credit — idempotency guard in credit_refund_to_wallet
+    # will block if already done at approval step
     credit_refund_to_wallet(
         user=order.user,
         amount=refund_amount,
-        description=f"Refund for approved return of '{oi.variant.product.product_name}' in order {order.order_id}",
+        description=(
+            f"Final refund for return of '{oi.variant.product.product_name}' "
+            f"in order {order.order_id}"
+        ),
         reference_type="RETURN",
-        reference_id=str(order.order_id),
+        reference_id=f"{order.order_id}-return-{ret.id}",   # same key → blocked if already paid
         order=order,
     )
 
-    # Update statuses
     ret.status = "REFUNDED"
     ret.refunded_at = timezone.now()
-    ret.refund_amount = refund_amount
-    ret.save()
+    ret.save(update_fields=["status", "refunded_at"])
 
-    oi.item_status = "REFUNDED"
-    oi.save(update_fields=["item_status"])
+    if oi.item_status == "RETURN_APPROVED":
+        oi.item_status = "REFUNDED"
+        oi.save(update_fields=["item_status"])
 
     _recalculate_order_amount(order)
 
-    # Update order payment status
-    if not order.order_items.filter(item_status="ACTIVE").exists():
-        order.payment_status = "REFUNDED"
-    else:
-        order.payment_status = "PARTIALLY_REFUNDED"
+    active_count = order.order_items.filter(item_status="ACTIVE").count()
+    order.payment_status = "REFUNDED" if active_count == 0 else "PARTIALLY_REFUNDED"
     order.save(update_fields=["payment_status"])
 
-    messages.success(request, f"Refund processed successfully. ₹{refund_amount} credited.")
+    messages.success(request, f"Refund of ₹{refund_amount} finalised.")
     return redirect("shopcore:admin_return_detail", return_id=return_id)
+
 # ─────────────────────────────────────────────── ADMIN: REJECT RETURN ───────────────────────────────────────────────
 @never_cache
 @admin_login_required
@@ -251,7 +280,7 @@ def admin_reject_return(request, return_id):
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
     ret = get_object_or_404(Return, id=return_id, status="REQUESTED")
-    oi  = ret.order_item
+    oi = ret.order_item
 
     admin_note = request.POST.get("admin_note", "").strip()
     if not admin_note:
@@ -263,8 +292,9 @@ def admin_reject_return(request, return_id):
     ret.updated_at = timezone.now()
     ret.save(update_fields=["status", "admin_note", "updated_at"])
 
-    oi.item_status = "RETURN_REJECTED"
+    # Item goes back to ACTIVE since the return was rejected
+    oi.item_status = "ACTIVE"
     oi.save(update_fields=["item_status"])
 
-    messages.success(request, f"Return request rejected. Reason: {admin_note}")
+    messages.success(request, f"Return rejected. Reason: {admin_note}")
     return redirect("shopcore:admin_return_detail", return_id=return_id)

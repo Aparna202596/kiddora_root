@@ -348,6 +348,8 @@ class OrderItem(models.Model):
 
     quantity = models.PositiveIntegerField()
 
+    cancelled_quantity = models.PositiveIntegerField(default=0)
+
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -362,6 +364,19 @@ class OrderItem(models.Model):
 
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
+    @property
+    def active_quantity(self) -> int:
+        """Units still active (not cancelled)."""
+        return max(0, self.quantity - self.cancelled_quantity)
+
+    @property
+    def active_total(self):
+        """Price for active units only, proportional to discount."""
+        if self.quantity == 0:
+            return Decimal("0")
+        unit_net = self.total_price / self.quantity   # per-unit net after discount
+        return (unit_net * self.active_quantity).quantize(Decimal("0.01"))
+    
     def save(self, *args, **kwargs):
         self.total_price = (self.unit_price * self.quantity) - self.discount_amount
         super().save(*args, **kwargs)
@@ -381,6 +396,8 @@ class Return(models.Model):
 
     reason = models.TextField(help_text="Reason for return (mandatory per instructions).")
 
+    return_quantity = models.PositiveIntegerField(default=0)
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="REQUESTED")
 
     refund_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -396,6 +413,20 @@ class Return(models.Model):
     locked = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def per_unit_refund(self) -> Decimal:
+        """Net price per unit after discount, used for partial refunds."""
+        qty = self.order_item.quantity
+        if not qty:
+            return Decimal("0")
+        return (self.order_item.total_price / qty).quantize(Decimal("0.01"))
+
+    @property
+    def calculated_refund_amount(self) -> Decimal:
+        qty = self.return_quantity or self.order_item.active_quantity
+        return (self.per_unit_refund * qty).quantize(Decimal("0.01"))
+    
     class Meta:
         ordering = ["-created_at"]
 
