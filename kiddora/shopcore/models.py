@@ -502,13 +502,20 @@ class Banner(models.Model):
         verbose_name_plural = "Banners"
 
     def is_live(self):
-        now = timezone.now()
+    
         if not self.is_active:
             return False
+        
+        now = timezone.now()
+        
+        # If start_date is set, must be after or equal to it
         if self.start_date and now < self.start_date:
             return False
+        
+        # If end_date is set, must be before or equal to it
         if self.end_date and now > self.end_date:
             return False
+        
         return True
 
     def __str__(self):

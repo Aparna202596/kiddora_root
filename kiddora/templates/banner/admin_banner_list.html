@@ -31,6 +31,12 @@
         {% if search %}
         <a href="{% url 'shopcore:admin_banner_list' %}" class="search-btn">Clear</a>
         {% endif %}
+        <select name="slot" style="...">
+            <option value="">All Slots</option>
+            {% for val, label in slot_choices %}
+            <option value="{{ val }}" {% if slot_f == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
     </form>
 
     <!-- Table -->

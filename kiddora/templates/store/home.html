@@ -87,6 +87,48 @@
 .kd-prod-img .kd-no-img { font-size: 36px; color: #ddd; }
 .kd-prod-info { padding: 10px 10px 12px; }
 .kd-prod-name { font-size: 13px; font-weight: 600; color: #222; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; text-decoration: none; }
+.kd-banner-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5));
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+}
+
+.kd-badge {
+    background: #f06292;
+    color: white;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kd-cta-btn {
+    margin-top: 16px;
+    background: #fff;
+    color: #f06292;
+    padding: 12px 28px;
+    border-radius: 30px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.kd-cta-btn:hover {
+    background: #f06292;
+    color: white;
+    transform: scale(1.05);
+}
 .kd-prod-name:hover { color: 
 #f06292; }
 .kd-prod-price { font-size: 14px; font-weight: 700; color: #222; margin-bottom: 5px; }
@@ -230,30 +272,35 @@
         {% endfor %}
     </div>
     {% endif %}
-    {# ── BANNER / HERO CAROUSEL ─────────────────────────── #}
-    {% comment %} <div class="kd-carousel" id="kdCarousel">
-        <div class="kd-slide active">
-            <img src="{% static 'images/ramadan_banner.jpg' %}" alt="Ramadan Big Sale - Up to 70% Off" loading="eager">
-            <!-- Optional overlay text / CTA -->
-            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; text-shadow:0 2px 8px black; text-align:center; padding:20px;">
-                <h1 style="font-size:3.5rem; margin-bottom:12px;">Ramadan BIG SALE</h1>
-                <p style="font-size:1.8rem; margin-bottom:24px;">UP TO <strong>70%</strong> OFF</p>
-                <a href="/products/user/products/?on_sale=true" style="background:
-#f06292; color:white; padding:14px 32px; border-radius:30px; font-weight:600; text-decoration:none; font-size:1.3rem;">SHOP & SAVE!</a>
-            </div>
-        </div>
-    </div> {% endcomment %}
+
+    {# ── HERO CAROUSEL ─────────────────────────── #}
     {% if hero_banners %}
     <div class="kd-carousel" id="kdCarousel">
         {% for banner in hero_banners %}
-        <div class="kd-slide {% if forloop.first %}active{% endif %}">
-            <img src="{{ banner.image.url }}" alt="{{ banner.title }}"
-                 loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+        <div class="kd-slide {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
+            <img src="{{ banner.image.url }}" 
+                alt="{{ banner.title }}"
+                loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+            
+            {% if banner.title or banner.subtitle or banner.badge_text %}
+            <div class="kd-banner-overlay">
+                {% if banner.badge_text %}
+                    <div class="kd-badge">{{ banner.badge_text }}</div>
+                {% endif %}
+                <h2>{{ banner.title }}</h2>
+                {% if banner.subtitle %}<p>{{ banner.subtitle }}</p>{% endif %}
+                {% if banner.cta_text %}
+                    <a href="{{ banner.cta_url }}" class="kd-cta-btn">{{ banner.cta_text }}</a>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
         {% endfor %}
+
         {% if hero_banners|length > 1 %}
         <button class="kd-carousel-btn prev" onclick="kdCar.prev()"><i class="fa-solid fa-chevron-left"></i></button>
         <button class="kd-carousel-btn next" onclick="kdCar.next()"><i class="fa-solid fa-chevron-right"></i></button>
+        
         <div class="kd-carousel-dots">
             {% for banner in hero_banners %}
             <button class="kd-carousel-dot {% if forloop.first %}active{% endif %}"
@@ -399,29 +446,73 @@
 {% block extra_js %}
 <script>
 /* ══ CAROUSEL ══════════════════════════════════════════════ */
+
+/* Hero Carousel - Minimum 3 banners recommended, auto rotates every 5 seconds */
 (function(){
-    const slides = document.querySelectorAll('.kd-slide');
-    const dots   = document.querySelectorAll('.kd-carousel-dot');
-    if(!slides.length || slides.length < 2) return;
-    let cur=0, timer=null, sx=0;
-    function goTo(n){
-        slides[cur].classList.remove('active'); if(dots[cur]) dots[cur].classList.remove('active');
-        cur = (n+slides.length)%slides.length;
-        slides[cur].classList.add('active'); if(dots[cur]) dots[cur].classList.add('active');
+    const carousel = document.getElementById('kdCarousel');
+    if (!carousel) return;
+
+    const slides = carousel.querySelectorAll('.kd-slide');
+    const dots = carousel.querySelectorAll('.kd-carousel-dot');
+    
+    if (slides.length === 0) return;
+    
+    let current = 0;
+    let timer = null;
+
+    function goTo(index) {
+        slides.forEach(s => s.classList.remove('active'));
+        if (dots.length) dots.forEach(d => d.classList.remove('active'));
+        
+        current = (index + slides.length) % slides.length;
+        
+        slides[current].classList.add('active');
+        if (dots.length) dots[current].classList.add('active');
     }
-    const next=()=>goTo(cur+1), prev=()=>goTo(cur-1);
-    const start=()=>{timer=setInterval(next,4500);};
-    const stop =()=>clearInterval(timer);
-    const el = document.getElementById('kdCarousel');
-    if(el){
-        el.addEventListener('mouseenter', stop);
-        el.addEventListener('mouseleave', start);
-        el.addEventListener('touchstart', e=>{sx=e.changedTouches[0].clientX;},{passive:true});
-        el.addEventListener('touchend',   e=>{const d=sx-e.changedTouches[0].clientX; if(Math.abs(d)>40){stop(); d>0?next():prev(); start();}});
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    function startAuto() {
+        if (timer) clearInterval(timer);
+        timer = setInterval(next, 5000);   // 5 seconds as requested
     }
-    start();
-    window.kdCar = {next, prev, goTo};
+
+    function stopAuto() {
+        if (timer) clearInterval(timer);
+    }
+
+    // Button controls
+    const prevBtn = carousel.querySelector('.prev');
+    const nextBtn = carousel.querySelector('.next');
+    if (prevBtn) prevBtn.addEventListener('click', () => { stopAuto(); prev(); startAuto(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { stopAuto(); next(); startAuto(); });
+
+    // Dots
+    dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => { stopAuto(); goTo(i); startAuto(); });
+    });
+
+    // Pause on hover / touch
+    carousel.addEventListener('mouseenter', stopAuto);
+    carousel.addEventListener('mouseleave', startAuto);
+
+    // Touch swipe
+    let startX = 0;
+    carousel.addEventListener('touchstart', e => { startX = e.changedTouches[0].clientX; }, {passive: true});
+    carousel.addEventListener('touchend', e => {
+        const diff = startX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) {
+            stopAuto();
+            diff > 0 ? next() : prev();
+            startAuto();
+        }
+    });
+
+    startAuto();
+    window.kdCar = { next, prev, goTo };
 })();
+
 /* ══ TREND TABS ════════════════════════════════════════════ */
 (function(){
     const allGrid = document.querySelector('#kdtrend-all .kd-trend-grid');

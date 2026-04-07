@@ -53,23 +53,33 @@ def _attach_reviews(product_list):
         p.review_count = rd.get("cnt", 0)
     return product_list
 
-# ────────────────────────────────────────────────── PUBLIC VIEWS (USER-FACING) ─────────────────────────────────────────────────────────────
 def anonymous_home(request):
-    live_banners = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
-    hero_banners = [b for b in live_banners if b.slot == "HERO"][:6]
-    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
+    live_banners = Banner.objects.filter(is_active=True).order_by('display_order', '-created_at')
+    
+    # Filter using is_live() method
+    hero_banners = [b for b in live_banners if b.slot == "HERO" and b.is_live()]
+    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY" and b.is_live()][:6]
+
+    # Fallback if no hero banners
+    if not hero_banners:
+        # You can show a default banner or just the no-banner message
+        pass
+
     categories = Category.objects.filter(is_active=True).order_by("category_name")
+    
     top_products = list(
         _active_products()
         .annotate(total_sold=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0)))
         .order_by("-total_sold")[:6]
     )
     _attach_reviews(top_products)
+
     new_arrivals = list(_active_products().order_by("-id")[:6])
     _attach_reviews(new_arrivals)
 
     uw = _cart_wishlist_ctx(request.user)
-    return render(request, "store/anonymous_home.html", {
+
+    return render(request, "store/all_home.html", {
         "hero_banners": hero_banners,
         "secondary_banners": secondary_banners,
         "categories": categories,
@@ -77,29 +87,33 @@ def anonymous_home(request):
         "new_arrivals": new_arrivals,
         "cart_variant_ids": uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
-        "wishlist_product_ids": set(uw["wishlist_product_ids"]),
         "cart_item_count": uw["cart_item_count"],
     })
 
-# ────────────────────────────────────────────────── USER HOME (AFTER LOGIN) ─────────────────────────────────────────────────────────────
+
 @user_login_required
 def home(request):
-    live_banners = [b for b in Banner.objects.filter(is_active=True) if b.is_live()]
-    hero_banners = [b for b in live_banners if b.slot == "HERO"][:6]
-    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY"][:4]
+    # Same logic as anonymous_home (we use the same template)
+    live_banners = Banner.objects.filter(is_active=True).order_by('display_order', '-created_at')
+    
+    hero_banners = [b for b in live_banners if b.slot == "HERO" and b.is_live()]
+    secondary_banners = [b for b in live_banners if b.slot == "SECONDARY" and b.is_live()][:6]
 
     categories = Category.objects.filter(is_active=True).order_by("category_name")
+    
     top_products = list(
         _active_products()
         .annotate(total_sold=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0)))
         .order_by("-total_sold")[:6]
     )
     _attach_reviews(top_products)
+
     new_arrivals = list(_active_products().order_by("-id")[:6])
     _attach_reviews(new_arrivals)
 
     uw = _cart_wishlist_ctx(request.user)
-    return render(request, "store/home.html", {
+
+    return render(request, "store/all_home.html", {
         "hero_banners": hero_banners,
         "secondary_banners": secondary_banners,
         "categories": categories,
@@ -107,7 +121,6 @@ def home(request):
         "new_arrivals": new_arrivals,
         "cart_variant_ids": uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
-        "wishlist_product_ids": set(uw["wishlist_product_ids"]),
         "cart_item_count": uw["cart_item_count"],
     })
 

@@ -1,0 +1,307 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Kiddora{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+          crossorigin="anonymous" referrerpolicy="no-referrer">
+    <style>
+        /* ── RESET ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #333; line-height: 1.5; overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
+        img { max-width: 100%; display: block; }
+        ul { list-style: none; }
+        /* ── LOADER ── */
+        #global-loader {
+            display: none; position: fixed; inset: 0;
+            background: rgba(255,255,255,.75); backdrop-filter: blur(3px);
+            z-index: 999999; flex-direction: column;
+            align-items: center; justify-content: center; gap: 16px;
+            pointer-events: all !important;
+        }
+        #global-loader.active { display: flex; }
+        .loader-spinner {
+            width: 52px; height: 52px; border-radius: 50%;
+            border: 5px solid #f3d6ed; border-top-color: #f06292;
+            animation: spin .75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-label { font-size: 15px; font-weight: 600; color: #444; }
+        body.loading * { pointer-events: none !important; }
+        body.loading #global-loader { pointer-events: all !important; }
+        /* ── HEADER ── */
+        .site-header {
+            width: 100%; background: #fff;
+            border-bottom: 2px solid #f06292;
+            box-shadow: 0 2px 8px rgba(240,98,146,.08);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-container {
+            max-width: 1400px; margin: 0 auto;
+            padding: 14px 32px;
+            display: flex; align-items: center; justify-content: space-between; gap: 20px;
+        }
+        .logo img { height: 42px; }
+        .main-nav ul { display: flex; gap: 24px; align-items: center; }
+        .main-nav ul li a {
+            font-size: 15px; font-weight: 500; color: #444;
+            position: relative; padding-bottom: 3px; transition: color .2s;
+        }
+        .main-nav ul li a::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 0; height: 2px; background: #f06292;
+            border-radius: 2px; transition: width .2s;
+        }
+        .main-nav ul li a:hover { color: #f06292; }
+        .main-nav ul li a:hover::after { width: 100%; }
+        .header-actions { display: flex; align-items: center; gap: 14px; }
+        /* search */
+        .search-wrap { position: relative; }
+        .search-form {
+            display: flex; align-items: center;
+            border: 1.5px solid #e0e0e0; border-radius: 22px;
+            overflow: hidden; background: #fafafa;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .search-form:focus-within {
+            border-color: #f06292;
+            box-shadow: 0 0 0 3px rgba(240,98,146,.12);
+            background: #fff;
+        }
+        .search-form input[type="text"] {
+            width: 180px; height: 36px; padding: 0 8px 0 14px;
+            border: none; outline: none; background: transparent;
+            font-size: 14px; color: #333;
+        }
+        .sf-clear { background: none; border: none; cursor: pointer; padding: 0 5px; color: #bbb; font-size: 13px; display: none; align-items: center; }
+        .sf-clear.show { display: flex; }
+        .sf-clear:hover { color: #f06292; }
+        .sf-submit {
+            border: none; background: #f06292; color: #fff;
+            height: 36px; padding: 0 14px; cursor: pointer;
+            font-size: 14px; flex-shrink: 0; transition: background .2s;
+        }
+        .sf-submit:hover { background: #e91e63; }
+        /* search dropdown */
+        .search-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); left: 0;
+            width: 100%; min-width: 320px; background: #fff;
+            border: 1.5px solid #f0c8d8; border-radius: 12px;
+            box-shadow: 0 8px 28px rgba(240,98,146,.13);
+            z-index: 9999; max-height: 420px; overflow-y: auto;
+        }
+        .search-dropdown.open { display: block; }
+        .sd-item { display: flex; align-items: center; gap: 10px; padding: 9px 14px; color: #333; border-bottom: 1px solid #fdf0f5; transition: background .15s; text-decoration: none; }
+        .sd-item:last-child { border-bottom: none; }
+        .sd-item:hover { background: #fff5f9; }
+        .sd-img { width: 42px; height: 52px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: #fafafa; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .sd-img img { width: 100%; height: 100%; object-fit: cover; }
+        .sd-info { flex: 1; min-width: 0; }
+        .sd-name { font-size: 13px; font-weight: 600; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sd-brand { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: .06em; }
+        .sd-price { font-size: 13px; font-weight: 700; white-space: nowrap; }
+        .sd-price.red { color: #e91e63; } .sd-price.black { color: #222; }
+        .sd-footer { padding: 9px 14px; text-align: center; font-size: 13px; font-weight: 600; color: #f06292; border-top: 1px solid #fde; cursor: pointer; display: block; transition: background .15s; text-decoration: none; }
+        .sd-footer:hover { background: #fff5f9; }
+        .sd-empty { padding: 20px 14px; text-align: center; font-size: 13px; color: #bbb; }
+        .sd-loading { padding: 14px; text-align: center; font-size: 13px; color: #ccc; }
+        /* auth buttons */
+        .auth-btn {
+            padding: 7px 18px; border-radius: 20px; font-size: 14px;
+            font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+            transition: background .2s, transform .15s;
+            background: #f06292; color: #fff; border: 1.5px solid #f06292;
+        }
+        .auth-btn:hover { background: #e91e63; border-color: #e91e63; transform: translateY(-1px); }
+        .auth-btn.outline { background: #fff; color: #f06292; }
+        .auth-btn.outline:hover { background: #fff0f5; transform: translateY(-1px); }
+        /* ── MAIN CONTENT ── */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+        }
+        /* ── FOOTER ── */
+        .site-footer { background: #fafafa; padding-top: 48px; border-top: 2px solid #f06292; margin-top: 40px; }
+        .footer-container { max-width: 1200px; margin: auto; padding: 0 20px; display: grid; grid-template-columns: repeat(4,1fr); gap: 30px; }
+        .footer-logo img { height: 50px; }
+        .footer-column h4 { font-size: 14px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #222; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #f06292; display: inline-block; }
+        .footer-column ul li { margin-bottom: 9px; }
+        .footer-column ul li a { font-size: 14px; color: #666; transition: color .2s, padding-left .2s; display: inline-block; }
+        .footer-column ul li a:hover { color: #f06292; padding-left: 4px; }
+        .footer-column form { display: flex; flex-direction: column; gap: 10px; }
+        .footer-column input[type="email"] { padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; transition: border-color .2s; }
+        .footer-column input[type="email"]:focus { border-color: #f06292; }
+        .footer-column button { padding: 9px 12px; border: none; background: #f06292; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: background .2s; }
+        .footer-column button:hover { background: #e91e63; }
+        .social-icons { margin-top: 16px; display: flex; gap: 12px; }
+        .social-icons a { font-size: 18px; color: #555; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #e0e0e0; display: flex; align-items: center; justify-content: center; transition: color .2s, border-color .2s, background .2s; }
+        .social-icons a:hover { color: #f06292; border-color: #f06292; background: rgba(240,98,146,.06); }
+        .footer-bottom { text-align: center; padding: 16px 0; margin-top: 36px; font-size: 13px; color: #888; border-top: 1px solid #eaeaea; background: #fff; }
+        /* ── RESPONSIVE ── */
+        @media (max-width: 992px) { .main-nav { display: none; } .footer-container { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 576px) { .footer-container { grid-template-columns: 1fr; } .search-form input[type="text"] { width: 110px; } .header-container { padding: 10px 12px; } }
+        @media (max-width: 360px) { .header-container { padding: 10px 12px; } }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Loader -->
+    <div id="global-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-label" id="loader-label">Loading...</div>
+    </div>
+
+    <!-- ══ HEADER ══ -->
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="{% url 'shopcore:anonymous_home' %}">
+                    <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
+                </a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="{% url 'shopcore:anonymous_home' %}">Home</a></li>
+                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
+                    <li><a href="{% url 'products:category_list' %}">Categories</a></li>
+                    <li><a href="{% url 'products:product_list' %}">Shop</a></li>
+                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <div class="search-wrap" id="searchWrap">
+                    <form method="get" action="/products/user/products/" class="search-form" role="search">
+                        <input type="text" name="q" id="headerSearchQ"
+                               placeholder="Search products…" autocomplete="off">
+                        <button type="button" class="sf-clear" id="headerSearchClear" aria-label="Clear search">✕</button>
+                        <button type="submit" class="sf-submit" aria-label="Search"><i class="fa fa-search"></i></button>
+                    </form>
+                    <div class="search-dropdown" id="searchDropdown"></div>
+                </div>
+                <a href="{% url 'accounts:admin_login' %}" class="auth-btn outline">Admin</a>
+                <a href="{% url 'accounts:login' %}" class="auth-btn outline">Login</a>
+                <a href="{% url 'accounts:signup' %}" class="auth-btn">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══ MAIN ══ -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ══ FOOTER ══ -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-logo">
+                <img src="{% static 'images/kiddora_logo.PNG' %}" alt="Kiddora">
+            </div>
+            <div class="footer-column">
+                <h4>Info</h4>
+                <ul>
+                    <li><a href="{% url 'shopcore:about_us' %}">About Us</a></li>
+                    <li><a href="{% url 'shopcore:contact_us' %}">Contact</a></li>
+                    <li><a href="{% url 'shopcore:blog' %}">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Policies</h4>
+                <ul>
+                    <li><a href="{% url 'shopcore:privacy_policy' %}">Privacy</a></li>
+                    <li><a href="{% url 'shopcore:return_policy' %}">Returns</a></li>
+                    <li><a href="{% url 'shopcore:terms_conditions' %}">Terms</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Newsletter</h4>
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <input type="email" name="email" placeholder="Email Address" required>
+                    <button type="submit">Subscribe</button>
+                </form>
+                <div class="social-icons">
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">© 2025 Kiddora. All Rights Reserved.</div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+
+    <script>
+    /* ── Search dropdown ── */
+    (function(){
+        var wrap  = document.getElementById('searchWrap');
+        var input = document.getElementById('headerSearchQ');
+        var clr   = document.getElementById('headerSearchClear');
+        var drop  = document.getElementById('searchDropdown');
+        var timer = null;
+        var URL   = '/products/user/search/';
+        if(!input || !drop) return;
+        function syncClear(){ clr && clr.classList.toggle('show', input.value.length > 0); }
+        input.addEventListener('input', syncClear);
+        if(clr) clr.addEventListener('click', function(){ input.value=''; syncClear(); closeDrop(); input.focus(); });
+        syncClear();
+        function openDrop(html){ drop.innerHTML=html; drop.classList.add('open'); }
+        function closeDrop(){ drop.classList.remove('open'); drop.innerHTML=''; }
+        document.addEventListener('click', function(e){ if(!wrap.contains(e.target)) closeDrop(); });
+        input.addEventListener('keydown', function(e){ if(e.key==='Escape'){closeDrop(); input.blur();} });
+        function fetchSugg(q){
+            drop.innerHTML='<div class="sd-loading">Searching…</div>'; drop.classList.add('open');
+            fetch(URL+'?q='+encodeURIComponent(q), {headers:{'X-Requested-With':'XMLHttpRequest'}})
+            .then(r=>r.json()).then(data=>{
+                if(!drop.classList.contains('open')) return;
+                if(!data.results||!data.results.length){ openDrop('<div class="sd-empty">No results for "'+esc(q)+'"</div>'); return; }
+                var html='';
+                data.results.forEach(function(p){
+                    var cls=p.discount>0?'red':'black';
+                    var img=p.img?'<img src="'+p.img+'" loading="lazy">':'👕';
+                    var badge=p.discount>0?' <small style="font-size:10px;color:#f06292;">('+p.discount+'% off)</small>':'';
+                    html+='<a href="'+p.url+'" class="sd-item"><div class="sd-img">'+img+'</div><div class="sd-info"><div class="sd-name">'+esc(p.name)+'</div><div class="sd-brand">'+esc(p.brand)+'</div></div><div class="sd-price '+cls+'">₹'+p.price+badge+'</div></a>';
+                });
+                html+='<a href="/products/user/products/?q='+encodeURIComponent(q)+'" class="sd-footer">See all results →</a>';
+                openDrop(html);
+            }).catch(()=>closeDrop());
+        }
+        input.addEventListener('input', function(){ clearTimeout(timer); var q=input.value.trim(); if(q.length<2){closeDrop();return;} timer=setTimeout(()=>fetchSugg(q),280); });
+        input.addEventListener('focus', function(){ var q=input.value.trim(); if(q.length>=2) fetchSugg(q); });
+        function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    })();
+    /* ── Page loader ── */
+    (function(){
+        const loader = document.getElementById('global-loader');
+        const label  = document.getElementById('loader-label');
+        function show(msg){ label.textContent=msg||'Loading...'; loader.classList.add('active'); document.body.classList.add('loading'); }
+        function hide(){ loader.classList.remove('active'); document.body.classList.remove('loading'); }
+        document.addEventListener('submit', function(e){
+            if(e.target.tagName!=='FORM') return;
+            const btn=e.target.querySelector('[type=submit]');
+            const lower=btn?btn.textContent.trim().toLowerCase():'';
+            const map={'save':'Saving...','update':'Updating...','delete':'Deleting...','login':'Signing in...','search':'Searching...'};
+            let msg='Processing...';
+            for(const[k,v] of Object.entries(map)){ if(lower.includes(k)){msg=v;break;} }
+            show(msg);
+        });
+        document.addEventListener('click', function(e){
+            const a=e.target.closest('a');
+            if(!a) return;
+            const href=a.getAttribute('href');
+            if(!href||href==='#'||href.startsWith('javascript')) return;
+            if(a.target==='_blank'||a.closest('form')||a.hasAttribute('onclick')) return;
+            if(a.closest('.search-dropdown')) return;
+            show('Loading...');
+        });
+        window.addEventListener('pageshow', hide);
+        window.addEventListener('popstate', hide);
+    })();
+    </script>
+</body>
+</html>
