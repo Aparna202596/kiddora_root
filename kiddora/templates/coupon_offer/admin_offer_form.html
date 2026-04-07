@@ -26,17 +26,15 @@
 .btn-save:hover { background:#e91e63; }
 .btn-cancel { padding:12px 20px; background:#f5f5f5; color:#555; border:1.5px solid #ddd; border-radius:10px; font-size:13px; font-weight:600; text-decoration:none; display:flex; align-items:center; }
 .btn-cancel:hover { background:#eee; }
-
-/* ── flash messages ── */
+/* Flash messages */
 .messages { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
 .message { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:8px; font-size:14px; font-weight:500; }
 .message button { background:none; border:none; cursor:pointer; font-size:18px; padding:0 0 0 10px; color:inherit; opacity:.7; }
 .message button:hover { opacity:1; }
 .message.success { background:#e6f9f0; color:#1a7a4a; border:1px solid #a3e0c1; }
-.message.error   { background:#fdecea; color:#c0392b; border:1px solid #f5a9a4; }
+.message.error { background:#fdecea; color:#c0392b; border:1px solid #f5a9a4; }
 .message.warning { background:#fff8e1; color:#b07d00; border:1px solid #ffe082; }
-.message.info    { background:#e8f4fd; color:#1565c0; border:1px solid #90caf9; }
-
+.message.info { background:#e8f4fd; color:#1565c0; border:1px solid #90caf9; }
 @media (max-width:600px) { .form-row { grid-template-columns:1fr; } }
 </style>
 
@@ -63,6 +61,7 @@
 
         <div class="form-card">
             <div class="card-title">Offer Configuration</div>
+
             <div class="form-group">
                 <label>Offer Type <span style="color:#e91e63;">*</span></label>
                 <select name="offer_type" id="offerType" onchange="toggleTargets()">
@@ -74,6 +73,8 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <!-- Product Offer -->
             <div class="form-group conditional-field" id="productField">
                 <label>Product</label>
                 <select name="product_id">
@@ -86,6 +87,8 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <!-- Category Offer -->
             <div class="form-group conditional-field" id="categoryField">
                 <label>Category</label>
                 <select name="category_id">
@@ -98,23 +101,48 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group conditional-field" id="referralField">
-                <label>Referral Coupon <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-                <select name="referral_coupon_id">
-                    <option value="">— None —</option>
-                    {% for coupon in coupons %}
-                    <option value="{{ coupon.id }}"
-                        {% if offer.referral_coupon_id == coupon.id %}selected{% endif %}>
-                        {{ coupon.code }}
-                    </option>
-                    {% endfor %}
-                </select>
+
+            <!-- Referral Rewards -->
+            <div class="form-group conditional-field" id="referralRewards">
+                <label style="font-weight:700; color:#d63384;">Referral Rewards</label>
+                
+                <div class="form-group">
+                    <label>Referrer Reward Coupon <span style="font-weight:400;color:#aaa;">(Existing User)</span></label>
+                    <select name="referrer_coupon_id">
+                        <option value="">— None —</option>
+                        {% for coupon in coupons %}
+                        <option value="{{ coupon.id }}"
+                            {% if offer.referrer_coupon_id == coupon.id or form_data.referrer_coupon_id == coupon.id|stringformat:"s" %}selected{% endif %}>
+                            {{ coupon.code }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="hint">Coupon awarded to the user who made the referral</div>
+                </div>
+
+                <div class="form-group">
+                    <label>New User Reward Coupon <span style="font-weight:400;color:#aaa;">(New Signup)</span></label>
+                    <select name="new_user_coupon_id">
+                        <option value="">— None —</option>
+                        {% for coupon in coupons %}
+                        <option value="{{ coupon.id }}"
+                            {% if offer.new_user_coupon_id == coupon.id or form_data.new_user_coupon_id == coupon.id|stringformat:"s" %}selected{% endif %}>
+                            {{ coupon.code }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="hint">Coupon awarded to the new user who signed up via referral link</div>
+                </div>
             </div>
-            <div class="form-group">
+
+            <!-- Discount % - Hidden for REFERRAL offers -->
+            <div class="form-group conditional-field" id="discountField">
                 <label>Discount % <span style="color:#e91e63;">*</span></label>
-                <input type="number" name="discount_percent" min="1" max="100"
+                <input type="number" name="discount_percent" id="discountPercentInput" 
+                       min="1" max="100"
                        value="{{ offer.discount_percent|default:form_data.discount_percent|default:'' }}"
                        placeholder="1 – 100" required>
+                <div class="hint">Applicable only for Product and Category offers</div>
             </div>
         </div>
 
@@ -146,15 +174,10 @@
         </div>
 
         <div class="form-actions">
-            <!--
-              Visible trigger button → opens confirm modal.
-              Hidden real submit → fired by modal callback.
-            -->
             <button type="button" class="btn-save" id="btnSaveTrigger">
                 <i class="fa fa-check"></i> {{ action }} Offer
             </button>
             <button type="submit" id="btnRealSubmit" style="display:none;"></button>
-
             <a href="{% url 'shopcore:admin_offer_list' %}" class="btn-cancel">
                 <i class="fa fa-times"></i> Cancel
             </a>
@@ -165,35 +188,54 @@
 {% include "confirm_modal.html" %}
 <script src="{% static 'js/ui-utils.js' %}"></script>
 <script>
-/* ── conditional field visibility ── */
+/* ── Conditional field visibility based on Offer Type ── */
 function toggleTargets() {
-    var type = document.getElementById('offerType').value;
-    document.getElementById('productField').style.display  = type === 'PRODUCT'  ? 'block' : 'none';
-    document.getElementById('categoryField').style.display = type === 'CATEGORY' ? 'block' : 'none';
-    document.getElementById('referralField').style.display = type === 'REFERRAL' ? 'block' : 'none';
+    const type = document.getElementById('offerType').value;
+
+    // Hide all conditional fields
+    document.getElementById('productField').style.display = 'none';
+    document.getElementById('categoryField').style.display = 'none';
+    document.getElementById('referralRewards').style.display = 'none';
+    document.getElementById('discountField').style.display = 'none';
+
+    if (type === 'PRODUCT') {
+        document.getElementById('productField').style.display = 'block';
+        document.getElementById('discountField').style.display = 'block';
+    } 
+    else if (type === 'CATEGORY') {
+        document.getElementById('categoryField').style.display = 'block';
+        document.getElementById('discountField').style.display = 'block';
+    } 
+    else if (type === 'REFERRAL') {
+        document.getElementById('referralRewards').style.display = 'block';
+        // Discount field remains hidden for referral offers
+    }
 }
+
+// Initialize on page load
 toggleTargets();
 
-/* ── confirm modal before saving ── */
+/* ── Confirm before save ── */
 document.getElementById('btnSaveTrigger').addEventListener('click', function () {
-    var action = '{{ action|escapejs }}';
-    var msg = action === 'Edit'
-        ? 'Save changes to this offer?'
+    const action = '{{ action|escapejs }}';
+    const msg = action === 'Edit' 
+        ? 'Save changes to this offer?' 
         : 'Create this new offer?';
+    
     openConfirmModal(msg, function () {
         document.getElementById('btnRealSubmit').click();
     });
 });
 
-/* ── auto-dismiss messages ── */
+/* Auto-dismiss messages */
 (function () {
-    var mc = document.getElementById('msgContainer');
+    const mc = document.getElementById('msgContainer');
     if (!mc) return;
     setTimeout(function () {
         mc.querySelectorAll('.message').forEach(function (m) {
             m.style.transition = 'opacity 0.5s';
             m.style.opacity = '0';
-            setTimeout(function () { m.remove(); }, 500);
+            setTimeout(() => m.remove(), 500);
         });
     }, 15000);
 })();

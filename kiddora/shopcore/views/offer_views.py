@@ -12,39 +12,129 @@ from types import SimpleNamespace
 from products.models import Category, Product
 from shopcore.models import Coupon, Offer
 
-# ────────────────────────────────────────────────── HELPER FUNCTION ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
+
 def get_max_offer_discount_percent(product) -> int:
+    """
+    TASK 3 — Returns the single best (highest) discount percentage applicable
+    to a product.  When both a product-level offer AND a category-level offer
+    exist, only the greater one is applied — they are never combined.
+
+    Example: shirt has 20% product offer + 30% category offer → returns 30.
+    """
     if not product:
         return 0
 
     now = timezone.now()
     active_offers = Offer.objects.filter(
-        is_active = True, is_deleted=False, start_date__lte = now
+        is_active=True,
+        is_deleted=False,
+        start_date__lte=now,
     )
 
-    product_offer = active_offers.filter(
-        offer_type="PRODUCT", product = product
-    ).first()
+    product_pct = 0
+    category_pct = 0
 
-    category_offer = None
+    product_offer = active_offers.filter(
+        offer_type="PRODUCT", product=product
+    ).first()
+    if product_offer and product_offer.is_valid():
+        product_pct = product_offer.discount_percent
+
     try:
         if product.subcategory and product.subcategory.category:
             category_offer = active_offers.filter(
-                offer_type = "CATEGORY",
-                category = product.subcategory.category,
+                offer_type="CATEGORY",
+                category=product.subcategory.category,
             ).first()
+            if category_offer and category_offer.is_valid():
+                category_pct = category_offer.discount_percent
     except Exception:
         pass
 
-    max_pct = 0
+    # TASK 3: return only the larger of the two — never sum them
+    return max(product_pct, category_pct)
+
+
+def get_offer_discount_detail(product) -> dict:
+    """
+    TASK 3 — Returns a dict with the winning offer percentage AND which type
+    won, useful for rendering a per-item breakdown on the checkout page.
+
+    Returns:
+        {
+            "discount_percent": int,          # 0 if no offer
+            "offer_type": str | None,         # "PRODUCT", "CATEGORY", or None
+            "product_percent": int,           # raw product-level %
+            "category_percent": int,          # raw category-level %
+        }
+
+    When both a product offer and a category offer exist, only the larger one
+    is reflected in ``discount_percent`` / ``offer_type``.  The raw values are
+    exposed so the checkout template can display why the winning offer was chosen.
+    """
+    if not product:
+        return {
+            "discount_percent": 0,
+            "offer_type": None,
+            "product_percent": 0,
+            "category_percent": 0,
+        }
+
+    now = timezone.now()
+    active_offers = Offer.objects.filter(
+        is_active=True,
+        is_deleted=False,
+        start_date__lte=now,
+    )
+
+    product_pct = 0
+    category_pct = 0
+
+    product_offer = active_offers.filter(
+        offer_type="PRODUCT", product=product
+    ).first()
     if product_offer and product_offer.is_valid():
-        max_pct = max(max_pct, product_offer.discount_percent)
-    if category_offer and category_offer.is_valid():
-        max_pct = max(max_pct, category_offer.discount_percent)
+        product_pct = product_offer.discount_percent
 
-    return max_pct
+    try:
+        if product.subcategory and product.subcategory.category:
+            category_offer = active_offers.filter(
+                offer_type="CATEGORY",
+                category=product.subcategory.category,
+            ).first()
+            if category_offer and category_offer.is_valid():
+                category_pct = category_offer.discount_percent
+    except Exception:
+        pass
 
-# ────────────────────────────────────────────────── ADMIN: LIST + FILTER + PAGINATION ──────────────────────────────────────────────────
+    if product_pct == 0 and category_pct == 0:
+        return {
+            "discount_percent": 0,
+            "offer_type": None,
+            "product_percent": 0,
+            "category_percent": 0,
+        }
+
+    # TASK 3: category wins on tie (≥), product wins otherwise
+    if category_pct >= product_pct:
+        winning_type = "CATEGORY"
+        winning_pct = category_pct
+    else:
+        winning_type = "PRODUCT"
+        winning_pct = product_pct
+
+    return {
+        "discount_percent": winning_pct,
+        "offer_type": winning_type,
+        "product_percent": product_pct,
+        "category_percent": category_pct,
+    }
+
+
+# ────────────────────────────────────────────────── ADMIN: LIST ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_offer_list(request):
@@ -53,7 +143,7 @@ def admin_offer_list(request):
     status_f = request.GET.get("status", "")
 
     qs = Offer.objects.filter(is_deleted=False).select_related(
-        "product", "category", "referral_coupon"
+        "product", "category", "referral_coupon", "referrer_coupon", "new_user_coupon"
     )
 
     if search:
@@ -79,7 +169,9 @@ def admin_offer_list(request):
         "now": timezone.now(),
     })
 
-#────────────────────────────────────────────────── ADMIN: ADD ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: ADD ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_add_offer(request):
@@ -92,15 +184,25 @@ def admin_add_offer(request):
         "offer_types": Offer.OFFER_TYPE_CHOICES,
         "products": Product.objects.filter(is_active=True, is_deleted=False).order_by("product_name"),
         "categories": Category.objects.filter(is_active=True, is_deleted=False).order_by("category_name"),
+        # All active coupons available for selection (referral offer form dropdowns)
         "coupons": Coupon.objects.filter(is_active=True, is_deleted=False).order_by("code"),
         "form_data": SimpleNamespace(
-            offer_type="", product_id="", category_id="",
-            referral_coupon_id="", discount_percent="",
-            start_date="", end_date="", is_active=False,
+            offer_type="",
+            product_id="",
+            category_id="",
+            referral_coupon_id="",   # legacy
+            referrer_coupon_id="",   # TASK 1: referrer reward
+            new_user_coupon_id="",   # TASK 1: new-user reward
+            discount_percent="",
+            start_date="",
+            end_date="",
+            is_active=False,
         ),
     })
 
-#────────────────────────────────────────────────── ADMIN: EDIT ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: EDIT ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_edit_offer(request, offer_id):
@@ -119,14 +221,22 @@ def admin_edit_offer(request, offer_id):
         "form_data": offer,
     })
 
-#───────────────────────────────────────────────── ADMIN: SAVE (for both add and edit) ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: SAVE (internal) ───────────────────────────────────────────
+
 def _save_offer(request, instance):
-    offer_type = request.POST.get("offer_type", "")
+    """
+    Shared create / update logic.
+    - Discount percent is REQUIRED only for PRODUCT and CATEGORY offers.
+    - For REFERRAL offers, discount_percent is ignored (no extra discount).
+    """
+    offer_type = request.POST.get("offer_type", "").strip()
     product_id = request.POST.get("product_id", "") or None
     category_id = request.POST.get("category_id", "") or None
-    referral_coupon_id = request.POST.get("referral_coupon_id", "") or None
-    discount_percent = request.POST.get("discount_percent", "")
-    start_date = request.POST.get("start_date", "")
+    referrer_coupon_id = request.POST.get("referrer_coupon_id", "") or None
+    new_user_coupon_id = request.POST.get("new_user_coupon_id", "") or None
+    discount_percent_str = request.POST.get("discount_percent", "").strip()
+    start_date = request.POST.get("start_date", "").strip()
     end_date = request.POST.get("end_date", "") or None
     is_active = bool(request.POST.get("is_active"))
 
@@ -134,66 +244,79 @@ def _save_offer(request, instance):
 
     if not offer_type:
         errors.append("Offer type is required.")
+
     if offer_type == "PRODUCT" and not product_id:
         errors.append("A product must be selected for product offers.")
     if offer_type == "CATEGORY" and not category_id:
         errors.append("A category must be selected for category offers.")
 
-    try:
-        dp = int(discount_percent)
-        if dp < 1 or dp > 100:
-            raise ValueError
-    except (ValueError, TypeError):
-        errors.append("Discount percent must be between 1 and 100.")
+    # Discount validation - ONLY for PRODUCT and CATEGORY
+    if offer_type in ("PRODUCT", "CATEGORY"):
+        if not discount_percent_str:
+            errors.append("Discount percent is required for Product and Category offers.")
+        else:
+            try:
+                dp = int(discount_percent_str)
+                if dp < 1 or dp > 100:
+                    raise ValueError
+                discount_percent = dp
+            except (ValueError, TypeError):
+                errors.append("Discount percent must be a number between 1 and 100.")
+    else:
+        # For REFERRAL offers - ignore discount
+        discount_percent = 0
 
     if not start_date:
         errors.append("Start date is required.")
 
-    ctx = {
-        "action": "Edit" if instance else "Add",
-        "offer": instance,
-        "offer_types": Offer.OFFER_TYPE_CHOICES,
-        "products": Product.objects.filter(is_active=True, is_deleted=False).order_by("product_name"),
-        "categories": Category.objects.filter(is_active=True, is_deleted=False).order_by("category_name"),
-        "coupons": Coupon.objects.filter(is_active=True, is_deleted=False).order_by("code"),
-        "form_data": request.POST,
-    }
-
     if errors:
+        ctx = {
+            "action": "Edit" if instance else "Add",
+            "offer": instance,
+            "offer_types": Offer.OFFER_TYPE_CHOICES,
+            "products": Product.objects.filter(is_active=True, is_deleted=False).order_by("product_name"),
+            "categories": Category.objects.filter(is_active=True, is_deleted=False).order_by("category_name"),
+            "coupons": Coupon.objects.filter(is_active=True, is_deleted=False).order_by("code"),
+            "form_data": request.POST,
+        }
         for e in errors:
             messages.error(request, e)
         return render(request, "coupon_offer/admin_offer_form.html", ctx)
 
+    # Save logic
     obj = instance or Offer()
     obj.offer_type = offer_type
     obj.product = Product.objects.filter(id=product_id).first() if product_id else None
     obj.category = Category.objects.filter(id=category_id).first() if category_id else None
-    obj.referral_coupon = Coupon.objects.filter(id=referral_coupon_id).first() if referral_coupon_id else None
-    obj.discount_percent = int(discount_percent)
+
+    obj.referrer_coupon = Coupon.objects.filter(id=referrer_coupon_id).first() if referrer_coupon_id else None
+    obj.new_user_coupon = Coupon.objects.filter(id=new_user_coupon_id).first() if new_user_coupon_id else None
+
+    obj.discount_percent = discount_percent
     obj.start_date = start_date
     obj.end_date = end_date
     obj.is_active = is_active
     obj.save()
 
-    messages.success(
-        request,
-        f'Offer {"updated" if instance else "created"} successfully.',
-    )
+    messages.success(request, f'Offer {"updated" if instance else "created"} successfully.')
     return redirect("shopcore:admin_offer_list")
 
-# ────────────────────────────────────────────────── ADMIN: DELETE (soft delete) ──────────────────────────────────────────────────
+# ────────────────────────────────────────────────── ADMIN: DELETE ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_delete_offer(request, offer_id):
     offer = get_object_or_404(Offer, id=offer_id)
     if request.method == "POST":
         offer.is_deleted = True
-        offer.is_active  = False
+        offer.is_active = False
         offer.save(update_fields=["is_deleted", "is_active"])
         messages.success(request, "Offer deleted.")
     return redirect("shopcore:admin_offer_list")
 
-# ────────────────────────────────────────────────── ADMIN: BLOCK OFFER (deactivate) ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: BLOCK ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_block_offer(request, offer_id):
@@ -205,7 +328,9 @@ def admin_block_offer(request, offer_id):
         return redirect("shopcore:admin_offer_list")
     return render(request, "admin_confirm_block.html", {"offer": offer})
 
-# ────────────────────────────────────────────────── ADMIN: UNBLOCK OFFER (activate) ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: UNBLOCK ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_unblock_offer(request, offer_id):

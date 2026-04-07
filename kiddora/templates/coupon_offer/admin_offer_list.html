@@ -35,7 +35,7 @@
         </select>
         <select name="status" style="border-radius:25px;padding:9px 13px;border:1.5px solid #e0e0e0;font-size:13px;outline:none;">
             <option value="">All Status</option>
-            <option value="active"   {% if status_f == "active"   %}selected{% endif %}>Active</option>
+            <option value="active" {% if status_f == "active" %}selected{% endif %}>Active</option>
             <option value="inactive" {% if status_f == "inactive" %}selected{% endif %}>Inactive</option>
         </select>
         <button type="submit" class="search-btn"><i class="fa fa-search"></i> Filter</button>
@@ -65,13 +65,13 @@
                     <td>{{ forloop.counter }}</td>
                     <td>
                         {% if offer.offer_type == "PRODUCT" %}
-                            <span class="badge badge-product">Product</span>
+                            <span class="badge badge-product">Product Offer</span>
                         {% elif offer.offer_type == "CATEGORY" %}
-                            <span class="badge badge-category">Category</span>
+                            <span class="badge badge-category">Category Offer</span>
                         {% elif offer.offer_type == "REFERRAL" %}
-                            <span class="badge badge-referral">Referral</span>
+                            <span class="badge badge-referral">Referral Offer</span>
                         {% else %}
-                            <span class="badge badge-expired">{{ offer.offer_type }}</span>
+                            <span class="badge">{{ offer.offer_type }}</span>
                         {% endif %}
                     </td>
                     <td>
@@ -79,19 +79,32 @@
                             {{ offer.product.product_name }}
                         {% elif offer.offer_type == "CATEGORY" and offer.category %}
                             {{ offer.category.category_name }}
-                        {% elif offer.offer_type == "REFERRAL" and offer.referral_coupon %}
-                            Coupon: <strong>{{ offer.referral_coupon.code }}</strong>
+                        {% elif offer.offer_type == "REFERRAL" %}
+                            {% if offer.referrer_coupon or offer.new_user_coupon %}
+                                <small>
+                                    Referrer: <strong>{{ offer.referrer_coupon.code|default:"—" }}</strong><br>
+                                    New User: <strong>{{ offer.new_user_coupon.code|default:"—" }}</strong>
+                                </small>
+                            {% else %}
+                                <span style="color:#aaa;">No coupons set</span>
+                            {% endif %}
                         {% else %}
                             <span style="color:#aaa;">—</span>
                         {% endif %}
                     </td>
-                    <td><strong>{{ offer.discount_percent }}%</strong></td>
+                    <td>
+                        {% if offer.offer_type == "REFERRAL" %}
+                            <span style="color:#888;">—</span>
+                        {% else %}
+                            <strong>{{ offer.discount_percent }}%</strong>
+                        {% endif %}
+                    </td>
                     <td>{{ offer.start_date|date:"d M Y" }}</td>
                     <td>
                         {% if offer.end_date %}
                             {{ offer.end_date|date:"d M Y" }}
                             {% if offer.end_date < now %}
-                            <br><small style="color:#dc2626;">Expired</small>
+                                <br><small style="color:#dc2626;">Expired</small>
                             {% endif %}
                         {% else %}
                             <span style="color:#aaa;">No expiry</span>
@@ -108,49 +121,41 @@
                     </td>
                     <td>
                         <div class="tbl-actions">
-
-                            <!-- Edit -->
                             <a href="{% url 'shopcore:admin_edit_offer' offer_id=offer.id %}"
                                class="icon-edit" title="Edit">✏️</a>
-
-                            <!-- Block / Unblock (GET → confirm page) -->
+                            
                             {% if offer.is_active %}
                                 <a href="{% url 'shopcore:admin_block_offer' offer_id=offer.id %}"
-                                   class="action-block"
-                                   title="Block Offer">
+                                   class="action-block" title="Block Offer">
                                     <i class="fa-solid fa-ban"></i>
                                 </a>
                             {% else %}
                                 <a href="{% url 'shopcore:admin_unblock_offer' offer_id=offer.id %}"
-                                   class="action-unblock"
-                                   title="Unblock Offer">
+                                   class="action-unblock" title="Unblock Offer">
                                     <i class="fa-solid fa-circle-check"></i>
                                 </a>
                             {% endif %}
 
-                            <!-- Delete via confirm modal -->
-                            <button type="button"
-                                    class="icon-delete"
+                            <button type="button" class="icon-delete"
                                     style="background:transparent;border:none;cursor:pointer;font-size:15px;"
                                     onclick="openConfirmModal(
                                         'Delete this offer? This cannot be undone.',
                                         function(){ document.getElementById('del-offer-{{ offer.id }}').submit(); }
                                     )"
                                     title="Delete">🗑️</button>
-                            <form id="del-offer-{{ offer.id }}"
-                                  method="post"
-                                  action="{% url 'shopcore:admin_delete_offer' offer_id=offer.id %}"
-                                  style="display:none;">
+
+                            <form id="del-offer-{{ offer.id }}" method="post"
+                                    action="{% url 'shopcore:admin_delete_offer' offer_id=offer.id %}"
+                                    style="display:none;">
                                 {% csrf_token %}
                             </form>
-
                         </div>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8">
-                        <i class="fa fa-percent" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+                    <td colspan="8" style="text-align:center;padding:40px;">
+                        <i class="fa fa-percent" style="font-size:2rem;display:block;margin-bottom:8px;color:#ccc;"></i>
                         No offers found.
                     </td>
                 </tr>

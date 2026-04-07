@@ -15,20 +15,20 @@ class Coupon(models.Model):
     )
 
     COUPON_TYPE_CHOICES = (
-        ("PUBLIC", "Public"), 
+        ("PUBLIC", "Public"),
         ("REFERRAL", "Referral"),
     )
     #   PERCENT type → discount_value = 10  means 10%
     #   FLAT type    → discount_value = 100 means ₹100 off
     code = models.CharField(max_length=20, unique=True)
 
-    coupon_type = models.CharField(max_length=20, choices=COUPON_TYPE_CHOICES,default="PUBLIC")
+    coupon_type = models.CharField(max_length=20, choices=COUPON_TYPE_CHOICES, default="PUBLIC")
 
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
 
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(1)])
 
-    max_discount = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
+    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
@@ -45,18 +45,19 @@ class Coupon(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ["-created_at"]
 
     def get_user_usage(self, user):
-        #Return how many times THIS user has used the coupon
+        """Return how many times THIS user has used the coupon."""
         try:
             return self.usages.get(user=user).times_used
         except CouponUsage.DoesNotExist:
             return 0
-        
+
     def is_valid(self):
-        #Check coupon is active, not deleted, and within its date window.
+        """Check coupon is active, not deleted, and within its date window."""
         now = timezone.now()
         return (self.is_active and not self.is_deleted and self.start_date <= now <= self.expiry_date)
 
@@ -69,11 +70,10 @@ class Coupon(models.Model):
 
     def __str__(self):
         return f"{self.code} ({self.discount_type}: {self.discount_value})"
-    
+
 class CouponUsage(models.Model):
     coupon = models.ForeignKey('Coupon', on_delete=models.CASCADE, related_name='usages')
 
-    #user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='coupon_usages')
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='coupon_usages')
 
     times_used = models.PositiveIntegerField(default=0)
@@ -103,7 +103,11 @@ class Offer(models.Model):
 
     end_date = models.DateTimeField(null=True, blank=True)
 
-    referral_coupon  = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_offers")
+    referral_coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_offers") # Coupon associated with this referral offer, if applicable
+
+    referrer_coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referrer_offers") # Coupon awarded to the REFERRER (existing user) when their referral is successful
+
+    new_user_coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="new_user_offers") # Coupon awarded to the NEW USER who signs up via referral when the referral is successful
 
     is_active = models.BooleanField(default=True)
 
@@ -130,12 +134,12 @@ class Offer(models.Model):
     def __str__(self):
         target = self.product or self.category or "Referral"
         return f"{self.get_offer_type_display()} – {self.discount_percent}% on {target}"
-    
+
 #   ────────────────────────────────────────────────── REFERRAL ──────────────────────────────────────────────────
 class ReferralCode(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referral_record")
 
-    code = models.CharField(max_length=20, unique=True)  
+    code = models.CharField(max_length=20, unique=True)
 
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
@@ -146,7 +150,7 @@ class ReferralCode(models.Model):
 
     @classmethod
     def fresh_code(cls) -> str:
-        # Generate a new referral code (used by signal and views)
+        """Generate a new referral code (used by signal and views)."""
         return f"KIDDREF-{uuid.uuid4().hex[:8].upper()}"
 
     @property
@@ -155,17 +159,16 @@ class ReferralCode(models.Model):
 
     def __str__(self):
         return f"{self.user.email} — {self.code}"
-    
 
 class ReferralUse(models.Model):
-    #Created once when a new user registers via referral code or token URL.
-    #Records who referred whom and the coupon awarded to the referrer.
 
-    referral_code  = models.ForeignKey(ReferralCode, on_delete=models.CASCADE, related_name="uses")
+    referral_code = models.ForeignKey(ReferralCode, on_delete=models.CASCADE, related_name="uses")
 
-    referred_user  = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referred_via")
+    referred_user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="referred_via")
 
     coupon_awarded = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="referral_uses")
+
+    new_user_coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, related_name="new_user_referral_uses")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -176,8 +179,6 @@ class ReferralUse(models.Model):
         return f"{self.referral_code.user.email} → {self.referred_user.email}"
 
 #   ────────────────────────────────────────────────── WISHLIST ──────────────────────────────────────────────────
-
-# Per-user wishlist of products. One Wishlist per user, multiple WishlistItems per wishlist.
 class Wishlist(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="wishlist")
 
@@ -187,7 +188,7 @@ class Wishlist(models.Model):
 class WishlistItem(models.Model):
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE, related_name="items")
 
-    product  = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="wishlist_items")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="wishlist_items")
 
     added_at = models.DateTimeField(auto_now_add=True)
     class Meta:
@@ -209,7 +210,7 @@ class Cart(models.Model):
         return f"Cart – {self.user.email}"
 
 class CartItem(models.Model):
-    MAX_QTY_PER_PRODUCT = 5   # handle maximum quantity per product
+    MAX_QTY_PER_PRODUCT = 5  # handle maximum quantity per product
 
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
 
@@ -224,7 +225,6 @@ class CartItem(models.Model):
         ordering = ["-added_at"]
 
     def clean(self):
-    #max quantity validation
         if self.quantity > self.MAX_QTY_PER_PRODUCT:
             raise ValidationError(
                 f"Cannot add more than {self.MAX_QTY_PER_PRODUCT} of the same item."
@@ -249,8 +249,8 @@ class Order(models.Model):
     )
     PAYMENT_METHOD_CHOICES = (
         ("COD", "Cash on Delivery"),
-        ("RAZORPAY","Razorpay"),
-        ("PAYPAL","Paypal"),
+        ("RAZORPAY", "Razorpay"),
+        ("PAYPAL", "Paypal"),
         ("WALLET", "Wallet"),
     )
     PAYMENT_STATUS_CHOICES = (
@@ -264,6 +264,7 @@ class Order(models.Model):
     )
     FREE_SHIPPING_THRESHOLD = Decimal("1000")
     DEFAULT_SHIPPING_CHARGE = Decimal("100")
+
     order_id = models.CharField(max_length=20, unique=True, editable=False)
 
     user = models.ForeignKey(CustomUser, on_delete=models.PROTECT, related_name="orders")
@@ -286,7 +287,7 @@ class Order(models.Model):
 
     shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=100)
 
-    final_amount = models.DecimalField(max_digits=10, decimal_places=2) #"total_amount - discount_amount - coupon_discount + shipping_charge"
+    final_amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     order_date = models.DateTimeField(auto_now_add=True)
 
@@ -309,11 +310,13 @@ class Order(models.Model):
                     self.order_id = oid
                     break
 
-        if self.shipping_charge is None or self.shipping_charge == Decimal("100"):  # only override default
+        if self.shipping_charge is None or self.shipping_charge == Decimal("100"):
             self.shipping_charge = self.calculate_shipping()
 
         if self.final_amount == 0 or self.final_amount is None:
-            self.final_amount = self.total_amount - self.discount_amount - self.coupon_discount + self.shipping_charge
+            self.final_amount = (
+                self.total_amount - self.discount_amount - self.coupon_discount + self.shipping_charge
+            )
 
         super().save(*args, **kwargs)
 
@@ -328,8 +331,8 @@ class Order(models.Model):
 
     def __str__(self):
         return self.order_id
-    
-#  ORDER ITEM
+
+#  ────────────────────────────────────────────────── ORDER ITEM ──────────────────────────────────────────────────
 class OrderItem(models.Model):
     ITEM_STATUS_CHOICES = (
         ("ACTIVE", "Active"),
@@ -341,7 +344,7 @@ class OrderItem(models.Model):
         ("RETURN_REJECTED", "Return Rejected"),
         ("REFUNDED", "Refunded"),
     )
-    
+
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="order_items")
 
     variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT, related_name="order_items")
@@ -354,7 +357,7 @@ class OrderItem(models.Model):
 
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    total_price = models.DecimalField(max_digits=10, decimal_places=2) #"unit_price × quantity) - discount_amount"
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     item_status = models.CharField(max_length=20, choices=ITEM_STATUS_CHOICES, default="ACTIVE")
 
@@ -374,9 +377,9 @@ class OrderItem(models.Model):
         """Price for active units only, proportional to discount."""
         if self.quantity == 0:
             return Decimal("0")
-        unit_net = self.total_price / self.quantity   # per-unit net after discount
+        unit_net = self.total_price / self.quantity  # per-unit net after discount
         return (unit_net * self.active_quantity).quantize(Decimal("0.01"))
-    
+
     def save(self, *args, **kwargs):
         self.total_price = (self.unit_price * self.quantity) - self.discount_amount
         super().save(*args, **kwargs)
@@ -384,12 +387,13 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.order.order_id} – {self.variant}"
 
+# ────────────────────────────────────────────────── RETURN ──────────────────────────────────────────────────
 class Return(models.Model):
     STATUS_CHOICES = (
         ("REQUESTED", "Requested"),
-        ("APPROVED",  "Approved"),
-        ("REJECTED",  "Rejected"),
-        ("REFUNDED",  "Refunded"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+        ("REFUNDED", "Refunded"),
     )
 
     order_item = models.OneToOneField(OrderItem, on_delete=models.CASCADE, related_name="return_request")
@@ -426,7 +430,7 @@ class Return(models.Model):
     def calculated_refund_amount(self) -> Decimal:
         qty = self.return_quantity or self.order_item.active_quantity
         return (self.per_unit_refund * qty).quantize(Decimal("0.01"))
-    
+
     class Meta:
         ordering = ["-created_at"]
 
@@ -434,8 +438,8 @@ class Return(models.Model):
         return f"Return: {self.order_item} [{self.status}]"
 
 #   ────────────────────────────────────────────────── REVIEW ──────────────────────────────────────────────────
-#  User reviews for products. One review per user per product.
 class Review(models.Model):
+    """User reviews for products. One review per user per product."""
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="reviews")
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
@@ -453,6 +457,7 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         unique_together = ("user", "product")
         ordering = ["-created_at"]
@@ -481,7 +486,7 @@ class Banner(models.Model):
 
     slot = models.CharField(max_length=20, choices=SLOT_CHOICES, default="HERO")
 
-    display_order = models.PositiveIntegerField(default=0,validators=[MinValueValidator(0)])
+    display_order = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
 
     is_active = models.BooleanField(default=True)
 
@@ -496,7 +501,7 @@ class Banner(models.Model):
         verbose_name = "Banner"
         verbose_name_plural = "Banners"
 
-    def is_live(self):        
+    def is_live(self):
         now = timezone.now()
         if not self.is_active:
             return False

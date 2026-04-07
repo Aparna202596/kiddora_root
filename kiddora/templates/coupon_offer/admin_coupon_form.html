@@ -136,6 +136,14 @@
         </select>
         <div class="hint">Public coupons appear in checkout for all users. Referral coupons are only visible to the referred user.</div>
     </div>
+                <div class="form-card">
+            <div class="card-title">Status</div>
+            <div class="toggle-row">
+                <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
+                       {% if coupon.is_active or not coupon %}checked{% endif %}>
+                <label for="isActive">Active</label>
+            </div>
+        </div>
         <div class="form-actions">
             <button type="button" class="btn-save" id="btnSaveTrigger">
                 <i class="fa fa-check"></i> {{ action }} Coupon

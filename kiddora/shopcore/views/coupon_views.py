@@ -14,15 +14,17 @@ from types import SimpleNamespace
 
 from shopcore.models import Cart, Coupon, CouponUsage, ReferralUse
 
-# ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── HELPERS ──────────────────────────────────────────────────
+
 def _get_cart(user):
     try:
         return user.cart
     except Cart.DoesNotExist:
         return None
 
-def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
 
+def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
     if subtotal < coupon.min_order_amount:
         return Decimal("0")
     if coupon.discount_type == "PERCENT":
@@ -33,8 +35,10 @@ def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
         discount = coupon.discount_value
     return min(discount, subtotal)
 
+
 def _coupon_json_error(msg: str, status: int = 400) -> JsonResponse:
     return JsonResponse({"success": False, "error": msg}, status=status)
+
 
 def _user_usage(coupon: Coupon, user) -> int:
     try:
@@ -42,7 +46,36 @@ def _user_usage(coupon: Coupon, user) -> int:
     except CouponUsage.DoesNotExist:
         return 0
 
-# ───────────────────────────────────────────────────────────── APPLY COUPON ─────────────────────────────────────────────────────────────
+
+def _referral_coupon_ids_for_user(user):
+    """
+    TASK 1 — Returns the set of coupon IDs that `user` is entitled to via the
+    referral system.  Two separate coupon types are now supported:
+
+    new_user_coupon  – awarded to THIS user when they signed up via someone
+                       else's referral link (ReferralUse.new_user_coupon).
+    coupon_awarded   – awarded to THIS user when THEY referred someone else
+                       (ReferralUse.coupon_awarded, the legacy referrer field).
+
+    Both coupon IDs are returned so checkout can display and accept them.
+    """
+    # Coupons THIS user received as the NEW user (signed up via referral)
+    new_user_ids = ReferralUse.objects.filter(
+        referred_user=user
+    ).values_list("new_user_coupon_id", flat=True)
+
+    # Coupons THIS user received as the REFERRER (they referred someone)
+    referrer_ids = ReferralUse.objects.filter(
+        referral_code__user=user
+    ).values_list("coupon_awarded_id", flat=True)
+
+    # Combine and deduplicate, dropping None values
+    combined = set(filter(None, list(new_user_ids) + list(referrer_ids)))
+    return list(combined)
+
+
+# ────────────────────────────────────────────────── APPLY COUPON ──────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 @require_POST
@@ -70,6 +103,7 @@ def apply_coupon(request):
         messages.error(request, f'Coupon "{code}" is expired or inactive.')
         return redirect("shopcore:checkout")
 
+    # Validate per-user usage limit
     times_used = _user_usage(coupon, request.user)
     if times_used >= coupon.usage_limit:
         msg = "You have reached the maximum usage limit for this coupon."
@@ -77,6 +111,16 @@ def apply_coupon(request):
             return _coupon_json_error(msg)
         messages.error(request, msg)
         return redirect("shopcore:checkout")
+
+    # TASK 1: For REFERRAL coupons, verify this user is actually entitled to it
+    if coupon.coupon_type == "REFERRAL":
+        entitled_ids = _referral_coupon_ids_for_user(request.user)
+        if coupon.id not in entitled_ids:
+            msg = "This referral coupon is not valid for your account."
+            if ajax:
+                return _coupon_json_error(msg)
+            messages.error(request, msg)
+            return redirect("shopcore:checkout")
 
     if ajax:
         try:
@@ -102,7 +146,6 @@ def apply_coupon(request):
 
     discount = compute_coupon_discount(coupon, subtotal)
 
-    # Store in session (or could be stored in Cart FK for persistence across devices)
     request.session["applied_coupon_code"] = coupon.code
     request.session["applied_coupon_discount"] = str(discount)
     request.session.modified = True
@@ -111,6 +154,7 @@ def apply_coupon(request):
         return JsonResponse({
             "success": True,
             "coupon_code": coupon.code,
+            "coupon_type": coupon.coupon_type,          # "PUBLIC" or "REFERRAL"
             "discount_type": coupon.discount_type,
             "discount_value": str(coupon.discount_value),
             "max_discount": str(coupon.max_discount) if coupon.max_discount else None,
@@ -121,7 +165,9 @@ def apply_coupon(request):
     messages.success(request, f'Coupon "{code}" applied! You save ₹{discount:.0f}.')
     return redirect("shopcore:checkout")
 
-#   ──────────────────────────────────────────────────────────── REMOVE COUPON ─────────────────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── REMOVE COUPON ──────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 @require_POST
@@ -132,7 +178,6 @@ def remove_coupon(request):
     request.session.pop("applied_coupon_discount", None)
     request.session.modified = True
 
-    # Also remove from Cart if stored there for persistence
     cart = _get_cart(request.user)
     if cart and getattr(cart, "coupon", None):
         cart.coupon = None
@@ -144,21 +189,22 @@ def remove_coupon(request):
     messages.success(request, "Coupon removed.")
     return redirect("shopcore:checkout")
 
-#   ──────────────────────────────────────────────────────────── USER: COUPON LIST ─────────────────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── USER: COUPON LIST ──────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 def user_coupon_list(request):
-    now     = timezone.now()
-    user_referral_coupon_ids = ReferralUse.objects.filter(
-        referred_user=request.user
-    ).values_list("coupon_awarded_id", flat=True)
+    now = timezone.now()
+    referral_coupon_ids = _referral_coupon_ids_for_user(request.user)
+
     coupons = Coupon.objects.filter(
         is_active=True, is_deleted=False,
         start_date__lte=now, expiry_date__gte=now,
     ).filter(
-        Q(coupon_type="PUBLIC") |
-        Q(coupon_type="REFERRAL", id__in=user_referral_coupon_ids)
-    )
+        Q(coupon_type="PUBLIC")
+        | Q(coupon_type="REFERRAL", id__in=referral_coupon_ids)
+    ).distinct()
 
     coupon_data = []
     for coupon in coupons:
@@ -179,6 +225,20 @@ def user_coupon_list(request):
         else:
             discount_label = f"₹{coupon.discount_value:.0f} flat off"
 
+        # TASK 1: Tag so the template can explain where the coupon came from
+        is_referral = coupon.coupon_type == "REFERRAL"
+        referral_role = None
+        if is_referral:
+            # Was this coupon awarded to THIS user when they signed up via referral?
+            new_user_ids = list(
+                ReferralUse.objects.filter(referred_user=request.user)
+                .values_list("new_user_coupon_id", flat=True)
+            )
+            if coupon.id in new_user_ids:
+                referral_role = "new_user"    # earned by signing up via referral
+            else:
+                referral_role = "referrer"    # earned by referring someone else
+
         coupon_data.append({
             "code": coupon.code,
             "discount_type": coupon.discount_type,
@@ -195,15 +255,24 @@ def user_coupon_list(request):
             "already_used": times_used > 0,
             "usage_exhausted": usage_exhausted,
             "is_available": not usage_exhausted,
+            "is_referral": is_referral,
+            # TASK 1: "new_user" | "referrer" | None
+            "referral_role": referral_role,
         })
-    return render(request, "coupons/user_coupon_list.html", {"coupon_data": coupon_data, "now": now,})
 
-# ───────────────────────────────────────────────────────────── ADMIN: COUPON LIST ─────────────────────────────────────────────────────────────
+    return render(request, "coupons/user_coupon_list.html", {
+        "coupon_data": coupon_data,
+        "now": now,
+    })
+
+
+# ────────────────────────────────────────────────── ADMIN: COUPON LIST ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_coupon_list(request):
-    search   = request.GET.get("search", "").strip()
-    type_f   = request.GET.get("type", "")
+    search = request.GET.get("search", "").strip()
+    type_f = request.GET.get("type", "")
     status_f = request.GET.get("status", "")
 
     qs = Coupon.objects.filter(is_deleted=False)
@@ -230,30 +299,26 @@ def admin_coupon_list(request):
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
     })
 
-# ───────────────────────────────────────────────────────────── ADMIN: COUPON DETAIL ─────────────────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: COUPON DETAIL ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_coupon_detail(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
-
     now = timezone.now()
 
-    is_expired  = coupon.expiry_date < now
+    is_expired = coupon.expiry_date < now
     is_upcoming = coupon.start_date > now
     if is_expired:
-        status_label = "Expired"
-        status_class = "badge-expired"
+        status_label, status_class = "Expired", "badge-expired"
     elif not coupon.is_active:
-        status_label = "Inactive"
-        status_class = "badge-inactive"
+        status_label, status_class = "Inactive", "badge-inactive"
     elif is_upcoming:
-        status_label = "Scheduled"
-        status_class = "badge-scheduled"
+        status_label, status_class = "Scheduled", "badge-scheduled"
     else:
-        status_label = "Active"
-        status_class = "badge-active"
+        status_label, status_class = "Active", "badge-active"
 
-    # Discount label
     if coupon.discount_type == "PERCENT":
         discount_label = f"{coupon.discount_value:.0f}% off"
         if coupon.max_discount:
@@ -261,7 +326,6 @@ def admin_coupon_detail(request, coupon_id):
     else:
         discount_label = f"₹{coupon.discount_value:.0f} flat off"
 
-    # Per-user usage details
     usages = (
         CouponUsage.objects
         .filter(coupon=coupon)
@@ -281,7 +345,6 @@ def admin_coupon_detail(request, coupon_id):
     unique_users_count = usages.count()
     exhausted_users_count = sum(1 for r in usage_rows if r["exhausted"])
 
-    # Total discount given across all orders that used this coupon
     from shopcore.models import Order
     linked_orders = (
         Order.objects
@@ -303,26 +366,24 @@ def admin_coupon_detail(request, coupon_id):
     return render(request, "coupon_offer/admin_coupon_detail.html", {
         "coupon": coupon,
         "now": now,
-        # status
         "status_label": status_label,
         "status_class": status_class,
         "is_expired": is_expired,
         "is_upcoming": is_upcoming,
         "discount_label": discount_label,
-        # per-user usage
         "usage_rows": usage_rows,
         "unique_users_count": unique_users_count,
         "exhausted_users_count": exhausted_users_count,
-        # order stats
         "linked_orders": linked_orders,
         "orders_page": orders_page,
         "total_discount_given": total_discount_given,
         "total_revenue": total_revenue,
-        # referral
         "referral_offers": referral_offers,
     })
 
-# ───────────────────────────────────────────────────────────── ADMIN: ADD COUPON ─────────────────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: ADD / EDIT COUPON ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_add_coupon(request):
@@ -330,22 +391,22 @@ def admin_add_coupon(request):
         return _save_coupon(request, instance=None)
 
     return render(request, "coupon_offer/admin_coupon_form.html", {
-        "action":"Add",
+        "action": "Add",
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+        "coupon_type_choices": Coupon.COUPON_TYPE_CHOICES,
         "coupon": None,
         "form_data": SimpleNamespace(
-            code="", discount_type="", discount_value="",
+            code="", coupon_type="PUBLIC", discount_type="", discount_value="",
             max_discount="", min_order_amount="", start_date="",
             expiry_date="", usage_limit="", is_active=False,
         ),
     })
 
-# ───────────────────────────────────────────────────────────── ADMIN: EDIT COUPON ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_edit_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id, is_deleted=False)
-
     if request.method == "POST":
         return _save_coupon(request, instance=coupon)
 
@@ -353,8 +414,10 @@ def admin_edit_coupon(request, coupon_id):
         "action": "Edit",
         "coupon": coupon,
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+        "coupon_type_choices": Coupon.COUPON_TYPE_CHOICES,
         "form_data": coupon,
     })
+
 
 def _save_coupon(request, instance):
     code = request.POST.get("code", "").strip().upper()
@@ -392,6 +455,7 @@ def _save_coupon(request, instance):
         "action": "Edit" if instance else "Add",
         "coupon": instance,
         "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+        "coupon_type_choices": Coupon.COUPON_TYPE_CHOICES,
         "form_data": request.POST,
     }
 
@@ -402,7 +466,7 @@ def _save_coupon(request, instance):
 
     obj = instance or Coupon()
     obj.code = code
-    obj.coupon_type = coupon_type 
+    obj.coupon_type = coupon_type
     obj.discount_type = discount_type
     obj.discount_value = Decimal(discount_val)
     obj.max_discount = Decimal(max_discount) if max_discount else None
@@ -419,19 +483,21 @@ def _save_coupon(request, instance):
     )
     return redirect("shopcore:admin_coupon_list")
 
-# ───────────────────────────────────────────────────────────── ADMIN: DELETE COUPON ─────────────────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── ADMIN: DELETE / BLOCK / UNBLOCK ──────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_delete_coupon(request, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id)
     if request.method == "POST":
         coupon.is_deleted = True
-        coupon.is_active  = False
+        coupon.is_active = False
         coupon.save(update_fields=["is_deleted", "is_active"])
         messages.success(request, f'Coupon "{coupon.code}" deleted.')
     return redirect("shopcore:admin_coupon_list")
 
-# ───────────────────────────────────────────────────────────── ADMIN: BLOCK COUPON  (deactivate) ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_block_coupon(request, coupon_id):
@@ -443,7 +509,7 @@ def admin_block_coupon(request, coupon_id):
         return redirect("shopcore:admin_coupon_list")
     return render(request, "admin_confirm_block.html", {"coupon": coupon})
 
-# ───────────────────────────────────────────────────────────── ADMIN: UNBLOCK COUPON  (reactivate) ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_unblock_coupon(request, coupon_id):
