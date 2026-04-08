@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from products.models import (AgeGroup, Category, Color, Product,
-                                ProductVariant, SubCategory)
+                             ProductVariant, SubCategory)
 from shopcore.models import Cart, CartItem, Offer, Order, Review, Wishlist
 
 

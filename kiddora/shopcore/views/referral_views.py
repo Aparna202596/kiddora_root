@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from shopcore.models import (Coupon, CouponUsage, Offer, ReferralCode,
-                                ReferralUse)
+                             ReferralUse)
 
 User = get_user_model()
 
@@ -142,8 +142,8 @@ def process_referral_on_signup(
     ReferralUse.objects.create(
         referral_code=referral_record,
         referred_user=new_user,
-        coupon_awarded=referrer_coupon,  
-        new_user_coupon=new_user_coupon,  
+        coupon_awarded=referrer_coupon,
+        new_user_coupon=new_user_coupon,
     )
 
     # ── Pre-create CouponUsage rows so coupons show in checkout immediately ─
@@ -228,7 +228,6 @@ def my_referrals(request):
             "referral_link": referral_link,
             "uses": uses,
             "total_uses": uses.count(),
-            
             "my_new_user_coupon": (
                 my_referral_use.new_user_coupon if my_referral_use else None
             ),
@@ -263,7 +262,9 @@ def admin_referral_list(request):
         },
     )
 
+
 # ────────────────────────────────────────────────── ADMIN: REFERRAL USES ──────────────────────────────────────────────────
+
 
 @never_cache
 @admin_login_required

@@ -120,7 +120,6 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 LOGIN_REDIRECT_URL = "shopcore:home"
 LOGOUT_REDIRECT_URL = "shopcore:anonymous_home"
 
@@ -134,15 +133,6 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# ── Cloudinary storage ──────────────────────────────────────────────────────
-# Cloudinary credentials (loaded from .env)
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
-#     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
-#     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
-# }
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # ── Media files (uploaded by users) ───────────────────────────────────────────
 MEDIA_URL = "/media/"
@@ -161,5 +151,6 @@ PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
 PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
 PAYPAL_MODE = "sandbox"  # → "live" in production
 PAYPAL_CURRENCY = "USD"
-PAYPAL_RETURN_URL = "http://localhost:8000/payments/paypal/callback/"
-PAYPAL_CANCEL_URL = "http://localhost:8000/payments/paypal/cancel/"
+PAYPAL_RETURN_URL = os.getenv("PAYPAL_RETURN_URL")
+PAYPAL_CANCEL_URL = os.getenv("PAYPAL_CANCEL_URL")
+

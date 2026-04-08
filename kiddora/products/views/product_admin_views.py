@@ -8,7 +8,7 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from products.models import (AgeGroup, Category, Color, Inventory, Product,
-                                ProductImage, ProductVariant, SubCategory)
+                             ProductImage, ProductVariant, SubCategory)
 from products.utils.pagination import paginate_queryset
 from products.utils.queryset_utils import apply_product_filters, apply_sorting
 from products.utils.search_utils import apply_search

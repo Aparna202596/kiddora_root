@@ -14,7 +14,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from payments.models import Payment, Wallet
 from shopcore.models import (Cart, Coupon, CouponUsage, Order, OrderItem,
-                                ReferralUse)
+                             ReferralUse)
 from shopcore.views.coupon_views import compute_coupon_discount
 from shopcore.views.offer_views import (get_max_offer_discount_percent,
                                         get_offer_discount_detail)

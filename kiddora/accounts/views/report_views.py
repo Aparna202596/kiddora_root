@@ -8,13 +8,14 @@ from accounts.decorators import admin_login_required
 from accounts.models import CustomUser
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import (Avg, Count, Max, Min, Sum)
+from django.db.models import Avg, Count, Max, Min, Sum
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from payments.models import Payment, Wallet, WalletTransaction
-from products.models import (Category, Inventory, Product, ProductVariant, SubCategory)
+from products.models import (Category, Inventory, Product, ProductVariant,
+                             SubCategory)
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -25,8 +26,8 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import (HRFlowable, Image, Paragraph,
                                 SimpleDocTemplate, Spacer, Table, TableStyle)
 from shopcore.models import (Cart, CartItem, Coupon, CouponUsage, Offer, Order,
-                                OrderItem, ReferralCode, ReferralUse, Return,
-                                Review, Wishlist)
+                             OrderItem, ReferralCode, ReferralUse, Return,
+                             Review, Wishlist)
 
 User = get_user_model()
 
