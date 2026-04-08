@@ -6,18 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('products', '0008_alter_category_options_alter_product_options_and_more'),
+        ("products", "0008_alter_category_options_alter_product_options_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='category',
-            name='category_image',
-            field=models.ImageField(blank=True, null=True, upload_to='category_images/'),
+            model_name="category",
+            name="category_image",
+            field=models.ImageField(
+                blank=True, null=True, upload_to="category_images/"
+            ),
         ),
         migrations.AddField(
-            model_name='subcategory',
-            name='subcategory_image',
-            field=models.ImageField(blank=True, null=True, upload_to='subcategory_images/'),
+            model_name="subcategory",
+            name="subcategory_image",
+            field=models.ImageField(
+                blank=True, null=True, upload_to="subcategory_images/"
+            ),
         ),
     ]

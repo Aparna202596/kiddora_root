@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0003_banner'),
+        ("shopcore", "0003_banner"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='review',
-            name='average_review',
+            model_name="review",
+            name="average_review",
             field=models.DecimalField(decimal_places=2, default=0, max_digits=3),
         ),
     ]

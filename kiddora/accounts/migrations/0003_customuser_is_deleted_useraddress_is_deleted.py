@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0002_customuser_referral_code_customuser_referred_by'),
+        ("accounts", "0002_customuser_referral_code_customuser_referred_by"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='customuser',
-            name='is_deleted',
+            model_name="customuser",
+            name="is_deleted",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='useraddress',
-            name='is_deleted',
+            model_name="useraddress",
+            name="is_deleted",
             field=models.BooleanField(default=False),
         ),
     ]

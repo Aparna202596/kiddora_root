@@ -6,18 +6,18 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0001_initial'),
+        ("shopcore", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='wallettransaction',
-            name='wallet',
+            model_name="wallettransaction",
+            name="wallet",
         ),
         migrations.DeleteModel(
-            name='Wallet',
+            name="Wallet",
         ),
         migrations.DeleteModel(
-            name='WalletTransaction',
+            name="WalletTransaction",
         ),
     ]

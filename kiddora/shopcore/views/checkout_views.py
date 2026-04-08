@@ -1,25 +1,26 @@
 from __future__ import annotations
 
-from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_POST
-from accounts.decorators import user_login_required
-from django.shortcuts import get_object_or_404, redirect, render
-from django.db.models import Q
-from django.contrib import messages
-from django.utils import timezone
-from django.http import JsonResponse
-from django.db import transaction
 from decimal import Decimal
 
-from shopcore.views.coupon_views import compute_coupon_discount
-from shopcore.views.offer_views import get_max_offer_discount_percent, get_offer_discount_detail
-
+from accounts.decorators import user_login_required
 from accounts.models import UserAddress
-from payments.models import Wallet, Payment
-from shopcore.models import Cart, Coupon, CouponUsage, Order, OrderItem, ReferralUse
-
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
+from payments.models import Payment, Wallet
+from shopcore.models import (Cart, Coupon, CouponUsage, Order, OrderItem,
+                             ReferralUse)
+from shopcore.views.coupon_views import compute_coupon_discount
+from shopcore.views.offer_views import (get_max_offer_discount_percent,
+                                        get_offer_discount_detail)
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
+
 
 def _get_cart(user):
     try:
@@ -35,9 +36,12 @@ def _variant_is_available(variant) -> bool:
         cat = sub.category
         return (
             variant.is_active
-            and p.is_active and not p.is_deleted
-            and sub.is_active and not sub.is_deleted
-            and cat.is_active and not cat.is_deleted
+            and p.is_active
+            and not p.is_deleted
+            and sub.is_active
+            and not sub.is_deleted
+            and cat.is_active
+            and not cat.is_deleted
         )
     except Exception:
         return False
@@ -51,10 +55,7 @@ def _stock_for(variant) -> int:
 
 
 def _img_url_for(product) -> str | None:
-    img_obj = (
-        product.images.filter(is_default=True).first()
-        or product.images.first()
-    )
+    img_obj = product.images.filter(is_default=True).first() or product.images.first()
     if img_obj:
         for field in ("image1", "image2", "image3", "image4", "image5"):
             val = getattr(img_obj, field)
@@ -147,6 +148,7 @@ def _exhausted_coupon_ids(user) -> list[int]:
 #           cancellation or return reduces the active order total.
 # ────────────────────────────────────────────────────────────────────────────
 
+
 def revalidate_order_after_item_change(order: Order) -> dict:
     """
     Called whenever an item is cancelled or a return is processed on an order.
@@ -227,15 +229,22 @@ def revalidate_order_after_item_change(order: Order) -> dict:
     order.coupon_discount = new_coupon_discount
     order.shipping_charge = new_shipping
     order.final_amount = new_final
-    order.save(update_fields=[
-        "total_amount", "discount_amount", "coupon_discount",
-        "shipping_charge", "final_amount", "coupon",
-    ])
+    order.save(
+        update_fields=[
+            "total_amount",
+            "discount_amount",
+            "coupon_discount",
+            "shipping_charge",
+            "final_amount",
+            "coupon",
+        ]
+    )
 
     return result
 
 
 # ────────────────────────────────────────────────── SAVE NEW ADDRESS ──────────────────────────────────────────────────
+
 
 @never_cache
 @user_login_required
@@ -247,9 +256,9 @@ def save_new_address(request):
 
     set_default = request.POST.get("set_default") == "1"
     if set_default:
-        UserAddress.objects.filter(
-            user=request.user, is_deleted=False
-        ).update(is_default=False)
+        UserAddress.objects.filter(user=request.user, is_deleted=False).update(
+            is_default=False
+        )
 
     address = UserAddress.objects.create(
         user=request.user,
@@ -267,6 +276,7 @@ def save_new_address(request):
 
 # ────────────────────────────────────────────────── EDIT ADDRESS ──────────────────────────────────────────────────
 
+
 @never_cache
 @user_login_required
 @require_POST
@@ -280,9 +290,9 @@ def edit_address(request, address_id):
 
     set_default = request.POST.get("set_default") == "1"
     if set_default:
-        UserAddress.objects.filter(
-            user=request.user, is_deleted=False
-        ).update(is_default=False)
+        UserAddress.objects.filter(user=request.user, is_deleted=False).update(
+            is_default=False
+        )
 
     address.address_line1 = request.POST.get("address_line1", "").strip()
     address.address_line2 = request.POST.get("address_line2", "").strip()
@@ -298,6 +308,7 @@ def edit_address(request, address_id):
 
 # ────────────────────────────────────────────────── CHECKOUT PAGE (GET) ──────────────────────────────────────────────────
 
+
 @never_cache
 @user_login_required
 def checkout(request):
@@ -306,14 +317,18 @@ def checkout(request):
         messages.error(request, "Your cart is empty.")
         return redirect("shopcore:cart")
 
-    items = cart.items.select_related(
-        "variant__product",
-        "variant__product__subcategory",
-        "variant__product__subcategory__category",
-        "variant__color",
-        "variant__age_group",
-        "variant__inventory",
-    ).prefetch_related("variant__product__images").order_by("-added_at")
+    items = (
+        cart.items.select_related(
+            "variant__product",
+            "variant__product__subcategory",
+            "variant__product__subcategory__category",
+            "variant__color",
+            "variant__age_group",
+            "variant__inventory",
+        )
+        .prefetch_related("variant__product__images")
+        .order_by("-added_at")
+    )
 
     checkout_items = []
     subtotal = Decimal("0")
@@ -344,24 +359,28 @@ def checkout(request):
         subtotal += item_base_total
         offer_discount_total += item_offer_discount
 
-        checkout_items.append({
-            "item": item,
-            "variant": variant,
-            "product": product,
-            "unit_price": base_price,
-            "discounted_price": discounted_price,
-            "item_total": item_final_total,
-            "base_item_total": item_base_total,
-            "offer_discount": item_offer_discount,
-            "offer_pct": offer_pct,
-            # TASK 3: breakdown context — which offer type won and why
-            "offer_type": offer_detail["offer_type"],           # "PRODUCT", "CATEGORY", or None
-            "product_offer_pct": offer_detail["product_percent"],
-            "category_offer_pct": offer_detail["category_percent"],
-            "available": available,
-            "stock": stock,
-            "img_url": _img_url_for(product),
-        })
+        checkout_items.append(
+            {
+                "item": item,
+                "variant": variant,
+                "product": product,
+                "unit_price": base_price,
+                "discounted_price": discounted_price,
+                "item_total": item_final_total,
+                "base_item_total": item_base_total,
+                "offer_discount": item_offer_discount,
+                "offer_pct": offer_pct,
+                # TASK 3: breakdown context — which offer type won and why
+                "offer_type": offer_detail[
+                    "offer_type"
+                ],  # "PRODUCT", "CATEGORY", or None
+                "product_offer_pct": offer_detail["product_percent"],
+                "category_offer_pct": offer_detail["category_percent"],
+                "available": available,
+                "stock": stock,
+                "img_url": _img_url_for(product),
+            }
+        )
 
     if blocked:
         messages.error(
@@ -429,9 +448,9 @@ def checkout(request):
         role = None
         if c.coupon_type == "REFERRAL":
             if c.id in new_user_ids_list:
-                role = "new_user"    # welcome reward for THIS user
+                role = "new_user"  # welcome reward for THIS user
             elif c.id in referrer_ids_list:
-                role = "referrer"   # reward for referring someone
+                role = "referrer"  # reward for referring someone
         tagged_coupons.append({"coupon": c, "referral_role": role})
 
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
@@ -439,12 +458,12 @@ def checkout(request):
 
     # TASK 2: structured price breakdown dict for the checkout summary panel
     price_breakdown = {
-        "subtotal": subtotal,                          # MRP total (before any discounts)
-        "offer_discount": offer_discount_total,        # savings from product/category offers
-        "price_after_offers": price_after_offers,      # subtotal after offers applied
-        "coupon_discount": coupon_discount,            # savings from coupon
-        "shipping_charge": shipping_charge,            # 0 if free shipping
-        "grand_total": grand_total,                    # final amount payable
+        "subtotal": subtotal,  # MRP total (before any discounts)
+        "offer_discount": offer_discount_total,  # savings from product/category offers
+        "price_after_offers": price_after_offers,  # subtotal after offers applied
+        "coupon_discount": coupon_discount,  # savings from coupon
+        "shipping_charge": shipping_charge,  # 0 if free shipping
+        "grand_total": grand_total,  # final amount payable
         "free_shipping": shipping_charge == Decimal("0"),
         "free_shipping_threshold": Order.FREE_SHIPPING_THRESHOLD,
         "amount_to_free_shipping": max(
@@ -452,30 +471,35 @@ def checkout(request):
         ),
     }
 
-    return render(request, "cart/checkout.html", {
-        "checkout_items": checkout_items,
-        "addresses": addresses,
-        "default_address": default_address,
-        # Individual fields kept for backward-compat with existing template references
-        "subtotal": subtotal,
-        "offer_discount_total": offer_discount_total,
-        "price_after_offers": price_after_offers,
-        "shipping_charge": shipping_charge,
-        "coupon_discount": coupon_discount,
-        "applied_coupon": applied_coupon,
-        "grand_total": grand_total,
-        "cod_blocked": cod_blocked,
-        "wallet_balance": wallet_balance,
-        "wallet_sufficient": wallet_sufficient,
-        "available_coupons": available_coupons,
-        "tagged_coupons": tagged_coupons,           # TASK 1 & 2: tagged with referral_role
-        "address_type_choices": UserAddress.ADDRESS_TYPE_CHOICES,
-        # TASK 2: structured breakdown for the checkout summary panel
-        "price_breakdown": price_breakdown,
-    })
+    return render(
+        request,
+        "cart/checkout.html",
+        {
+            "checkout_items": checkout_items,
+            "addresses": addresses,
+            "default_address": default_address,
+            # Individual fields kept for backward-compat with existing template references
+            "subtotal": subtotal,
+            "offer_discount_total": offer_discount_total,
+            "price_after_offers": price_after_offers,
+            "shipping_charge": shipping_charge,
+            "coupon_discount": coupon_discount,
+            "applied_coupon": applied_coupon,
+            "grand_total": grand_total,
+            "cod_blocked": cod_blocked,
+            "wallet_balance": wallet_balance,
+            "wallet_sufficient": wallet_sufficient,
+            "available_coupons": available_coupons,
+            "tagged_coupons": tagged_coupons,  # TASK 1 & 2: tagged with referral_role
+            "address_type_choices": UserAddress.ADDRESS_TYPE_CHOICES,
+            # TASK 2: structured breakdown for the checkout summary panel
+            "price_breakdown": price_breakdown,
+        },
+    )
 
 
 # ────────────────────────────────────────────────── PLACE ORDER (POST) ──────────────────────────────────────────────────
+
 
 @never_cache
 @user_login_required
@@ -507,9 +531,9 @@ def place_order(request):
             return redirect("shopcore:checkout")
         set_default = bool(request.POST.get("set_default"))
         if set_default:
-            UserAddress.objects.filter(
-                user=request.user, is_deleted=False
-            ).update(is_default=False)
+            UserAddress.objects.filter(user=request.user, is_deleted=False).update(
+                is_default=False
+            )
         address = UserAddress.objects.create(
             user=request.user,
             address_line1=request.POST.get("address_line1", "").strip(),
@@ -529,7 +553,9 @@ def place_order(request):
             or UserAddress.objects.filter(user=request.user, is_deleted=False).first()
         )
         if not address:
-            messages.error(request, "Please add a delivery address before placing an order.")
+            messages.error(
+                request, "Please add a delivery address before placing an order."
+            )
             return redirect("shopcore:checkout")
 
     # ── Stock validation ──────────────────────────────────────────────────
@@ -672,11 +698,13 @@ def place_order(request):
 
 # ────────────────────────────────────────────────── ORDER SUCCESS ──────────────────────────────────────────────────
 
+
 @never_cache
 @user_login_required
 def order_success(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     return render(request, "orders/user/order_success.html", {"order": order})
+
 
 # ────────────────────────────────────────────────── CANCEL ITEM ──────────────────────────────────────────────────
 @never_cache
@@ -809,6 +837,3 @@ def return_order_item(request, item_id):
         messages.info(request, msg)
 
     return redirect("shopcore:order_detail", order_id=order.order_id)
-
-
-

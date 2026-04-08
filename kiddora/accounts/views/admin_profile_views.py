@@ -1,21 +1,28 @@
-from django.contrib.sessions.models import Session
-from django.views.decorators.cache import never_cache
-from django.contrib.auth import get_user_model
 from accounts.decorators import admin_login_required
-from django.shortcuts import render
-from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.sessions.models import Session
+from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
 
 User = get_user_model()
+
 
 #  ────────────────────────────────────────────────── ADMIN PROFILE ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_profile(request):
-    admin = request.user  
-    context = {"admin": admin,}
-    return render(request,"accounts/admin_profile/admin_profile.html",context,)
+    admin = request.user
+    context = {
+        "admin": admin,
+    }
+    return render(
+        request,
+        "accounts/admin_profile/admin_profile.html",
+        context,
+    )
+
 
 #  ────────────────────────────────────────────────── EDIT ADMIN PROFILE ──────────────────────────────────────────────────
 @never_cache
@@ -39,6 +46,7 @@ def admin_edit_profile(request):
         "accounts/admin_profile/edit_admin_profile.html",
         {"admin": admin},
     )
+
 
 #  ────────────────────────────────────────────────── ADMIN ACTIVITY INFO ──────────────────────────────────────────────────
 @never_cache

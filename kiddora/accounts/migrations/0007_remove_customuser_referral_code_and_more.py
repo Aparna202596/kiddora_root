@@ -6,16 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0006_customuser_deleted_at_alter_useraddress_user'),
+        ("accounts", "0006_customuser_deleted_at_alter_useraddress_user"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='customuser',
-            name='referral_code',
+            model_name="customuser",
+            name="referral_code",
         ),
         migrations.RemoveField(
-            model_name='customuser',
-            name='referred_by',
+            model_name="customuser",
+            name="referred_by",
         ),
     ]

@@ -6,13 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0014_alter_order_order_status_alter_order_payment_status_and_more'),
+        (
+            "shopcore",
+            "0014_alter_order_order_status_alter_order_payment_status_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='coupon',
-            name='coupon_type',
-            field=models.CharField(choices=[('PUBLIC', 'Public'), ('REFERRAL', 'Referral')], default='PUBLIC', max_length=20),
+            model_name="coupon",
+            name="coupon_type",
+            field=models.CharField(
+                choices=[("PUBLIC", "Public"), ("REFERRAL", "Referral")],
+                default="PUBLIC",
+                max_length=20,
+            ),
         ),
     ]

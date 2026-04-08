@@ -1,9 +1,11 @@
 from io import BytesIO
+
 from django.http import HttpResponse
+from django.utils.timezone import now
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from django.utils.timezone import now
 from shopcore.models import Order
+
 
 def generate_invoice_pdf(order):
     buffer = BytesIO()

@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
 from django.db import models
+from django.utils import timezone
 
 
 # #  ────────────────────────────────────────────────── CUSTOM USER ──────────────────────────────────────────────────
@@ -21,46 +21,57 @@ class CustomUser(AbstractUser):
         (GENDER_FEMALE, "Female"),
     )
     # Override fields
-    username = models.CharField(max_length=150,unique=True,null=True,blank=True)
-    
+    username = models.CharField(max_length=150, unique=True, null=True, blank=True)
+
     email = models.EmailField(unique=True)
-    
-    phone = models.CharField(max_length=20,unique=True,null=True,blank=True)
-    
-    full_name = models.CharField(max_length=100,null=True,blank=True)
-    
-    gender = models.CharField(max_length=10,choices=GENDER_CHOICES,null=True,blank=True)
-    
-    role = models.CharField(max_length=20,choices=ROLE_CHOICES,default=ROLE_CUSTOMER,db_index=True)
-    
+
+    phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
+
+    full_name = models.CharField(max_length=100, null=True, blank=True)
+
+    gender = models.CharField(
+        max_length=10, choices=GENDER_CHOICES, null=True, blank=True
+    )
+
+    role = models.CharField(
+        max_length=20, choices=ROLE_CHOICES, default=ROLE_CUSTOMER, db_index=True
+    )
+
     email_verified = models.BooleanField(default=False)
-    
-    profile_image = models.ImageField(upload_to="profile_images/",null=True,blank=True)
-    
-    otp = models.CharField(max_length=6,null=True,blank=True)
-    
-    otp_created_at = models.DateTimeField(null=True,blank=True)
-    
+
+    profile_image = models.ImageField(
+        upload_to="profile_images/", null=True, blank=True
+    )
+
+    otp = models.CharField(max_length=6, null=True, blank=True)
+
+    otp_created_at = models.DateTimeField(null=True, blank=True)
+
     is_active = models.BooleanField(default=True)
-    
-    is_staff= models.BooleanField(default=False)
-    
+
+    is_staff = models.BooleanField(default=False)
+
     is_superuser = models.BooleanField(default=False)
-    
-    last_login = models.DateTimeField(null=True,blank=True,)
-    
+
+    last_login = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
     date_joined = models.DateTimeField(default=timezone.now)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     pending_email = models.EmailField(null=True, blank=True)
-    
+
     blocked_at = models.DateTimeField(null=True, blank=True)
-    
-    timezone = models.CharField(max_length=50,default="UTC",help_text="timezone Asia/Kolkata, Asia/Dubai")
-    
+
+    timezone = models.CharField(
+        max_length=50, default="UTC", help_text="timezone Asia/Kolkata, Asia/Dubai"
+    )
+
     is_deleted = models.BooleanField(default=False)
 
     deleted_at = models.DateTimeField(null=True, blank=True)
@@ -83,12 +94,13 @@ class CustomUser(AbstractUser):
                 pass
 
         super().save(*args, **kwargs)
+
     def delete(self, *args, **kwargs):
         """Soft delete the user"""
         self.is_deleted = True
         self.deleted_at = timezone.now()
-        self.is_active = False         
-        self.save(update_fields=['is_deleted', 'deleted_at', 'is_active'])
+        self.is_active = False
+        self.save(update_fields=["is_deleted", "deleted_at", "is_active"])
 
     def hard_delete(self):
         super().delete()
@@ -96,47 +108,54 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
+
 #  ────────────────────────────────────────────────── USER ADDRESS ──────────────────────────────────────────────────
 class UserAddress(models.Model):
     ADDRESS_HOME = "home"
     ADDRESS_WORK = "work"
     ADDRESS_OTHER = "other"
 
-    ADDRESS_TYPE_CHOICES = ((ADDRESS_HOME, "Home"),(ADDRESS_WORK, "Work"),(ADDRESS_OTHER, "Other"),)
+    ADDRESS_TYPE_CHOICES = (
+        (ADDRESS_HOME, "Home"),
+        (ADDRESS_WORK, "Work"),
+        (ADDRESS_OTHER, "Other"),
+    )
 
-    user = models.ForeignKey(CustomUser,on_delete=models.PROTECT,related_name="addresses")
-    
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.PROTECT, related_name="addresses"
+    )
+
     id = models.BigAutoField(primary_key=True)
-    
+
     address_line1 = models.CharField(max_length=200)
 
-    address_line2 = models.CharField(max_length=200, blank=True, null=True, default='')
-    
+    address_line2 = models.CharField(max_length=200, blank=True, null=True, default="")
+
     city = models.CharField(max_length=100)
-    
+
     state = models.CharField(max_length=100)
-    
+
     country = models.CharField(max_length=100)
-    
+
     pincode = models.CharField(max_length=10)
-    
-    address_type = models.CharField(max_length=10,choices=ADDRESS_TYPE_CHOICES)
-    
+
+    address_type = models.CharField(max_length=10, choices=ADDRESS_TYPE_CHOICES)
+
     is_default = models.BooleanField(default=False)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     is_deleted = models.BooleanField(default=False)
 
     deleted_at = models.DateTimeField(null=True, blank=True)
 
-
     class Meta:
         verbose_name_plural = "User Addresses"
+
     def delete(self, *args, **kwargs):
         self.is_deleted = True
         self.deleted_at = timezone.now()
-        self.save(update_fields=['is_deleted', 'deleted_at'])
-        
+        self.save(update_fields=["is_deleted", "deleted_at"])
+
     def __str__(self):
         return f"{self.user.email} - {self.city}"

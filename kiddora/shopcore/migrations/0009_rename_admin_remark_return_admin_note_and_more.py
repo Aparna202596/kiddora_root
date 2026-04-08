@@ -6,28 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0008_remove_orderitem_item_order_status_and_more'),
+        ("shopcore", "0008_remove_orderitem_item_order_status_and_more"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='return',
-            old_name='admin_remark',
-            new_name='admin_note',
+            model_name="return",
+            old_name="admin_remark",
+            new_name="admin_note",
         ),
         migrations.RenameField(
-            model_name='return',
-            old_name='reviewed_at',
-            new_name='updated_at',
+            model_name="return",
+            old_name="reviewed_at",
+            new_name="updated_at",
         ),
         migrations.AlterField(
-            model_name='order',
-            name='payment_status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('PAID', 'Paid'), ('FAILED', 'Failed'), ('REFUNDED', 'Refunded'), ('PARTIALLY_REFUNDED', 'Partially Refunded')], default='PENDING', max_length=20),
+            model_name="order",
+            name="payment_status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("PAID", "Paid"),
+                    ("FAILED", "Failed"),
+                    ("REFUNDED", "Refunded"),
+                    ("PARTIALLY_REFUNDED", "Partially Refunded"),
+                ],
+                default="PENDING",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='order',
-            name='shipping_charge',
+            model_name="order",
+            name="shipping_charge",
             field=models.DecimalField(decimal_places=2, default=1000, max_digits=10),
         ),
     ]

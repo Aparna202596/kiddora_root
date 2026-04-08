@@ -1,13 +1,14 @@
-from __future__ import annotations   
+from __future__ import annotations
+
+import logging
+from decimal import Decimal
 
 from django.db import transaction
-from decimal import Decimal
-import logging
-
 from payments.models import Wallet, WalletTransaction
 from shopcore.models import CouponUsage
 
 logger = logging.getLogger(__name__)
+
 
 @transaction.atomic
 def debit_from_wallet(
@@ -39,7 +40,9 @@ def debit_from_wallet(
         reference_id=reference_id,
         description=description,
     )
-    logger.info("Wallet debit: user=%s amount=%s txn=%s", user.email, amount, txn.txn_id)
+    logger.info(
+        "Wallet debit: user=%s amount=%s txn=%s", user.email, amount, txn.txn_id
+    )
     return True, "", txn
 
 
@@ -66,7 +69,9 @@ def credit_refund_to_wallet(
     if already_refunded:
         logger.warning(
             "Duplicate refund blocked: user=%s reference_type=%s reference_id=%s",
-            user.email, reference_type, reference_id,
+            user.email,
+            reference_type,
+            reference_id,
         )
         return None
     # ─────────────────────────────────────────────────────────────────────
@@ -84,8 +89,11 @@ def credit_refund_to_wallet(
         reference_id=reference_id,
         description=description,
     )
-    logger.info("Wallet refund: user=%s amount=%s txn=%s", user.email, amount, txn.txn_id)
+    logger.info(
+        "Wallet refund: user=%s amount=%s txn=%s", user.email, amount, txn.txn_id
+    )
     return txn
+
 
 #   ────────────────────────────────────────────────── INTERNAL HELPERS ──────────────────────────────────────────────────
 def _restore_inventory_for_order(order) -> None:
@@ -109,6 +117,7 @@ def _finalize_order_after_payment(request, order):
     coupon_id = request.session.pop("pending_coupon_id", None)
     if coupon_id:
         from shopcore.models import Coupon
+
         try:
             coupon = Coupon.objects.get(id=coupon_id)
             usage, _ = CouponUsage.objects.get_or_create(coupon=coupon, user=order.user)

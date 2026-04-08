@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('products', '0005_subcategory_is_active_alter_color_color'),
+        ("products", "0005_subcategory_is_active_alter_color_color"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='category',
-            name='is_deleted',
+            model_name="category",
+            name="is_deleted",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='subcategory',
-            name='is_deleted',
+            model_name="subcategory",
+            name="is_deleted",
             field=models.BooleanField(default=False),
         ),
     ]

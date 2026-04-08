@@ -1,7 +1,9 @@
-from PIL import Image
-from io import BytesIO
-from django.core.files.uploadedfile import InMemoryUploadedFile
 import sys
+from io import BytesIO
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from PIL import Image
+
 
 # -----------------------------
 # IMAGE PROCESSING
@@ -12,7 +14,7 @@ def process_image(file, size=(800, 800)):
     output = BytesIO()
     img.save(output, format="JPEG", quality=85)
     output.seek(0)
-    
+
     return InMemoryUploadedFile(
         output,
         "ImageField",

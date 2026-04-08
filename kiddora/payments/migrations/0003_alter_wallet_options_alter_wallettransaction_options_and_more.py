@@ -7,101 +7,137 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('payments', '0002_alter_paymentlog_gateway_wallet_wallettransaction'),
-        ('shopcore', '0005_remove_referraluse_referral_code_and_more'),
+        ("payments", "0002_alter_paymentlog_gateway_wallet_wallettransaction"),
+        ("shopcore", "0005_remove_referraluse_referral_code_and_more"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='wallet',
-            options={'verbose_name': 'Wallet', 'verbose_name_plural': 'Wallets'},
+            name="wallet",
+            options={"verbose_name": "Wallet", "verbose_name_plural": "Wallets"},
         ),
         migrations.AlterModelOptions(
-            name='wallettransaction',
-            options={'ordering': ['-created_at'], 'verbose_name': 'Wallet Transaction', 'verbose_name_plural': 'Wallet Transactions'},
+            name="wallettransaction",
+            options={
+                "ordering": ["-created_at"],
+                "verbose_name": "Wallet Transaction",
+                "verbose_name_plural": "Wallet Transactions",
+            },
         ),
         migrations.RemoveField(
-            model_name='payment',
-            name='razorpay_order_id',
+            model_name="payment",
+            name="razorpay_order_id",
         ),
         migrations.RemoveField(
-            model_name='payment',
-            name='razorpay_payment_id',
+            model_name="payment",
+            name="razorpay_payment_id",
         ),
         migrations.RemoveField(
-            model_name='payment',
-            name='razorpay_signature',
+            model_name="payment",
+            name="razorpay_signature",
         ),
         migrations.RemoveField(
-            model_name='payment',
-            name='stripe_charge_id',
+            model_name="payment",
+            name="stripe_charge_id",
         ),
         migrations.RemoveField(
-            model_name='payment',
-            name='stripe_client_secret',
+            model_name="payment",
+            name="stripe_client_secret",
         ),
         migrations.RemoveField(
-            model_name='payment',
-            name='stripe_payment_intent_id',
+            model_name="payment",
+            name="stripe_payment_intent_id",
         ),
         migrations.RemoveField(
-            model_name='wallettransaction',
-            name='balance_after',
+            model_name="wallettransaction",
+            name="balance_after",
         ),
         migrations.RemoveField(
-            model_name='wallettransaction',
-            name='reference_id',
+            model_name="wallettransaction",
+            name="reference_id",
         ),
         migrations.RemoveField(
-            model_name='wallettransaction',
-            name='reference_type',
+            model_name="wallettransaction",
+            name="reference_type",
         ),
         migrations.RemoveField(
-            model_name='wallettransaction',
-            name='txn_id',
+            model_name="wallettransaction",
+            name="txn_id",
         ),
         migrations.RemoveField(
-            model_name='wallettransaction',
-            name='txn_type',
+            model_name="wallettransaction",
+            name="txn_type",
         ),
         migrations.AddField(
-            model_name='payment',
-            name='paypal_capture_id',
+            model_name="payment",
+            name="paypal_capture_id",
             field=models.CharField(blank=True, max_length=200, null=True),
         ),
         migrations.AddField(
-            model_name='payment',
-            name='paypal_order_id',
+            model_name="payment",
+            name="paypal_order_id",
             field=models.CharField(blank=True, max_length=200, null=True, unique=True),
         ),
         migrations.AddField(
-            model_name='wallettransaction',
-            name='order',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='shopcore.order'),
+            model_name="wallettransaction",
+            name="order",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="shopcore.order",
+            ),
         ),
         migrations.AddField(
-            model_name='wallettransaction',
-            name='transaction_type',
-            field=models.CharField(choices=[('CREDIT', 'Credit'), ('DEBIT', 'Debit'), ('REFUND', 'Refund')], default='CREDIT', max_length=10),
+            model_name="wallettransaction",
+            name="transaction_type",
+            field=models.CharField(
+                choices=[
+                    ("CREDIT", "Credit"),
+                    ("DEBIT", "Debit"),
+                    ("REFUND", "Refund"),
+                ],
+                default="CREDIT",
+                max_length=10,
+            ),
         ),
         migrations.AlterField(
-            model_name='payment',
-            name='payment_method',
-            field=models.CharField(choices=[('PAYPAL', 'PayPal'), ('COD', 'Cash on Delivery'), ('WALLET', 'Wallet')], max_length=20),
+            model_name="payment",
+            name="payment_method",
+            field=models.CharField(
+                choices=[
+                    ("PAYPAL", "PayPal"),
+                    ("COD", "Cash on Delivery"),
+                    ("WALLET", "Wallet"),
+                ],
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentlog',
-            name='event_type',
-            field=models.CharField(choices=[('PAYPAL_WEBHOOK', 'PayPal Webhook'), ('PAYPAL_CALLBACK', 'PayPal Callback'), ('REFUND', 'Refund Event'), ('MANUAL', 'Manual Entry')], max_length=30),
+            model_name="paymentlog",
+            name="event_type",
+            field=models.CharField(
+                choices=[
+                    ("PAYPAL_WEBHOOK", "PayPal Webhook"),
+                    ("PAYPAL_CALLBACK", "PayPal Callback"),
+                    ("REFUND", "Refund Event"),
+                    ("MANUAL", "Manual Entry"),
+                ],
+                max_length=30,
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentlog',
-            name='gateway',
-            field=models.CharField(choices=[('PAYPAL', 'PayPal'), ('INTERNAL', 'Internal')], default='INTERNAL', max_length=20),
+            model_name="paymentlog",
+            name="gateway",
+            field=models.CharField(
+                choices=[("PAYPAL", "PayPal"), ("INTERNAL", "Internal")],
+                default="INTERNAL",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='wallettransaction',
-            name='description',
+            model_name="wallettransaction",
+            name="description",
             field=models.CharField(blank=True, max_length=255),
         ),
     ]

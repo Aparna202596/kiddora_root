@@ -1,17 +1,19 @@
-from django.views.decorators.cache import never_cache
-from products.utils.queryset_utils import apply_product_filters, apply_sorting
-from products.utils.search_utils import apply_search
-from django.db.models.functions import Coalesce
-from products.utils.pagination import paginate_queryset
-from accounts.decorators import admin_login_required
-from utils.image_utils import process_image
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Sum, F, Value
-from django.contrib import messages
-from django.db import transaction
 from decimal import Decimal
 
-from products.models import Product, ProductImage, ProductVariant, Inventory, Color, AgeGroup, SubCategory, Category
+from accounts.decorators import admin_login_required
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import F, Sum, Value
+from django.db.models.functions import Coalesce
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
+from products.models import (AgeGroup, Category, Color, Inventory, Product,
+                             ProductImage, ProductVariant, SubCategory)
+from products.utils.pagination import paginate_queryset
+from products.utils.queryset_utils import apply_product_filters, apply_sorting
+from products.utils.search_utils import apply_search
+from utils.image_utils import process_image
+
 
 #  ──────────────────────────────────────── CALCULATE FINAL PRICE (helper) ──────────────────────────────────────────────────
 def calculate_final_price(base_price, discount_percent):
@@ -21,8 +23,10 @@ def calculate_final_price(base_price, discount_percent):
         return base - (base * discount / 100)
     except Exception:
         return 0
-    
+
+
 #   =============================================== PRODUCT MANAGEMENT ===============================================
+
 
 #   ──────────────────────────────────────────────── PRODUCT DETAILS ──────────────────────────────────────────────────
 @never_cache
@@ -30,14 +34,14 @@ def calculate_final_price(base_price, discount_percent):
 def admin_product_details(request, product_id):
 
     product = get_object_or_404(
-        Product.objects.select_related("subcategory","subcategory__category"),
-        id=product_id)
+        Product.objects.select_related("subcategory", "subcategory__category"),
+        id=product_id,
+    )
 
     images = ProductImage.objects.filter(product=product)
 
     variants = (
-        ProductVariant.objects
-        .filter(product=product)
+        ProductVariant.objects.filter(product=product)
         .select_related("color", "age_group")
         .annotate(
             stock=Coalesce(F("inventory__quantity_available"), Value(0)),
@@ -51,7 +55,9 @@ def admin_product_details(request, product_id):
         total_reserved=Coalesce(Sum("reserved"), Value(0)),
     )
 
-    final_price = product.base_price - (product.base_price * product.discount_percent / 100)
+    final_price = product.base_price - (
+        product.base_price * product.discount_percent / 100
+    )
 
     context = {
         "product": product,
@@ -61,9 +67,12 @@ def admin_product_details(request, product_id):
         "variants": variants,
         "stock_summary": stock_summary,
         "final_price": final_price,
-        "last_updated": product.updated_at if hasattr(product, "updated_at") else product.id,
+        "last_updated": (
+            product.updated_at if hasattr(product, "updated_at") else product.id
+        ),
     }
-    return render(request, "products/admin/admin_product_details.html",context  )
+    return render(request, "products/admin/admin_product_details.html", context)
+
 
 #  ──────────────────────────────────────────────── PRODUCT LIST ──────────────────────────────────────────────────
 @never_cache
@@ -79,16 +88,15 @@ def admin_product_list(request):
     max_price = request.GET.get("max_price")
     brand = request.GET.get("brand")
 
-    queryset = Product.objects.select_related("subcategory", "subcategory__category").filter(
-        is_deleted=False, subcategory__category__is_deleted=False)
+    queryset = Product.objects.select_related(
+        "subcategory", "subcategory__category"
+    ).filter(is_deleted=False, subcategory__category__is_deleted=False)
 
     queryset = apply_search(queryset, search, ["product_name", "brand"])
 
-    # POPULARITY 
+    # POPULARITY
     queryset = queryset.annotate(
-        popularity_score=Coalesce(
-            Sum("variants__inventory__quantity_sold"), Value(0)
-        )
+        popularity_score=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0))
     )
     # FILTERS
     queryset = apply_product_filters(queryset, category_id, subcategory_id)
@@ -108,7 +116,7 @@ def admin_product_list(request):
         "brand": "brand",
         "final_price": "final_price",
         "subcategory__subcategory_name": "subcategory__subcategory_name",
-        "subcategory__category__category_name":"subcategory__category__category_name",
+        "subcategory__category__category_name": "subcategory__category__category_name",
         "gender": "gender",
         "new": "id",
         "popular": "popularity_score",
@@ -127,12 +135,13 @@ def admin_product_list(request):
         "page_obj": page_obj,
         "search": search,
         "sort": sort,
-        "dir":dir,
+        "dir": dir,
         "categories": Category.objects.filter(is_deleted=False),
         "subcategories": SubCategory.objects.filter(is_deleted=False),
     }
 
     return render(request, "products/admin/admin_product_lists.html", context)
+
 
 #   ────────────────────────────────────────────────── ADD PRODUCT ──────────────────────────────────────────────────
 @never_cache
@@ -140,7 +149,7 @@ def admin_product_list(request):
 def admin_add_product(request):
 
     preview_final_price = None
-    
+
     if request.method == "POST":
         base_price = request.POST.get("base_price")
         discount_percent = request.POST.get("discount_percent")
@@ -158,13 +167,15 @@ def admin_add_product(request):
                 request,
                 "products/admin/admin_product_form.html",
                 {
-                    "subcategories": SubCategory.objects.filter(category__is_active=True),
+                    "subcategories": SubCategory.objects.filter(
+                        category__is_active=True
+                    ),
                     "preview_final_price": preview_final_price,
                     "fabric_choices": Product.FABRIC_CHOICES,
                     "gender_choices": Product.GENDER_CHOICES,
                 },
             )
-        
+
         name = request.POST.get("product_name").strip()
         subcategory = get_object_or_404(SubCategory, id=request.POST.get("subcategory"))
 
@@ -195,16 +206,16 @@ def admin_add_product(request):
                 image5=processed5,
                 is_default=True,
             )
-        
-            ProductImage.objects.filter(
-                product=product, is_default=True
-            ).update(is_default=False)
-            
+
+            ProductImage.objects.filter(product=product, is_default=True).update(
+                is_default=False
+            )
+
             super(ProductImage, img_instance).save(force_insert=True)
-        
+
         messages.success(request, "Product added successfully")
         return redirect("products:admin_product_list")
-    
+
     return render(
         request,
         "products/admin/admin_product_form.html",
@@ -215,6 +226,7 @@ def admin_add_product(request):
             "gender_choices": Product.GENDER_CHOICES,
         },
     )
+
 
 #   ────────────────────────────────────────────────── EDIT PRODUCT ──────────────────────────────────────────────────
 @never_cache
@@ -243,9 +255,10 @@ def admin_edit_product(request, product_id):
         return redirect("products:admin_product_list")
 
     return render(
-        request,"products/admin/admin_product_form.html",
+        request,
+        "products/admin/admin_product_form.html",
         {
-            "product": product, 
+            "product": product,
             "subcategories": SubCategory.objects.all(),
             "preview_final_price": preview_final_price,
             "fabric_choices": Product.FABRIC_CHOICES,
@@ -253,17 +266,19 @@ def admin_edit_product(request, product_id):
         },
     )
 
+
 #   ────────────────────────────────────────────────── DELETE PRODUCT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     product.is_deleted = True
-    product.is_active = False  
+    product.is_active = False
     product.save()
     ProductVariant.objects.filter(product=product).update(is_active=False)
     messages.success(request, "Product deleted safely")
     return redirect("products:admin_product_list")
+
 
 #   ────────────────────────────────────────────────── BLOCK PRODUCT ──────────────────────────────────────────────────
 @never_cache
@@ -274,9 +289,12 @@ def admin_block_product(request, product_id):
         product.is_active = False
         product.save()
         ProductVariant.objects.filter(product=product).update(is_active=False)
-        messages.success(request, f"{product.product_name} and its variants have been blocked.")
+        messages.success(
+            request, f"{product.product_name} and its variants have been blocked."
+        )
         return redirect("products:admin_product_list")
     return render(request, "admin_confirm_block.html", {"product": product})
+
 
 #   ────────────────────────────────────────────────── UNBLOCK PRODUCT ──────────────────────────────────────────────────
 @never_cache
@@ -284,31 +302,35 @@ def admin_block_product(request, product_id):
 def admin_unblock_product(request, product_id):
     product = get_object_or_404(
         Product.objects.select_related("subcategory", "subcategory__category"),
-        id=product_id
+        id=product_id,
     )
     if request.method == "POST":
         if not product.subcategory.is_active:
             messages.error(
                 request,
                 f"Cannot unblock '{product.product_name}' because its subcategory "
-                f"'{product.subcategory.subcategory_name}' is blocked. Unblock the subcategory first."
+                f"'{product.subcategory.subcategory_name}' is blocked. Unblock the subcategory first.",
             )
             return redirect("products:admin_product_list")
         if not product.subcategory.category.is_active:
             messages.error(
                 request,
                 f"Cannot unblock '{product.product_name}' because its category "
-                f"'{product.subcategory.category.category_name}' is blocked. Unblock the category first."
+                f"'{product.subcategory.category.category_name}' is blocked. Unblock the category first.",
             )
             return redirect("products:admin_product_list")
         product.is_active = True
         product.save()
         ProductVariant.objects.filter(product=product).update(is_active=True)
-        messages.success(request, f"{product.product_name} and its variants have been unblocked.")
+        messages.success(
+            request, f"{product.product_name} and its variants have been unblocked."
+        )
         return redirect("products:admin_product_list")
     return render(request, "admin_confirm_unblock.html", {"product": product})
 
+
 #   =============================================== VARIANT MANAGEMENT ===============================================
+
 
 #   ────────────────────────────────────────────────── ADD VARIANT ──────────────────────────────────────────────────
 @never_cache
@@ -319,12 +341,14 @@ def admin_add_variant(request, product_id):
 
     if request.method == "POST":
 
-        variant = ProductVariant.objects.create(product=product,
+        variant = ProductVariant.objects.create(
+            product=product,
             color_id=request.POST.get("color"),
             age_group_id=request.POST.get("age_group"),
         )
 
-        Inventory.objects.create(variant=variant,
+        Inventory.objects.create(
+            variant=variant,
             quantity_available=request.POST.get("stock"),
         )
 
@@ -341,12 +365,13 @@ def admin_add_variant(request, product_id):
         },
     )
 
-#   ────────────────────────────────────────────────── EDIT VARIANT ────────────────────────────────────────────────── 
+
+#   ────────────────────────────────────────────────── EDIT VARIANT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_edit_variant(request, variant_id, product_id):
 
-    variant = get_object_or_404(ProductVariant, id=variant_id,product_id=product_id)
+    variant = get_object_or_404(ProductVariant, id=variant_id, product_id=product_id)
 
     if request.method == "POST":
         variant.color_id = request.POST.get("color")
@@ -355,8 +380,7 @@ def admin_edit_variant(request, variant_id, product_id):
         variant.save()
 
         messages.success(request, "Variant updated")
-        return redirect(
-            "products:admin_product_details", product_id=product_id)
+        return redirect("products:admin_product_details", product_id=product_id)
 
     return render(
         request,
@@ -368,6 +392,7 @@ def admin_edit_variant(request, variant_id, product_id):
         },
     )
 
+
 #   ────────────────────────────────────────────────── DELETE VARIANT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
@@ -375,9 +400,8 @@ def admin_delete_variant(request, product_id, variant_id):
     variant = get_object_or_404(ProductVariant, id=variant_id, product_id=product_id)
     variant.delete()
     messages.success(request, "Variant removed")
-    return redirect(
-        "products:admin_product_details", product_id=product_id
-    )
+    return redirect("products:admin_product_details", product_id=product_id)
+
 
 #  ────────────────────────────────────────────────── BLOCK VARIANT ──────────────────────────────────────────────────
 @never_cache
@@ -389,7 +413,12 @@ def admin_block_variant(request, product_id, variant_id):
         variant.save()
         messages.success(request, f"Variant has been blocked.")
         return redirect("products:admin_product_details", product_id=product_id)
-    return render(request, "admin_confirm_block.html", {"variant": variant, "product_id": product_id})
+    return render(
+        request,
+        "admin_confirm_block.html",
+        {"variant": variant, "product_id": product_id},
+    )
+
 
 #  ────────────────────────────────────────────────── UNBLOCK VARIANT ──────────────────────────────────────────────────
 @never_cache
@@ -404,25 +433,29 @@ def admin_unblock_variant(request, product_id, variant_id):
             messages.error(
                 request,
                 f"Cannot unblock this variant because its product "
-                f"'{product.product_name}' is blocked. Unblock the product first."
+                f"'{product.product_name}' is blocked. Unblock the product first.",
             )
             return redirect("products:admin_product_details", product_id=product_id)
         if not subcategory.is_active:
             messages.error(
                 request,
                 f"Cannot unblock this variant because its subcategory "
-                f"'{subcategory.subcategory_name}' is blocked. Unblock the subcategory first."
+                f"'{subcategory.subcategory_name}' is blocked. Unblock the subcategory first.",
             )
             return redirect("products:admin_product_details", product_id=product_id)
         if not category.is_active:
             messages.error(
                 request,
                 f"Cannot unblock this variant because its category "
-                f"'{category.category_name}' is blocked. Unblock the category first."
+                f"'{category.category_name}' is blocked. Unblock the category first.",
             )
             return redirect("products:admin_product_details", product_id=product_id)
         variant.is_active = True
         variant.save()
         messages.success(request, "Variant has been unblocked.")
         return redirect("products:admin_product_details", product_id=product_id)
-    return render(request, "admin_confirm_unblock.html", {"variant": variant, "product_id": product_id})
+    return render(
+        request,
+        "admin_confirm_unblock.html",
+        {"variant": variant, "product_id": product_id},
+    )

@@ -6,13 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0005_remove_referraluse_referral_code_and_more'),
+        ("shopcore", "0005_remove_referraluse_referral_code_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='order',
-            name='payment_method',
-            field=models.CharField(choices=[('COD', 'Cash on Delivery'), ('RAZORPAY', 'Razorpay'), ('PAYPAL', 'Paypal'), ('WALLET', 'Wallet')], default='COD', max_length=20),
+            model_name="order",
+            name="payment_method",
+            field=models.CharField(
+                choices=[
+                    ("COD", "Cash on Delivery"),
+                    ("RAZORPAY", "Razorpay"),
+                    ("PAYPAL", "Paypal"),
+                    ("WALLET", "Wallet"),
+                ],
+                default="COD",
+                max_length=20,
+            ),
         ),
     ]

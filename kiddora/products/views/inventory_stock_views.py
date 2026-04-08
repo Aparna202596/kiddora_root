@@ -1,22 +1,22 @@
-from django.views.decorators.cache import never_cache
-from products.utils.search_utils import apply_search
-from products.utils.pagination import paginate_queryset
 from accounts.decorators import admin_login_required
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import transaction
-
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
 from products.models import Inventory, ProductVariant
+from products.utils.pagination import paginate_queryset
+from products.utils.search_utils import apply_search
 
 #   =============================================== INVENTORY MANAGEMENT ===============================================
+
 
 #   ────────────────────────────────────────────────── INVENTORY LIST ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_inventory_list(request):
     search = request.GET.get("search", "").strip()
-    sort = request.GET.get("sort", "-updated")  
-    stock_f = request.GET.get("stock_filter", "") 
+    sort = request.GET.get("sort", "-updated")
+    stock_f = request.GET.get("stock_filter", "")
 
     SORT_MAP = {
         "product": "variant__product__product_name",
@@ -40,10 +40,10 @@ def admin_inventory_list(request):
             "variant__age_group",
         )
         .filter(
-            variant__product__is_deleted = False,
-            variant__product__is_active = True,
-            variant__product__subcategory__is_deleted = False,
-            variant__product__subcategory__category__is_deleted = False,
+            variant__product__is_deleted=False,
+            variant__product__is_active=True,
+            variant__product__subcategory__is_deleted=False,
+            variant__product__subcategory__category__is_deleted=False,
         )
         .order_by(order_field)
     )
@@ -57,10 +57,10 @@ def admin_inventory_list(request):
         )
 
     if stock_f == "out":
-        inventories = inventories.filter(quantity_available = 0)
+        inventories = inventories.filter(quantity_available=0)
     elif stock_f == "low":
         inventories = inventories.filter(
-            quantity_available__gt=0, quantity_available__lte = 5
+            quantity_available__gt=0, quantity_available__lte=5
         )
 
     page_obj = paginate_queryset(request, inventories, 15)
@@ -71,19 +71,19 @@ def admin_inventory_list(request):
         {
             "inventories": page_obj,
             "page_obj": page_obj,
-            "search":   search,
-
+            "search": search,
             "sort": sort,
             "stock_f": stock_f,
         },
     )
 
+
 #   ────────────────────────────────────────────────── UPDATE STOCK ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 @transaction.atomic
-def update_stock(request, inventory_id):   
-    inventory = get_object_or_404(Inventory, id=inventory_id)  
+def update_stock(request, inventory_id):
+    inventory = get_object_or_404(Inventory, id=inventory_id)
 
     if request.method == "POST":
         try:
@@ -108,7 +108,9 @@ def update_stock(request, inventory_id):
     return redirect("products:admin_inventory_list")
 
 
-def sync_inventory(variant: ProductVariant, delta_available=0, delta_reserved=0, delta_sold=0):
+def sync_inventory(
+    variant: ProductVariant, delta_available=0, delta_reserved=0, delta_sold=0
+):
     inventory, _ = Inventory.objects.get_or_create(
         variant=variant, defaults={"quantity_available": 0}
     )

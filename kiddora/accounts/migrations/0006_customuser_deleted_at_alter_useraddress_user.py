@@ -8,18 +8,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0005_useraddress_address_line2'),
+        ("accounts", "0005_useraddress_address_line2"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='customuser',
-            name='deleted_at',
+            model_name="customuser",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='useraddress',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='addresses', to=settings.AUTH_USER_MODEL),
+            model_name="useraddress",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="addresses",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

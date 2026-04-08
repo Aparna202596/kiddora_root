@@ -6,22 +6,48 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0007_orderitem_delivered_at_orderitem_item_order_status_and_more'),
+        (
+            "shopcore",
+            "0007_orderitem_delivered_at_orderitem_item_order_status_and_more",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='orderitem',
-            name='item_order_status',
+            model_name="orderitem",
+            name="item_order_status",
         ),
         migrations.AlterField(
-            model_name='order',
-            name='order_status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('CONFIRMED', 'Confirmed'), ('SHIPPED', 'Shipped'), ('OUT_FOR_DELIVERY', 'Out for Delivery'), ('DELIVERED', 'Delivered'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=20),
+            model_name="order",
+            name="order_status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("CONFIRMED", "Confirmed"),
+                    ("SHIPPED", "Shipped"),
+                    ("OUT_FOR_DELIVERY", "Out for Delivery"),
+                    ("DELIVERED", "Delivered"),
+                    ("CANCELLED", "Cancelled"),
+                ],
+                default="PENDING",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='orderitem',
-            name='item_status',
-            field=models.CharField(choices=[('ACTIVE', 'Active'), ('PENDING', 'Pending'), ('CANCELLED', 'Cancelled'), ('RETURN_REQUESTED', 'Return Requested'), ('RETURN_APPROVED', 'Return Approved'), ('RETURN_REJECTED', 'Return Rejected'), ('REFUNDED', 'Refunded')], default='ACTIVE', max_length=20),
+            model_name="orderitem",
+            name="item_status",
+            field=models.CharField(
+                choices=[
+                    ("ACTIVE", "Active"),
+                    ("PENDING", "Pending"),
+                    ("CANCELLED", "Cancelled"),
+                    ("RETURN_REQUESTED", "Return Requested"),
+                    ("RETURN_APPROVED", "Return Approved"),
+                    ("RETURN_REJECTED", "Return Rejected"),
+                    ("REFUNDED", "Refunded"),
+                ],
+                default="ACTIVE",
+                max_length=20,
+            ),
         ),
     ]

@@ -7,31 +7,60 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0002_remove_wallettransaction_wallet_delete_wallet_and_more'),
+        ("shopcore", "0002_remove_wallettransaction_wallet_delete_wallet_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Banner',
+            name="Banner",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=120)),
-                ('subtitle', models.CharField(blank=True, max_length=200)),
-                ('image', models.ImageField(upload_to='banners/')),
-                ('cta_text', models.CharField(default='Shop Now', max_length=40)),
-                ('cta_url', models.CharField(default='/products/user/products/', max_length=300)),
-                ('badge_text', models.CharField(blank=True, max_length=40)),
-                ('slot', models.CharField(choices=[('HERO', 'Hero Carousel'), ('SECONDARY', 'Secondary Banner')], default='HERO', max_length=20)),
-                ('display_order', models.PositiveIntegerField(default=0, validators=[django.core.validators.MinValueValidator(0)])),
-                ('is_active', models.BooleanField(default=True)),
-                ('start_date', models.DateTimeField(blank=True, null=True)),
-                ('end_date', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=120)),
+                ("subtitle", models.CharField(blank=True, max_length=200)),
+                ("image", models.ImageField(upload_to="banners/")),
+                ("cta_text", models.CharField(default="Shop Now", max_length=40)),
+                (
+                    "cta_url",
+                    models.CharField(
+                        default="/products/user/products/", max_length=300
+                    ),
+                ),
+                ("badge_text", models.CharField(blank=True, max_length=40)),
+                (
+                    "slot",
+                    models.CharField(
+                        choices=[
+                            ("HERO", "Hero Carousel"),
+                            ("SECONDARY", "Secondary Banner"),
+                        ],
+                        default="HERO",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "display_order",
+                    models.PositiveIntegerField(
+                        default=0,
+                        validators=[django.core.validators.MinValueValidator(0)],
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("start_date", models.DateTimeField(blank=True, null=True)),
+                ("end_date", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'Banner',
-                'verbose_name_plural': 'Banners',
-                'ordering': ['display_order', '-created_at'],
+                "verbose_name": "Banner",
+                "verbose_name_plural": "Banners",
+                "ordering": ["display_order", "-created_at"],
             },
         ),
     ]

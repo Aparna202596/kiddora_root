@@ -1,5 +1,7 @@
-import requests
 from decimal import Decimal
+
+import requests
+
 
 def convert_currency(amount, from_currency="INR", to_currency="USD"):
     try:

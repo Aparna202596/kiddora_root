@@ -6,23 +6,61 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0013_alter_couponusage_user_referralcode_referraluse'),
+        ("shopcore", "0013_alter_couponusage_user_referralcode_referraluse"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='order',
-            name='order_status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('CONFIRMED', 'Confirmed'), ('SHIPPED', 'Shipped'), ('OUT_FOR_DELIVERY', 'Out for Delivery'), ('DELIVERED', 'Delivered'), ('CANCELLED', 'Cancelled'), ('RETURNED', 'Returned'), ('ORDER NOT PLACED', 'Order Not Placed')], default='PENDING', max_length=20),
+            model_name="order",
+            name="order_status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("CONFIRMED", "Confirmed"),
+                    ("SHIPPED", "Shipped"),
+                    ("OUT_FOR_DELIVERY", "Out for Delivery"),
+                    ("DELIVERED", "Delivered"),
+                    ("CANCELLED", "Cancelled"),
+                    ("RETURNED", "Returned"),
+                    ("ORDER NOT PLACED", "Order Not Placed"),
+                ],
+                default="PENDING",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='order',
-            name='payment_status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('INITIATED', 'Initiated'), ('PAID', 'Paid'), ('FAILED', 'Failed'), ('REFUNDED', 'Refunded'), ('PARTIALLY_REFUNDED', 'Partially Refunded'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=20),
+            model_name="order",
+            name="payment_status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("INITIATED", "Initiated"),
+                    ("PAID", "Paid"),
+                    ("FAILED", "Failed"),
+                    ("REFUNDED", "Refunded"),
+                    ("PARTIALLY_REFUNDED", "Partially Refunded"),
+                    ("CANCELLED", "Cancelled"),
+                ],
+                default="PENDING",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='orderitem',
-            name='item_status',
-            field=models.CharField(choices=[('ACTIVE', 'Active'), ('PENDING', 'Pending'), ('CANCELLED', 'Cancelled'), ('ORDER NOT PLACED', 'Order Not Placed'), ('RETURN_REQUESTED', 'Return Requested'), ('RETURN_APPROVED', 'Return Approved'), ('RETURN_REJECTED', 'Return Rejected'), ('REFUNDED', 'Refunded')], default='ACTIVE', max_length=20),
+            model_name="orderitem",
+            name="item_status",
+            field=models.CharField(
+                choices=[
+                    ("ACTIVE", "Active"),
+                    ("PENDING", "Pending"),
+                    ("CANCELLED", "Cancelled"),
+                    ("ORDER NOT PLACED", "Order Not Placed"),
+                    ("RETURN_REQUESTED", "Return Requested"),
+                    ("RETURN_APPROVED", "Return Approved"),
+                    ("RETURN_REJECTED", "Return Rejected"),
+                    ("REFUNDED", "Refunded"),
+                ],
+                default="ACTIVE",
+                max_length=20,
+            ),
         ),
     ]

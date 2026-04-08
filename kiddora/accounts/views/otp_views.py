@@ -1,24 +1,26 @@
-from django.views.decorators.cache import never_cache
-from django.utils.dateparse import parse_datetime
-from django.utils.crypto import get_random_string
-from django.contrib.auth import get_user_model
-from django.core .mail import send_mail
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.utils import timezone
-from django.conf import settings
 from datetime import datetime, timedelta
 
 from accounts.models import CustomUser
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.utils.dateparse import parse_datetime
+from django.views.decorators.cache import never_cache
 
 User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 5
 
+
 #  ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────
 def generate_otp():
     """Return a 6-digit numeric OTP."""
     return get_random_string(length=6, allowed_chars="0123456789")
+
 
 #  ────────────────────────────────────────────────── VERIFY SIGNUP OTP ──────────────────────────────────────────────────
 @never_cache
@@ -31,7 +33,7 @@ def verify_signup_otp(request):
         otp_entered = request.POST.get("otp")
         # EXPIRY CHECK
         if timezone.now() - user.otp_created_at > timedelta(minutes=OTP_EXPIRY_MINUTES):
-            user.delete()  
+            user.delete()
             request.session.pop("verify_user_id", None)
             messages.error(request, "OTP expired. Please register again.")
             return redirect("accounts:signup")
@@ -51,6 +53,7 @@ def verify_signup_otp(request):
         return redirect("accounts:login")
     return render(request, "accounts/otp/verification.html")
 
+
 #  ────────────────────────────────────────────────── RESEND SIGNUP OTP ──────────────────────────────────────────────────
 @never_cache
 def resend_signup_otp(request):
@@ -59,8 +62,11 @@ def resend_signup_otp(request):
         return redirect("accounts:signup")
     now = timezone.now()
     cooldown_time = now - timedelta(seconds=60)
-    updated = CustomUser.objects.filter(id=user_id).filter(
-        otp_created_at__lte=cooldown_time).update(otp=generate_otp(),otp_created_at=now)
+    updated = (
+        CustomUser.objects.filter(id=user_id)
+        .filter(otp_created_at__lte=cooldown_time)
+        .update(otp=generate_otp(), otp_created_at=now)
+    )
     # If update() returns 0 → cooldown not finished
     if updated == 0:
         messages.error(request, "Please wait 60 seconds before resending OTP")
@@ -81,7 +87,7 @@ def resend_signup_otp(request):
             ),
             from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user.email],
-            fail_silently=False
+            fail_silently=False,
         )
     except Exception as e:
         messages.error(request, "Failed to send OTP. Try again later.")
@@ -89,6 +95,7 @@ def resend_signup_otp(request):
 
     messages.success(request, "OTP resent successfully")
     return redirect("accounts:verify_signup_otp")
+
 
 #  ────────────────────────────────────────────────── FORGOT PASSWORD ──────────────────────────────────────────────────
 @never_cache
@@ -101,7 +108,7 @@ def forgot_password(request):
 
         try:
             user = CustomUser.objects.get(email=email)
-            
+
             if not user.is_active:
                 messages.error(request, "Your account is blocked.")
                 return redirect("accounts:blocked")
@@ -118,13 +125,13 @@ def forgot_password(request):
             request.session["fp_user_id"] = user.id
             request.session["fp_otp"] = otp
             request.session["fp_otp_expiry"] = otp_expiry.isoformat()
-            request.session.pop("fp_otp_verified", None) 
+            request.session.pop("fp_otp_verified", None)
 
             # Send OTP email
             try:
                 send_mail(
                     subject="Password Reset OTP - Kiddora",
-                    message = (
+                    message=(
                         "Hi,\n\n"
                         "We received a request to reset your Kiddora account password.\n\n"
                         f"Your One-Time Password (OTP) is {otp}.\n"
@@ -135,8 +142,7 @@ def forgot_password(request):
                     ),
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[user.email],
-                    fail_silently=False
-      
+                    fail_silently=False,
                 )
             except Exception as e:
                 messages.error(request, "Failed to send OTP. Try again later.")
@@ -149,6 +155,7 @@ def forgot_password(request):
             messages.error(request, "No account found with this email.")
 
     return render(request, "accounts/otp/forgot_password.html")
+
 
 #  ────────────────────────────────────────────────── VERIFY FORGOT PASSWORD OTP ──────────────────────────────────────────────────
 @never_cache
@@ -164,7 +171,7 @@ def verify_forgot_password_otp(request):
             return redirect("accounts:forgot_password")
 
         otp_expiry = datetime.fromisoformat(otp_expiry_str)
-        
+
         # If it already has one (aware), skip make_aware to avoid the ValueError.
         if timezone.is_naive(otp_expiry):
             otp_expiry = timezone.make_aware(otp_expiry)
@@ -181,6 +188,7 @@ def verify_forgot_password_otp(request):
         return redirect("accounts:reset_password")
 
     return render(request, "accounts/otp/verification.html")
+
 
 #  ────────────────────────────────────────────────── RESET PASSWORD ──────────────────────────────────────────────────
 @never_cache
@@ -223,9 +231,9 @@ def reset_password(request):
 
     return render(request, "accounts/otp/reset_password.html")
 
+
 #  ────────────────────────────────────────────────── RESEND RESET PASSWORD OTP ──────────────────────────────────────────────────
 @never_cache
-
 def resend_reset_password_otp(request):
 
     user_id = request.session.get("fp_user_id")
@@ -234,10 +242,10 @@ def resend_reset_password_otp(request):
         return redirect("accounts:forgot_password")
 
     user = get_object_or_404(CustomUser, id=user_id)
-    
+
     now = timezone.now()
     cooldown_time = now - timedelta(seconds=60)
-    
+
     if user.otp_created_at and user.otp_created_at > cooldown_time:
         messages.error(request, "Please wait 60 seconds before resending OTP.")
         return redirect("accounts:verify_forgot_password_otp")
@@ -247,7 +255,7 @@ def resend_reset_password_otp(request):
 
     request.session["fp_otp"] = new_otp
     request.session["fp_otp_expiry"] = new_expiry.isoformat()
-    
+
     user.otp_created_at = now
     user.save()
 
@@ -265,7 +273,7 @@ def resend_reset_password_otp(request):
             ),
             from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user.email],
-            fail_silently=False
+            fail_silently=False,
         )
         messages.success(request, "OTP resent successfully.")
     except Exception as e:

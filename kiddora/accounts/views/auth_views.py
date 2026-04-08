@@ -1,30 +1,34 @@
-from django.views.decorators.cache import never_cache
-from shopcore.views.referral_views import process_referral_on_signup
-from django.contrib.auth import login, logout, authenticate, get_user_model
-from accounts.decorators import user_login_required,admin_login_required
-from django.utils.crypto import get_random_string
-from django.shortcuts import render, redirect
-from django.core.mail import send_mail
-from django.contrib import messages
-from django.utils import timezone
-from django.conf import settings
-from django.db import transaction 
 import re
 
+from accounts.decorators import admin_login_required, user_login_required
 from accounts.models import CustomUser
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.core.mail import send_mail
+from django.db import transaction
+from django.shortcuts import redirect, render
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from django.views.decorators.cache import never_cache
+from shopcore.views.referral_views import process_referral_on_signup
 
 User = get_user_model()
 
-OTP_EXPIRY_MINUTES=5
+OTP_EXPIRY_MINUTES = 5
+
+
 #   ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────
 def generate_otp():
     """Return a 6-digit numeric OTP."""
     return get_random_string(length=6, allowed_chars="0123456789")
 
+
 #  ────────────────────────────────────────────────── GOOGLE LOGIN ──────────────────────────────────────────────────
 @never_cache
 def google_login(request):
     return redirect("/accounts/google/login/")
+
 
 #  ────────────────────────────────────────────────── USER LOGIN ──────────────────────────────────────────────────
 @never_cache
@@ -43,7 +47,7 @@ def user_login(request):
 
         context["form_data"] = {"email": email, "remember_me": remember_me}
 
-        user=authenticate(request,username=email,password=password)
+        user = authenticate(request, username=email, password=password)
 
         if user is None:
             messages.error(request, "Invalid username or password")
@@ -52,32 +56,33 @@ def user_login(request):
         if user.role != CustomUser.ROLE_CUSTOMER:
             messages.error(request, "Access denied")
             return render(request, "accounts/auth/login.html", context)
-            
+
         if not user.is_active:
             return redirect("accounts:blocked")
-        
+
         if not user.email_verified:
             messages.error(request, "Please verify your email")
             return render(request, "accounts/auth/login.html", context)
-            
+
         login(request, user)
 
         response = redirect("shopcore:home")
-        
+
         if remember_me:
-            response.set_cookie("remember_user",email,max_age=7 * 24 * 60 * 60)
+            response.set_cookie("remember_user", email, max_age=7 * 24 * 60 * 60)
         else:
             response.delete_cookie("remember_user")
 
         return response
-    
-    return render(request,"accounts/auth/login.html",context)
+
+    return render(request, "accounts/auth/login.html", context)
+
 
 #  ────────────────────────────────────────────────── USER SIGNUP ──────────────────────────────────────────────────
 @never_cache
 def user_signup(request):
-    error = ''
-    success = ''
+    error = ""
+    success = ""
     context = {}
 
     referral_token = request.GET.get("ref", "").strip()
@@ -85,68 +90,71 @@ def user_signup(request):
     if referral_token:
         try:
             from shopcore.models import ReferralCode as RC
+
             rc = RC.objects.select_related("user").get(token=referral_token)
             prefill_referral_code = rc.code
         except Exception:
-            referral_token = ""   # invalid token — ignore silently
+            referral_token = ""  # invalid token — ignore silently
 
     context["referral_token"] = referral_token
     context["prefill_referral_code"] = prefill_referral_code
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form_data = request.POST.dict()
         context["form_data"] = form_data
 
-        username = request.POST.get('username', '').strip()
-        email = request.POST['email']
-        password1 = request.POST['password1']
-        password2 = request.POST['password2']
-        referral_code_str = request.POST.get('referral_code', '').strip()
-        referral_token = request.POST.get('referral_token', '').strip()
+        username = request.POST.get("username", "").strip()
+        email = request.POST["email"]
+        password1 = request.POST["password1"]
+        password2 = request.POST["password2"]
+        referral_code_str = request.POST.get("referral_code", "").strip()
+        referral_token = request.POST.get("referral_token", "").strip()
 
         # Validation
         if User.objects.filter(username__iexact=username).exists():
             messages.error(request, "Username already exists!")
-            return render(request, 'accounts/auth/signup.html', context)
+            return render(request, "accounts/auth/signup.html", context)
         elif len(username) < 6:
             messages.error(request, "Username atleast contain 6 characters, Retry!")
-            return render(request, 'accounts/auth/signup.html', context)
-        elif re.search(r'\s', username):
+            return render(request, "accounts/auth/signup.html", context)
+        elif re.search(r"\s", username):
             messages.error(request, "Username cannot contain spaces!")
-            return render(request, 'accounts/auth/signup.html', context)
+            return render(request, "accounts/auth/signup.html", context)
         elif User.objects.filter(email__iexact=email).exists():
             messages.error(request, "Email already exists, Try new!")
-            return render(request, 'accounts/auth/signup.html', context)
+            return render(request, "accounts/auth/signup.html", context)
         elif len(password1) < 6:
             messages.error(request, "Password must be at least 6 characters, Retry!")
-            return render(request, 'accounts/auth/signup.html', context)
-        elif re.search(r'\s', password1):
+            return render(request, "accounts/auth/signup.html", context)
+        elif re.search(r"\s", password1):
             messages.error(request, "Password cannot contain spaces!")
-            return render(request, 'accounts/auth/signup.html', context)
+            return render(request, "accounts/auth/signup.html", context)
         elif password1 != password2:
             messages.error(request, "Passwords do not match!")
-            return render(request, 'accounts/auth/signup.html', context)
+            return render(request, "accounts/auth/signup.html", context)
 
         with transaction.atomic():
             user = User.objects.create_user(
-                username = username,
-                email = email,
-                password = password1,
-                role = CustomUser.ROLE_CUSTOMER,
-                is_active = False,
-                email_verified = False,
+                username=username,
+                email=email,
+                password=password1,
+                role=CustomUser.ROLE_CUSTOMER,
+                is_active=False,
+                email_verified=False,
             )
 
         user.otp = generate_otp()
         user.otp_created_at = timezone.now()
         user.save()
 
-        # Process referral AFTER user is created 
+        # Process referral AFTER user is created
         if referral_code_str or referral_token:
             try:
-                process_referral_on_signup(new_user=user, 
-                                            referral_code_str=referral_code_str, 
-                                            referral_token=referral_token)
+                process_referral_on_signup(
+                    new_user=user,
+                    referral_code_str=referral_code_str,
+                    referral_token=referral_token,
+                )
             except Exception as e:
                 # Referral failure must never block signup
                 print("REFERRAL ERROR:", e)
@@ -159,7 +167,8 @@ def user_signup(request):
                     f"Your One-Time Password (OTP) is {user.otp}.\n"
                     f"This OTP is valid for {OTP_EXPIRY_MINUTES} minutes.\n\n"
                     "If you did not request this, please ignore this email.\n\n"
-                    "Best regards,\nKiddora Team"),
+                    "Best regards,\nKiddora Team"
+                ),
                 from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[user.email],
                 fail_silently=False,
@@ -172,8 +181,12 @@ def user_signup(request):
         request.session["verify_user_id"] = user.id
         return redirect("accounts:verify_signup_otp")
 
-    return render(request, 'accounts/auth/signup.html',
-                  {'error': error, 'success': success, **context})
+    return render(
+        request,
+        "accounts/auth/signup.html",
+        {"error": error, "success": success, **context},
+    )
+
 
 #   ────────────────────────────────────────────────── USER LOGOUT ──────────────────────────────────────────────────
 @never_cache
@@ -184,6 +197,7 @@ def user_logout(request):
     response = redirect("shopcore:anonymous_home")
     response.delete_cookie("remember_user")
     return response
+
 
 #  ────────────────────────────────────────────────── ADMIN LOGIN ──────────────────────────────────────────────────
 @never_cache
@@ -196,7 +210,7 @@ def admin_login(request):
         return redirect("accounts:blocked")
 
     if request.method == "POST":
-        email= request.POST.get("email")
+        email = request.POST.get("email")
         password = request.POST.get("password")
         remember_me = request.POST.get("remember_me")
 
@@ -204,7 +218,11 @@ def admin_login(request):
 
         if user is None:
             messages.error(request, "Invalid credentials")
-            return render(request,"accounts/admin/admin_login.html",{"form_data":{"email":email}})
+            return render(
+                request,
+                "accounts/admin/admin_login.html",
+                {"form_data": {"email": email}},
+            )
 
         if not user.is_active:
             messages.error(request, "Your account is blocked")
@@ -223,10 +241,11 @@ def admin_login(request):
         response = redirect("accounts:admin_dashboard")
 
         if remember_me:
-            response.set_cookie("remember_admin",email,max_age=7 * 24 * 60 * 60)
-        
+            response.set_cookie("remember_admin", email, max_age=7 * 24 * 60 * 60)
+
         return response
     return render(request, "accounts/admin/admin_login.html")
+
 
 #  ────────────────────────────────────────────────── ADMIN LOGOUT ──────────────────────────────────────────────────
 @never_cache

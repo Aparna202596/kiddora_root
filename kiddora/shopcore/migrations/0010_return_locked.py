@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0009_rename_admin_remark_return_admin_note_and_more'),
+        ("shopcore", "0009_rename_admin_remark_return_admin_note_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='return',
-            name='locked',
+            model_name="return",
+            name="locked",
             field=models.BooleanField(default=False),
         ),
     ]

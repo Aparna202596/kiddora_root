@@ -8,37 +8,70 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0010_return_locked'),
+        ("shopcore", "0010_return_locked"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='coupon',
-            name='used_by',
+            model_name="coupon",
+            name="used_by",
         ),
         migrations.AlterField(
-            model_name='order',
-            name='order_status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('CONFIRMED', 'Confirmed'), ('SHIPPED', 'Shipped'), ('OUT_FOR_DELIVERY', 'Out for Delivery'), ('DELIVERED', 'Delivered'), ('CANCELLED', 'Cancelled'), ('RETURNED', 'Returned')], default='PENDING', max_length=20),
+            model_name="order",
+            name="order_status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("CONFIRMED", "Confirmed"),
+                    ("SHIPPED", "Shipped"),
+                    ("OUT_FOR_DELIVERY", "Out for Delivery"),
+                    ("DELIVERED", "Delivered"),
+                    ("CANCELLED", "Cancelled"),
+                    ("RETURNED", "Returned"),
+                ],
+                default="PENDING",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='order',
-            name='shipping_charge',
+            model_name="order",
+            name="shipping_charge",
             field=models.DecimalField(decimal_places=2, default=100, max_digits=10),
         ),
         migrations.CreateModel(
-            name='CouponUsage',
+            name="CouponUsage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('times_used', models.PositiveIntegerField(default=0)),
-                ('coupon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='usages', to='shopcore.coupon')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("times_used", models.PositiveIntegerField(default=0)),
+                (
+                    "coupon",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="usages",
+                        to="shopcore.coupon",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Coupon Usage',
-                'verbose_name_plural': 'Coupon Usages',
-                'unique_together': {('coupon', 'user')},
+                "verbose_name": "Coupon Usage",
+                "verbose_name_plural": "Coupon Usages",
+                "unique_together": {("coupon", "user")},
             },
         ),
     ]

@@ -8,100 +8,350 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='AgeGroup',
+            name="AgeGroup",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('age', models.CharField(choices=[('Newborn', 'Newborn'), ('0-3 months', '0-3 months'), ('3-6 months', '3-6 months'), ('6-9 months', '6-9 months'), ('9-12 months', '9-12 months'), ('12-18 months', '12-18 months'), ('18-24 months', '18-24 months'), ('2-3 years', '2-3 years'), ('3-4 years', '3-4 years'), ('4-5 years', '4-5 years'), ('5-6 years', '5-6 years'), ('6-7 years', '6-7 years'), ('7-8 years', '7-8 years'), ('8-9 years', '8-9 years'), ('9-10 years', '9-10 years'), ('10-11 years', '10-11 years'), ('11-12 years', '11-12 years'), ('12-13 years', '12-13 years'), ('13-14 years', '13-14 years'), ('14-15 years', '14-15 years')], max_length=20, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "age",
+                    models.CharField(
+                        choices=[
+                            ("Newborn", "Newborn"),
+                            ("0-3 months", "0-3 months"),
+                            ("3-6 months", "3-6 months"),
+                            ("6-9 months", "6-9 months"),
+                            ("9-12 months", "9-12 months"),
+                            ("12-18 months", "12-18 months"),
+                            ("18-24 months", "18-24 months"),
+                            ("2-3 years", "2-3 years"),
+                            ("3-4 years", "3-4 years"),
+                            ("4-5 years", "4-5 years"),
+                            ("5-6 years", "5-6 years"),
+                            ("6-7 years", "6-7 years"),
+                            ("7-8 years", "7-8 years"),
+                            ("8-9 years", "8-9 years"),
+                            ("9-10 years", "9-10 years"),
+                            ("10-11 years", "10-11 years"),
+                            ("11-12 years", "11-12 years"),
+                            ("12-13 years", "12-13 years"),
+                            ("13-14 years", "13-14 years"),
+                            ("14-15 years", "14-15 years"),
+                        ],
+                        max_length=20,
+                        unique=True,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Category',
+            name="Category",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('category_name', models.CharField(max_length=100, unique=True)),
-                ('is_active', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("category_name", models.CharField(max_length=100, unique=True)),
+                ("is_active", models.BooleanField(default=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Color',
+            name="Color",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('color', models.CharField(choices=[('White', 'White'), ('Black', 'Black'), ('Gray', 'Gray'), ('Light Gray', 'Light Gray'), ('Charcoal', 'Charcoal'), ('Red', 'Red'), ('Maroon', 'Maroon'), ('Crimson', 'Crimson'), ('Burgundy', 'Burgundy'), ('Coral', 'Coral'), ('Pink', 'Pink'), ('Baby Pink', 'Baby Pink'), ('Hot Pink', 'Hot Pink'), ('Rose', 'Rose'), ('Blush', 'Blush'), ('Orange', 'Orange'), ('Peach', 'Peach'), ('Rust', 'Rust'), ('Burnt Orange', 'Burnt Orange'), ('Amber', 'Amber'), ('Yellow', 'Yellow'), ('Mustard', 'Mustard'), ('Gold', 'Gold'), ('Lemon', 'Lemon'), ('Ivory', 'Ivory'), ('Green', 'Green'), ('Olive', 'Olive'), ('Mint', 'Mint'), ('Lime', 'Lime'), ('Forest Green', 'Forest Green'), ('Blue', 'Blue'), ('Sky Blue', 'Sky Blue'), ('Navy Blue', 'Navy Blue'), ('Royal Blue', 'Royal Blue'), ('Teal', 'Teal'), ('Purple', 'Purple'), ('Lavender', 'Lavender'), ('Violet', 'Violet'), ('Plum', 'Plum'), ('Lilac', 'Lilac'), ('Brown', 'Brown'), ('Beige', 'Beige'), ('Tan', 'Tan'), ('Khaki', 'Khaki'), ('Chocolate', 'Chocolate')], max_length=30, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "color",
+                    models.CharField(
+                        choices=[
+                            ("White", "White"),
+                            ("Black", "Black"),
+                            ("Gray", "Gray"),
+                            ("Light Gray", "Light Gray"),
+                            ("Charcoal", "Charcoal"),
+                            ("Red", "Red"),
+                            ("Maroon", "Maroon"),
+                            ("Crimson", "Crimson"),
+                            ("Burgundy", "Burgundy"),
+                            ("Coral", "Coral"),
+                            ("Pink", "Pink"),
+                            ("Baby Pink", "Baby Pink"),
+                            ("Hot Pink", "Hot Pink"),
+                            ("Rose", "Rose"),
+                            ("Blush", "Blush"),
+                            ("Orange", "Orange"),
+                            ("Peach", "Peach"),
+                            ("Rust", "Rust"),
+                            ("Burnt Orange", "Burnt Orange"),
+                            ("Amber", "Amber"),
+                            ("Yellow", "Yellow"),
+                            ("Mustard", "Mustard"),
+                            ("Gold", "Gold"),
+                            ("Lemon", "Lemon"),
+                            ("Ivory", "Ivory"),
+                            ("Green", "Green"),
+                            ("Olive", "Olive"),
+                            ("Mint", "Mint"),
+                            ("Lime", "Lime"),
+                            ("Forest Green", "Forest Green"),
+                            ("Blue", "Blue"),
+                            ("Sky Blue", "Sky Blue"),
+                            ("Navy Blue", "Navy Blue"),
+                            ("Royal Blue", "Royal Blue"),
+                            ("Teal", "Teal"),
+                            ("Purple", "Purple"),
+                            ("Lavender", "Lavender"),
+                            ("Violet", "Violet"),
+                            ("Plum", "Plum"),
+                            ("Lilac", "Lilac"),
+                            ("Brown", "Brown"),
+                            ("Beige", "Beige"),
+                            ("Tan", "Tan"),
+                            ("Khaki", "Khaki"),
+                            ("Chocolate", "Chocolate"),
+                        ],
+                        max_length=30,
+                        unique=True,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Product',
+            name="Product",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('product_name', models.CharField(max_length=200)),
-                ('brand', models.CharField(max_length=100)),
-                ('gender', models.CharField(choices=[('boy', 'Boy'), ('girl', 'Girl'), ('unisex', 'Unisex')], default='unisex', max_length=10)),
-                ('fabric', models.CharField(choices=[('Cotton', 'Cotton'), ('Polyester', 'Polyester'), ('Wool', 'Wool'), ('Silk', 'Silk'), ('Denim', 'Denim'), ('Linen', 'Linen'), ('Fleece', 'Fleece'), ('Velvet', 'Velvet'), ('Organic_cotton', 'Organic Cotton'), ('Wool_blends', 'Wool Blends'), ('Other', 'Other')], default='Other', max_length=20)),
-                ('base_price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('discount_percent', models.PositiveIntegerField(default=0)),
-                ('final_price', models.DecimalField(decimal_places=2, editable=False, max_digits=10)),
-                ('about_product', models.TextField(blank=True)),
-                ('is_active', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("product_name", models.CharField(max_length=200)),
+                ("brand", models.CharField(max_length=100)),
+                (
+                    "gender",
+                    models.CharField(
+                        choices=[
+                            ("boy", "Boy"),
+                            ("girl", "Girl"),
+                            ("unisex", "Unisex"),
+                        ],
+                        default="unisex",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "fabric",
+                    models.CharField(
+                        choices=[
+                            ("Cotton", "Cotton"),
+                            ("Polyester", "Polyester"),
+                            ("Wool", "Wool"),
+                            ("Silk", "Silk"),
+                            ("Denim", "Denim"),
+                            ("Linen", "Linen"),
+                            ("Fleece", "Fleece"),
+                            ("Velvet", "Velvet"),
+                            ("Organic_cotton", "Organic Cotton"),
+                            ("Wool_blends", "Wool Blends"),
+                            ("Other", "Other"),
+                        ],
+                        default="Other",
+                        max_length=20,
+                    ),
+                ),
+                ("base_price", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("discount_percent", models.PositiveIntegerField(default=0)),
+                (
+                    "final_price",
+                    models.DecimalField(
+                        decimal_places=2, editable=False, max_digits=10
+                    ),
+                ),
+                ("about_product", models.TextField(blank=True)),
+                ("is_active", models.BooleanField(default=True)),
             ],
         ),
         migrations.CreateModel(
-            name='ProductImage',
+            name="ProductImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image1', models.ImageField(blank=True, null=True, upload_to='product_images/')),
-                ('image2', models.ImageField(blank=True, null=True, upload_to='product_images/')),
-                ('image3', models.ImageField(blank=True, null=True, upload_to='product_images/')),
-                ('image4', models.ImageField(blank=True, null=True, upload_to='product_images/')),
-                ('image5', models.ImageField(blank=True, null=True, upload_to='product_images/')),
-                ('is_default', models.BooleanField(default=False)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='products.product')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "image1",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="product_images/"
+                    ),
+                ),
+                (
+                    "image2",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="product_images/"
+                    ),
+                ),
+                (
+                    "image3",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="product_images/"
+                    ),
+                ),
+                (
+                    "image4",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="product_images/"
+                    ),
+                ),
+                (
+                    "image5",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="product_images/"
+                    ),
+                ),
+                ("is_default", models.BooleanField(default=False)),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="products.product",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ProductVariant',
+            name="ProductVariant",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('sku', models.CharField(blank=True, max_length=100, unique=True)),
-                ('barcode', models.CharField(max_length=100, unique=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('age_group', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='variants', to='products.agegroup')),
-                ('color', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='variants', to='products.color')),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='variants', to='products.product')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("sku", models.CharField(blank=True, max_length=100, unique=True)),
+                ("barcode", models.CharField(max_length=100, unique=True)),
+                ("is_active", models.BooleanField(default=True)),
+                (
+                    "age_group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="variants",
+                        to="products.agegroup",
+                    ),
+                ),
+                (
+                    "color",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="variants",
+                        to="products.color",
+                    ),
+                ),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="variants",
+                        to="products.product",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('product', 'color', 'age_group')},
+                "unique_together": {("product", "color", "age_group")},
             },
         ),
         migrations.CreateModel(
-            name='Inventory',
+            name="Inventory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('quantity_available', models.PositiveIntegerField()),
-                ('quantity_reserved', models.PositiveIntegerField(default=0)),
-                ('quantity_sold', models.PositiveIntegerField(default=0)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('variant', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='inventory', to='products.productvariant')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("quantity_available", models.PositiveIntegerField()),
+                ("quantity_reserved", models.PositiveIntegerField(default=0)),
+                ("quantity_sold", models.PositiveIntegerField(default=0)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "variant",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="inventory",
+                        to="products.productvariant",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='SubCategory',
+            name="SubCategory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('subcategory_name', models.CharField(max_length=100)),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subcategories', to='products.category')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("subcategory_name", models.CharField(max_length=100)),
+                (
+                    "category",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subcategories",
+                        to="products.category",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('category', 'subcategory_name')},
+                "unique_together": {("category", "subcategory_name")},
             },
         ),
         migrations.AddField(
-            model_name='product',
-            name='subcategory',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='products', to='products.subcategory'),
+            model_name="product",
+            name="subcategory",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="products",
+                to="products.subcategory",
+            ),
         ),
     ]

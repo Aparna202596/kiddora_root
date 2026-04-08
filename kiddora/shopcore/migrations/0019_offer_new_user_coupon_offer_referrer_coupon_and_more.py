@@ -7,23 +7,41 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0018_return_return_quantity'),
+        ("shopcore", "0018_return_return_quantity"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='offer',
-            name='new_user_coupon',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='new_user_offers', to='shopcore.coupon'),
+            model_name="offer",
+            name="new_user_coupon",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="new_user_offers",
+                to="shopcore.coupon",
+            ),
         ),
         migrations.AddField(
-            model_name='offer',
-            name='referrer_coupon',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='referrer_offers', to='shopcore.coupon'),
+            model_name="offer",
+            name="referrer_coupon",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="referrer_offers",
+                to="shopcore.coupon",
+            ),
         ),
         migrations.AddField(
-            model_name='referraluse',
-            name='new_user_coupon',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='new_user_referral_uses', to='shopcore.coupon'),
+            model_name="referraluse",
+            name="new_user_coupon",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="new_user_referral_uses",
+                to="shopcore.coupon",
+            ),
         ),
     ]

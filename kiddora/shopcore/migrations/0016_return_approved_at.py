@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0015_coupon_coupon_type'),
+        ("shopcore", "0015_coupon_coupon_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='return',
-            name='approved_at',
+            model_name="return",
+            name="approved_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

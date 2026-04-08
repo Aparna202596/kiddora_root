@@ -3,15 +3,15 @@
 # Fixed: uses item_status (not status) consistent with the OrderItem model.
 
 from decimal import Decimal
+
 from django.db import transaction
 from django.utils import timezone
-
 from products.services.inventory import release_stock
-
 
 # ─────────────────────────────────────────────────────────────
 # CANCEL a single OrderItem and restore its stock
 # ─────────────────────────────────────────────────────────────
+
 
 def cancel_order_item(order_item, reason="Cancelled"):
     """
@@ -23,9 +23,9 @@ def cancel_order_item(order_item, reason="Cancelled"):
     if order_item.item_status != "ACTIVE":
         return False
 
-    order_item.item_status   = "CANCELLED"
+    order_item.item_status = "CANCELLED"
     order_item.cancel_reason = reason
-    order_item.cancelled_at  = timezone.now()
+    order_item.cancelled_at = timezone.now()
     order_item.save(update_fields=["item_status", "cancel_reason", "cancelled_at"])
 
     release_stock(order_item.variant, order_item.quantity)
@@ -35,6 +35,7 @@ def cancel_order_item(order_item, reason="Cancelled"):
 # ─────────────────────────────────────────────────────────────
 # CANCEL a whole Order
 # ─────────────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def cancel_entire_order(order, reason="Cancelled by user"):
@@ -48,9 +49,9 @@ def cancel_entire_order(order, reason="Cancelled by user"):
     for item in order.order_items.filter(item_status="ACTIVE"):
         cancel_order_item(item, reason=reason)
 
-    order.order_status  = "CANCELLED"
+    order.order_status = "CANCELLED"
     order.cancel_reason = reason
-    order.cancelled_at  = timezone.now()
+    order.cancelled_at = timezone.now()
     order.save(update_fields=["order_status", "cancel_reason", "cancelled_at"])
     return True
 
@@ -58,6 +59,7 @@ def cancel_entire_order(order, reason="Cancelled by user"):
 # ─────────────────────────────────────────────────────────────
 # MARK ORDER DELIVERED
 # ─────────────────────────────────────────────────────────────
+
 
 @transaction.atomic
 def mark_order_delivered(order):
@@ -69,8 +71,8 @@ def mark_order_delivered(order):
         item.item_status = "DELIVERED"
         item.save(update_fields=["item_status"])
 
-    order.order_status   = "DELIVERED"
-    order.delivered_at   = timezone.now()
+    order.order_status = "DELIVERED"
+    order.delivered_at = timezone.now()
     order.payment_status = "PAID"
     order.save(update_fields=["order_status", "delivered_at", "payment_status"])
 
@@ -79,18 +81,18 @@ def mark_order_delivered(order):
 # COMPUTE ORDER TOTALS
 # ─────────────────────────────────────────────────────────────
 
+
 def compute_order_totals(cart_items, coupon=None):
     """
     Given a list/queryset of CartItems, return a dict with:
       subtotal, discount_amount, coupon_discount, shipping_charge, final_amount
     """
-    subtotal        = sum(
-        item.variant.product.final_price * item.quantity
-        for item in cart_items
+    subtotal = sum(
+        item.variant.product.final_price * item.quantity for item in cart_items
     )
     discount_amount = Decimal("0")
     coupon_discount = Decimal("0")
-    shipping_charge = Decimal("0")   # extend with real shipping logic
+    shipping_charge = Decimal("0")  # extend with real shipping logic
 
     if coupon and coupon.is_valid():
         if coupon.discount_type == "PERCENT":
@@ -104,9 +106,9 @@ def compute_order_totals(cart_items, coupon=None):
     final_amount = subtotal - discount_amount - coupon_discount + shipping_charge
 
     return {
-        "subtotal":        subtotal,
+        "subtotal": subtotal,
         "discount_amount": discount_amount,
         "coupon_discount": coupon_discount,
         "shipping_charge": shipping_charge,
-        "final_amount":    final_amount,
+        "final_amount": final_amount,
     }

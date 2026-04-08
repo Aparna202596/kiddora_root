@@ -1,37 +1,53 @@
-from django.views.decorators.cache import never_cache
-from django.db.models.functions import Coalesce
-from django.core.paginator import Paginator
 from accounts.decorators import user_login_required
-from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Q, Min, Max, Sum, Prefetch, Avg
-from django.db.models import Value
 from django.contrib import messages
-from django.utils import timezone
+from django.core.paginator import Paginator
+from django.db.models import Avg, Max, Min, Prefetch, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
-
-from products.models import Category, SubCategory, Product, Color, AgeGroup, ProductVariant
-from shopcore.models import Review, Offer
-from shopcore.models import Cart, CartItem, Wishlist, Order
-
-
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from products.models import (AgeGroup, Category, Color, Product,
+                             ProductVariant, SubCategory)
+from shopcore.models import Cart, CartItem, Offer, Order, Review, Wishlist
 
 
 #  ────────────────────────────────────────────────── Build sidebar filter options from a filtered QS ──────────────────────────────────────────────────
 def get_filter_options(products_qs):
-    colors = (Color.objects.filter(variants__product__in=products_qs, variants__is_active=True).distinct().order_by("color"))
-    age_groups = (AgeGroup.objects.filter(variants__product__in=products_qs, variants__is_active=True).distinct().order_by("age"))
-    gender_codes = (products_qs.values_list("gender", flat=True).distinct().order_by("gender"))
+    colors = (
+        Color.objects.filter(
+            variants__product__in=products_qs, variants__is_active=True
+        )
+        .distinct()
+        .order_by("color")
+    )
+    age_groups = (
+        AgeGroup.objects.filter(
+            variants__product__in=products_qs, variants__is_active=True
+        )
+        .distinct()
+        .order_by("age")
+    )
+    gender_codes = (
+        products_qs.values_list("gender", flat=True).distinct().order_by("gender")
+    )
     gender_map = dict(Product.GENDER_CHOICES)
     genders = [
         {"code": code, "label": gender_map.get(code, code)}
-        for code in gender_codes if code]
-    fabric_values = (products_qs.values_list("fabric", flat=True).distinct().order_by("fabric"))
+        for code in gender_codes
+        if code
+    ]
+    fabric_values = (
+        products_qs.values_list("fabric", flat=True).distinct().order_by("fabric")
+    )
     fabric_map = dict(Product.FABRIC_CHOICES)
     fabric_types = [
-        {"code": f, "label": fabric_map.get(f, f)}
-        for f in fabric_values if f]
-    brands = (products_qs.values_list("brand", flat=True).distinct().order_by("brand"))
-    price_range = products_qs.aggregate(min_price=Min("final_price"), max_price=Max("final_price"))
+        {"code": f, "label": fabric_map.get(f, f)} for f in fabric_values if f
+    ]
+    brands = products_qs.values_list("brand", flat=True).distinct().order_by("brand")
+    price_range = products_qs.aggregate(
+        min_price=Min("final_price"), max_price=Max("final_price")
+    )
 
     return {
         "colors": colors,
@@ -43,14 +59,23 @@ def get_filter_options(products_qs):
         "max_price": price_range["max_price"] or 0,
     }
 
+
 #   ────────────────────────────────────────────────── Build category tree from a filtered QS ──────────────────────────────────────────────────
 def build_category_tree(products_qs):
     active_sub_ids = products_qs.values_list("subcategory_id", flat=True).distinct()
     active_subs = SubCategory.objects.filter(id__in=active_sub_ids)
-    categories = (Category.objects.filter(is_active=True, subcategories__id__in=active_sub_ids)
-        .prefetch_related(Prefetch("subcategories", queryset=active_subs, to_attr="active_subcategories"))
-        .distinct().order_by("category_name"))
+    categories = (
+        Category.objects.filter(is_active=True, subcategories__id__in=active_sub_ids)
+        .prefetch_related(
+            Prefetch(
+                "subcategories", queryset=active_subs, to_attr="active_subcategories"
+            )
+        )
+        .distinct()
+        .order_by("category_name")
+    )
     return categories
+
 
 #  SORT OPTIONS (used by product_list and search_products)
 SORT_OPTIONS = [
@@ -75,6 +100,7 @@ SORT_MAP = {
     "newest": "-id",
     "oldest": "id",
 }
+
 
 def _cart_wishlist_ctx(user):
     if not user.is_authenticated:
@@ -101,6 +127,7 @@ def _cart_wishlist_ctx(user):
         "cart_item_count": cart_item_count,
     }
 
+
 #  ────────────────────────────────────────────────── Appy Sort ──────────────────────────────────────────────────
 def _apply_sort(products, sort_by):
     if sort_by == "popularity":
@@ -109,12 +136,16 @@ def _apply_sort(products, sort_by):
         ).order_by("-popularity")
     return products.order_by(SORT_MAP.get(sort_by, "-id"))
 
+
 #  ────────────────────────────────────────────────── Category list ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def category_list_view(request):
     categories = Category.objects.filter(is_active=True)
-    return render(request, "products/catalog/category_list.html", {"categories": categories})
+    return render(
+        request, "products/catalog/category_list.html", {"categories": categories}
+    )
+
 
 #  ────────────────────────────────────────────────── Subcategory list ──────────────────────────────────────────────────
 @never_cache
@@ -122,23 +153,28 @@ def category_list_view(request):
 def subcategory_list_view(request, category_id):
     category = get_object_or_404(Category, id=category_id, is_active=True)
     subcategories = category.subcategories.filter(products__is_active=True).distinct()
-    return render(request, "products/catalog/subcategory_list.html", {
-        "category":      category,
-        "subcategories": subcategories,
-    })
+    return render(
+        request,
+        "products/catalog/subcategory_list.html",
+        {
+            "category": category,
+            "subcategories": subcategories,
+        },
+    )
+
 
 #  ────────────────────────────────────────────────── Product list with filters, sorting, pagination ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def product_list(request, category_id=None, subcategory_id=None):
     products = Product.objects.filter(
-            is_active=True,
-            is_deleted=False,
-            subcategory__is_active=True,
-            subcategory__is_deleted=False,
-            subcategory__category__is_active=True,
-            subcategory__category__is_deleted=False, 
-            ).select_related("subcategory", "subcategory__category")
+        is_active=True,
+        is_deleted=False,
+        subcategory__is_active=True,
+        subcategory__is_deleted=False,
+        subcategory__category__is_active=True,
+        subcategory__category__is_deleted=False,
+    ).select_related("subcategory", "subcategory__category")
 
     if category_id:
         products = products.filter(subcategory__category_id=category_id)
@@ -152,29 +188,33 @@ def product_list(request, category_id=None, subcategory_id=None):
     selected_ages = request.GET.getlist("age")
     selected_genders = request.GET.getlist("gender")
     selected_fabrics = request.GET.getlist("fabric")
-    selected_brands = request.GET.getlist("brand")   
+    selected_brands = request.GET.getlist("brand")
     min_price = request.GET.get("min_price", "").strip()
     max_price = request.GET.get("max_price", "").strip()
     sort_by = request.GET.getlist("sort_by")
     sort_by = sort_by[0] if sort_by else ""
 
-    # Apply filters 
+    # Apply filters
     if query:
         products = products.filter(
-            Q(product_name__icontains=query) |
-            Q(brand__icontains=query) |
-            Q(about_product__icontains=query) |
-            Q(subcategory__subcategory_name__icontains=query) |
-            Q(subcategory__category__category_name__icontains=query)
+            Q(product_name__icontains=query)
+            | Q(brand__icontains=query)
+            | Q(about_product__icontains=query)
+            | Q(subcategory__subcategory_name__icontains=query)
+            | Q(subcategory__category__category_name__icontains=query)
         )
     if selected_categories:
         products = products.filter(subcategory__category_id__in=selected_categories)
     if selected_subs:
         products = products.filter(subcategory_id__in=selected_subs)
     if selected_colors:
-        products = products.filter(variants__color_id__in=selected_colors, variants__is_active=True)
+        products = products.filter(
+            variants__color_id__in=selected_colors, variants__is_active=True
+        )
     if selected_ages:
-        products = products.filter(variants__age_group_id__in=selected_ages, variants__is_active=True)
+        products = products.filter(
+            variants__age_group_id__in=selected_ages, variants__is_active=True
+        )
     if selected_genders:
         products = products.filter(gender__in=selected_genders)
     if selected_fabrics:
@@ -203,10 +243,10 @@ def product_list(request, category_id=None, subcategory_id=None):
         )
     )
 
-    # Sort 
+    # Sort
     products = _apply_sort(products, sort_by)
 
-    # Pagination 
+    # Pagination
     paginator = Paginator(products, 15)
     page_obj = paginator.get_page(request.GET.get("page"))
 
@@ -218,7 +258,11 @@ def product_list(request, category_id=None, subcategory_id=None):
     current_category = None
     current_subcategory = None
     if subcategory_id:
-        current_subcategory = SubCategory.objects.filter(id=subcategory_id).select_related("category").first()
+        current_subcategory = (
+            SubCategory.objects.filter(id=subcategory_id)
+            .select_related("category")
+            .first()
+        )
         current_category = current_subcategory.category if current_subcategory else None
     elif category_id:
         current_category = Category.objects.filter(id=category_id).first()
@@ -244,24 +288,24 @@ def product_list(request, category_id=None, subcategory_id=None):
         "selected_brands": selected_brands,
         "sort_by": sort_by,
         "query": query,
-
         # breadcrumb
         "current_category": current_category,
         "current_subcategory": current_subcategory,
     }
     uw = _cart_wishlist_ctx(request.user)
-    context.update({
-        "cart_variant_ids": uw["cart_variant_ids"],
-        "wishlist_product_ids":uw["wishlist_product_ids"],
-        "cart_item_count": uw["cart_item_count"],
-        "MAX_QTY": CartItem.MAX_QTY_PER_PRODUCT,
-    })
+    context.update(
+        {
+            "cart_variant_ids": uw["cart_variant_ids"],
+            "wishlist_product_ids": uw["wishlist_product_ids"],
+            "cart_item_count": uw["cart_item_count"],
+            "MAX_QTY": CartItem.MAX_QTY_PER_PRODUCT,
+        }
+    )
 
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return render(
-            request, "products/catalog/product_grid.html", context
-        )
+        return render(request, "products/catalog/product_grid.html", context)
     return render(request, "products/catalog/product_list.html", context)
+
 
 #  ────────────────────────────────────────────────── Search products (AJAX) ──────────────────────────────────────────────────
 @never_cache
@@ -274,8 +318,7 @@ def search_products(request):
         return JsonResponse({"results": [], "query": query})
 
     products = (
-        Product.objects
-        .filter(
+        Product.objects.filter(
             is_active=True,
             is_deleted=False,
             subcategory__is_active=True,
@@ -284,13 +327,15 @@ def search_products(request):
             subcategory__category__is_deleted=False,
         )
         .filter(
-            Q(product_name__icontains=query) |
-            Q(brand__icontains=query) |
-            Q(subcategory__subcategory_name__icontains=query) |
-            Q(subcategory__category__category_name__icontains=query) |
-            Q(about_product__icontains=query)
+            Q(product_name__icontains=query)
+            | Q(brand__icontains=query)
+            | Q(subcategory__subcategory_name__icontains=query)
+            | Q(subcategory__category__category_name__icontains=query)
+            | Q(about_product__icontains=query)
         )
-        .select_related("subcategory", "subcategory__category").prefetch_related("images").distinct() [:8]   # Limit to top 8 results for autocomplete dropdown
+        .select_related("subcategory", "subcategory__category")
+        .prefetch_related("images")
+        .distinct()[:8]  # Limit to top 8 results for autocomplete dropdown
     )
 
     results = []
@@ -303,16 +348,18 @@ def search_products(request):
                 if val:
                     img_url = val.url
                     break
-        results.append({
-            "id": p.id,
-            "name": p.product_name,
-            "brand": p.brand,
-            "price": str(p.final_price),
-            "base": str(p.base_price),
-            "discount": p.discount_percent,
-            "img": img_url,
-            "url": f"/products/user/products/{p.id}/",
-        })
+        results.append(
+            {
+                "id": p.id,
+                "name": p.product_name,
+                "brand": p.brand,
+                "price": str(p.final_price),
+                "base": str(p.base_price),
+                "discount": p.discount_percent,
+                "img": img_url,
+                "url": f"/products/user/products/{p.id}/",
+            }
+        )
 
     return JsonResponse({"results": results, "query": query})
 
@@ -320,7 +367,9 @@ def search_products(request):
 @never_cache
 @user_login_required
 def product_detail_view(request, product_id):
-    product = get_object_or_404(Product, id=product_id, is_active=True, is_deleted=False)
+    product = get_object_or_404(
+        Product, id=product_id, is_active=True, is_deleted=False
+    )
     try:
         product = Product.objects.select_related(
             "subcategory", "subcategory__category"
@@ -349,9 +398,9 @@ def product_detail_view(request, product_id):
         .select_related("color", "age_group", "inventory")
         .order_by("color__color", "age_group__age")
     )
-    variant_data     = []
-    total_stock      = 0
-    any_in_stock     = False
+    variant_data = []
+    total_stock = 0
+    any_in_stock = False
     all_out_of_stock = True
 
     for v in variants_qs:
@@ -361,19 +410,23 @@ def product_detail_view(request, product_id):
             qty = 0
         total_stock += qty
         if qty > 0:
-            any_in_stock     = True
+            any_in_stock = True
             all_out_of_stock = False
-        variant_data.append({
-            "id": v.id,
-            "color_id": v.color.id,
-            "color_name": v.color.color,
-            "age": v.age_group.age,
-            "sku": v.sku,
-            "qty": qty,
-            "is_oos": qty == 0,
-            "max_cart_qty": min(CartItem.MAX_QTY_PER_PRODUCT, qty) if qty > 0 else 0,
-            "in_cart": False,
-        })
+        variant_data.append(
+            {
+                "id": v.id,
+                "color_id": v.color.id,
+                "color_name": v.color.color,
+                "age": v.age_group.age,
+                "sku": v.sku,
+                "qty": qty,
+                "is_oos": qty == 0,
+                "max_cart_qty": (
+                    min(CartItem.MAX_QTY_PER_PRODUCT, qty) if qty > 0 else 0
+                ),
+                "in_cart": False,
+            }
+        )
 
     #   ===================================== Images =====================================
     image_urls = []
@@ -414,7 +467,7 @@ def product_detail_view(request, product_id):
     #  Review eligibility — SINGLE source of truth for all review-related logic in the template.
     user_review = None
     user_has_reviewed = False
-    user_can_review  = False
+    user_can_review = False
 
     if request.user.is_authenticated:
         # Check against ALL reviews (approved or pending) so a user who has submitted a review but is awaiting moderation doesn't get the "Write a Review" button back.
@@ -423,12 +476,17 @@ def product_detail_view(request, product_id):
 
         if not user_has_reviewed:
             # Eligible only if they have a DELIVERED order containing this product. This ensures they can only review products they've actually received.
-            user_can_review = Order.objects.filter(user=request.user, order_status="DELIVERED", order_items__variant__product=product).exists()
+            user_can_review = Order.objects.filter(
+                user=request.user,
+                order_status="DELIVERED",
+                order_items__variant__product=product,
+            ).exists()
 
     # ===================================== Active Offers =====================================
     now = timezone.now()
     product_offers = [
-        o for o in Offer.objects.filter(
+        o
+        for o in Offer.objects.filter(
             offer_type="PRODUCT",
             product=product,
             is_active=True,
@@ -438,7 +496,8 @@ def product_detail_view(request, product_id):
         if o.is_valid()
     ]
     category_offers = [
-        o for o in Offer.objects.filter(
+        o
+        for o in Offer.objects.filter(
             offer_type="CATEGORY",
             category=product.subcategory.category,
             is_active=True,
@@ -448,7 +507,9 @@ def product_detail_view(request, product_id):
         if o.is_valid()
     ]
     all_offers = product_offers + category_offers
-    best_offer = max(all_offers, key=lambda o: o.discount_percent) if all_offers else None
+    best_offer = (
+        max(all_offers, key=lambda o: o.discount_percent) if all_offers else None
+    )
 
     context = {
         # product core data
@@ -459,23 +520,20 @@ def product_detail_view(request, product_id):
         "any_in_stock": any_in_stock,
         "all_out_of_stock": all_out_of_stock,
         "related_products": related_products,
-
         # cart / wishlist context for buttons and JS
         "cart_variant_ids": uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
         "cart_item_count": uw["cart_item_count"],
-        "product_in_wishlist":  product.id in uw["wishlist_product_ids"],
-        "MAX_QTY":CartItem.MAX_QTY_PER_PRODUCT,
+        "product_in_wishlist": product.id in uw["wishlist_product_ids"],
+        "MAX_QTY": CartItem.MAX_QTY_PER_PRODUCT,
         "add_to_cart_url_base": "/shop/cart/add/",
-
-        # reviews 
+        # reviews
         "reviews": review_list,
         "review_count": review_count,
         "average_rating": average_rating,
         "user_review": user_review,
-        "user_has_reviewed": user_has_reviewed,  
+        "user_has_reviewed": user_has_reviewed,
         "user_can_review": user_can_review,
-
         # offers
         "product_offers": product_offers,
         "category_offers": category_offers,
@@ -513,12 +571,14 @@ def ajax_variant_info(request):
     in_cart = False
     if request.user.is_authenticated:
         try:
-            in_cart = CartItem.objects.filter(cart=request.user.cart, variant=variant).exists()
+            in_cart = CartItem.objects.filter(
+                cart=request.user.cart, variant=variant
+            ).exists()
         except Cart.DoesNotExist:
             pass
 
     data = {
-        #  original keys 
+        #  original keys
         "variant_id": variant.id,
         "sku": variant.sku,
         "color": str(variant.color),
@@ -529,13 +589,14 @@ def ajax_variant_info(request):
         "base_price": str(variant.product.base_price),
         "final_price": str(variant.product.final_price),
         "discount_percent": variant.product.discount_percent,
-
         # Used by the product-detail page JS to update button state
         "in_cart": in_cart,
         "max_cart_qty": min(CartItem.MAX_QTY_PER_PRODUCT, qty),
         "add_to_cart_url": f"/shop/cart/add/{variant.id}/",
     }
     return JsonResponse(data)
+
+
 #  ────────────────────────────────────────────────── AJAX: Get product grid HTML for filters/sorting without full page reload ──────────────────────────────────────────────────
 @never_cache
 def ajax_product_grid(request, category_id=None, subcategory_id=None):

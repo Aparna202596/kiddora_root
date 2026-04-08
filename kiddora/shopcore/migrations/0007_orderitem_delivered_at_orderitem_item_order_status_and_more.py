@@ -6,28 +6,60 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0006_alter_order_payment_method'),
+        ("shopcore", "0006_alter_order_payment_method"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='orderitem',
-            name='delivered_at',
+            model_name="orderitem",
+            name="delivered_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='orderitem',
-            name='item_order_status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('CONFIRMED', 'Confirmed'), ('SHIPPED', 'Shipped'), ('OUT_FOR_DELIVERY', 'Out for Delivery'), ('DELIVERED', 'Delivered'), ('CANCELLED', 'Cancelled')], default='PENDING', max_length=20),
+            model_name="orderitem",
+            name="item_order_status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("CONFIRMED", "Confirmed"),
+                    ("SHIPPED", "Shipped"),
+                    ("OUT_FOR_DELIVERY", "Out for Delivery"),
+                    ("DELIVERED", "Delivered"),
+                    ("CANCELLED", "Cancelled"),
+                ],
+                default="PENDING",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='order',
-            name='order_status',
-            field=models.CharField(choices=[('ALL PENDING', 'All Pending'), ('ALL CONFIRMED', 'All Confirmed'), ('ALL SHIPPED', 'All Shipped'), ('ALL OUT_FOR_DELIVERY', 'All Out for Delivery'), ('ALL DELIVERED', 'All Delivered'), ('ALL CANCELLED', 'All Cancelled')], default='PENDING', max_length=20),
+            model_name="order",
+            name="order_status",
+            field=models.CharField(
+                choices=[
+                    ("ALL PENDING", "All Pending"),
+                    ("ALL CONFIRMED", "All Confirmed"),
+                    ("ALL SHIPPED", "All Shipped"),
+                    ("ALL OUT_FOR_DELIVERY", "All Out for Delivery"),
+                    ("ALL DELIVERED", "All Delivered"),
+                    ("ALL CANCELLED", "All Cancelled"),
+                ],
+                default="PENDING",
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='order',
-            name='payment_status',
-            field=models.CharField(choices=[('PENDING', 'Pending'), ('PAID', 'Paid'), ('FAILED', 'Failed'), ('REFUNDED', 'Refunded'), ('PARTIALLY_REFUNDED', 'Partially Refunded')], default='ALL PENDING', max_length=20),
+            model_name="order",
+            name="payment_status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING", "Pending"),
+                    ("PAID", "Paid"),
+                    ("FAILED", "Failed"),
+                    ("REFUNDED", "Refunded"),
+                    ("PARTIALLY_REFUNDED", "Partially Refunded"),
+                ],
+                default="ALL PENDING",
+                max_length=20,
+            ),
         ),
     ]

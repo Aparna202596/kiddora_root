@@ -1,33 +1,35 @@
 from __future__ import annotations
 
+import json
+import logging
+import re
+from decimal import ROUND_HALF_UP, Decimal
+
+import requests
+from accounts.decorators import user_login_required
+from django.conf import settings
+from django.contrib import messages
+from django.db import transaction
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from accounts.decorators import user_login_required
-from django.shortcuts import get_object_or_404, redirect, render
-from utils.currency import convert_currency
-from django.contrib import messages
-from django.utils import timezone
-from django.http import HttpResponse
-from django.conf import settings
-from django.db import transaction
-from decimal import Decimal, ROUND_HALF_UP
-import requests
-import logging
-import json
-import re
-
-from payments.views.wallet_helpers import _restore_inventory_for_order, _finalize_order_after_payment
 from payments.models import Payment, PaymentLog, Wallet
+from payments.views.wallet_helpers import (_finalize_order_after_payment,
+                                           _restore_inventory_for_order)
 from shopcore.models import Order
-
+from utils.currency import convert_currency
 
 logger = logging.getLogger(__name__)
+
 
 #   ────────────────────────────────────────────────── WALLET HELPER ──────────────────────────────────────────────────
 def _get_wallet_balance(user) -> Decimal:
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet.balance
+
 
 def _paypal_base_url() -> str:
     mode = getattr(settings, "PAYPAL_MODE", "sandbox")
@@ -37,8 +39,9 @@ def _paypal_base_url() -> str:
         else "https://api-m.paypal.com"
     )
 
+
 def _paypal_access_token() -> str:
-    url  = f"{_paypal_base_url()}/v1/oauth2/token"
+    url = f"{_paypal_base_url()}/v1/oauth2/token"
     resp = requests.post(
         url,
         data={"grant_type": "client_credentials"},
@@ -48,11 +51,13 @@ def _paypal_access_token() -> str:
     resp.raise_for_status()
     return resp.json()["access_token"]
 
+
 def _paypal_headers() -> dict:
     return {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {_paypal_access_token()}",
     }
+
 
 def _sanitise_reference_id(order_id: str) -> str:
     clean = re.sub(r"[^A-Za-z0-9\-]", "", order_id)
@@ -61,6 +66,7 @@ def _sanitise_reference_id(order_id: str) -> str:
 
 def _format_amount(amount: Decimal) -> str:
     return str(amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
 
 def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> dict:
     url = f"{_paypal_base_url()}/v2/checkout/orders"
@@ -93,8 +99,9 @@ def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> d
     resp.raise_for_status()
     return resp.json()
 
+
 def _paypal_capture_order(paypal_order_id: str) -> dict:
-    url  = f"{_paypal_base_url()}/v2/checkout/orders/{paypal_order_id}/capture"
+    url = f"{_paypal_base_url()}/v2/checkout/orders/{paypal_order_id}/capture"
     resp = requests.post(url, headers=_paypal_headers(), timeout=15)
 
     if not resp.ok:
@@ -107,6 +114,7 @@ def _paypal_capture_order(paypal_order_id: str) -> dict:
     resp.raise_for_status()
     return resp.json()
 
+
 #   ────────────────────────────────────────────────── INITIATE PAYPAL PAYMENT ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -118,11 +126,15 @@ def initiate_paypal_payment(request, order_id):
     currency = getattr(settings, "PAYPAL_CURRENCY", "USD")
 
     try:
-        amount_usd = Decimal(str(convert_currency(
-            amount=order.final_amount,
-            from_currency="INR",
-            to_currency=currency,
-        )))
+        amount_usd = Decimal(
+            str(
+                convert_currency(
+                    amount=order.final_amount,
+                    from_currency="INR",
+                    to_currency=currency,
+                )
+            )
+        )
     except Exception as exc:
         logger.exception("Currency conversion failed: %s", exc)
 
@@ -132,33 +144,42 @@ def initiate_paypal_payment(request, order_id):
 
     try:
         pp_data = _paypal_create_order(
-            amount=amount_usd,      
-            currency=currency,      
+            amount=amount_usd,
+            currency=currency,
             reference_id=str(order.order_id),
         )
     except Exception as exc:
-            logger.exception("PayPal create order failed for order %s: %s", order_id, exc)
-            payment = Payment.objects.create(
-                order=order, payment_method="PAYPAL",
-                payment_status="FAILED", amount=order.final_amount,
-                failure_reason=str(exc), initiated_at=timezone.now(),
-            )
-            PaymentLog.objects.create(
-                payment=payment, gateway="PAYPAL",
-                event_type="PAYPAL_CALLBACK", payload={"error": str(exc)},
-            )
-            order.order_status = "ORDER NOT PLACED"
-            order.payment_status = "FAILED"
-            order.save(update_fields=["order_status", "payment_status"])
-            return redirect("payments:paypal_failure", order_id=order.order_id)
+        logger.exception("PayPal create order failed for order %s: %s", order_id, exc)
+        payment = Payment.objects.create(
+            order=order,
+            payment_method="PAYPAL",
+            payment_status="FAILED",
+            amount=order.final_amount,
+            failure_reason=str(exc),
+            initiated_at=timezone.now(),
+        )
+        PaymentLog.objects.create(
+            payment=payment,
+            gateway="PAYPAL",
+            event_type="PAYPAL_CALLBACK",
+            payload={"error": str(exc)},
+        )
+        order.order_status = "ORDER NOT PLACED"
+        order.payment_status = "FAILED"
+        order.save(update_fields=["order_status", "payment_status"])
+        return redirect("payments:paypal_failure", order_id=order.order_id)
 
     paypal_order_id = pp_data.get("id")
-    approve_url = next((link["href"] for link in pp_data.get("links", []) if link["rel"] == "approve"),None)
+    approve_url = next(
+        (link["href"] for link in pp_data.get("links", []) if link["rel"] == "approve"),
+        None,
+    )
 
     if not approve_url:
         logger.error(
             "PayPal did not return an approve URL for order %s: %s",
-            order_id, pp_data,
+            order_id,
+            pp_data,
         )
         return redirect("payments:paypal_failure", order_id=order.order_id)
 
@@ -182,7 +203,8 @@ def initiate_paypal_payment(request, order_id):
 
     return redirect(approve_url)
 
-#────────────────────────────────────────────────── PAYPAL CALLBACK ──────────────────────────────────────────────────
+
+# ────────────────────────────────────────────────── PAYPAL CALLBACK ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -209,15 +231,19 @@ def paypal_callback(request):
     try:
         capture_data = _paypal_capture_order(paypal_order_id)
     except Exception as exc:
-        logger.exception("PayPal capture failed for order %s: %s", kiddora_order_id, exc)
+        logger.exception(
+            "PayPal capture failed for order %s: %s", kiddora_order_id, exc
+        )
         payment.payment_status = "FAILED"
         payment.failure_reason = str(exc)
         payment.save(update_fields=["payment_status", "failure_reason"])
         PaymentLog.objects.create(
-            payment=payment, gateway="PAYPAL",
-            event_type="PAYPAL_CALLBACK", payload={"error": str(exc)},
+            payment=payment,
+            gateway="PAYPAL",
+            event_type="PAYPAL_CALLBACK",
+            payload={"error": str(exc)},
         )
-        order.order_status  = "ORDER NOT PLACED"
+        order.order_status = "ORDER NOT PLACED"
         order.payment_status = "FAILED"
         order.save(update_fields=["order_status", "payment_status"])
         return redirect("payments:paypal_failure", order_id=order.order_id)
@@ -233,24 +259,29 @@ def paypal_callback(request):
     )
 
     if capture_status == "COMPLETED":
-        capture_id  = None
+        capture_id = None
         try:
-            capture_id = (
-                capture_data["purchase_units"][0]["payments"]["captures"][0]["id"]
-            )
+            capture_id = capture_data["purchase_units"][0]["payments"]["captures"][0][
+                "id"
+            ]
         except (KeyError, IndexError):
             pass
 
         payer_email = capture_data.get("payer", {}).get("email_address", "")
-        payment.payment_status     = "PAID"
-        payment.paypal_capture_id  = capture_id
-        payment.paypal_payer_id    = payer_id
+        payment.payment_status = "PAID"
+        payment.paypal_capture_id = capture_id
+        payment.paypal_payer_id = payer_id
         payment.paypal_payer_email = payer_email
-        payment.completed_at       = timezone.now()
-        payment.save(update_fields=[
-            "payment_status", "paypal_capture_id",
-            "paypal_payer_id", "paypal_payer_email", "completed_at",
-        ])
+        payment.completed_at = timezone.now()
+        payment.save(
+            update_fields=[
+                "payment_status",
+                "paypal_capture_id",
+                "paypal_payer_id",
+                "paypal_payer_email",
+                "completed_at",
+            ]
+        )
 
         order.payment_status = "PAID"
         order.save(update_fields=["payment_status"])
@@ -270,13 +301,14 @@ def paypal_callback(request):
         payment.failure_reason = failure_reason
         payment.save(update_fields=["payment_status", "failure_reason"])
 
-        order.order_status   = "ORDER NOT PLACED"
+        order.order_status = "ORDER NOT PLACED"
         order.payment_status = "FAILED"
         order.save(update_fields=["order_status", "payment_status"])
 
-        _restore_inventory_for_order(order)   # ← see helper below
+        _restore_inventory_for_order(order)  # ← see helper below
 
-        return redirect("payments:paypal_failure", order_id=order.order_id)   
+        return redirect("payments:paypal_failure", order_id=order.order_id)
+
 
 #   ────────────────────────────────────────────────── PAYPAL CANCEL ──────────────────────────────────────────────────
 @never_cache
@@ -285,26 +317,33 @@ def paypal_cancel(request):
     if kiddora_order_id:
         order = Order.objects.filter(order_id=kiddora_order_id).first()
         if order:
-            Payment.objects.filter(
-                order=order, payment_status="INITIATED"
-            ).update(payment_status="FAILED")  
-            
+            Payment.objects.filter(order=order, payment_status="INITIATED").update(
+                payment_status="FAILED"
+            )
+
             order.order_status = "ORDER NOT PLACED"
             order.payment_status = "FAILED"
             order.save(update_fields=["order_status", "payment_status"])
             return redirect("payments:paypal_failure", order_id=order.order_id)
     messages.warning(request, "Payment was cancelled.")
     return redirect("shopcore:user_order_list")
+
+
 #   ────────────────────────────────────────────────── PAYPAL SUCCESS PAGE ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def paypal_success(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     latest_payment = order.payments.filter(payment_status="PAID").first()
-    return render(request, "payments/paypal_success.html", {
-        "order": order,
-        "latest_payment": latest_payment,
-    })
+    return render(
+        request,
+        "payments/paypal_success.html",
+        {
+            "order": order,
+            "latest_payment": latest_payment,
+        },
+    )
+
 
 #   ────────────────────────────────────────────────── PAYPAL FAILURE PAGE ──────────────────────────────────────────────────
 @never_cache
@@ -312,14 +351,17 @@ def paypal_success(request, order_id):
 def paypal_failure(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     latest_payment = (
-        order.payments.filter(payment_method="PAYPAL")
-        .order_by("-created_at")
-        .first()
+        order.payments.filter(payment_method="PAYPAL").order_by("-created_at").first()
     )
-    return render(request, "payments/paypal_failure.html", {
-        "order": order,
-        "latest_payment": latest_payment,
-    })
+    return render(
+        request,
+        "payments/paypal_failure.html",
+        {
+            "order": order,
+            "latest_payment": latest_payment,
+        },
+    )
+
 
 #   ────────────────────────────────────────────────── RETRY PAYMENT ──────────────────────────────────────────────────
 @never_cache
@@ -330,23 +372,21 @@ def retry_payment(request, order_id):
         return redirect("shopcore:order_success", order_id=order.order_id)
     return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
 
+
 #   ────────────────────────────────────────────────── PAYPAL WEBHOOK ──────────────────────────────────────────────────
 @csrf_exempt
 @require_POST
 def paypal_webhook(request):
     try:
         payload = json.loads(request.body)
-    except json.JSONDecodeError: 
+    except json.JSONDecodeError:
         return HttpResponse(status=400)
 
     event_type = payload.get("event_type", "")
     resource = payload.get("resource", {})
-    paypal_order_id = (
-        resource.get("supplementary_data", {})
-        .get("related_ids", {})
-        .get("order_id")
-        or resource.get("id")
-    )
+    paypal_order_id = resource.get("supplementary_data", {}).get("related_ids", {}).get(
+        "order_id"
+    ) or resource.get("id")
 
     PaymentLog.objects.create(
         gateway="PAYPAL",

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0016_return_approved_at'),
+        ("shopcore", "0016_return_approved_at"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='orderitem',
-            name='cancelled_quantity',
+            model_name="orderitem",
+            name="cancelled_quantity",
             field=models.PositiveIntegerField(default=0),
         ),
     ]

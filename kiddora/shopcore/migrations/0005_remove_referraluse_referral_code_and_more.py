@@ -6,45 +6,53 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('shopcore', '0004_review_average_review'),
+        ("shopcore", "0004_review_average_review"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='referraluse',
-            name='referral_code',
+            model_name="referraluse",
+            name="referral_code",
         ),
         migrations.RemoveField(
-            model_name='referraluse',
-            name='coupon_awarded',
+            model_name="referraluse",
+            name="coupon_awarded",
         ),
         migrations.RemoveField(
-            model_name='referraluse',
-            name='referred_user',
+            model_name="referraluse",
+            name="referred_user",
         ),
         migrations.RemoveField(
-            model_name='review',
-            name='average_review',
+            model_name="review",
+            name="average_review",
         ),
         migrations.AddField(
-            model_name='review',
-            name='admin_reply',
+            model_name="review",
+            name="admin_reply",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='review',
-            name='replied_at',
+            model_name="review",
+            name="replied_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='order',
-            name='payment_method',
-            field=models.CharField(choices=[('COD', 'Cash on Delivery'), ('PAYPAL', 'Paypal'), ('WALLET', 'Wallet')], default='COD', max_length=20),
+            model_name="order",
+            name="payment_method",
+            field=models.CharField(
+                choices=[
+                    ("COD", "Cash on Delivery"),
+                    ("PAYPAL", "Paypal"),
+                    ("WALLET", "Wallet"),
+                ],
+                default="COD",
+                max_length=20,
+            ),
         ),
         migrations.DeleteModel(
-            name='ReferralCode',
+            name="ReferralCode",
         ),
         migrations.DeleteModel(
-            name='ReferralUse',
+            name="ReferralUse",
         ),
     ]
