@@ -8,7 +8,7 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from products.models import Category, Product
-from shopcore.models import Banner, Cart, CartItem, Review, Wishlist
+from shopcore.models import Banner, Cart, Review, Wishlist
 
 User = get_user_model()
 

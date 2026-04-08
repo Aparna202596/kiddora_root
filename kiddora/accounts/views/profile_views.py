@@ -6,7 +6,7 @@ from accounts.views.otp_views import generate_otp
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import (get_user_model, logout,
-                                 update_session_auth_hash)
+                                    update_session_auth_hash)
 from django.core.mail import send_mail
 from django.shortcuts import redirect, render
 from django.utils import timezone

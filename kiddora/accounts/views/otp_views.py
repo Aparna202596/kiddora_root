@@ -8,7 +8,6 @@ from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django.utils.dateparse import parse_datetime
 from django.views.decorators.cache import never_cache
 
 User = get_user_model()

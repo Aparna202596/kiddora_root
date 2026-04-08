@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from payments.models import Payment, PaymentLog, Wallet
 from payments.views.wallet_helpers import (_finalize_order_after_payment,
-                                           _restore_inventory_for_order)
+                                            _restore_inventory_for_order)
 from shopcore.models import Order
 from utils.currency import convert_currency
 

@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from products.models import Inventory, ProductVariant
 from products.utils.pagination import paginate_queryset
-from products.utils.search_utils import apply_search
 
 #   =============================================== INVENTORY MANAGEMENT ===============================================
 

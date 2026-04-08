@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from shopcore.models import (Coupon, CouponUsage, Offer, ReferralCode,
-                             ReferralUse)
+                                ReferralUse)
 
 User = get_user_model()
 
@@ -78,15 +78,7 @@ def _award_referrer_coupon(referrer) -> Coupon | None:
 
 
 def _award_new_user_coupon() -> Coupon | None:
-    """
-    TASK 1 — Award a coupon to the NEW USER who signed up via a referral link.
 
-    Priority:
-      1. Use the ``new_user_coupon`` configured on an active REFERRAL Offer.
-      2. Fall back to auto-generating a ₹50 flat welcome coupon (30-day, single-use).
-
-    This coupon is entirely separate from the referrer's reward.
-    """
     now = timezone.now()
 
     # Look for an admin-configured new-user welcome reward on a live REFERRAL offer
@@ -112,25 +104,9 @@ def process_referral_on_signup(
     referral_code_str: str = "",
     referral_token: str = "",
 ) -> bool:
-    """
-    Called immediately after a new user registers.
 
-    TASK 1 — Issues SEPARATE coupons for each party:
-      • referrer (existing user)  → via ``_award_referrer_coupon()``
-      • new user (just registered) → via ``_award_new_user_coupon()``
-
-    Both coupons are stored on ``ReferralUse``:
-      - ``coupon_awarded``   ← referrer's reward  (legacy field, kept for compat)
-      - ``new_user_coupon``  ← new user's welcome reward  (TASK 1 addition)
-
-    ``CouponUsage`` rows are pre-created for both parties so the coupons appear
-    immediately in the checkout coupon list (even before either is redeemed).
-
-    Returns True if a valid referral was processed, False otherwise.
-    """
     referral_record = None
 
-    # 1. Try token first (link-based referral)
     if referral_token:
         try:
             referral_record = ReferralCode.objects.select_related("user").get(
@@ -139,7 +115,6 @@ def process_referral_on_signup(
         except ReferralCode.DoesNotExist:
             pass
 
-    # 2. Fall back to typed referral code
     if not referral_record and referral_code_str:
         try:
             referral_record = ReferralCode.objects.select_related("user").get(
@@ -153,7 +128,6 @@ def process_referral_on_signup(
 
     referrer = referral_record.user
 
-    # Guard: no self-referral, no double-processing
     if (
         referrer == new_user
         or ReferralUse.objects.filter(referred_user=new_user).exists()
@@ -168,8 +142,8 @@ def process_referral_on_signup(
     ReferralUse.objects.create(
         referral_code=referral_record,
         referred_user=new_user,
-        coupon_awarded=referrer_coupon,  # referrer's reward (legacy field)
-        new_user_coupon=new_user_coupon,  # TASK 1: new user's separate reward
+        coupon_awarded=referrer_coupon,  
+        new_user_coupon=new_user_coupon,  
     )
 
     # ── Pre-create CouponUsage rows so coupons show in checkout immediately ─
@@ -207,7 +181,6 @@ def award_referral_rewards(referrer, new_user, referral_code_obj):
 
     if referral_offer.referrer_coupon:
         coupon_awarded = referral_offer.referrer_coupon
-        # Optionally mark as used or just award (depending on your policy)
 
     if referral_offer.new_user_coupon:
         new_user_coupon = referral_offer.new_user_coupon
@@ -219,7 +192,6 @@ def award_referral_rewards(referrer, new_user, referral_code_obj):
         new_user_coupon=new_user_coupon,  # to new user
     )
 
-    # Optional: increment used_count on coupons if you want immediate "claimed" status
     if coupon_awarded:
         coupon_awarded.used_count += 1
         coupon_awarded.save(update_fields=["used_count"])
@@ -256,7 +228,7 @@ def my_referrals(request):
             "referral_link": referral_link,
             "uses": uses,
             "total_uses": uses.count(),
-            # TASK 1: surface both coupon types to the template
+            
             "my_new_user_coupon": (
                 my_referral_use.new_user_coupon if my_referral_use else None
             ),
@@ -291,9 +263,7 @@ def admin_referral_list(request):
         },
     )
 
-
 # ────────────────────────────────────────────────── ADMIN: REFERRAL USES ──────────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
