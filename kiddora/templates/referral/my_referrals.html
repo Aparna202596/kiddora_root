@@ -305,8 +305,6 @@
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Friend Email</th>
                     <th>Coupon Awarded</th>
                     <th>Date</th>
                 </tr>
@@ -314,8 +312,6 @@
             <tbody>
                 {% for use in uses %}
                 <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ use.referred_user.email }}</td>
                     <td>
                         {% if use.coupon_awarded %}
                             <span class="coupon-pill">{{ use.coupon_awarded.code }}</span>
