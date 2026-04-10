@@ -5,9 +5,6 @@ from django.dispatch import receiver
 from payments.models import Wallet
 from shopcore.models import Cart, Wishlist
 
-
-# This signal handler creates associated Cart, Wishlist, and Wallet instances
-# whenever a new user with the role of "customer" is created.
 @receiver(post_save, sender=CustomUser)
 def create_user_dependencies(sender, instance, created, **kwargs):
 

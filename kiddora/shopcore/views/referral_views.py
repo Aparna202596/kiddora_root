@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from shopcore.models import (Coupon, CouponUsage, Offer, ReferralCode,
-                             ReferralUse)
+                            ReferralUse)
 
 User = get_user_model()
 
@@ -47,16 +47,7 @@ def _make_referral_coupon(
 
 
 def _award_referrer_coupon(referrer) -> Coupon | None:
-    """
-    TASK 1 — Award a coupon to the EXISTING USER who shared the referral link.
 
-    Priority:
-      1. Use the ``referrer_coupon`` configured on an active REFERRAL Offer.
-      2. Fall back to auto-generating a ₹100 flat coupon (30-day, single-use).
-
-    A separate new-user coupon is handled by ``_award_new_user_coupon()`` so the
-    two rewards are always distinct and independently trackable.
-    """
     now = timezone.now()
 
     # Look for an admin-configured referrer reward on a live REFERRAL offer
@@ -72,8 +63,7 @@ def _award_referrer_coupon(referrer) -> Coupon | None:
     )
     if offer and offer.referrer_coupon and offer.referrer_coupon.is_valid():
         return offer.referrer_coupon
-
-    # Auto-generate: ₹100 flat, usable once, 30-day validity
+# Auto-generate: ₹100 flat, usable once, 30-day validity
     return _make_referral_coupon("REF-REFERRER", Decimal("100"), usage_limit=1)
 
 
@@ -134,9 +124,24 @@ def process_referral_on_signup(
     ):
         return False
 
-    # ── Issue separate coupons ────────────────────────────────────────────
-    referrer_coupon = _award_referrer_coupon(referrer)  # existing user's reward
-    new_user_coupon = _award_new_user_coupon()  # new user's welcome reward
+    existing_referrer_use = ReferralUse.objects.filter(
+        referral_code=referral_record,
+        coupon_awarded__isnull=False,
+    ).select_related("coupon_awarded").first()
+
+    if existing_referrer_use and existing_referrer_use.coupon_awarded:
+        referrer_coupon = existing_referrer_use.coupon_awarded
+        # Each new sign-up earns the referrer one more use of their coupon
+        referrer_coupon.usage_limit += 1
+        # Extend validity: push expiry 30 days from now if it would expire sooner
+        extended = timezone.now() + timedelta(days=30)
+        if referrer_coupon.expiry_date < extended:
+            referrer_coupon.expiry_date = extended
+        referrer_coupon.save(update_fields=["usage_limit", "expiry_date"])
+    else:
+        referrer_coupon = _award_referrer_coupon(referrer)
+
+    new_user_coupon = _award_new_user_coupon()  # new user always gets a fresh one
 
     # ── Record the referral use with BOTH coupons ─────────────────────────
     ReferralUse.objects.create(
@@ -153,14 +158,12 @@ def process_referral_on_signup(
             user=referrer,
             defaults={"times_used": 0},
         )
-
     if new_user_coupon:
         CouponUsage.objects.get_or_create(
             coupon=new_user_coupon,
             user=new_user,
             defaults={"times_used": 0},
         )
-
     return True
 
 

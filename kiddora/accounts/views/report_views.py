@@ -15,7 +15,7 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from payments.models import Payment, Wallet, WalletTransaction
 from products.models import (Category, Inventory, Product, ProductVariant,
-                             SubCategory)
+                            SubCategory)
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -26,15 +26,10 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import (HRFlowable, Image, Paragraph,
                                 SimpleDocTemplate, Spacer, Table, TableStyle)
 from shopcore.models import (Cart, CartItem, Coupon, CouponUsage, Offer, Order,
-                             OrderItem, ReferralCode, ReferralUse, Return,
-                             Review, Wishlist)
+                            OrderItem, ReferralCode, ReferralUse, Return,
+                            Review, Wishlist)
 
 User = get_user_model()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 def get_date_range(request, default_days=10):
@@ -109,18 +104,6 @@ def _build_pdf_header(
 
     # Brand name + title row
     now_str = datetime.now().strftime("%d %B %Y, %I:%M %p")
-    # header_data = [
-    #     [
-    #         # Paragraph(f'<font size="18" color="#d98ab2"><b>KIDDORA</b></font>', ParagraphStyle("h", fontName=font_bold)),
-    #         Paragraph(f'<font size="9" color="#64748b">Downloaded: {now_str}</font>', ParagraphStyle("dt", fontName=font_regular, alignment=2)),
-    #     ]
-    # ]
-    # ht = Table(header_data, colWidths=[10 * cm, 9 * cm])
-    # ht.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
-    # elements.append(ht)
-    # elements.append(Spacer(1, 6))
-    # elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#e8a1c6")))
-    # elements.append(Spacer(1, 10))
 
     # Report title
     elements.append(
@@ -310,11 +293,7 @@ def _data_table(headers, rows, font_regular, font_bold, col_widths=None):
     t.setStyle(style)
     return t
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ADMIN DASHBOARD VIEW
-# ─────────────────────────────────────────────────────────────────────────────
-
+#  ────────────────────────────────────────────────── ADMIN DASHBOARD ──────────────────────────────────────────────────
 
 @never_cache
 @admin_login_required
@@ -653,11 +632,7 @@ def admin_dashboard_view(request):
     return render(request, "accounts/admin/admin_dashboard.html", context)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DASHBOARD PDF DOWNLOAD
-# ─────────────────────────────────────────────────────────────────────────────
-
-
+#  ────────────────────────────────────────────────── ADMIN DASHBOARD PDF ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def download_dashboard_pdf(request):
@@ -1107,11 +1082,7 @@ def download_dashboard_pdf(request):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SALES REPORT VIEW
-# ─────────────────────────────────────────────────────────────────────────────
-
-
+#  ────────────────────────────────────────────────── SALES REPORT ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def admin_sales_report(request):
@@ -1290,11 +1261,7 @@ def admin_sales_report(request):
     return render(request, "accounts/admin/admin_sales_report.html", context)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SALES REPORT PDF DOWNLOAD
-# ─────────────────────────────────────────────────────────────────────────────
-
-
+#  ────────────────────────────────────────────────── SALES REPORT PDF ──────────────────────────────────────────────────
 @never_cache
 @admin_login_required
 def download_sales_report_pdf(request):

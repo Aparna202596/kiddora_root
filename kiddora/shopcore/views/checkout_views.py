@@ -14,7 +14,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from payments.models import Payment, Wallet
 from shopcore.models import (Cart, Coupon, CouponUsage, Order, OrderItem,
-                             ReferralUse)
+                            ReferralUse)
 from shopcore.views.coupon_views import compute_coupon_discount
 from shopcore.views.offer_views import (get_max_offer_discount_percent,
                                         get_offer_discount_detail)
@@ -142,31 +142,8 @@ def _exhausted_coupon_ids(user) -> list[int]:
         if cu.times_used >= cu.coupon.usage_limit
     ]
 
-
-# ────────────────────────────────────────────────────────────────────────────
-# TASK 4 — Re-validate coupon eligibility and free-shipping after a
-#           cancellation or return reduces the active order total.
-# ────────────────────────────────────────────────────────────────────────────
-
-
 def revalidate_order_after_item_change(order: Order) -> dict:
-    """
-    Called whenever an item is cancelled or a return is processed on an order.
 
-    Recalculates the remaining order total from non-cancelled/returned items,
-    then checks:
-      1. Whether the applied coupon is still valid at the new subtotal.
-         If not, the coupon discount is zeroed out and the coupon is detached.
-      2. Whether free-shipping still applies at the new subtotal.
-         If not, the correct shipping charge is applied.
-
-    Returns a dict:
-        coupon_invalidated  – bool
-        shipping_changed    – bool
-        new_coupon_discount – Decimal
-        new_shipping_charge – Decimal
-        new_final_amount    – Decimal
-    """
     result = {
         "coupon_invalidated": False,
         "shipping_changed": False,
@@ -185,7 +162,6 @@ def revalidate_order_after_item_change(order: Order) -> dict:
 
     for oi in active_items:
         base = oi.unit_price * oi.quantity
-        # TASK 3: always use the larger of product / category offer
         offer_pct = get_max_offer_discount_percent(oi.variant.product)
         item_disc = base * Decimal(str(offer_pct)) / 100
         remaining_subtotal += base
@@ -193,7 +169,6 @@ def revalidate_order_after_item_change(order: Order) -> dict:
 
     price_after_offers = remaining_subtotal - remaining_offer_discount
 
-    # ── 1. Coupon re-validation ───────────────────────────────────────────
     new_coupon_discount = Decimal("0")
     if order.coupon:
         coupon = order.coupon
@@ -207,8 +182,6 @@ def revalidate_order_after_item_change(order: Order) -> dict:
 
     result["new_coupon_discount"] = new_coupon_discount
 
-    # ── 2. Shipping re-validation ─────────────────────────────────────────
-    # Use a temporary Order instance just to call calculate_shipping()
     temp_order = Order(
         total_amount=price_after_offers,
         discount_amount=remaining_offer_discount,
@@ -220,7 +193,6 @@ def revalidate_order_after_item_change(order: Order) -> dict:
         result["shipping_changed"] = True
     result["new_shipping_charge"] = new_shipping
 
-    # ── 3. Persist changes ────────────────────────────────────────────────
     new_final = price_after_offers - new_coupon_discount + new_shipping
     result["new_final_amount"] = new_final
 
@@ -242,9 +214,7 @@ def revalidate_order_after_item_change(order: Order) -> dict:
 
     return result
 
-
 # ────────────────────────────────────────────────── SAVE NEW ADDRESS ──────────────────────────────────────────────────
-
 
 @never_cache
 @user_login_required
@@ -409,20 +379,41 @@ def checkout(request):
     wallet_balance = _wallet_balance(request.user)
     wallet_sufficient = wallet_balance >= grand_total
 
-    # ── TASK 1 & TASK 2: Available coupons (PUBLIC + user's own REFERRAL rewards) ─
     now = timezone.now()
-
-    # Coupon given to THIS user as the new user who signed up via referral
-    new_user_referral_coupon_ids = ReferralUse.objects.filter(
-        referred_user=request.user
-    ).values_list("new_user_coupon_id", flat=True)
-
-    # Coupon given to THIS user as the referrer who brought someone in
-    referrer_coupon_ids = ReferralUse.objects.filter(
-        referral_code__user=request.user
-    ).values_list("coupon_awarded_id", flat=True)
-
     exhausted_ids = _exhausted_coupon_ids(request.user)
+
+    # Was THIS user referred by someone? → they are the "new user"
+    my_referral_use = ReferralUse.objects.filter(
+        referred_user=request.user
+    ).select_related("new_user_coupon").first()
+    is_new_referred_user = my_referral_use is not None
+
+    referrer_uses = ReferralUse.objects.filter(
+        referral_code__user=request.user
+    ).select_related("coupon_awarded")
+    is_referrer = referrer_uses.exists()
+
+    new_user_coupon_ids: list[int] = []
+    referrer_coupon_id: int | None = None
+
+    if is_new_referred_user and my_referral_use.new_user_coupon_id:
+        new_user_coupon_ids = [my_referral_use.new_user_coupon_id]
+
+    if is_referrer:
+        referrer_coupon_ids_set = {
+            u.coupon_awarded_id
+            for u in referrer_uses
+            if u.coupon_awarded_id is not None
+        }
+        if referrer_coupon_ids_set:
+            referrer_coupon_id = next(iter(referrer_coupon_ids_set))
+
+    # Compose the filter
+    referral_id_filter: list[int] = []
+    if is_new_referred_user:
+        referral_id_filter += new_user_coupon_ids
+    if is_referrer and referrer_coupon_id:
+        referral_id_filter.append(referrer_coupon_id)
 
     available_coupons = (
         Coupon.objects.filter(
@@ -433,30 +424,27 @@ def checkout(request):
         )
         .filter(
             Q(coupon_type="PUBLIC")
-            | Q(coupon_type="REFERRAL", id__in=new_user_referral_coupon_ids)
-            | Q(coupon_type="REFERRAL", id__in=referrer_coupon_ids)
+            | Q(coupon_type="REFERRAL", id__in=referral_id_filter)
         )
         .exclude(id__in=exhausted_ids)
         .distinct()
     )
 
-    # Tag each coupon so the template can show "referral reward" labels
+    # Tag coupons so the template can render the right label
     tagged_coupons = []
-    new_user_ids_list = list(new_user_referral_coupon_ids)
-    referrer_ids_list = list(referrer_coupon_ids)
     for c in available_coupons:
         role = None
         if c.coupon_type == "REFERRAL":
-            if c.id in new_user_ids_list:
-                role = "new_user"  # welcome reward for THIS user
-            elif c.id in referrer_ids_list:
-                role = "referrer"  # reward for referring someone
+            if c.id in new_user_coupon_ids:
+                role = "new_user"   # welcome reward — shown only to the new user
+            elif referrer_coupon_id and c.id == referrer_coupon_id:
+                role = "referrer"   # reward for referring — shown only to the referrer
         tagged_coupons.append({"coupon": c, "referral_role": role})
+
 
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
 
-    # TASK 2: structured price breakdown dict for the checkout summary panel
     price_breakdown = {
         "subtotal": subtotal,  # MRP total (before any discounts)
         "offer_discount": offer_discount_total,  # savings from product/category offers

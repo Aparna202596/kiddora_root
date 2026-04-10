@@ -1,9 +1,10 @@
-from accounts.decorators import user_login_required
-from accounts.models import UserAddress
-from django.contrib import messages
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
+from accounts.decorators import user_login_required
+from django.contrib.auth import get_user_model
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+
+from accounts.models import UserAddress
 
 User = get_user_model()
 
