@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Django
+*.sqlite3
+media/
+staticfiles/
+
+# Env files — NEVER bake secrets into the image
+.env
+.env.*
+
+# Dev tools
+.git/
+.gitignore
+.dockerignore
+docker-compose.yml
+*.md
+
+# IDE
+.vscode/
+.idea/

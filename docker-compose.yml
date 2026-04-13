@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: kiddora_db
+      POSTGRES_USER: kiddora_user
+      POSTGRES_PASSWORD: kiddora_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Override DB_HOST to point to the compose service
+      DB_HOST: db
+    depends_on:
+      - db
+    volumes:
+      # Hot-reload in dev (optional, comment out for prod test)
+      - .:/app
+
+volumes:
+  postgres_data:
