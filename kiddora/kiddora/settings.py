@@ -14,9 +14,6 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -157,8 +154,7 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = f"https://res.cloudinary.com/{os.getenv('CLOUDINARY_CLOUD_NAME')}/image/upload/"
-
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # ── Email ─────────────────────────────────────────────────────────────────────

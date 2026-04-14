@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from payments.models import Payment, PaymentLog, Wallet
 from payments.views.wallet_helpers import (_finalize_order_after_payment,
-                                           _restore_inventory_for_order)
+                                        _restore_inventory_for_order)
 from shopcore.models import Order
 from utils.currency import convert_currency
 
@@ -82,8 +82,8 @@ def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> d
             }
         ],
         "application_context": {
-            "return_url": "http://localhost:8000/payments/paypal/callback/",
-            "cancel_url": "http://localhost:8000/payments/paypal/cancel/",
+            "return_url": settings.PAYPAL_RETURN_URL,
+            "cancel_url": settings.PAYPAL_CANCEL_URL,
         },
     }
 

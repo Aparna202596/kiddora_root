@@ -12,7 +12,7 @@ from django.views.decorators.cache import never_cache
 
 User = get_user_model()
 
-OTP_EXPIRY_MINUTES = 5
+OTP_EXPIRY_MINUTES = 1
 
 
 #  ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────

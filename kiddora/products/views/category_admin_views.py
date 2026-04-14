@@ -1,4 +1,5 @@
 import os
+from unicodedata import category
 
 from accounts.decorators import admin_login_required
 from django.contrib import messages
@@ -96,14 +97,8 @@ def admin_edit_category(request, category_id):
         category.category_name = category_name
 
         if new_image:
-            if category.category_image:
-                try:
-                    old_path = category.category_image.path
-                    if os.path.isfile(old_path):
-                        os.remove(old_path)
-                except Exception:
-                    pass
             category.category_image = new_image
+        category.save()
 
         category.save()
         messages.success(request, "Category updated")

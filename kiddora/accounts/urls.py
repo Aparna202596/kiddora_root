@@ -1,5 +1,5 @@
 from accounts.views import (address_views, admin_profile_views, admin_views,
-                            auth_views, error_views, otp_views, profile_views,
+                            auth_views, otp_views, profile_views,
                             report_views)
 from django import views
 from django.urls import path
@@ -103,10 +103,8 @@ urlpatterns = [
     # ────────────────────── ADDRESS ──────────────────────
     path("user/addresses/", address_views.address_list, name="address_list"),
     path(
-        "user/addresses/set-default/",
-        address_views.set_default_address,
-        name="set_default_address",
-    ),
+        "user/addresses/set-default/<int:address_id>/", 
+        address_views.set_default_address, name="set_default_address"),
     path("user/addresses/add/", address_views.address_add, name="address_add"),
     path(
         "user/addresses/edit/<int:address_id>",
@@ -119,10 +117,6 @@ urlpatterns = [
         name="address_delete",
     ),
     # ────────────────────── ERROR HANDLING ──────────────────────
-    path("errors/400/", error_views.handler400, name="400"),
-    path("errors/403/", error_views.handler403, name="403"),
-    path("errors/404/", error_views.handler404, name="404"),
-    path("errors/500/", error_views.handler500, name="500"),
     path(
         "blocked/",
         TemplateView.as_view(template_name="accounts/errors/blocked.html"),

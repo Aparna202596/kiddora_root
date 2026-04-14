@@ -396,49 +396,49 @@ def cancel_order_item(request, order_id, item_id):
 
 
 # ────────────────────────────────────────────────── REQUEST RETURN ─────────────────────────────────────────────────────────────
-@never_cache
-@user_login_required
-@transaction.atomic
-def request_return(request, order_id, item_id):
-    order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    order_item = get_object_or_404(OrderItem, id=item_id, order=order)
+# @never_cache
+# @user_login_required
+# @transaction.atomic
+# def request_return(request, order_id, item_id):
+#     order = get_object_or_404(Order, order_id=order_id, user=request.user)
+#     order_item = get_object_or_404(OrderItem, id=item_id, order=order)
 
-    if order.order_status != "DELIVERED":
-        messages.error(
-            request, "Returns are only allowed after the order is delivered."
-        )
-        return redirect("shopcore:user_order_detail", order_id=order.order_id)
+#     if order.order_status != "DELIVERED":
+#         messages.error(
+#             request, "Returns are only allowed after the order is delivered."
+#         )
+#         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-    if order_item.item_status != "ACTIVE":
-        messages.error(request, "This item is not eligible for return.")
-        return redirect("shopcore:user_order_detail", order_id=order.order_id)
+#     if order_item.item_status != "ACTIVE":
+#         messages.error(request, "This item is not eligible for return.")
+#         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-    if hasattr(order_item, "return_request"):
-        messages.error(request, "A return request already exists for this item.")
-        return redirect("shopcore:user_order_detail", order_id=order.order_id)
+#     if hasattr(order_item, "return_request"):
+#         messages.error(request, "A return request already exists for this item.")
+#         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-    if request.method != "POST":
-        return render(
-            request,
-            "orders/user/request_return.html",
-            {"order": order, "order_item": order_item},
-        )
+#     if request.method != "POST":
+#         return render(
+#             request,
+#             "orders/user/request_return.html",
+#             {"order": order, "order_item": order_item},
+#         )
 
-    reason = request.POST.get("return_reason", "").strip()
-    if not reason:
-        messages.error(request, "Please provide a reason for the return.")
-        return render(
-            request,
-            "orders/user/request_return.html",
-            {"order": order, "order_item": order_item},
-        )
+#     reason = request.POST.get("return_reason", "").strip()
+#     if not reason:
+#         messages.error(request, "Please provide a reason for the return.")
+#         return render(
+#             request,
+#             "orders/user/request_return.html",
+#             {"order": order, "order_item": order_item},
+#         )
 
-    Return.objects.create(order_item=order_item, reason=reason)
-    order_item.item_status = "RETURN_REQUESTED"
-    order_item.save(update_fields=["item_status"])
+#     Return.objects.create(order_item=order_item, reason=reason)
+#     order_item.item_status = "RETURN_REQUESTED"
+#     order_item.save(update_fields=["item_status"])
 
-    messages.success(request, "Return request submitted successfully.")
-    return redirect("shopcore:user_order_detail", order_id=order.order_id)
+#     messages.success(request, "Return request submitted successfully.")
+#     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
 
 # ───────────────────────────────────────────────────────────── ADMIN: ORDER LIST ─────────────────────────────────────────────────────────────

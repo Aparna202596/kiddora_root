@@ -13,11 +13,6 @@ cloudinary.config(
     secure=True,
 )
 
-# Optional: Print config for debugging (remove after it works)
-print("Cloudinary configured with:")
-print("Cloud Name:", cloudinary.config().cloud_name)
-print("API Key present:", bool(cloudinary.config().api_key))
-
 class Command(BaseCommand):
     help = 'Migrate existing media files to Cloudinary while preserving exact folder structure'
 

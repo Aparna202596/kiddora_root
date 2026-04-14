@@ -16,13 +16,7 @@ from shopcore.models import Coupon, Offer
 
 
 def get_max_offer_discount_percent(product) -> int:
-    """
-    TASK 3 — Returns the single best (highest) discount percentage applicable
-    to a product.  When both a product-level offer AND a category-level offer
-    exist, only the greater one is applied — they are never combined.
 
-    Example: shirt has 20% product offer + 30% category offer → returns 30.
-    """
     if not product:
         return 0
 

@@ -645,10 +645,6 @@ def place_order(request):
             discount_amount=item_disc,
             item_status="PENDING",
         )
-        inv = variant.inventory
-        inv.quantity_available = max(0, inv.quantity_available - item.quantity)
-        inv.quantity_sold += item.quantity
-        inv.save(update_fields=["quantity_available", "quantity_sold"])
 
     if payment_method == "COD":
         Payment.objects.create(
@@ -695,133 +691,133 @@ def order_success(request, order_id):
 
 
 # ────────────────────────────────────────────────── CANCEL ITEM ──────────────────────────────────────────────────
-@never_cache
-@user_login_required
-@require_POST
-@transaction.atomic
-def cancel_order_item(request, item_id):
-    order_item = get_object_or_404(
-        OrderItem,
-        id=item_id,
-        order__user=request.user,
-    )
-    order = order_item.order
+# @never_cache
+# @user_login_required
+# @require_POST
+# @transaction.atomic
+# def cancel_order_item(request, item_id):
+#     order_item = get_object_or_404(
+#         OrderItem,
+#         id=item_id,
+#         order__user=request.user,
+#     )
+#     order = order_item.order
 
-    if order_item.item_status not in ("PENDING", "CONFIRMED"):
-        messages.error(request, "This item cannot be cancelled at its current status.")
-        return redirect("shopcore:order_detail", order_id=order.order_id)
+#     if order_item.item_status not in ("PENDING", "CONFIRMED"):
+#         messages.error(request, "This item cannot be cancelled at its current status.")
+#         return redirect("shopcore:order_detail", order_id=order.order_id)
 
-    order_item.item_status = "CANCELLED"
-    order_item.save(update_fields=["item_status"])
+#     order_item.item_status = "CANCELLED"
+#     order_item.save(update_fields=["item_status"])
 
-    # Restore inventory
-    try:
-        inv = order_item.variant.inventory
-        inv.quantity_available += order_item.quantity
-        inv.quantity_sold = max(0, inv.quantity_sold - order_item.quantity)
-        inv.save(update_fields=["quantity_available", "quantity_sold"])
-    except Exception:
-        pass
+#     # Restore inventory
+#     try:
+#         inv = order_item.variant.inventory
+#         inv.quantity_available += order_item.quantity
+#         inv.quantity_sold = max(0, inv.quantity_sold - order_item.quantity)
+#         inv.save(update_fields=["quantity_available", "quantity_sold"])
+#     except Exception:
+#         pass
 
-    # TASK 4: re-validate coupon and shipping
-    validation = revalidate_order_after_item_change(order)
+#     # TASK 4: re-validate coupon and shipping
+#     validation = revalidate_order_after_item_change(order)
 
-    # Optional: If the entire order now has no active items, decrement coupon usage
-    active_items_count = order.order_items.filter(
-        item_status__in=("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED")
-    ).count()
+#     # Optional: If the entire order now has no active items, decrement coupon usage
+#     active_items_count = order.order_items.filter(
+#         item_status__in=("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED")
+#     ).count()
 
-    if active_items_count == 0 and order.coupon:
-        try:
-            usage = CouponUsage.objects.get(coupon=order.coupon, user=order.user)
-            usage.times_used = max(0, usage.times_used - 1)
-            usage.save(update_fields=["times_used"])
+#     if active_items_count == 0 and order.coupon:
+#         try:
+#             usage = CouponUsage.objects.get(coupon=order.coupon, user=order.user)
+#             usage.times_used = max(0, usage.times_used - 1)
+#             usage.save(update_fields=["times_used"])
 
-            order.coupon.used_count = max(0, order.coupon.used_count - 1)
-            order.coupon.save(update_fields=["used_count"])
-        except CouponUsage.DoesNotExist:
-            pass
-        except Exception:
-            pass  # safety
+#             order.coupon.used_count = max(0, order.coupon.used_count - 1)
+#             order.coupon.save(update_fields=["used_count"])
+#         except CouponUsage.DoesNotExist:
+#             pass
+#         except Exception:
+#             pass  # safety
 
-    feedback = []
-    if validation["coupon_invalidated"]:
-        feedback.append(
-            "The applied coupon has been removed because the remaining order "
-            "total no longer meets its minimum requirement."
-        )
-    if validation["shipping_changed"]:
-        if validation["new_shipping_charge"] == Decimal("0"):
-            feedback.append("Your order now qualifies for free shipping.")
-        else:
-            feedback.append(
-                f"Shipping charge updated to ₹{validation['new_shipping_charge']:.2f}."
-            )
+#     feedback = []
+#     if validation["coupon_invalidated"]:
+#         feedback.append(
+#             "The applied coupon has been removed because the remaining order "
+#             "total no longer meets its minimum requirement."
+#         )
+#     if validation["shipping_changed"]:
+#         if validation["new_shipping_charge"] == Decimal("0"):
+#             feedback.append("Your order now qualifies for free shipping.")
+#         else:
+#             feedback.append(
+#                 f"Shipping charge updated to ₹{validation['new_shipping_charge']:.2f}."
+#             )
 
-    messages.success(request, "Item cancelled successfully.")
-    for msg in feedback:
-        messages.info(request, msg)
+#     messages.success(request, "Item cancelled successfully.")
+#     for msg in feedback:
+#         messages.info(request, msg)
 
-    return redirect("shopcore:order_detail", order_id=order.order_id)
+#     return redirect("shopcore:order_detail", order_id=order.order_id)
 
 
 # ────────────────────────────────────────────────── RETURN ITEM ──────────────────────────────────────────────────
-@never_cache
-@user_login_required
-@require_POST
-@transaction.atomic
-def return_order_item(request, item_id):
-    order_item = get_object_or_404(
-        OrderItem,
-        id=item_id,
-        order__user=request.user,
-    )
-    order = order_item.order
+# @never_cache
+# @user_login_required
+# @require_POST
+# @transaction.atomic
+# def return_order_item(request, item_id):
+#     order_item = get_object_or_404(
+#         OrderItem,
+#         id=item_id,
+#         order__user=request.user,
+#     )
+#     order = order_item.order
 
-    if order_item.item_status != "DELIVERED":
-        messages.error(request, "Only delivered items can be returned.")
-        return redirect("shopcore:order_detail", order_id=order.order_id)
+#     if order_item.item_status != "DELIVERED":
+#         messages.error(request, "Only delivered items can be returned.")
+#         return redirect("shopcore:order_detail", order_id=order.order_id)
 
-    order_item.item_status = "RETURN_REQUESTED"
-    order_item.save(update_fields=["item_status"])
+#     order_item.item_status = "RETURN_REQUESTED"
+#     order_item.save(update_fields=["item_status"])
 
-    # TASK 4: re-validate coupon and shipping
-    validation = revalidate_order_after_item_change(order)
+#     # TASK 4: re-validate coupon and shipping
+#     validation = revalidate_order_after_item_change(order)
 
-    # Optional: If no active items remain, decrement coupon usage
-    active_items_count = order.order_items.filter(
-        item_status__in=("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED")
-    ).count()
+#     # Optional: If no active items remain, decrement coupon usage
+#     active_items_count = order.order_items.filter(
+#         item_status__in=("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED")
+#     ).count()
 
-    if active_items_count == 0 and order.coupon:
-        try:
-            usage = CouponUsage.objects.get(coupon=order.coupon, user=order.user)
-            usage.times_used = max(0, usage.times_used - 1)
-            usage.save(update_fields=["times_used"])
+#     if active_items_count == 0 and order.coupon:
+#         try:
+#             usage = CouponUsage.objects.get(coupon=order.coupon, user=order.user)
+#             usage.times_used = max(0, usage.times_used - 1)
+#             usage.save(update_fields=["times_used"])
 
-            order.coupon.used_count = max(0, order.coupon.used_count - 1)
-            order.coupon.save(update_fields=["used_count"])
-        except CouponUsage.DoesNotExist:
-            pass
-        except Exception:
-            pass
+#             order.coupon.used_count = max(0, order.coupon.used_count - 1)
+#             order.coupon.save(update_fields=["used_count"])
+#         except CouponUsage.DoesNotExist:
+#             pass
+#         except Exception:
+#             pass
 
-    feedback = []
-    if validation["coupon_invalidated"]:
-        feedback.append(
-            "The applied coupon has been removed because the remaining order "
-            "total no longer meets its minimum requirement."
-        )
-    if validation["shipping_changed"]:
-        if validation["new_shipping_charge"] == Decimal("0"):
-            feedback.append("Your order now qualifies for free shipping.")
-        else:
-            feedback.append(
-                f"Shipping charge updated to ₹{validation['new_shipping_charge']:.2f}."
-            )
+#     feedback = []
+#     if validation["coupon_invalidated"]:
+#         feedback.append(
+#             "The applied coupon has been removed because the remaining order "
+#             "total no longer meets its minimum requirement."
+#         )
+#     if validation["shipping_changed"]:
+#         if validation["new_shipping_charge"] == Decimal("0"):
+#             feedback.append("Your order now qualifies for free shipping.")
+#         else:
+#             feedback.append(
+#                 f"Shipping charge updated to ₹{validation['new_shipping_charge']:.2f}."
+#             )
 
-    messages.success(request, "Return request submitted successfully.")
-    for msg in feedback:
-        messages.info(request, msg)
+#     messages.success(request, "Return request submitted successfully.")
+#     for msg in feedback:
+#         messages.info(request, msg)
 
-    return redirect("shopcore:order_detail", order_id=order.order_id)
+#     return redirect("shopcore:order_detail", order_id=order.order_id)

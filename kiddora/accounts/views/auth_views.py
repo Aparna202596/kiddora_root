@@ -15,7 +15,7 @@ from shopcore.views.referral_views import process_referral_on_signup
 
 User = get_user_model()
 
-OTP_EXPIRY_MINUTES = 5
+OTP_EXPIRY_MINUTES = 1
 
 
 #   ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────

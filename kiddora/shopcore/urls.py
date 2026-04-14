@@ -114,11 +114,11 @@ urlpatterns = [
         order_views.cancel_order_item,
         name="cancel_order_item",
     ),
-    path(
-        "orders/<str:order_id>/return-item/<int:item_id>/",
-        order_views.request_return,
-        name="request_return",
-    ),
+    # path(
+    #     "orders/<str:order_id>/return-item/<int:item_id>/",
+    #     order_views.request_return,
+    #     name="request_return",
+    # ),
     path(
         "orders/<str:order_id>/invoice/",
         order_views.download_invoice,

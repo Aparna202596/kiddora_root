@@ -16,7 +16,7 @@ from shopcore.views.referral_views import get_or_create_referral_record
 
 User = get_user_model()
 
-OTP_EXPIRY_MINUTES = 5
+OTP_EXPIRY_MINUTES = 1
 
 
 #  ────────────────────────────────────────────────── USER PROFILE ──────────────────────────────────────────────────

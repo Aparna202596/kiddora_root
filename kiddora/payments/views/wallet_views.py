@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 from payments.models import Payment, Wallet, WalletTransaction
 from payments.views.paypal_views import _finalize_order_after_payment
 from payments.views.wallet_helpers import (_restore_inventory_for_order,
-                                           debit_from_wallet)
+                                            debit_from_wallet)
 from shopcore.models import Order
 
 #   ────────────────────────────────────────────────── INTERNAL HELPER ──────────────────────────────────────────────────

@@ -105,15 +105,3 @@ def update_stock(request, inventory_id):
         messages.success(request, f"Stock updated for {inventory.variant}.")
 
     return redirect("products:admin_inventory_list")
-
-
-def sync_inventory(
-    variant: ProductVariant, delta_available=0, delta_reserved=0, delta_sold=0
-):
-    inventory, _ = Inventory.objects.get_or_create(
-        variant=variant, defaults={"quantity_available": 0}
-    )
-    inventory.quantity_available += delta_available
-    inventory.quantity_reserved += delta_reserved
-    inventory.quantity_sold += delta_sold
-    inventory.save()

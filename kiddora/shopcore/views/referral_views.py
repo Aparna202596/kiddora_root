@@ -167,40 +167,40 @@ def process_referral_on_signup(
     return True
 
 
-def award_referral_rewards(referrer, new_user, referral_code_obj):
-    # Find active referral offer (if any)
-    referral_offer = Offer.objects.filter(
-        offer_type="REFERRAL",
-        is_active=True,
-        is_deleted=False,
-        start_date__lte=timezone.now(),
-    ).first()
+# def award_referral_rewards(referrer, new_user, referral_code_obj):
+#     # Find active referral offer (if any)
+#     referral_offer = Offer.objects.filter(
+#         offer_type="REFERRAL",
+#         is_active=True,
+#         is_deleted=False,
+#         start_date__lte=timezone.now(),
+#     ).first()
 
-    if not referral_offer:
-        return
+#     if not referral_offer:
+#         return
 
-    coupon_awarded = None  # for referrer
-    new_user_coupon = None  # for new user
+#     coupon_awarded = None  # for referrer
+#     new_user_coupon = None  # for new user
 
-    if referral_offer.referrer_coupon:
-        coupon_awarded = referral_offer.referrer_coupon
+#     if referral_offer.referrer_coupon:
+#         coupon_awarded = referral_offer.referrer_coupon
 
-    if referral_offer.new_user_coupon:
-        new_user_coupon = referral_offer.new_user_coupon
+#     if referral_offer.new_user_coupon:
+#         new_user_coupon = referral_offer.new_user_coupon
 
-    ReferralUse.objects.create(
-        referral_code=referral_code_obj,
-        referred_user=new_user,
-        coupon_awarded=coupon_awarded,  # to referrer
-        new_user_coupon=new_user_coupon,  # to new user
-    )
+#     ReferralUse.objects.create(
+#         referral_code=referral_code_obj,
+#         referred_user=new_user,
+#         coupon_awarded=coupon_awarded,  # to referrer
+#         new_user_coupon=new_user_coupon,  # to new user
+#     )
 
-    if coupon_awarded:
-        coupon_awarded.used_count += 1
-        coupon_awarded.save(update_fields=["used_count"])
-    if new_user_coupon:
-        new_user_coupon.used_count += 1
-        new_user_coupon.save(update_fields=["used_count"])
+#     if coupon_awarded:
+#         coupon_awarded.used_count += 1
+#         coupon_awarded.save(update_fields=["used_count"])
+#     if new_user_coupon:
+#         new_user_coupon.used_count += 1
+#         new_user_coupon.save(update_fields=["used_count"])
 
 
 # ────────────────────────────────────────────────── MY REFERRALS ──────────────────────────────────────────────────
