@@ -1,21 +1,21 @@
 from __future__ import annotations
 
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
+from accounts.decorators import admin_login_required, user_login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import Q, Sum
+from django.contrib import messages
+from django.utils import timezone
+from django.http import JsonResponse
 from decimal import Decimal
 from types import SimpleNamespace
 
-from accounts.decorators import admin_login_required, user_login_required
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db.models import Q, Sum
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_POST
 from shopcore.models import Cart, Coupon, CouponUsage, ReferralUse
 
-# ────────────────────────────────────────────────── HELPERS ──────────────────────────────────────────────────
 
+# ────────────────────────────────────────────────── HELPERS ──────────────────────────────────────────────────
 
 def _get_cart(user):
     try:
@@ -60,14 +60,14 @@ def _referral_coupon_ids_for_user(user):
     Both coupon IDs are returned so checkout can display and accept them.
     """
     # Coupons THIS user received as the NEW user (signed up via referral)
-    new_user_ids = ReferralUse.objects.filter(referred_user=user).values_list(
-        "new_user_coupon_id", flat=True
-    )
+    new_user_ids = ReferralUse.objects.filter(
+        referred_user=user
+    ).values_list("new_user_coupon_id", flat=True)
 
     # Coupons THIS user received as the REFERRER (they referred someone)
-    referrer_ids = ReferralUse.objects.filter(referral_code__user=user).values_list(
-        "coupon_awarded_id", flat=True
-    )
+    referrer_ids = ReferralUse.objects.filter(
+        referral_code__user=user
+    ).values_list("coupon_awarded_id", flat=True)
 
     # Combine and deduplicate, dropping None values
     combined = set(filter(None, list(new_user_ids) + list(referrer_ids)))
@@ -75,7 +75,6 @@ def _referral_coupon_ids_for_user(user):
 
 
 # ────────────────────────────────────────────────── APPLY COUPON ──────────────────────────────────────────────────
-
 
 @never_cache
 @user_login_required
@@ -139,9 +138,7 @@ def apply_coupon(request):
         )
 
     if subtotal < coupon.min_order_amount:
-        msg = (
-            f"Minimum order of ₹{coupon.min_order_amount:.0f} required for this coupon."
-        )
+        msg = f"Minimum order of ₹{coupon.min_order_amount:.0f} required for this coupon."
         if ajax:
             return _coupon_json_error(msg)
         messages.error(request, msg)
@@ -154,27 +151,22 @@ def apply_coupon(request):
     request.session.modified = True
 
     if ajax:
-        return JsonResponse(
-            {
-                "success": True,
-                "coupon_code": coupon.code,
-                "coupon_type": coupon.coupon_type,  # "PUBLIC" or "REFERRAL"
-                "discount_type": coupon.discount_type,
-                "discount_value": str(coupon.discount_value),
-                "max_discount": (
-                    str(coupon.max_discount) if coupon.max_discount else None
-                ),
-                "discount": str(discount),
-                "message": f'Coupon "{coupon.code}" applied! You save ₹{discount:.2f}.',
-            }
-        )
+        return JsonResponse({
+            "success": True,
+            "coupon_code": coupon.code,
+            "coupon_type": coupon.coupon_type,          # "PUBLIC" or "REFERRAL"
+            "discount_type": coupon.discount_type,
+            "discount_value": str(coupon.discount_value),
+            "max_discount": str(coupon.max_discount) if coupon.max_discount else None,
+            "discount": str(discount),
+            "message": f'Coupon "{coupon.code}" applied! You save ₹{discount:.2f}.',
+        })
 
     messages.success(request, f'Coupon "{code}" applied! You save ₹{discount:.0f}.')
     return redirect("shopcore:checkout")
 
 
 # ────────────────────────────────────────────────── REMOVE COUPON ──────────────────────────────────────────────────
-
 
 @never_cache
 @user_login_required
@@ -200,26 +192,19 @@ def remove_coupon(request):
 
 # ────────────────────────────────────────────────── USER: COUPON LIST ──────────────────────────────────────────────────
 
-
 @never_cache
 @user_login_required
 def user_coupon_list(request):
     now = timezone.now()
     referral_coupon_ids = _referral_coupon_ids_for_user(request.user)
 
-    coupons = (
-        Coupon.objects.filter(
-            is_active=True,
-            is_deleted=False,
-            start_date__lte=now,
-            expiry_date__gte=now,
-        )
-        .filter(
-            Q(coupon_type="PUBLIC")
-            | Q(coupon_type="REFERRAL", id__in=referral_coupon_ids)
-        )
-        .distinct()
-    )
+    coupons = Coupon.objects.filter(
+        is_active=True, is_deleted=False,
+        start_date__lte=now, expiry_date__gte=now,
+    ).filter(
+        Q(coupon_type="PUBLIC")
+        | Q(coupon_type="REFERRAL", id__in=referral_coupon_ids)
+    ).distinct()
 
     coupon_data = []
     for coupon in coupons:
@@ -246,50 +231,42 @@ def user_coupon_list(request):
         if is_referral:
             # Was this coupon awarded to THIS user when they signed up via referral?
             new_user_ids = list(
-                ReferralUse.objects.filter(referred_user=request.user).values_list(
-                    "new_user_coupon_id", flat=True
-                )
+                ReferralUse.objects.filter(referred_user=request.user)
+                .values_list("new_user_coupon_id", flat=True)
             )
             if coupon.id in new_user_ids:
-                referral_role = "new_user"  # earned by signing up via referral
+                referral_role = "new_user"    # earned by signing up via referral
             else:
-                referral_role = "referrer"  # earned by referring someone else
+                referral_role = "referrer"    # earned by referring someone else
 
-        coupon_data.append(
-            {
-                "code": coupon.code,
-                "discount_type": coupon.discount_type,
-                "discount_label": discount_label,
-                "discount_value": coupon.discount_value,
-                "max_discount": coupon.max_discount,
-                "min_order_amount": coupon.min_order_amount,
-                "condition": condition,
-                "start_date": coupon.start_date,
-                "expiry_date": coupon.expiry_date,
-                "usage_limit": coupon.usage_limit,
-                "used_count": coupon.used_count,
-                "remaining_uses": remaining_uses,
-                "already_used": times_used > 0,
-                "usage_exhausted": usage_exhausted,
-                "is_available": not usage_exhausted,
-                "is_referral": is_referral,
-                # TASK 1: "new_user" | "referrer" | None
-                "referral_role": referral_role,
-            }
-        )
+        coupon_data.append({
+            "code": coupon.code,
+            "discount_type": coupon.discount_type,
+            "discount_label": discount_label,
+            "discount_value": coupon.discount_value,
+            "max_discount": coupon.max_discount,
+            "min_order_amount": coupon.min_order_amount,
+            "condition": condition,
+            "start_date": coupon.start_date,
+            "expiry_date": coupon.expiry_date,
+            "usage_limit": coupon.usage_limit,
+            "used_count": coupon.used_count,
+            "remaining_uses": remaining_uses,
+            "already_used": times_used > 0,
+            "usage_exhausted": usage_exhausted,
+            "is_available": not usage_exhausted,
+            "is_referral": is_referral,
+            # TASK 1: "new_user" | "referrer" | None
+            "referral_role": referral_role,
+        })
 
-    return render(
-        request,
-        "coupons/user_coupon_list.html",
-        {
-            "coupon_data": coupon_data,
-            "now": now,
-        },
-    )
+    return render(request, "coupons/user_coupon_list.html", {
+        "coupon_data": coupon_data,
+        "now": now,
+    })
 
 
 # ────────────────────────────────────────────────── ADMIN: COUPON LIST ──────────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
@@ -313,22 +290,17 @@ def admin_coupon_list(request):
 
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
 
-    return render(
-        request,
-        "coupon_offer/admin_coupon_list.html",
-        {
-            "page_obj": page_obj,
-            "search": search,
-            "type_f": type_f,
-            "status_f": status_f,
-            "now": timezone.now(),
-            "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
-        },
-    )
+    return render(request, "coupon_offer/admin_coupon_list.html", {
+        "page_obj": page_obj,
+        "search": search,
+        "type_f": type_f,
+        "status_f": status_f,
+        "now": timezone.now(),
+        "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+    })
 
 
 # ────────────────────────────────────────────────── ADMIN: COUPON DETAIL ──────────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
@@ -355,68 +327,62 @@ def admin_coupon_detail(request, coupon_id):
         discount_label = f"₹{coupon.discount_value:.0f} flat off"
 
     usages = (
-        CouponUsage.objects.filter(coupon=coupon)
+        CouponUsage.objects
+        .filter(coupon=coupon)
         .select_related("user")
         .order_by("-times_used", "user__email")
     )
 
     usage_rows = []
     for u in usages:
-        usage_rows.append(
-            {
-                "user": u.user,
-                "times_used": u.times_used,
-                "remaining": max(coupon.usage_limit - u.times_used, 0),
-                "exhausted": u.times_used >= coupon.usage_limit,
-            }
-        )
+        usage_rows.append({
+            "user": u.user,
+            "times_used": u.times_used,
+            "remaining": max(coupon.usage_limit - u.times_used, 0),
+            "exhausted": u.times_used >= coupon.usage_limit,
+        })
 
     unique_users_count = usages.count()
     exhausted_users_count = sum(1 for r in usage_rows if r["exhausted"])
 
     from shopcore.models import Order
-
     linked_orders = (
-        Order.objects.filter(coupon=coupon)
+        Order.objects
+        .filter(coupon=coupon)
         .select_related("user", "address")
         .order_by("-order_date")
     )
-    total_discount_given = linked_orders.aggregate(total=Sum("coupon_discount"))[
-        "total"
-    ] or Decimal("0")
-    total_revenue = linked_orders.aggregate(total=Sum("final_amount"))[
-        "total"
-    ] or Decimal("0")
+    total_discount_given = linked_orders.aggregate(
+        total=Sum("coupon_discount")
+    )["total"] or Decimal("0")
+    total_revenue = linked_orders.aggregate(
+        total=Sum("final_amount")
+    )["total"] or Decimal("0")
 
     orders_page = Paginator(linked_orders, 10).get_page(request.GET.get("opage"))
 
     referral_offers = coupon.referral_offers.filter(is_deleted=False)
 
-    return render(
-        request,
-        "coupon_offer/admin_coupon_detail.html",
-        {
-            "coupon": coupon,
-            "now": now,
-            "status_label": status_label,
-            "status_class": status_class,
-            "is_expired": is_expired,
-            "is_upcoming": is_upcoming,
-            "discount_label": discount_label,
-            "usage_rows": usage_rows,
-            "unique_users_count": unique_users_count,
-            "exhausted_users_count": exhausted_users_count,
-            "linked_orders": linked_orders,
-            "orders_page": orders_page,
-            "total_discount_given": total_discount_given,
-            "total_revenue": total_revenue,
-            "referral_offers": referral_offers,
-        },
-    )
+    return render(request, "coupon_offer/admin_coupon_detail.html", {
+        "coupon": coupon,
+        "now": now,
+        "status_label": status_label,
+        "status_class": status_class,
+        "is_expired": is_expired,
+        "is_upcoming": is_upcoming,
+        "discount_label": discount_label,
+        "usage_rows": usage_rows,
+        "unique_users_count": unique_users_count,
+        "exhausted_users_count": exhausted_users_count,
+        "linked_orders": linked_orders,
+        "orders_page": orders_page,
+        "total_discount_given": total_discount_given,
+        "total_revenue": total_revenue,
+        "referral_offers": referral_offers,
+    })
 
 
 # ────────────────────────────────────────────────── ADMIN: ADD / EDIT COUPON ──────────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
@@ -424,28 +390,17 @@ def admin_add_coupon(request):
     if request.method == "POST":
         return _save_coupon(request, instance=None)
 
-    return render(
-        request,
-        "coupon_offer/admin_coupon_form.html",
-        {
-            "action": "Add",
-            "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
-            "coupon_type_choices": Coupon.COUPON_TYPE_CHOICES,
-            "coupon": None,
-            "form_data": SimpleNamespace(
-                code="",
-                coupon_type="PUBLIC",
-                discount_type="",
-                discount_value="",
-                max_discount="",
-                min_order_amount="",
-                start_date="",
-                expiry_date="",
-                usage_limit="",
-                is_active=False,
-            ),
-        },
-    )
+    return render(request, "coupon_offer/admin_coupon_form.html", {
+        "action": "Add",
+        "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+        "coupon_type_choices": Coupon.COUPON_TYPE_CHOICES,
+        "coupon": None,
+        "form_data": SimpleNamespace(
+            code="", coupon_type="PUBLIC", discount_type="", discount_value="",
+            max_discount="", min_order_amount="", start_date="",
+            expiry_date="", usage_limit="", is_active=False,
+        ),
+    })
 
 
 @never_cache
@@ -455,17 +410,13 @@ def admin_edit_coupon(request, coupon_id):
     if request.method == "POST":
         return _save_coupon(request, instance=coupon)
 
-    return render(
-        request,
-        "coupon_offer/admin_coupon_form.html",
-        {
-            "action": "Edit",
-            "coupon": coupon,
-            "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
-            "coupon_type_choices": Coupon.COUPON_TYPE_CHOICES,
-            "form_data": coupon,
-        },
-    )
+    return render(request, "coupon_offer/admin_coupon_form.html", {
+        "action": "Edit",
+        "coupon": coupon,
+        "discount_choices": Coupon.DISCOUNT_TYPE_CHOICES,
+        "coupon_type_choices": Coupon.COUPON_TYPE_CHOICES,
+        "form_data": coupon,
+    })
 
 
 def _save_coupon(request, instance):
@@ -534,7 +485,6 @@ def _save_coupon(request, instance):
 
 
 # ────────────────────────────────────────────────── ADMIN: DELETE / BLOCK / UNBLOCK ──────────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required

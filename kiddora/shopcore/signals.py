@@ -1,22 +1,20 @@
-import math
-from decimal import Decimal
-
-from accounts.models import CustomUser
 from django.db import transaction
+from django.db.models.signals import post_save,post_delete
 from django.db.models import Avg
-from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 # from django.utils.timezone import now
 from django.utils import timezone
-from payments.models import Wallet, WalletTransaction
+from decimal import Decimal
+import math
 from products.models import Inventory
-from products.services.inventory import deduct_stock_on_delivery, release_stock
-from shopcore.models import OrderItem, ReferralCode, Return, Review
+from products.services.inventory import release_stock, deduct_stock_on_delivery
+from shopcore.models import OrderItem, Return, Review, ReferralCode
+from payments.models import Wallet, WalletTransaction
+from accounts.models import CustomUser
 
 # ─────────────────────────────────────────────────────────────
 # ORDER ITEM: reserve inventory on creation
 # ─────────────────────────────────────────────────────────────
-
 
 @receiver(post_save, sender=OrderItem)
 def reserve_inventory(sender, instance, created, **kwargs):
@@ -25,7 +23,7 @@ def reserve_inventory(sender, instance, created, **kwargs):
         try:
             inventory = Inventory.objects.get(variant=instance.variant)
             inventory.quantity_available -= instance.quantity
-            inventory.quantity_reserved += instance.quantity
+            inventory.quantity_reserved  += instance.quantity
             inventory.save(update_fields=["quantity_available", "quantity_reserved"])
         except Inventory.DoesNotExist:
             pass
@@ -34,7 +32,6 @@ def reserve_inventory(sender, instance, created, **kwargs):
 # ─────────────────────────────────────────────────────────────
 # ORDER ITEM: handle status transitions
 # ─────────────────────────────────────────────────────────────
-
 
 @receiver(post_save, sender=OrderItem)
 def handle_order_item_status(sender, instance, created, **kwargs):
@@ -54,7 +51,6 @@ def handle_order_item_status(sender, instance, created, **kwargs):
 # ─────────────────────────────────────────────────────────────
 # RETURN: combined refund + restock on REFUNDED status
 # ─────────────────────────────────────────────────────────────
-
 
 @receiver(post_save, sender=Return)
 def handle_return_status(sender, instance, **kwargs):
@@ -88,7 +84,6 @@ def _restock_inventory(ret):
     except Exception:
         pass
 
-
 HALF_LIFE_DAYS = 90
 
 
@@ -107,13 +102,13 @@ def compute_weighted_average(product):
     if not reviews.exists():
         return Decimal("0.00")
 
-    now = timezone.now()
-    weighted_sum = 0.0
-    total_weight = 0.0
+    now             = timezone.now()
+    weighted_sum    = 0.0
+    total_weight    = 0.0
 
     for review in reviews:
         days_old = (now - review.created_at).total_seconds() / 86400  # convert to days
-        weight = math.exp(-days_old / HALF_LIFE_DAYS)  # exponential decay
+        weight   = math.exp(-days_old / HALF_LIFE_DAYS)               # exponential decay
 
         weighted_sum += review.rating * weight
         total_weight += weight
@@ -121,7 +116,7 @@ def compute_weighted_average(product):
     if total_weight == 0:
         return Decimal("0.00")
 
-    raw_avg = weighted_sum / total_weight  # float between 1.0 – 5.0
+    raw_avg = weighted_sum / total_weight                   # float between 1.0 – 5.0
     return Decimal(str(round(raw_avg, 2)))
 
 
@@ -141,8 +136,7 @@ def update_average_on_save(sender, instance, **kwargs):
 def update_average_on_delete(sender, instance, **kwargs):
     """Fires when a review is deleted."""
     update_product_average(instance.product)
-
-
+    
 def _credit_wallet(ret):
     """Credit the refund amount to the user's wallet."""
     try:
@@ -151,14 +145,13 @@ def _credit_wallet(ret):
         wallet.balance += amount
         wallet.save(update_fields=["balance"])
         WalletTransaction.objects.create(
-            wallet=wallet,
-            txn_type="REFUND",
-            amount=amount,
-            description=f"Refund for order {ret.order_item.order.order_id}",
+            wallet      = wallet,
+            txn_type    = "REFUND",
+            amount      = amount,
+            description = f"Refund for order {ret.order_item.order.order_id}",
         )
     except Exception:
         pass
-
 
 # ─────────────────────────────────────────────────────────────
 # AUTO-GENERATE REFERRAL CODE ON USER CREATION (THE REQUIRED ADDON)

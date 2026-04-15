@@ -5,12 +5,29 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: kiddora_db
-      POSTGRES_USER: kiddora_user
-      POSTGRES_PASSWORD: kiddora_pass
+      POSTGRES_USER: kiddora           
+      POSTGRES_PASSWORD: success       
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kiddora -d kiddora_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   web:
     build: .
@@ -19,13 +36,18 @@ services:
     env_file:
       - .env
     environment:
-      # Override DB_HOST to point to the compose service
       DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_URL: "redis://redis:6379/1"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # For local development hot-reload; comment out for production
     volumes:
-      # Hot-reload in dev (optional, comment out for prod test)
       - .:/app
+    restart: unless-stopped
 
 volumes:
   postgres_data:

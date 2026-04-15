@@ -89,7 +89,11 @@ class CustomUser(AbstractUser):
             try:
                 old = CustomUser.objects.get(pk=self.pk)
                 if old.profile_image and old.profile_image != self.profile_image:
-                    old.profile_image.delete(save=False)
+                    try:
+                        old.profile_image.delete(save=False)
+                    except Exception:
+                        pass
+
             except CustomUser.DoesNotExist:
                 pass
 

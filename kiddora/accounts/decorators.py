@@ -1,10 +1,9 @@
-from functools import wraps
-
-from accounts.models import CustomUser
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
+from functools import wraps
 
+from accounts.models import CustomUser
 
 def user_login_required(view_func):
     @wraps(view_func)
@@ -14,16 +13,14 @@ def user_login_required(view_func):
 
         if not request.user.is_authenticated:
             return redirect("accounts:login")
-
+        
         if request.path == blocked_url:
             return view_func(request, *args, **kwargs)
-
+        
         if request.user.role != CustomUser.ROLE_CUSTOMER:
             return redirect("accounts:blocked")
         return view_func(request, *args, **kwargs)
-
     return wrapper
-
 
 def admin_login_required(view_func):
     @wraps(view_func)
@@ -31,11 +28,10 @@ def admin_login_required(view_func):
 
         if not request.user.is_authenticated:
             return redirect("accounts:admin_login")
-
+        
         if request.user.role != CustomUser.ROLE_ADMIN:
             logout(request)
 
             return redirect("accounts:blocked")
         return view_func(request, *args, **kwargs)
-
     return wrapper

@@ -1,30 +1,27 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
-from accounts.decorators import admin_login_required, user_login_required
-from django.contrib import messages
-from django.core.paginator import Paginator
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from payments.models import Payment, Wallet, WalletTransaction
 from payments.views.paypal_views import _finalize_order_after_payment
-from payments.views.wallet_helpers import (_restore_inventory_for_order,
-                                            debit_from_wallet)
+from django.core.paginator import Paginator
+from accounts.decorators import admin_login_required, user_login_required
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.utils import timezone
+from decimal import Decimal
+
+from payments.views.wallet_helpers import debit_from_wallet, _restore_inventory_for_order
+from payments.models import Payment, Wallet, WalletTransaction
 from shopcore.models import Order
 
 #   ────────────────────────────────────────────────── INTERNAL HELPER ──────────────────────────────────────────────────
-
 
 def _wallet_balance(user) -> Decimal:
     wallet, _ = Wallet.objects.get_or_create(user=user)
     return wallet.balance
 
-
-#   ────────────────────────────────────────────────── USER: PAY WITH WALLET ──────────────────────────────────────────────────
+#   ────────────────────────────────────────────────── USER: PAY WITH WALLET ────────────────────────────────────────────────── 
 @never_cache
 @user_login_required
 @require_POST
@@ -43,7 +40,7 @@ def pay_with_wallet(request, order_id):
             "Please choose another payment method.",
         )
 
-        order.order_status = "ORDER NOT PLACED"
+        order.order_status   = "ORDER NOT PLACED"
         order.payment_status = "FAILED"
         order.save(update_fields=["order_status", "payment_status"])
         _restore_inventory_for_order(order)
@@ -60,19 +57,19 @@ def pay_with_wallet(request, order_id):
 
     if not success:
         messages.error(request, msg)
-        order.order_status = "ORDER NOT PLACED"
+        order.order_status   = "ORDER NOT PLACED"
         order.payment_status = "FAILED"
         order.save(update_fields=["order_status", "payment_status"])
         _restore_inventory_for_order(order)
         return redirect("payments:wallet_payment_failure", order_id=order.order_id)
 
     Payment.objects.create(
-        order=order,
-        payment_method="WALLET",
-        payment_status="PAID",
-        amount=order.final_amount,
-        initiated_at=timezone.now(),
-        completed_at=timezone.now(),
+        order  = order,
+        payment_method = "WALLET",
+        payment_status = "PAID",
+        amount  = order.final_amount,
+        initiated_at = timezone.now(),
+        completed_at = timezone.now(),
     )
 
     order.payment_status = "PAID"
@@ -80,26 +77,19 @@ def pay_with_wallet(request, order_id):
 
     _finalize_order_after_payment(request, order)
 
-    messages.success(
-        request, f"₹{order.final_amount} paid from wallet. Order confirmed!"
-    )
+    messages.success(request, f"₹{order.final_amount} paid from wallet. Order confirmed!")
     return redirect("shopcore:order_success", order_id=order.order_id)
 
 
-#   ────────────────────────────────────────────────── USER: WALLET PAYMENT FAILURE ──────────────────────────────────────────────────
+#   ────────────────────────────────────────────────── USER: WALLET PAYMENT FAILURE ──────────────────────────────────────────────────  
 @never_cache
 @user_login_required
 def wallet_payment_failure(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
-    return render(
-        request,
-        "payments/wallet_failure.html",
-        {
-            "order": order,
-            "wallet_balance": _wallet_balance(request.user),
-        },
-    )
-
+    return render(request, "payments/wallet_failure.html", {
+        "order":          order,
+        "wallet_balance": _wallet_balance(request.user),
+    })
 
 #   ────────────────────────────────────────────────── ADMIN: WALLET TRANSACTIONS LIST ──────────────────────────────────────────────────
 @never_cache
@@ -109,8 +99,10 @@ def admin_wallet_list(request):
     type_f = request.GET.get("type", "")
     ref_f = request.GET.get("ref", "")
 
-    qs = WalletTransaction.objects.select_related("wallet__user", "order").order_by(
-        "-created_at"
+    qs = (
+        WalletTransaction.objects
+        .select_related("wallet__user", "order")
+        .order_by("-created_at")
     )
 
     if search:
@@ -127,19 +119,14 @@ def admin_wallet_list(request):
 
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
 
-    return render(
-        request,
-        "payments/admin_wallet_list.html",
-        {
-            "page_obj": page_obj,
-            "search": search,
-            "type_f": type_f,
-            "ref_f": ref_f,
-            "txn_types": WalletTransaction.TRANSACTION_TYPE_CHOICES,
-            "ref_types": WalletTransaction.REFERENCE_TYPE_CHOICES,
-        },
-    )
-
+    return render(request, "payments/admin_wallet_list.html", {
+        "page_obj": page_obj,
+        "search": search,
+        "type_f": type_f,
+        "ref_f": ref_f,
+        "txn_types": WalletTransaction.TRANSACTION_TYPE_CHOICES,
+        "ref_types": WalletTransaction.REFERENCE_TYPE_CHOICES,
+    })
 
 #   ────────────────────────────────────────────────── ADMIN: WALLET TRANSACTION DETAIL ──────────────────────────────────────────────────
 @never_cache
@@ -150,21 +137,18 @@ def admin_wallet_detail(request, txn_id):
         txn_id=txn_id,
     )
 
-    recent_txns = WalletTransaction.objects.filter(wallet=txn.wallet).order_by(
-        "-created_at"
-    )[:10]
-
-    return render(
-        request,
-        "payments/admin_wallet_detail.html",
-        {
-            "txn": txn,
-            "user": txn.wallet.user,
-            "wallet": txn.wallet,
-            "recent_txns": recent_txns,
-        },
+    recent_txns = (
+        WalletTransaction.objects
+        .filter(wallet=txn.wallet)
+        .order_by("-created_at")[:10]
     )
 
+    return render(request, "payments/admin_wallet_detail.html", {
+        "txn": txn,
+        "user": txn.wallet.user,
+        "wallet": txn.wallet,
+        "recent_txns": recent_txns,
+    })
 
 #   ───────────────────────────────── DEBIT  (used when customer pays with wallet) ──────────────────────────────────────────────────
 @never_cache
@@ -175,7 +159,11 @@ def admin_payment_list(request):
     method_f = request.GET.get("method", "")
     status_f = request.GET.get("status", "")
 
-    payment_qs = Payment.objects.select_related("order__user").order_by("-created_at")
+    payment_qs = (
+        Payment.objects
+        .select_related("order__user")
+        .order_by("-created_at")
+    )
     if search:
         payment_qs = payment_qs.filter(
             Q(order__order_id__icontains=search)
@@ -187,7 +175,7 @@ def admin_payment_list(request):
     if method_f and method_f != "COD":
         payment_qs = payment_qs.filter(payment_method=method_f)
     elif method_f == "COD":
-        payment_qs = payment_qs.none()
+        payment_qs = payment_qs.none() 
 
     if status_f:
         payment_qs = payment_qs.filter(payment_status=status_f)
@@ -195,25 +183,24 @@ def admin_payment_list(request):
     # Convert Payment queryset rows to unified dicts
     online_rows = []
     for p in payment_qs:
-        online_rows.append(
-            {
-                "source": "payment",
-                "txn_id_display": p.txn_id_display,
-                "order": p.order,
-                "payment_method": p.payment_method,
-                "amount": p.amount,
-                "payment_status": p.payment_status,
-                "paypal_capture_id": p.paypal_capture_id or "",
-                "initiated_at": p.initiated_at,
-                "completed_at": p.completed_at,
-                "sort_dt": p.created_at,
-            }
-        )
+        online_rows.append({
+            "source": "payment",
+            "txn_id_display": p.txn_id_display,
+            "order": p.order,
+            "payment_method": p.payment_method,
+            "amount": p.amount,
+            "payment_status": p.payment_status,
+            "paypal_capture_id": p.paypal_capture_id or "",
+            "initiated_at": p.initiated_at,
+            "completed_at": p.completed_at,
+            "sort_dt": p.created_at,
+        })
 
     cod_rows = []
     if not method_f or method_f == "COD":
         cod_qs = (
-            Order.objects.filter(payment_method="COD")
+            Order.objects
+            .filter(payment_method="COD")
             .select_related("user")
             .order_by("-order_date")
         )
@@ -235,26 +222,22 @@ def admin_payment_list(request):
             ps = _cod_pay_status(o)
             if status_f and ps != status_f:
                 continue
-            cod_rows.append(
-                {
-                    "source": "cod",
-                    "txn_id_display": f"COD-{o.order_id}",
-                    "order": o,
-                    "payment_method": "COD",
-                    "amount": o.final_amount,
-                    "payment_status": ps,
-                    "paypal_capture_id": "",
-                    "initiated_at": o.order_date,
-                    "completed_at": o.delivered_at,
-                    "sort_dt": o.order_date,
-                }
-            )
+            cod_rows.append({
+                "source": "cod",
+                "txn_id_display": f"COD-{o.order_id}",
+                "order": o,
+                "payment_method": "COD",
+                "amount": o.final_amount,
+                "payment_status": ps,
+                "paypal_capture_id": "",
+                "initiated_at": o.order_date,
+                "completed_at": o.delivered_at,
+                "sort_dt": o.order_date,
+            })
 
     all_rows = sorted(
         online_rows + cod_rows,
-        key=lambda r: (
-            r["sort_dt"] if r["sort_dt"] else timezone.now().replace(year=2000)
-        ),
+        key=lambda r: r["sort_dt"] if r["sort_dt"] else timezone.now().replace(year=2000),
         reverse=True,
     )
 
@@ -268,39 +251,27 @@ def admin_payment_list(request):
     ]
     status_choices = Payment.PAYMENT_STATUS_CHOICES
 
-    return render(
-        request,
-        "payments/admin_payment_list.html",
-        {
-            "page_obj": page_obj,
-            "search": search,
-            "method_f": method_f,
-            "status_f": status_f,
-            "method_choices": method_choices,
-            "status_choices": status_choices,
-        },
-    )
-
-
+    return render(request, "payments/admin_payment_list.html", {
+        "page_obj": page_obj,
+        "search": search,
+        "method_f": method_f,
+        "status_f": status_f,
+        "method_choices": method_choices,
+        "status_choices": status_choices,
+    })
 #   ────────────────────────────────────────────────── INTERNAL HELPERS ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def wallet_balance(request):
     wallet, _ = Wallet.objects.get_or_create(user=request.user)
+    
+    transactions = WalletTransaction.objects.filter(
+        wallet=wallet
+    ).select_related('order').order_by('-created_at')
 
-    transactions = (
-        WalletTransaction.objects.filter(wallet=wallet)
-        .select_related("order")
-        .order_by("-created_at")
-    )
+    page_obj = Paginator(transactions, 15).get_page(request.GET.get('page'))
 
-    page_obj = Paginator(transactions, 15).get_page(request.GET.get("page"))
-
-    return render(
-        request,
-        "payments/wallet_balance.html",
-        {
-            "wallet": wallet,
-            "page_obj": page_obj,
-        },
-    )
+    return render(request, "payments/wallet_balance.html", {
+        "wallet": wallet,
+        "page_obj": page_obj,
+    })

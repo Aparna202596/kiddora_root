@@ -1,10 +1,12 @@
-from accounts.models import CustomUser
 from allauth.socialaccount.signals import social_account_added
 from django.db.models.signals import post_save
-from django.dispatch import receiver
-from payments.models import Wallet
 from shopcore.models import Cart, Wishlist
+from django.dispatch import receiver
+from accounts.models import CustomUser
+from payments.models import Wallet
 
+# This signal handler creates associated Cart, Wishlist, and Wallet instances 
+# whenever a new user with the role of "customer" is created.
 @receiver(post_save, sender=CustomUser)
 def create_user_dependencies(sender, instance, created, **kwargs):
 
@@ -18,7 +20,7 @@ def create_user_dependencies(sender, instance, created, **kwargs):
 # they are assigned the "customer" role, marked as active, and their email is verified.
 @receiver(social_account_added)
 def set_role_on_social_login(request, sociallogin, **kwargs):
-
+    
     user = sociallogin.user
     if not user.role:
         user.role = CustomUser.ROLE_CUSTOMER

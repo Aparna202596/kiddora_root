@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
-from accounts.decorators import admin_login_required, user_login_required
-from django.contrib import messages
+from payments.views.wallet_helpers import credit_refund_to_wallet
+from django.views.decorators.cache import never_cache
+from shopcore.views.order_views import _recalculate_order_amount
 from django.core.paginator import Paginator
-from django.db import transaction
+from accounts.decorators import admin_login_required, user_login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 from django.utils import timezone
-from django.views.decorators.cache import never_cache
-from payments.views.wallet_helpers import credit_refund_to_wallet
-from shopcore.models import Order, OrderItem, Return
-from shopcore.views.order_views import _recalculate_order_amount
+from django.db import transaction
+from decimal import Decimal
 
+from shopcore.models import Order, OrderItem, Return
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
 def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
@@ -25,10 +24,7 @@ def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
         inv.save(update_fields=["quantity_available", "quantity_sold"])
     except Exception:
         pass
-
-
 # ────────────────────────────────────────────────── RETURN REQUEST VIEWS ──────────────────────────────────────────────────
-
 
 @never_cache
 @user_login_required
@@ -50,36 +46,26 @@ def request_return(request, order_id, item_id):
         return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
     if request.method == "GET":
-        return render(
-            request,
-            "returns/request_return.html",
-            {
-                "order": order,
-                "order_item": order_item,
-                "max_qty": order_item.active_quantity,
-            },
-        )
+        return render(request, "returns/request_return.html", {
+            "order": order,
+            "order_item": order_item,
+            "max_qty": order_item.active_quantity,
+        })
 
     # ── POST ──────────────────────────────────────────────────────────────
     reason = request.POST.get("reason", "").strip()
     if not reason:
         messages.error(request, "Please provide a reason for the return.")
-        return render(
-            request,
-            "returns/request_return.html",
-            {
-                "order": order,
-                "order_item": order_item,
-                "max_qty": order_item.active_quantity,
-                "error": "Reason is required.",
-            },
-        )
+        return render(request, "returns/request_return.html", {
+            "order": order,
+            "order_item": order_item,
+            "max_qty": order_item.active_quantity,
+            "error": "Reason is required.",
+        })
 
     # ── Quantity to return ────────────────────────────────────────────────
     try:
-        return_qty = int(
-            request.POST.get("return_quantity", order_item.active_quantity)
-        )
+        return_qty = int(request.POST.get("return_quantity", order_item.active_quantity))
     except (ValueError, TypeError):
         return_qty = order_item.active_quantity
 
@@ -88,8 +74,7 @@ def request_return(request, order_id, item_id):
     # Per-unit net refund amount
     per_unit_net = (
         order_item.total_price / order_item.quantity
-        if order_item.quantity
-        else Decimal("0")
+        if order_item.quantity else Decimal("0")
     )
     refund_amount = (per_unit_net * return_qty).quantize(Decimal("0.01"))
 
@@ -111,14 +96,12 @@ def request_return(request, order_id, item_id):
     )
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-
 # ──────────────────────────────────────────────── ADMIN: RETURN REQUEST LIST ────────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
 def admin_return_list(request):
-    search = request.GET.get("search", "").strip()
+    search   = request.GET.get("search", "").strip()
     status_f = request.GET.get("status", "").strip()
 
     qs = Return.objects.select_related(
@@ -137,20 +120,14 @@ def admin_return_list(request):
         qs = qs.filter(status=status_f)
 
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
-    return render(
-        request,
-        "returns/admin_return_list.html",
-        {
-            "page_obj": page_obj,
-            "search": search,
-            "status_f": status_f,
-            "status_choices": Return.STATUS_CHOICES,
-        },
-    )
-
+    return render(request, "returns/admin_return_list.html", {
+        "page_obj": page_obj,
+        "search": search,
+        "status_f": status_f,
+        "status_choices": Return.STATUS_CHOICES,
+    })
 
 # ─────────────────────────────────────────────── ADMIN: RETURN REQUEST DETAIL ───────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
@@ -179,15 +156,10 @@ def admin_return_detail(request, return_id):
                 img_url = val.url
                 break
 
-    return render(
-        request,
-        "returns/admin_return_detail.html",
-        {
-            "ret": ret,
-            "img_url": img_url,
-        },
-    )
-
+    return render(request, "returns/admin_return_detail.html", {
+        "ret": ret,
+        "img_url": img_url,
+    })
 
 # ─────────────────────────────────────────────── ADMIN: APPROVE RETURN ───────────────────────────────────────────────
 @never_cache
@@ -210,25 +182,17 @@ def admin_approve_return(request, return_id):
     ret.refund_amount = refund_amount
     ret.updated_at = timezone.now()
     ret.approved_at = timezone.now()
-    ret.save(
-        update_fields=[
-            "status",
-            "admin_note",
-            "refund_amount",
-            "updated_at",
-            "approved_at",
-        ]
-    )
+    ret.save(update_fields=["status", "admin_note", "refund_amount", "updated_at", "approved_at"])
 
     # ── Determine new item status ─────────────────────────────────────────
-    is_full_return = return_qty >= oi.active_quantity
+    is_full_return = (return_qty >= oi.active_quantity)
     if is_full_return:
         oi.item_status = "RETURN_APPROVED"
     else:
         # Partial return: reduce active quantity by return_qty
         # We track this via cancelled_quantity (returned units leave circulation)
         oi.cancelled_quantity = (oi.cancelled_quantity or 0) + return_qty
-        oi.item_status = "ACTIVE"  # remaining units still active
+        oi.item_status = "ACTIVE"   # remaining units still active
     oi.save(update_fields=["item_status", "cancelled_quantity"])
 
     # ── Restore inventory for returned qty only ───────────────────────────
@@ -262,7 +226,6 @@ def admin_approve_return(request, return_id):
     )
     return redirect("shopcore:admin_return_detail", return_id=return_id)
 
-
 # ─────────────────────────────────────────────── ADMIN: PROCESS REFUND ───────────────────────────────────────────────
 @never_cache
 @admin_login_required
@@ -287,7 +250,7 @@ def admin_process_refund(request, return_id):
             f"in order {order.order_id}"
         ),
         reference_type="RETURN",
-        reference_id=f"{order.order_id}-return-{ret.id}",  # same key → blocked if already paid
+        reference_id=f"{order.order_id}-return-{ret.id}",   # same key → blocked if already paid
         order=order,
     )
 
@@ -307,7 +270,6 @@ def admin_process_refund(request, return_id):
 
     messages.success(request, f"Refund of ₹{refund_amount} finalised.")
     return redirect("shopcore:admin_return_detail", return_id=return_id)
-
 
 # ─────────────────────────────────────────────── ADMIN: REJECT RETURN ───────────────────────────────────────────────
 @never_cache

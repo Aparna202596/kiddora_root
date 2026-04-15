@@ -1,23 +1,21 @@
-from decimal import Decimal
-
-from accounts.decorators import user_login_required
-from django.contrib import messages
-from django.db import transaction
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from products.models import Product, ProductVariant
-from shopcore.models import Cart, CartItem, Order, Wishlist, WishlistItem
+from accounts.decorators import user_login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.http import JsonResponse
+from django.db import transaction
+from decimal import Decimal
+
+from products.models import ProductVariant, Product
+from shopcore.models import Cart, CartItem, Wishlist, WishlistItem, Order
 
 MAX_QTY = CartItem.MAX_QTY_PER_PRODUCT
-
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
 def _get_or_create_cart(user):
     cart, _ = Cart.objects.get_or_create(user=user)
     return cart
-
 
 def _variant_is_available(variant: ProductVariant) -> bool:
     try:
@@ -26,27 +24,21 @@ def _variant_is_available(variant: ProductVariant) -> bool:
         cat = sub.category
         return (
             variant.is_active
-            and p.is_active
-            and not p.is_deleted
-            and sub.is_active
-            and not sub.is_deleted
-            and cat.is_active
-            and not cat.is_deleted
+            and p.is_active and not p.is_deleted
+            and sub.is_active and not sub.is_deleted
+            and cat.is_active and not cat.is_deleted
         )
     except Exception:
         return False
-
 
 def _stock_for(variant: ProductVariant) -> int:
     try:
         return variant.inventory.quantity_available
     except Exception:
-        return 0
-
+        return 0 
 
 def _is_ajax(request) -> bool:
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
-
 
 def _cart_subtotal(cart) -> float:
     total = 0
@@ -60,14 +52,13 @@ def _cart_subtotal(cart) -> float:
             total += float(item.variant.product.final_price) * item.quantity
     return total
 
-
 # ────────────────────────────────────────────────── CART VIEWS ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
 def cart_view(request):
     cart = _get_or_create_cart(request.user)
-    items = (
-        cart.items.select_related(
+    items = (cart.items
+        .select_related(
             "variant",
             "variant__product",
             "variant__product__subcategory",
@@ -93,9 +84,7 @@ def cart_view(request):
         item_total = product.final_price * item.quantity if available else 0
 
         img_url = None
-        img_obj = (
-            product.images.filter(is_default=True).first() or product.images.first()
-        )
+        img_obj = product.images.filter(is_default=True).first() or product.images.first()
         if img_obj:
             for field in ("image1", "image2", "image3", "image4", "image5"):
                 val = getattr(img_obj, field)
@@ -108,26 +97,24 @@ def cart_view(request):
         if available and stock == 0:
             any_out_of_stock = True
 
-        cart_data.append(
-            {
-                "item": item,
-                "variant": variant,
-                "product": product,
-                "stock": stock,
-                "available": available,
-                "item_total": item_total,
-                "img_url": img_url,
-                "max_qty": min(MAX_QTY, stock) if stock > 0 else 0,
-                "exceeds_stock": (item.quantity > stock) if available else False,
-            }
-        )
+        cart_data.append({
+            "item": item,
+            "variant": variant,
+            "product": product,
+            "stock": stock,
+            "available": available,
+            "item_total": item_total,
+            "img_url": img_url,
+            "max_qty": min(MAX_QTY, stock) if stock > 0 else 0,
+            "exceeds_stock": (item.quantity > stock) if available else False,
+        })
         if available:
             subtotal += item_total
 
     temp_order = Order(
-        total_amount=subtotal,
-        discount_amount=Decimal("0"),
-        coupon_discount=Decimal("0"),
+        total_amount=subtotal, 
+        discount_amount=Decimal("0"),    
+        coupon_discount=Decimal("0"),    
     )
     shipping_charge = temp_order.calculate_shipping()
     grand_total = subtotal + shipping_charge
@@ -136,22 +123,17 @@ def cart_view(request):
         or any_out_of_stock
         or any(d["exceeds_stock"] for d in cart_data)
     )
-    return render(
-        request,
-        "cart/cart.html",
-        {
-            "cart": cart,
-            "cart_data": cart_data,
-            "subtotal": subtotal,
-            "shipping_charge": shipping_charge,
-            "grand_total": grand_total,
-            "checkout_blocked": checkout_blocked,
-            "any_unavailable": any_unavailable,
-            "any_out_of_stock": any_out_of_stock,
-            "MAX_QTY": MAX_QTY,
-        },
-    )
-
+    return render(request, "cart/cart.html", {
+        "cart": cart,
+        "cart_data": cart_data,
+        "subtotal": subtotal,
+        "shipping_charge": shipping_charge,
+        "grand_total": grand_total,
+        "checkout_blocked": checkout_blocked,
+        "any_unavailable": any_unavailable,
+        "any_out_of_stock": any_out_of_stock,
+        "MAX_QTY": MAX_QTY,
+    })
 
 #   ────────────────────────────────────────────────── ADD TO CART  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
@@ -170,10 +152,7 @@ def add_to_cart(request, variant_id):
             "product",
             "product__subcategory",
             "product__subcategory__category",
-            "inventory",
-        ),
-        id=variant_id,
-    )
+            "inventory"), id=variant_id)
 
     if not _variant_is_available(variant):
         msg = "This product is currently unavailable."
@@ -198,23 +177,19 @@ def add_to_cart(request, variant_id):
         if cart_item.quantity >= MAX_QTY:
             msg = f"You can add at most {MAX_QTY} of the same item."
             if ajax:
-                return JsonResponse(
-                    {"error": msg, "quantity": cart_item.quantity}, status=400
-                )
+                return JsonResponse({"error": msg, "quantity": cart_item.quantity}, status=400)
             messages.warning(request, msg)
         elif cart_item.quantity >= stock:
             msg = f"Only {stock} unit(s) available. Cannot add more."
             if ajax:
-                return JsonResponse(
-                    {"error": msg, "quantity": cart_item.quantity}, status=400
-                )
+                return JsonResponse({"error": msg, "quantity": cart_item.quantity}, status=400)
             messages.warning(request, msg)
         else:
             cart_item.quantity += 1
             cart_item.save()
     except CartItem.DoesNotExist:
         cart_item = CartItem.objects.create(cart=cart, variant=variant, quantity=1)
-        new_item = True
+        new_item  = True
 
     # Remove from wishlist
     try:
@@ -226,28 +201,22 @@ def add_to_cart(request, variant_id):
         pass
 
     if ajax:
-        return JsonResponse(
-            {
-                "success": True,
-                "new_item": new_item,
-                "quantity": cart_item.quantity,
-                "cart_count": cart.items.count(),
-                "product_id": variant.product.id,
-                "product_name": variant.product.product_name,
-            }
-        )
+        return JsonResponse({
+            "success": True,
+            "new_item": new_item,
+            "quantity": cart_item.quantity,
+            "cart_count": cart.items.count(),
+            "product_id": variant.product.id,
+            "product_name": variant.product.product_name,
+        })
 
     messages.success(
         request,
-        (
-            f"{variant.product.product_name} added to cart."
-            if new_item
-            else "Cart updated — quantity increased."
-        ),
+        f"{variant.product.product_name} added to cart."
+        if new_item else "Cart updated — quantity increased."
     )
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or ""
     return redirect(next_url) if next_url.startswith("/") else redirect("shopcore:cart")
-
 
 #   ────────────────────────────────────────────────── REMOVE FROM CART  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
@@ -269,24 +238,21 @@ def remove_from_cart(request, item_id):
     cart_item.delete()
 
     if ajax:
-        return JsonResponse(
-            {
-                "success": True,
-                "item_id": item_id,
-                "product_name": product_name,
-                "saved_to_wishlist": saved_to_wishlist,
-                "subtotal": str(_cart_subtotal(cart)),
-                "grand_total": str(_cart_subtotal(cart)),
-                "cart_count": cart.items.count(),
-            }
-        )
+        return JsonResponse({
+            "success": True,
+            "item_id": item_id,
+            "product_name": product_name,
+            "saved_to_wishlist": saved_to_wishlist,
+            "subtotal": str(_cart_subtotal(cart)),
+            "grand_total": str(_cart_subtotal(cart)),
+            "cart_count": cart.items.count(),
+        })
 
     msg = f"{product_name} removed from cart."
     if saved_to_wishlist:
         msg += " Saved to your wishlist."
     messages.success(request, msg)
     return redirect("shopcore:cart")
-
 
 #   ────────────────────────────────────────────────── UPDATE CART QUANTITY  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
@@ -296,11 +262,7 @@ def update_cart_quantity(request, item_id):
     ajax = _is_ajax(request)
 
     if request.method != "POST":
-        return (
-            JsonResponse({"error": "POST required"}, status=405)
-            if ajax
-            else redirect("shopcore:cart")
-        )
+        return JsonResponse({"error": "POST required"}, status=405) if ajax else redirect("shopcore:cart")
 
     cart = _get_or_create_cart(request.user)
     cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
@@ -308,13 +270,9 @@ def update_cart_quantity(request, item_id):
 
     if not _variant_is_available(variant):
         msg = "This product is no longer available."
-        return (
-            JsonResponse({"error": msg}, status=400)
-            if ajax
-            else redirect("shopcore:cart")
-        )
+        return JsonResponse({"error": msg}, status=400) if ajax else redirect("shopcore:cart")
 
-    stock = _stock_for(variant)
+    stock  = _stock_for(variant)
     action = request.POST.get("action", "set")
     qty = cart_item.quantity
 
@@ -345,22 +303,19 @@ def update_cart_quantity(request, item_id):
     subtotal = _cart_subtotal(cart)
 
     if ajax:
-        return JsonResponse(
-            {
-                "success": True,
-                "quantity": qty,
-                "max_qty": min(MAX_QTY, stock),
-                "item_total": str(item_total),
-                "subtotal": str(subtotal),
-                "grand_total": str(subtotal),
-                "warning": warning,
-            }
-        )
+        return JsonResponse({
+            "success": True,
+            "quantity": qty,
+            "max_qty": min(MAX_QTY, stock),
+            "item_total": str(item_total),
+            "subtotal": str(subtotal),
+            "grand_total": str(subtotal),
+            "warning": warning,
+        })
 
     if warning:
         messages.warning(request, warning)
     return redirect("shopcore:cart")
-
 
 #   ────────────────────────────────────────────────── CLEAR CART  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
@@ -370,7 +325,6 @@ def clear_cart(request):
         _get_or_create_cart(request.user).items.all().delete()
         messages.success(request, "Cart cleared.")
     return redirect("shopcore:cart")
-
 
 #   ────────────────────────────────────────────────── TOGGLE WISHLIST  (AJAX-aware) ──────────────────────────────────────────────────
 @never_cache
@@ -397,19 +351,9 @@ def toggle_wishlist(request, product_id):
         msg = f"{product.product_name} added to your wishlist."
 
     if ajax:
-        return JsonResponse(
-            {
-                "success": True,
-                "wishlisted": wishlisted,
-                "message": msg,
-                "product_id": product_id,
-            }
-        )
+        return JsonResponse({"success": True, "wishlisted": wishlisted,
+                                "message": msg, "product_id": product_id})
 
     messages.success(request, msg)
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER") or ""
-    return (
-        redirect(next_url)
-        if next_url.startswith("/")
-        else redirect("products:product_list")
-    )
+    return redirect(next_url) if next_url.startswith("/") else redirect("products:product_list")

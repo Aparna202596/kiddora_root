@@ -1,16 +1,12 @@
-import uuid
-from decimal import Decimal
-
 from django.db import models
-
+from decimal import Decimal
+import uuid
 
 #  ────────────────────────────────────────────────── CATEGORY ──────────────────────────────────────────────────
 class Category(models.Model):
     category_name = models.CharField(max_length=100, unique=True)
 
-    category_image = models.ImageField(
-        upload_to="category_images/", blank=True, null=True
-    )
+    category_image = models.ImageField(upload_to="category_images/",blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
 
@@ -19,25 +15,20 @@ class Category(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
-
+    
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
         return self.category_name
 
-
 #  ────────────────────────────────────────────────── SUB-CATEGORY ──────────────────────────────────────────────────
 class SubCategory(models.Model):
-    category = models.ForeignKey(
-        Category, on_delete=models.CASCADE, related_name="subcategories"
-    )
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="subcategories")
 
     subcategory_name = models.CharField(max_length=100)
 
-    subcategory_image = models.ImageField(
-        upload_to="subcategory_images/", blank=True, null=True
-    )
+    subcategory_image = models.ImageField(upload_to="subcategory_images/",blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
 
@@ -46,7 +37,6 @@ class SubCategory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         unique_together = ("category", "subcategory_name")
         ordering = ["-created_at"]
@@ -54,14 +44,13 @@ class SubCategory(models.Model):
     def __str__(self):
         return self.subcategory_name
 
-
 #  ────────────────────────────────────────────────── PRODUCT ──────────────────────────────────────────────────
 class Product(models.Model):
 
     GENDER_CHOICES = [
-        ("Boys", "Boys"),
-        ("Girls", "Girls"),
-        ("unisex", "Unisex"),
+        ('Boys', 'Boys'),
+        ('Girls', 'Girls'),
+        ('unisex', 'Unisex'),
     ]
 
     FABRIC_CHOICES = [
@@ -87,9 +76,7 @@ class Product(models.Model):
         ("Other", "Other"),
     ]
 
-    subcategory = models.ForeignKey(
-        "SubCategory", on_delete=models.CASCADE, related_name="products"
-    )
+    subcategory = models.ForeignKey("SubCategory", on_delete=models.CASCADE, related_name="products")
 
     product_name = models.CharField(max_length=200)
 
@@ -103,13 +90,11 @@ class Product(models.Model):
 
     discount_percent = models.PositiveIntegerField(default=0)
 
-    final_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    final_price = models.DecimalField(max_digits=10,decimal_places=2,editable=False)
 
     about_product = models.TextField(blank=True)
 
-    average_review = models.DecimalField(
-        max_digits=3, decimal_places=2, default=Decimal("0.00")
-    )
+    average_review = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal("0.00"))
 
     is_active = models.BooleanField(default=True)
 
@@ -121,7 +106,7 @@ class Product(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-
+        
     def save(self, *args, **kwargs):
         base = Decimal(self.base_price or 0)
         discount = Decimal(self.discount_percent or 0)
@@ -130,40 +115,33 @@ class Product(models.Model):
 
     def __str__(self):
         return self.product_name
-
-
+    
 #  ────────────────────────────────────────────────── PRODUCT IMAGES ──────────────────────────────────────────────────
 class ProductImage(models.Model):
 
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="images"
-    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
 
-    image1 = models.ImageField(upload_to="product_images/", blank=True, null=True)
+    image1 = models.ImageField(upload_to="product_images/",blank=True, null=True)
 
-    image2 = models.ImageField(upload_to="product_images/", blank=True, null=True)
+    image2 = models.ImageField(upload_to="product_images/",blank=True, null=True)
 
-    image3 = models.ImageField(upload_to="product_images/", blank=True, null=True)
+    image3 = models.ImageField(upload_to="product_images/",blank=True, null=True)
 
-    image4 = models.ImageField(upload_to="product_images/", blank=True, null=True)
+    image4 = models.ImageField(upload_to="product_images/",blank=True, null=True)
 
-    image5 = models.ImageField(upload_to="product_images/", blank=True, null=True)
+    image5 = models.ImageField(upload_to="product_images/",blank=True, null=True)
 
     is_default = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         if self.is_default:
-            ProductImage.objects.filter(product=self.product, is_default=True).update(
-                is_default=False
-            )
+            ProductImage.objects.filter(product=self.product, is_default=True).update(is_default=False)
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product.product_name} Images"
-
-
-#   =============================================== VARIANTS ===============================================
-
+    
+#   =============================================== VARIANTS =============================================== 
 
 #  ────────────────────────────────────────────────── COLOR ──────────────────────────────────────────────────
 class Color(models.Model):
@@ -176,43 +154,51 @@ class Color(models.Model):
         ("Gray", "Gray"),
         ("Light Gray", "Light Gray"),
         ("Charcoal", "Charcoal"),
+
         ("Red", "Red"),
         ("Maroon", "Maroon"),
         ("Crimson", "Crimson"),
         ("Burgundy", "Burgundy"),
         ("Coral", "Coral"),
+
         ("Pink", "Pink"),
         ("Baby Pink", "Baby Pink"),
         ("Hot Pink", "Hot Pink"),
         ("Rose", "Rose"),
         ("Blush", "Blush"),
+
         ("Apricot", "Apricot"),
         ("Orange", "Orange"),
         ("Peach", "Peach"),
         ("Rust", "Rust"),
         ("Burnt Orange", "Burnt Orange"),
         ("Amber", "Amber"),
+
         ("Light Yellow", "Light Yellow"),
         ("Yellow", "Yellow"),
         ("Mustard", "Mustard"),
         ("Gold", "Gold"),
         ("Lemon", "Lemon"),
         ("Ivory", "Ivory"),
+
         ("Green", "Green"),
         ("Olive", "Olive"),
         ("Mint", "Mint"),
         ("Lime", "Lime"),
         ("Forest Green", "Forest Green"),
+
         ("Blue", "Blue"),
         ("Sky Blue", "Sky Blue"),
         ("Navy Blue", "Navy Blue"),
         ("Royal Blue", "Royal Blue"),
         ("Teal", "Teal"),
+
         ("Purple", "Purple"),
         ("Lavender", "Lavender"),
         ("Violet", "Violet"),
         ("Plum", "Plum"),
         ("Lilac", "Lilac"),
+
         ("Brown", "Brown"),
         ("Beige", "Beige"),
         ("Tan", "Tan"),
@@ -224,7 +210,6 @@ class Color(models.Model):
 
     def __str__(self):
         return self.color
-
 
 #  ────────────────────────────────────────────────── AGE GROUP ──────────────────────────────────────────────────
 class AgeGroup(models.Model):
@@ -257,19 +242,14 @@ class AgeGroup(models.Model):
     def __str__(self):
         return self.age
 
-
 #  ────────────────────────────────────────────────── PRODUCT VARIANT ──────────────────────────────────────────────────
 class ProductVariant(models.Model):
 
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name="variants"
-    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
 
-    color = models.ForeignKey(Color, on_delete=models.PROTECT, related_name="variants")
+    color = models.ForeignKey(Color,on_delete=models.PROTECT, related_name="variants")
 
-    age_group = models.ForeignKey(
-        AgeGroup, on_delete=models.PROTECT, related_name="variants"
-    )
+    age_group = models.ForeignKey(AgeGroup,on_delete=models.PROTECT,related_name="variants")
 
     sku = models.CharField(max_length=100, unique=True, blank=True)
 
@@ -308,22 +288,19 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product.product_name} | {self.color} | {self.age_group}"
 
-
 #   =============================================== INVENTORY ===============================================
 class Inventory(models.Model):
 
-    variant = models.OneToOneField(
-        ProductVariant, on_delete=models.CASCADE, related_name="inventory"
-    )
-
+    variant = models.OneToOneField(ProductVariant,on_delete=models.CASCADE,related_name="inventory")
+    
     quantity_available = models.PositiveIntegerField()
-
+    
     quantity_reserved = models.PositiveIntegerField(default=0)
-
+    
     quantity_sold = models.PositiveIntegerField(default=0)
-
-    quantity_added = models.PositiveIntegerField(default=0)
-
+    
+    quantity_added = models.PositiveIntegerField(default=0) 
+    
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
