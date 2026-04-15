@@ -13,7 +13,7 @@ from accounts.models import CustomUser
 
 User = get_user_model()
 
-OTP_EXPIRY_MINUTES = 5
+OTP_EXPIRY_MINUTES = 1
 
 #  ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────
 def generate_otp():

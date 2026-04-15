@@ -184,117 +184,157 @@ def initiate_paypal_payment(request, order_id):
 
 #────────────────────────────────────────────────── PAYPAL CALLBACK ──────────────────────────────────────────────────
 @never_cache
-@user_login_required
 @transaction.atomic
 def paypal_callback(request):
     paypal_order_id = request.GET.get("token")
     payer_id = request.GET.get("PayerID")
-    kiddora_order_id = request.session.get("pending_kiddora_order_id")
 
-    if not paypal_order_id or not kiddora_order_id:
-        messages.error(request, "Invalid payment session. Please try again.")
+    print("=== PAYPAL CALLBACK START ===")
+    print("User authenticated?", request.user.is_authenticated)
+    print("Session keys:", list(request.session.keys()))
+    print("paypal_order_id from URL:", paypal_order_id)
+
+    # Try to find the Payment record using PayPal order ID (this works even if session is lost)
+    payment = None
+    order = None
+
+    if paypal_order_id:
+        try:
+            payment = Payment.objects.select_related('order', 'order__user').get(
+                paypal_order_id=paypal_order_id
+            )
+            order = payment.order
+            print(f"Found order via paypal_order_id: {order.order_id}")
+        except Payment.DoesNotExist:
+            print("Payment record not found using paypal_order_id")
+
+    # If still no order, fall back to session (old way)
+    if not order:
+        kiddora_order_id = request.session.get("pending_kiddora_order_id")
+        if kiddora_order_id:
+            try:
+                order = Order.objects.select_related('user').get(order_id=kiddora_order_id)
+                print(f"Found order via session: {order.order_id}")
+            except Order.DoesNotExist:
+                pass
+
+    if not order:
+        messages.error(request, "Order not found. Please try again.")
         return redirect("shopcore:user_order_list")
 
-    order = get_object_or_404(Order, order_id=kiddora_order_id, user=request.user)
+    # Recover user if not authenticated
+    if not request.user.is_authenticated and order.user:
+        try:
+            from django.contrib.auth import login
+            login(request, order.user, backend='django.contrib.auth.backends.ModelBackend')
+            print(f"✅ User recovered: {order.user.email}")
+        except Exception as e:
+            print(f"User recovery failed: {e}")
+
+    # Safety check
+    if request.user.is_authenticated and order.user != request.user:
+        messages.error(request, "This order does not belong to you.")
+        return redirect("shopcore:user_order_list")
 
     if order.payment_status == "PAID":
         return redirect("shopcore:order_success", order_id=order.order_id)
 
-    try:
-        payment = Payment.objects.get(paypal_order_id=paypal_order_id, order=order)
-    except Payment.DoesNotExist:
-        messages.error(request, "Payment record not found.")
-        return redirect("payments:paypal_failure", order_id=order.order_id)
-
+    # Continue with capture
     try:
         capture_data = _paypal_capture_order(paypal_order_id)
     except Exception as exc:
-        logger.exception("PayPal capture failed for order %s: %s", kiddora_order_id, exc)
-        payment.payment_status = "FAILED"
-        payment.failure_reason = str(exc)
-        payment.save(update_fields=["payment_status", "failure_reason"])
-        PaymentLog.objects.create(
-            payment=payment, gateway="PAYPAL",
-            event_type="PAYPAL_CALLBACK", payload={"error": str(exc)},
-        )
-        order.order_status  = "ORDER NOT PLACED"
+        logger.exception("PayPal capture failed for order %s: %s", order.order_id, exc)
+        if payment:
+            payment.payment_status = "FAILED"
+            payment.failure_reason = str(exc)
+            payment.save(update_fields=["payment_status", "failure_reason"])
+        order.order_status = "ORDER NOT PLACED"
         order.payment_status = "FAILED"
         order.save(update_fields=["order_status", "payment_status"])
         return redirect("payments:paypal_failure", order_id=order.order_id)
 
     capture_status = capture_data.get("status", "")
-
-    PaymentLog.objects.create(
-        payment=payment,
-        gateway="PAYPAL",
-        event_type="PAYPAL_CALLBACK",
-        payload=capture_data,
-        gateway_event_id=paypal_order_id,
-    )
+    if payment:
+        PaymentLog.objects.create(
+            payment=payment,
+            gateway="PAYPAL",
+            event_type="PAYPAL_CALLBACK",
+            payload=capture_data,
+            gateway_event_id=paypal_order_id,
+        )
 
     if capture_status == "COMPLETED":
-        capture_id  = None
+        capture_id = None
         try:
-            capture_id = (
-                capture_data["purchase_units"][0]["payments"]["captures"][0]["id"]
-            )
+            capture_id = capture_data["purchase_units"][0]["payments"]["captures"][0]["id"]
         except (KeyError, IndexError):
             pass
 
         payer_email = capture_data.get("payer", {}).get("email_address", "")
-        payment.payment_status     = "PAID"
-        payment.paypal_capture_id  = capture_id
-        payment.paypal_payer_id    = payer_id
-        payment.paypal_payer_email = payer_email
-        payment.completed_at       = timezone.now()
-        payment.save(update_fields=[
-            "payment_status", "paypal_capture_id",
-            "paypal_payer_id", "paypal_payer_email", "completed_at",
-        ])
+        
+        if payment:
+            payment.payment_status = "PAID"
+            payment.paypal_capture_id = capture_id
+            payment.paypal_payer_id = payer_id
+            payment.paypal_payer_email = payer_email
+            payment.completed_at = timezone.now()
+            payment.save(update_fields=[
+                "payment_status", "paypal_capture_id",
+                "paypal_payer_id", "paypal_payer_email", "completed_at"
+            ])
 
         order.payment_status = "PAID"
         order.save(update_fields=["payment_status"])
 
-        # ✅ Finalize the order
         _finalize_order_after_payment(request, order)
 
+        print("✅ Payment completed - redirecting to order success")
         return redirect("shopcore:order_success", order_id=order.order_id)
 
     else:
-        # ✅ Payment failed — mark order as not placed, restore inventory
         failure_reason = (
-            capture_data.get("details", [{}])[0].get("description", "")
-            or capture_status
+            capture_data.get("details", [{}])[0].get("description", "") or capture_status
         )
-        payment.payment_status = "FAILED"
-        payment.failure_reason = failure_reason
-        payment.save(update_fields=["payment_status", "failure_reason"])
+        if payment:
+            payment.payment_status = "FAILED"
+            payment.failure_reason = failure_reason
+            payment.save(update_fields=["payment_status", "failure_reason"])
 
-        order.order_status   = "ORDER NOT PLACED"
+        order.order_status = "ORDER NOT PLACED"
         order.payment_status = "FAILED"
         order.save(update_fields=["order_status", "payment_status"])
 
-        _restore_inventory_for_order(order)   # ← see helper below
-
-        return redirect("payments:paypal_failure", order_id=order.order_id)   
-
-#   ────────────────────────────────────────────────── PAYPAL CANCEL ──────────────────────────────────────────────────
+        _restore_inventory_for_order(order)
+        return redirect("payments:paypal_failure", order_id=order.order_id)
+    
 @never_cache
 def paypal_cancel(request):
     kiddora_order_id = request.session.get("pending_kiddora_order_id")
+    paypal_order_id = request.GET.get("token")
+
+    order = None
     if kiddora_order_id:
         order = Order.objects.filter(order_id=kiddora_order_id).first()
-        if order:
-            Payment.objects.filter(
-                order=order, payment_status="INITIATED"
-            ).update(payment_status="FAILED")  
-            
-            order.order_status = "ORDER NOT PLACED"
-            order.payment_status = "FAILED"
-            order.save(update_fields=["order_status", "payment_status"])
-            return redirect("payments:paypal_failure", order_id=order.order_id)
+    elif paypal_order_id:
+        try:
+            payment = Payment.objects.select_related('order').get(paypal_order_id=paypal_order_id)
+            order = payment.order
+        except Payment.DoesNotExist:
+            pass
+
+    if order:
+        Payment.objects.filter(
+            order=order, payment_status="INITIATED"
+        ).update(payment_status="FAILED")
+        
+        order.order_status = "ORDER NOT PLACED"
+        order.payment_status = "FAILED"
+        order.save(update_fields=["order_status", "payment_status"])
+        return redirect("payments:paypal_failure", order_id=order.order_id)
+
     messages.warning(request, "Payment was cancelled.")
     return redirect("shopcore:user_order_list")
+
 #   ────────────────────────────────────────────────── PAYPAL SUCCESS PAGE ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
