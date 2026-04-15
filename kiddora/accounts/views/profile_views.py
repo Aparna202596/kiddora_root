@@ -1,23 +1,23 @@
-from django.views.decorators.cache import never_cache
-from shopcore.views.referral_views import get_or_create_referral_record
-from accounts.views.otp_views import generate_otp
-from accounts.decorators import user_login_required
-from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth import get_user_model, logout
-from django.shortcuts import render, redirect
-from django.core.mail import send_mail
-
-from django.contrib import messages
-from django.utils import timezone
-from django.conf import settings
 from datetime import timedelta
 
-from shopcore.models import Order
+from accounts.decorators import user_login_required
 from accounts.models import CustomUser, UserAddress
+from accounts.views.otp_views import generate_otp
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import (get_user_model, logout,
+                                 update_session_auth_hash)
+from django.core.mail import send_mail
+from django.shortcuts import redirect, render
+from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from shopcore.models import Order
+from shopcore.views.referral_views import get_or_create_referral_record
 
 User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 1
+
 
 #  ────────────────────────────────────────────────── USER PROFILE ──────────────────────────────────────────────────
 @never_cache
@@ -31,11 +31,15 @@ def user_profile(request):
     return render(
         request,
         "accounts/profile/profile.html",
-        {"user": user, 
-        "addresses": addresses, 
-        "referral_link": referral_link,
-        "referral_code": rc.code,
-        "orders": orders,},)
+        {
+            "user": user,
+            "addresses": addresses,
+            "referral_link": referral_link,
+            "referral_code": rc.code,
+            "orders": orders,
+        },
+    )
+
 
 #  ────────────────────────────────────────────────── DELETE PROFILE ──────────────────────────────────────────────────
 @never_cache
@@ -66,6 +70,7 @@ def delete_profile(request):
 
     return render(request, "accounts/profile/delete_profile.html", {"user": user})
 
+
 #  ────────────────────────────────────────────────── EDIT PROFILE ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -79,9 +84,13 @@ def edit_profile(request):
         phone = request.POST.get("phone")
 
         if not full_name or not phone:
-            messages.error(request,"Name & phone required")
-            return render(request,"accounts/profile/edit_profile.html",{"user":user,"form_data":form_data})
-        
+            messages.error(request, "Name & phone required")
+            return render(
+                request,
+                "accounts/profile/edit_profile.html",
+                {"user": user, "form_data": form_data},
+            )
+
         user.full_name = request.POST.get("full_name")
         user.phone = request.POST.get("phone")
         user.gender = request.POST.get("gender")
@@ -93,6 +102,7 @@ def edit_profile(request):
         messages.success(request, "Profile updated successfully")
         return redirect("accounts:user_profile")
     return render(request, "accounts/profile/edit_profile.html", {"user": user})
+
 
 #  ────────────────────────────────────────────────── USER PROFILE ──────────────────────────────────────────────────
 @never_cache
@@ -127,6 +137,7 @@ def change_password(request):
         return redirect("accounts:user_profile")
     return render(request, "accounts/profile/change_password.html")
 
+
 #  ────────────────────────────────────────────────── CHANGE EMAIL ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -134,7 +145,11 @@ def change_email(request):
     if request.method == "POST":
         new_email = request.POST.get("email")
         # Optional: prevent duplicate email usage
-        if CustomUser.objects.filter(email=new_email).exclude(id=request.user.id).exists():
+        if (
+            CustomUser.objects.filter(email=new_email)
+            .exclude(id=request.user.id)
+            .exists()
+        ):
             messages.error(request, "Email already in use")
             return redirect("accounts:change_email")
         user = request.user
@@ -162,11 +177,12 @@ def change_email(request):
         except Exception as e:
             messages.error(request, "Failed to send OTP. Try again later.")
             return redirect("accounts:user_profile")
-        
+
         messages.success(request, "OTP sent to your new email address")
         return redirect("accounts:verify_email_update")
-    
+
     return render(request, "accounts/profile/change_email.html")
+
 
 #  ────────────────────────────────────────────────── VERIFY EMAIL UPDATE ──────────────────────────────────────────────────
 @never_cache

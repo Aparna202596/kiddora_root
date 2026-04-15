@@ -1,22 +1,24 @@
 from __future__ import annotations
 
-from django.views.decorators.cache import never_cache
-from django.core.paginator import Paginator
-from accounts.decorators import admin_login_required, user_login_required
-from django.contrib.auth import get_user_model
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
-from django.contrib import messages
-from django.utils import timezone
+import uuid
 from datetime import timedelta
 from decimal import Decimal
-import uuid
 
-from shopcore.models import Coupon, CouponUsage, ReferralCode, ReferralUse, Offer
+from accounts.decorators import admin_login_required, user_login_required
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from shopcore.models import (Coupon, CouponUsage, Offer, ReferralCode,
+                             ReferralUse)
 
 User = get_user_model()
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
+
 
 def get_or_create_referral_record(user) -> ReferralCode:
     rc, _ = ReferralCode.objects.get_or_create(
@@ -26,7 +28,9 @@ def get_or_create_referral_record(user) -> ReferralCode:
     return rc
 
 
-def _make_referral_coupon(prefix: str, discount_value: Decimal, usage_limit: int = 1) -> Coupon:
+def _make_referral_coupon(
+    prefix: str, discount_value: Decimal, usage_limit: int = 1
+) -> Coupon:
     """Create a personal one-time referral coupon valid for 30 days."""
     coupon = Coupon.objects.create(
         code=f"{prefix}-{uuid.uuid4().hex[:8].upper()}",
@@ -150,19 +154,22 @@ def process_referral_on_signup(
     referrer = referral_record.user
 
     # Guard: no self-referral, no double-processing
-    if referrer == new_user or ReferralUse.objects.filter(referred_user=new_user).exists():
+    if (
+        referrer == new_user
+        or ReferralUse.objects.filter(referred_user=new_user).exists()
+    ):
         return False
 
     # ── Issue separate coupons ────────────────────────────────────────────
-    referrer_coupon = _award_referrer_coupon(referrer)   # existing user's reward
-    new_user_coupon = _award_new_user_coupon()            # new user's welcome reward
+    referrer_coupon = _award_referrer_coupon(referrer)  # existing user's reward
+    new_user_coupon = _award_new_user_coupon()  # new user's welcome reward
 
     # ── Record the referral use with BOTH coupons ─────────────────────────
     ReferralUse.objects.create(
         referral_code=referral_record,
         referred_user=new_user,
-        coupon_awarded=referrer_coupon,     # referrer's reward (legacy field)
-        new_user_coupon=new_user_coupon,    # TASK 1: new user's separate reward
+        coupon_awarded=referrer_coupon,  # referrer's reward (legacy field)
+        new_user_coupon=new_user_coupon,  # TASK 1: new user's separate reward
     )
 
     # ── Pre-create CouponUsage rows so coupons show in checkout immediately ─
@@ -182,20 +189,21 @@ def process_referral_on_signup(
 
     return True
 
+
 def award_referral_rewards(referrer, new_user, referral_code_obj):
     # Find active referral offer (if any)
     referral_offer = Offer.objects.filter(
         offer_type="REFERRAL",
         is_active=True,
         is_deleted=False,
-        start_date__lte=timezone.now()
+        start_date__lte=timezone.now(),
     ).first()
 
     if not referral_offer:
         return
 
     coupon_awarded = None  # for referrer
-    new_user_coupon = None # for new user
+    new_user_coupon = None  # for new user
 
     if referral_offer.referrer_coupon:
         coupon_awarded = referral_offer.referrer_coupon
@@ -207,8 +215,8 @@ def award_referral_rewards(referrer, new_user, referral_code_obj):
     ReferralUse.objects.create(
         referral_code=referral_code_obj,
         referred_user=new_user,
-        coupon_awarded=coupon_awarded,      # to referrer
-        new_user_coupon=new_user_coupon     # to new user
+        coupon_awarded=coupon_awarded,  # to referrer
+        new_user_coupon=new_user_coupon,  # to new user
     )
 
     # Optional: increment used_count on coupons if you want immediate "claimed" status
@@ -218,7 +226,10 @@ def award_referral_rewards(referrer, new_user, referral_code_obj):
     if new_user_coupon:
         new_user_coupon.used_count += 1
         new_user_coupon.save(update_fields=["used_count"])
+
+
 # ────────────────────────────────────────────────── MY REFERRALS ──────────────────────────────────────────────────
+
 
 @never_cache
 @user_login_required
@@ -228,9 +239,7 @@ def my_referrals(request):
         "referred_user", "coupon_awarded", "new_user_coupon"
     ).order_by("-created_at")
 
-    referral_link = request.build_absolute_uri(
-        f"/accounts/user/signup/?ref={rc.token}"
-    )
+    referral_link = request.build_absolute_uri(f"/accounts/user/signup/?ref={rc.token}")
 
     # Show the new-user coupon this user received (if they were referred themselves)
     my_referral_use = (
@@ -239,22 +248,27 @@ def my_referrals(request):
         .first()
     )
 
-    return render(request, "referral/my_referrals.html", {
-        "referral_code": rc,
-        "referral_link": referral_link,
-        "uses": uses,
-        "total_uses": uses.count(),
-        # TASK 1: surface both coupon types to the template
-        "my_new_user_coupon": (
-            my_referral_use.new_user_coupon if my_referral_use else None
-        ),
-        "my_referrer_coupon": (
-            my_referral_use.coupon_awarded if my_referral_use else None
-        ),
-    })
+    return render(
+        request,
+        "referral/my_referrals.html",
+        {
+            "referral_code": rc,
+            "referral_link": referral_link,
+            "uses": uses,
+            "total_uses": uses.count(),
+            # TASK 1: surface both coupon types to the template
+            "my_new_user_coupon": (
+                my_referral_use.new_user_coupon if my_referral_use else None
+            ),
+            "my_referrer_coupon": (
+                my_referral_use.coupon_awarded if my_referral_use else None
+            ),
+        },
+    )
 
 
 # ────────────────────────────────────────────────── ADMIN: LIST ──────────────────────────────────────────────────
+
 
 @never_cache
 @admin_login_required
@@ -268,13 +282,18 @@ def admin_referral_list(request):
             | Q(user__full_name__icontains=search)
         )
     page_obj = Paginator(qs, 15).get_page(request.GET.get("page"))
-    return render(request, "referral/admin_referral_list.html", {
-        "page_obj": page_obj,
-        "search": search,
-    })
+    return render(
+        request,
+        "referral/admin_referral_list.html",
+        {
+            "page_obj": page_obj,
+            "search": search,
+        },
+    )
 
 
 # ────────────────────────────────────────────────── ADMIN: REFERRAL USES ──────────────────────────────────────────────────
+
 
 @never_cache
 @admin_login_required
@@ -284,7 +303,11 @@ def admin_referral_uses(request, referral_id):
         "referred_user", "coupon_awarded", "new_user_coupon"
     ).order_by("-created_at")
     page_obj = Paginator(uses, 15).get_page(request.GET.get("page"))
-    return render(request, "referral/admin_referral_uses.html", {
-        "referral_code": referral_code,
-        "page_obj": page_obj,
-    })
+    return render(
+        request,
+        "referral/admin_referral_uses.html",
+        {
+            "referral_code": referral_code,
+            "page_obj": page_obj,
+        },
+    )

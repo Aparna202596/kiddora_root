@@ -1,12 +1,12 @@
-from django.views.decorators.cache import never_cache
 from accounts.decorators import user_login_required
-from django.contrib.auth import get_user_model
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-
 from accounts.models import UserAddress
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
 
 User = get_user_model()
+
 
 #  ────────────────────────────────────────────────── ADDRESS LIST ──────────────────────────────────────────────────
 @never_cache
@@ -14,6 +14,7 @@ User = get_user_model()
 def address_list(request):
     addresses = request.user.addresses.all()
     return render(request, "accounts/address/addresses.html", {"addresses": addresses})
+
 
 #  ────────────────────────────────────────────────── SET DEFAULT ADDRESS ──────────────────────────────────────────────────
 @never_cache
@@ -25,6 +26,7 @@ def set_default_address(request, address_id):
     address.save()
     return redirect("accounts:address_list")
 
+
 #  ────────────────────────────────────────────────── ADD ADDRESS ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -34,39 +36,46 @@ def address_add(request):
         address_line1 = request.POST.get("address_line1", "").strip()
         address_line2 = request.POST.get("address_line2", "").strip()
         city = request.POST.get("city", "").strip()
-        state = request.POST.get("state", "").strip()       
-        country = request.POST.get("country", "").strip()     
+        state = request.POST.get("state", "").strip()
+        country = request.POST.get("country", "").strip()
         pincode = request.POST.get("pincode", "").strip()
         address_type = request.POST.get("address_type", "").strip()
 
         if not all([address_line1, city, state, country, pincode]):
             messages.error(request, "All fields are required.")
-            return render(request, "accounts/address/add_address.html", {"form_data": form_data})
+            return render(
+                request, "accounts/address/add_address.html", {"form_data": form_data}
+            )
 
         if not address_type:
             messages.error(request, "Address type is required.")
-            return render(request, "accounts/address/add_address.html", {"form_data": form_data})
+            return render(
+                request, "accounts/address/add_address.html", {"form_data": form_data}
+            )
 
         is_default = request.POST.get("is_default") == "on"
 
         if is_default:
-            UserAddress.objects.filter(user=request.user, is_default=True).update(is_default=False)
+            UserAddress.objects.filter(user=request.user, is_default=True).update(
+                is_default=False
+            )
 
         UserAddress.objects.create(
-            user = request.user,
-            address_line1 = address_line1,
-            address_line2 = address_line2,
-            city = city,
-            state = state,
-            country = country,
-            pincode = pincode,
-            address_type = address_type,
-            is_default = is_default,
+            user=request.user,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
+            state=state,
+            country=country,
+            pincode=pincode,
+            address_type=address_type,
+            is_default=is_default,
         )
         messages.success(request, "Address added successfully.")
         return redirect("accounts:address_list")
 
     return render(request, "accounts/address/add_address.html")
+
 
 #  ────────────────────────────────────────────────── EDIT ADDRESS ──────────────────────────────────────────────────
 @never_cache
@@ -79,22 +88,26 @@ def address_edit(request, address_id):
         address_line1 = request.POST.get("address_line1", "").strip()
         address_line2 = request.POST.get("address_line2", "").strip()
         city = request.POST.get("city", "").strip()
-        state = request.POST.get("state", "").strip()       
-        country = request.POST.get("country", "").strip()    
+        state = request.POST.get("state", "").strip()
+        country = request.POST.get("country", "").strip()
         pincode = request.POST.get("pincode", "").strip()
         address_type = request.POST.get("address_type", "").strip()
 
         if not all([address_line1, city, state, country, pincode]):
             messages.error(request, "All fields are required.")
-            return render(request, "accounts/address/edit_address.html", {
-                "address": address, "form_data": form_data
-            })
+            return render(
+                request,
+                "accounts/address/edit_address.html",
+                {"address": address, "form_data": form_data},
+            )
 
         if not address_type:
             messages.error(request, "Address type is required.")
-            return render(request, "accounts/address/edit_address.html", {
-                "address": address, "form_data": form_data
-            })
+            return render(
+                request,
+                "accounts/address/edit_address.html",
+                {"address": address, "form_data": form_data},
+            )
 
         is_default = request.POST.get("is_default") == "on"
 
@@ -115,6 +128,7 @@ def address_edit(request, address_id):
         return redirect("accounts:address_list")
 
     return render(request, "accounts/address/edit_address.html", {"address": address})
+
 
 #  ────────────────────────────────────────────────── DELETE ADDRESS ──────────────────────────────────────────────────
 @never_cache
