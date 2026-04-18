@@ -16,13 +16,7 @@ from shopcore.models import Coupon, Offer
 
 
 def get_max_offer_discount_percent(product) -> int:
-    """
-    TASK 3 — Returns the single best (highest) discount percentage applicable
-    to a product.  When both a product-level offer AND a category-level offer
-    exist, only the greater one is applied — they are never combined.
 
-    Example: shirt has 20% product offer + 30% category offer → returns 30.
-    """
     if not product:
         return 0
 
@@ -51,27 +45,11 @@ def get_max_offer_discount_percent(product) -> int:
     except Exception:
         pass
 
-    # TASK 3: return only the larger of the two — never sum them
     return max(product_pct, category_pct)
 
 
 def get_offer_discount_detail(product) -> dict:
-    """
-    TASK 3 — Returns a dict with the winning offer percentage AND which type
-    won, useful for rendering a per-item breakdown on the checkout page.
-
-    Returns:
-        {
-            "discount_percent": int,          # 0 if no offer
-            "offer_type": str | None,         # "PRODUCT", "CATEGORY", or None
-            "product_percent": int,           # raw product-level %
-            "category_percent": int,          # raw category-level %
-        }
-
-    When both a product offer and a category offer exist, only the larger one
-    is reflected in ``discount_percent`` / ``offer_type``.  The raw values are
-    exposed so the checkout template can display why the winning offer was chosen.
-    """
+    
     if not product:
         return {
             "discount_percent": 0,
@@ -113,7 +91,6 @@ def get_offer_discount_detail(product) -> dict:
             "category_percent": 0,
         }
 
-    # TASK 3: category wins on tie (≥), product wins otherwise
     if category_pct >= product_pct:
         winning_type = "CATEGORY"
         winning_pct = category_pct
@@ -193,7 +170,6 @@ def admin_add_offer(request):
             "categories": Category.objects.filter(
                 is_active=True, is_deleted=False
             ).order_by("category_name"),
-            # All active coupons available for selection (referral offer form dropdowns)
             "coupons": Coupon.objects.filter(is_active=True, is_deleted=False).order_by(
                 "code"
             ),
@@ -201,9 +177,9 @@ def admin_add_offer(request):
                 offer_type="",
                 product_id="",
                 category_id="",
-                referral_coupon_id="",  # legacy
-                referrer_coupon_id="",  # TASK 1: referrer reward
-                new_user_coupon_id="",  # TASK 1: new-user reward
+                referral_coupon_id="",  
+                referrer_coupon_id="",  
+                new_user_coupon_id="",  
                 discount_percent="",
                 start_date="",
                 end_date="",
@@ -249,11 +225,7 @@ def admin_edit_offer(request, offer_id):
 
 
 def _save_offer(request, instance):
-    """
-    Shared create / update logic.
-    - Discount percent is REQUIRED only for PRODUCT and CATEGORY offers.
-    - For REFERRAL offers, discount_percent is ignored (no extra discount).
-    """
+
     offer_type = request.POST.get("offer_type", "").strip()
     product_id = request.POST.get("product_id", "") or None
     category_id = request.POST.get("category_id", "") or None
@@ -274,7 +246,6 @@ def _save_offer(request, instance):
     if offer_type == "CATEGORY" and not category_id:
         errors.append("A category must be selected for category offers.")
 
-    # Discount validation - ONLY for PRODUCT and CATEGORY
     if offer_type in ("PRODUCT", "CATEGORY"):
         if not discount_percent_str:
             errors.append(
@@ -289,7 +260,6 @@ def _save_offer(request, instance):
             except (ValueError, TypeError):
                 errors.append("Discount percent must be a number between 1 and 100.")
     else:
-        # For REFERRAL offers - ignore discount
         discount_percent = 0
 
     if not start_date:
@@ -315,7 +285,6 @@ def _save_offer(request, instance):
             messages.error(request, e)
         return render(request, "coupon_offer/admin_offer_form.html", ctx)
 
-    # Save logic
     obj = instance or Offer()
     obj.offer_type = offer_type
     obj.product = Product.objects.filter(id=product_id).first() if product_id else None

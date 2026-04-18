@@ -11,11 +11,14 @@ urlpatterns = [
     path("user/login/", auth_views.user_login, name="login"),
     path("user/logout/", auth_views.user_logout, name="logout"),
     path("user/signup/", auth_views.user_signup, name="signup"),
+
     # ────────────────────── AUTHENTICATION - SOCIAL LOGIN ──────────────────────
     path("accounts/google/login/", auth_views.google_login, name="google_login"),
+
     # ────────────────────── AUTHENTICATION – ADMIN ──────────────────────
     path("admin/admin-login/", auth_views.admin_login, name="admin_login"),
     path("admin/admin-logout/", auth_views.admin_logout, name="admin_logout"),
+    
     # ────────────────────── AUTHENTICATION – ADMIN ──────────────────────
     path(
         "admin/admin-dashboard/",

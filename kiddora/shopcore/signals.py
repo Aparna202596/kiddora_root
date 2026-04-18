@@ -13,10 +13,7 @@ from products.models import Inventory
 from products.services.inventory import deduct_stock_on_delivery, release_stock
 from shopcore.models import OrderItem, ReferralCode, Return, Review
 
-# ─────────────────────────────────────────────────────────────
-# ORDER ITEM: reserve inventory on creation
-# ─────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────── ORDER ITEM: reserve inventory on creation ──────────────────────────────────────────
 
 @receiver(post_save, sender=OrderItem)
 def reserve_inventory(sender, instance, created, **kwargs):
@@ -30,19 +27,12 @@ def reserve_inventory(sender, instance, created, **kwargs):
         except Inventory.DoesNotExist:
             pass
 
-
-# ─────────────────────────────────────────────────────────────
-# ORDER ITEM: handle status transitions
-# ─────────────────────────────────────────────────────────────
+# ────────────────────────────────────────── ORDER ITEM: handle status transitions ──────────────────────────────────────────
 
 
 @receiver(post_save, sender=OrderItem)
 def handle_order_item_status(sender, instance, created, **kwargs):
-    """
-    CANCELLED → release reserved stock back to available.
-    DELIVERED  → move reserved stock to sold (via deduct_stock_on_delivery).
-    Skip on creation — reserve_inventory handles that.
-    """
+
     if created:
         return
     if instance.item_status == "CANCELLED":
@@ -50,23 +40,12 @@ def handle_order_item_status(sender, instance, created, **kwargs):
     elif instance.item_status == "DELIVERED":
         deduct_stock_on_delivery(instance.variant, instance.quantity)
 
-
-# ─────────────────────────────────────────────────────────────
-# RETURN: combined refund + restock on REFUNDED status
-# ─────────────────────────────────────────────────────────────
-
-
+# ────────────────────────────────────────── RETURN: combined refund + restock on REFUNDED status ──────────────────────────────────────────
 @receiver(post_save, sender=Return)
 def handle_return_status(sender, instance, **kwargs):
-    """
-    APPROVED  → restock inventory (quantity_available += qty).
-    REFUNDED  → credit wallet + ensure inventory is restocked.
 
-    Uses `instance.locked` to prevent double-execution.
-    Add `locked = models.BooleanField(default=False)` to the Return model.
-    """
     if kwargs.get("update_fields") and "locked" in kwargs["update_fields"]:
-        # This save was triggered by us setting locked=True — skip
+
         return
 
     if instance.status == "APPROVED" and not instance.locked:
@@ -80,7 +59,7 @@ def handle_return_status(sender, instance, **kwargs):
 
 
 def _restock_inventory(ret):
-    """Add returned quantity back to quantity_available."""
+
     try:
         inventory = ret.order_item.variant.inventory
         inventory.quantity_available += ret.order_item.quantity
@@ -93,15 +72,7 @@ HALF_LIFE_DAYS = 90
 
 
 def compute_weighted_average(product):
-    """
-    Weighted average rating using recency weights.
 
-    weight(review) = e ^ (- days_since_review / HALF_LIFE_DAYS)
-
-    weighted_avg = Sum(rating_i * weight_i) / Sum(weight_i)
-
-    Returns a Decimal rounded to 2 places, or 0.00 if no approved reviews.
-    """
     reviews = product.reviews.filter(is_approved=True).only("rating", "created_at")
 
     if not reviews.exists():
@@ -112,8 +83,8 @@ def compute_weighted_average(product):
     total_weight = 0.0
 
     for review in reviews:
-        days_old = (now - review.created_at).total_seconds() / 86400  # convert to days
-        weight = math.exp(-days_old / HALF_LIFE_DAYS)  # exponential decay
+        days_old = (now - review.created_at).total_seconds() / 86400  
+        weight = math.exp(-days_old / HALF_LIFE_DAYS)  
 
         weighted_sum += review.rating * weight
         total_weight += weight
@@ -121,7 +92,7 @@ def compute_weighted_average(product):
     if total_weight == 0:
         return Decimal("0.00")
 
-    raw_avg = weighted_sum / total_weight  # float between 1.0 – 5.0
+    raw_avg = weighted_sum / total_weight  
     return Decimal(str(round(raw_avg, 2)))
 
 
@@ -159,13 +130,10 @@ def _credit_wallet(ret):
     except Exception:
         pass
 
-
-# ─────────────────────────────────────────────────────────────
-# AUTO-GENERATE REFERRAL CODE ON USER CREATION (THE REQUIRED ADDON)
-# ─────────────────────────────────────────────────────────────
+# ────────────────────────────────────────── AUTO-GENERATE REFERRAL CODE ON USER CREATION (THE REQUIRED ADDON) ──────────────────────────────────────────
 @receiver(post_save, sender=CustomUser)
 def create_referral_record_for_new_user(sender, instance, created, **kwargs):
-    """Automatically create ReferralCode + token + code when any new user is created."""
+
     if created:
         ReferralCode.objects.get_or_create(
             user=instance,

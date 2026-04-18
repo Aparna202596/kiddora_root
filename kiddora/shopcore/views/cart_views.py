@@ -216,7 +216,6 @@ def add_to_cart(request, variant_id):
         cart_item = CartItem.objects.create(cart=cart, variant=variant, quantity=1)
         new_item = True
 
-    # Remove from wishlist
     try:
         WishlistItem.objects.filter(
             wishlist=request.user.wishlist,

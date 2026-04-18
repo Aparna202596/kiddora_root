@@ -11,7 +11,7 @@ urlpatterns = [
     path("products/", include("products.urls")),
     path("payments/", include("payments.urls", namespace="payments")),
     path("shop/", include("shopcore.urls")),
-    # Root URL → anonymous home page
+
     path("", lambda request: redirect("shopcore:anonymous_home"), name="root_redirect"),
 ]
 

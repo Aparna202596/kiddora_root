@@ -155,7 +155,6 @@ def wishlist_variant_popup(request, product_id):
                 img_url = val.url
                 break
 
-    # Build variant_data — ALL active variants regardless of stock
     variant_data = []
     first_in_stock = None
 
@@ -204,7 +203,6 @@ def wishlist_variant_popup(request, product_id):
 @user_login_required
 @require_POST
 def move_to_cart(request, variant_id):
-    # Add selected variant to cart and remove the product from wishlist
     try:
         with transaction.atomic():
             variant = get_object_or_404(
@@ -221,7 +219,6 @@ def move_to_cart(request, variant_id):
                 cart_item.quantity += 1
                 cart_item.save()
 
-            # Remove from wishlist
             wishlist = getattr(request.user, "wishlist", None)
             if wishlist:
                 WishlistItem.objects.filter(wishlist=wishlist, product=product).delete()

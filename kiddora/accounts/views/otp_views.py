@@ -15,7 +15,6 @@ User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 1
 
-
 #  ────────────────────────────────────────────────── GENERATE OTP ──────────────────────────────────────────────────
 def generate_otp():
     """Return a 6-digit numeric OTP."""
@@ -31,17 +30,17 @@ def verify_signup_otp(request):
     user = get_object_or_404(CustomUser, id=user_id)
     if request.method == "POST":
         otp_entered = request.POST.get("otp")
-        # EXPIRY CHECK
+
         if timezone.now() - user.otp_created_at > timedelta(minutes=OTP_EXPIRY_MINUTES):
             user.delete()
             request.session.pop("verify_user_id", None)
             messages.error(request, "OTP expired. Please register again.")
             return redirect("accounts:signup")
-        # OTP MATCH CHECK
+
         if otp_entered != user.otp:
             messages.error(request, "Invalid OTP")
             return redirect("accounts:verify_signup_otp")
-        # SUCCESS
+
         user.is_active = True
         user.email_verified = True
         user.otp = None
@@ -67,7 +66,7 @@ def resend_signup_otp(request):
         .filter(otp_created_at__lte=cooldown_time)
         .update(otp=generate_otp(), otp_created_at=now)
     )
-    # If update() returns 0 → cooldown not finished
+
     if updated == 0:
         messages.error(request, "Please wait 60 seconds before resending OTP")
         return redirect("accounts:verify_signup_otp")
@@ -113,21 +112,17 @@ def forgot_password(request):
                 messages.error(request, "Your account is blocked.")
                 return redirect("accounts:blocked")
 
-            # UPDATE DATABASE FOR COOLDOWN
             user.otp_created_at = timezone.now()
             user.save()
 
-            # Generate OTP
             otp = generate_otp()
             otp_expiry = timezone.now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
-            # Store in session
             request.session["fp_user_id"] = user.id
             request.session["fp_otp"] = otp
             request.session["fp_otp_expiry"] = otp_expiry.isoformat()
             request.session.pop("fp_otp_verified", None)
 
-            # Send OTP email
             try:
                 send_mail(
                     subject="Password Reset OTP - Kiddora",
@@ -172,7 +167,6 @@ def verify_forgot_password_otp(request):
 
         otp_expiry = datetime.fromisoformat(otp_expiry_str)
 
-        # If it already has one (aware), skip make_aware to avoid the ValueError.
         if timezone.is_naive(otp_expiry):
             otp_expiry = timezone.make_aware(otp_expiry)
 
@@ -216,7 +210,6 @@ def reset_password(request):
             user.set_password(new_password)
             user.save()
 
-            # Clear session
             request.session.pop("fp_user_id", None)
             request.session.pop("fp_otp", None)
             request.session.pop("fp_otp_expiry", None)

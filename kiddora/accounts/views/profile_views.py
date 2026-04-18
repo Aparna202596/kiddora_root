@@ -6,7 +6,7 @@ from accounts.views.otp_views import generate_otp
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import (get_user_model, logout,
-                                 update_session_auth_hash)
+                                update_session_auth_hash)
 from django.core.mail import send_mail
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -17,7 +17,6 @@ from shopcore.views.referral_views import get_or_create_referral_record
 User = get_user_model()
 
 OTP_EXPIRY_MINUTES = 1
-
 
 #  ────────────────────────────────────────────────── USER PROFILE ──────────────────────────────────────────────────
 @never_cache
@@ -50,17 +49,14 @@ def delete_profile(request):
     if request.method == "POST":
         password = request.POST.get("password")
 
-        # Validate password input
         if not password:
             messages.error(request, "Password is required to delete your account.")
             return redirect("accounts:delete_profile")
 
-        # Check password
         if not user.check_password(password):
             messages.error(request, "Incorrect password.")
             return redirect("accounts:delete_profile")
 
-        # Delete user account
         username = user.username or user.email
         logout(request)
         user.delete()
@@ -114,22 +110,18 @@ def change_password(request):
         new_password = request.POST.get("new_password")
         confirm_password = request.POST.get("confirm_password")
 
-        # CHECK CURRENT PASSWORD
         if not user.check_password(current_password):
             messages.error(request, "Current password is incorrect")
             return redirect("accounts:change_password")
 
-        # CHECK PASSWORD MATCH
         if new_password != confirm_password:
             messages.error(request, "New passwords do not match")
             return redirect("accounts:change_password")
 
-        # OPTIONAL: PASSWORD LENGTH CHECK
         if len(new_password) < 6:
             messages.error(request, "Password must be at least 6 characters")
             return redirect("accounts:change_password")
 
-        # SUCCESS
         request.user.set_password(new_password)
         request.user.save()
         update_session_auth_hash(request, request.user)
@@ -144,7 +136,7 @@ def change_password(request):
 def change_email(request):
     if request.method == "POST":
         new_email = request.POST.get("email")
-        # Optional: prevent duplicate email usage
+
         if (
             CustomUser.objects.filter(email=new_email)
             .exclude(id=request.user.id)
@@ -157,7 +149,7 @@ def change_email(request):
         user.otp = generate_otp()
         user.otp_created_at = timezone.now()
         user.save()
-        # SEND OTP EMAIL (CRITICAL FIX)
+
         try:
             send_mail(
                 subject="Email Change OTP",
@@ -191,11 +183,11 @@ def verify_email_update(request):
     user = request.user
     if request.method == "POST":
         entered_otp = request.POST.get("otp")
-        # SAFETY CHECKS
+
         if not user.otp or not user.otp_created_at or not user.pending_email:
             messages.error(request, "Invalid or expired session")
             return redirect("accounts:change_email")
-        # OTP EXPIRY VALIDATION (CRITICAL FIX)
+
         if timezone.now() > user.otp_created_at + timedelta(minutes=OTP_EXPIRY_MINUTES):
             user.otp = None
             user.otp_created_at = None
@@ -203,11 +195,11 @@ def verify_email_update(request):
             user.save()
             messages.error(request, "OTP expired. Please try again.")
             return redirect("accounts:change_email")
-        # OTP MATCH VALIDATION
+
         if entered_otp != user.otp:
             messages.error(request, "Invalid OTP")
             return redirect("accounts:verify_email_update")
-        # SUCCESS: UPDATE EMAIL
+
         user.email = user.pending_email
         user.pending_email = None
         user.otp = None

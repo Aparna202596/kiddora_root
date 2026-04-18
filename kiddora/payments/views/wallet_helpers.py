@@ -58,7 +58,6 @@ def credit_refund_to_wallet(
 
     wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
 
-    # ── Idempotency check ─────────────────────────────────────────────────
     already_refunded = WalletTransaction.objects.filter(
         wallet=wallet,
         txn_type="REFUND",
@@ -74,7 +73,6 @@ def credit_refund_to_wallet(
             reference_id,
         )
         return None
-    # ─────────────────────────────────────────────────────────────────────
 
     wallet.balance += amount
     wallet.save(update_fields=["balance", "updated_at"])
@@ -94,8 +92,6 @@ def credit_refund_to_wallet(
     )
     return txn
 
-
-#   ────────────────────────────────────────────────── INTERNAL HELPERS ──────────────────────────────────────────────────
 def _restore_inventory_for_order(order) -> None:
     for oi in order.order_items.filter(item_status="PENDING"):
         try:

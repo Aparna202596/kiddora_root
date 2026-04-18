@@ -17,7 +17,7 @@ from shopcore.views.order_views import _recalculate_order_amount
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
 def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
-    """Restore exactly `qty` units to inventory — used for partial returns."""
+
     try:
         inv = order_item.variant.inventory
         inv.quantity_available += qty
@@ -26,10 +26,7 @@ def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
     except Exception:
         pass
 
-
 # ────────────────────────────────────────────────── RETURN REQUEST VIEWS ──────────────────────────────────────────────────
-
-
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -60,7 +57,6 @@ def request_return(request, order_id, item_id):
             },
         )
 
-    # ── POST ──────────────────────────────────────────────────────────────
     reason = request.POST.get("reason", "").strip()
     if not reason:
         messages.error(request, "Please provide a reason for the return.")
@@ -75,7 +71,6 @@ def request_return(request, order_id, item_id):
             },
         )
 
-    # ── Quantity to return ────────────────────────────────────────────────
     try:
         return_qty = int(
             request.POST.get("return_quantity", order_item.active_quantity)
@@ -85,7 +80,6 @@ def request_return(request, order_id, item_id):
 
     return_qty = max(1, min(return_qty, order_item.active_quantity))
 
-    # Per-unit net refund amount
     per_unit_net = (
         order_item.total_price / order_item.quantity
         if order_item.quantity
@@ -204,7 +198,6 @@ def admin_approve_return(request, return_id):
     return_qty = ret.return_quantity or oi.active_quantity
     refund_amount = ret.calculated_refund_amount
 
-    # ── Update return record ──────────────────────────────────────────────
     ret.status = "APPROVED"
     ret.admin_note = request.POST.get("admin_note", "Return approved.").strip()
     ret.refund_amount = refund_amount
@@ -220,21 +213,17 @@ def admin_approve_return(request, return_id):
         ]
     )
 
-    # ── Determine new item status ─────────────────────────────────────────
     is_full_return = return_qty >= oi.active_quantity
     if is_full_return:
         oi.item_status = "RETURN_APPROVED"
     else:
-        # Partial return: reduce active quantity by return_qty
-        # We track this via cancelled_quantity (returned units leave circulation)
+
         oi.cancelled_quantity = (oi.cancelled_quantity or 0) + return_qty
-        oi.item_status = "ACTIVE"  # remaining units still active
+        oi.item_status = "ACTIVE"  
     oi.save(update_fields=["item_status", "cancelled_quantity"])
 
-    # ── Restore inventory for returned qty only ───────────────────────────
     _restore_inventory_partial(oi, return_qty)
 
-    # ── Refund wallet — unique key per return record ──────────────────────
     credit_refund_to_wallet(
         user=order.user,
         amount=refund_amount,
@@ -247,7 +236,6 @@ def admin_approve_return(request, return_id):
         order=order,
     )
 
-    # ── Recalculate order totals ──────────────────────────────────────────
     _recalculate_order_amount(order)
 
     active_count = order.order_items.filter(item_status="ACTIVE").count()
@@ -277,8 +265,6 @@ def admin_process_refund(request, return_id):
 
     refund_amount = ret.refund_amount or ret.calculated_refund_amount
 
-    # Attempt wallet credit — idempotency guard in credit_refund_to_wallet
-    # will block if already done at approval step
     credit_refund_to_wallet(
         user=order.user,
         amount=refund_amount,
@@ -287,7 +273,7 @@ def admin_process_refund(request, return_id):
             f"in order {order.order_id}"
         ),
         reference_type="RETURN",
-        reference_id=f"{order.order_id}-return-{ret.id}",  # same key → blocked if already paid
+        reference_id=f"{order.order_id}-return-{ret.id}",  
         order=order,
     )
 
@@ -330,7 +316,6 @@ def admin_reject_return(request, return_id):
     ret.updated_at = timezone.now()
     ret.save(update_fields=["status", "admin_note", "updated_at"])
 
-    # Item goes back to ACTIVE since the return was rejected
     oi.item_status = "ACTIVE"
     oi.save(update_fields=["item_status"])
 

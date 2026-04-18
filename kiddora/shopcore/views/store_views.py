@@ -75,15 +75,12 @@ def anonymous_home(request):
         "display_order", "-created_at"
     )
 
-    # Filter using is_live() method
     hero_banners = [b for b in live_banners if b.slot == "HERO" and b.is_live()]
     secondary_banners = [
         b for b in live_banners if b.slot == "SECONDARY" and b.is_live()
     ][:6]
 
-    # Fallback if no hero banners
     if not hero_banners:
-        # You can show a default banner or just the no-banner message
         pass
 
     categories = Category.objects.filter(is_active=True).order_by("category_name")
@@ -120,7 +117,6 @@ def anonymous_home(request):
 
 @user_login_required
 def home(request):
-    # Same logic as anonymous_home (we use the same template)
     live_banners = Banner.objects.filter(is_active=True).order_by(
         "display_order", "-created_at"
     )

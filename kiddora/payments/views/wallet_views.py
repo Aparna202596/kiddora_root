@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 from payments.models import Payment, Wallet, WalletTransaction
 from payments.views.paypal_views import _finalize_order_after_payment
 from payments.views.wallet_helpers import (_restore_inventory_for_order,
-                                           debit_from_wallet)
+                                        debit_from_wallet)
 from shopcore.models import Order
 
 #   ────────────────────────────────────────────────── INTERNAL HELPER ──────────────────────────────────────────────────
@@ -192,7 +192,6 @@ def admin_payment_list(request):
     if status_f:
         payment_qs = payment_qs.filter(payment_status=status_f)
 
-    # Convert Payment queryset rows to unified dicts
     online_rows = []
     for p in payment_qs:
         online_rows.append(
@@ -280,7 +279,6 @@ def admin_payment_list(request):
             "status_choices": status_choices,
         },
     )
-
 
 #   ────────────────────────────────────────────────── INTERNAL HELPERS ──────────────────────────────────────────────────
 @never_cache

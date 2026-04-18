@@ -74,7 +74,7 @@ def submit_review(request, product_id):
         if existing:
             existing.rating = rating_int
             existing.comment = comment
-            existing.is_approved = False  # re-approval required after edit
+            existing.is_approved = False  
             existing.save(update_fields=["rating", "comment", "is_approved"])
             messages.success(
                 request, "Your review has been updated and is pending approval."
@@ -115,7 +115,7 @@ def delete_review(request, product_id, review_id):
 # ────────────────────────────────────────────────── MY REVIEWS ─────────────────────────────────────────────────────────────
 @never_cache
 @user_login_required
-def my_reviews(request, product_id):  # FIX: added product_id param to match URL conf
+def my_reviews(request, product_id):  
     reviews = (
         Review.objects.filter(user=request.user)
         .select_related("product")

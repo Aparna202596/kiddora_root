@@ -31,7 +31,7 @@ def compute_coupon_discount(coupon: Coupon, subtotal: Decimal) -> Decimal:
         discount = subtotal * coupon.discount_value / Decimal("100")
         if coupon.max_discount:
             discount = min(discount, coupon.max_discount)
-    else:  # FLAT
+    else:  
         discount = coupon.discount_value
     return min(discount, subtotal)
 
@@ -48,28 +48,15 @@ def _user_usage(coupon: Coupon, user) -> int:
 
 
 def _referral_coupon_ids_for_user(user):
-    """
-    TASK 1 — Returns the set of coupon IDs that `user` is entitled to via the
-    referral system.  Two separate coupon types are now supported:
 
-    new_user_coupon  – awarded to THIS user when they signed up via someone
-                       else's referral link (ReferralUse.new_user_coupon).
-    coupon_awarded   – awarded to THIS user when THEY referred someone else
-                       (ReferralUse.coupon_awarded, the legacy referrer field).
-
-    Both coupon IDs are returned so checkout can display and accept them.
-    """
-    # Coupons THIS user received as the NEW user (signed up via referral)
     new_user_ids = ReferralUse.objects.filter(referred_user=user).values_list(
         "new_user_coupon_id", flat=True
     )
 
-    # Coupons THIS user received as the REFERRER (they referred someone)
     referrer_ids = ReferralUse.objects.filter(referral_code__user=user).values_list(
         "coupon_awarded_id", flat=True
     )
 
-    # Combine and deduplicate, dropping None values
     combined = set(filter(None, list(new_user_ids) + list(referrer_ids)))
     return list(combined)
 
@@ -104,7 +91,6 @@ def apply_coupon(request):
         messages.error(request, f'Coupon "{code}" is expired or inactive.')
         return redirect("shopcore:checkout")
 
-    # Validate per-user usage limit
     times_used = _user_usage(coupon, request.user)
     if times_used >= coupon.usage_limit:
         msg = "You have reached the maximum usage limit for this coupon."
@@ -113,7 +99,6 @@ def apply_coupon(request):
         messages.error(request, msg)
         return redirect("shopcore:checkout")
 
-    # TASK 1: For REFERRAL coupons, verify this user is actually entitled to it
     if coupon.coupon_type == "REFERRAL":
         entitled_ids = _referral_coupon_ids_for_user(request.user)
         if coupon.id not in entitled_ids:
@@ -158,7 +143,7 @@ def apply_coupon(request):
             {
                 "success": True,
                 "coupon_code": coupon.code,
-                "coupon_type": coupon.coupon_type,  # "PUBLIC" or "REFERRAL"
+                "coupon_type": coupon.coupon_type, 
                 "discount_type": coupon.discount_type,
                 "discount_value": str(coupon.discount_value),
                 "max_discount": (
@@ -240,20 +225,18 @@ def user_coupon_list(request):
         else:
             discount_label = f"₹{coupon.discount_value:.0f} flat off"
 
-        # TASK 1: Tag so the template can explain where the coupon came from
         is_referral = coupon.coupon_type == "REFERRAL"
         referral_role = None
         if is_referral:
-            # Was this coupon awarded to THIS user when they signed up via referral?
             new_user_ids = list(
                 ReferralUse.objects.filter(referred_user=request.user).values_list(
                     "new_user_coupon_id", flat=True
                 )
             )
             if coupon.id in new_user_ids:
-                referral_role = "new_user"  # earned by signing up via referral
+                referral_role = "new_user"  
             else:
-                referral_role = "referrer"  # earned by referring someone else
+                referral_role = "referrer"  
 
         coupon_data.append(
             {

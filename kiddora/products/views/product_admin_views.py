@@ -8,7 +8,7 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from products.models import (AgeGroup, Category, Color, Inventory, Product,
-                             ProductImage, ProductVariant, SubCategory)
+                            ProductImage, ProductVariant, SubCategory)
 from products.utils.pagination import paginate_queryset
 from products.utils.queryset_utils import apply_product_filters, apply_sorting
 from products.utils.search_utils import apply_search
@@ -94,11 +94,9 @@ def admin_product_list(request):
 
     queryset = apply_search(queryset, search, ["product_name", "brand"])
 
-    # POPULARITY
     queryset = queryset.annotate(
         popularity_score=Coalesce(Sum("variants__inventory__quantity_sold"), Value(0))
     )
-    # FILTERS
     queryset = apply_product_filters(queryset, category_id, subcategory_id)
 
     if brand:
@@ -110,7 +108,6 @@ def admin_product_list(request):
     if max_price:
         queryset = queryset.filter(final_price__lte=Decimal(max_price))
 
-    # SORTING
     sort_map = {
         "product_name": "product_name",
         "brand": "brand",

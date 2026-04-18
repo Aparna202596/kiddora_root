@@ -92,9 +92,9 @@ def delete_user_view(request, user_id):
         return redirect("accounts:admin_user_list")
 
     if request.method == "POST":
-        # Soft delete only
+
         username = user.username or user.email
-        user.delete()  # This now calls the soft delete method
+        user.delete()  
         messages.success(request, f"Customer {username} has been deleted successfully.")
         return redirect("accounts:admin_user_list")
 

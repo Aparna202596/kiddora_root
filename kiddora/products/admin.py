@@ -3,7 +3,7 @@ from django.db.models import Sum
 from django.utils.html import format_html
 
 from .models import (AgeGroup, Category, Color, Inventory, Product,
-                     ProductImage, ProductVariant, SubCategory)
+                    ProductImage, ProductVariant, SubCategory)
 
 
 @admin.register(Category)

@@ -8,11 +8,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from products.models import (AgeGroup, Category, Color, Product,
-                             ProductVariant, SubCategory)
+                            ProductVariant, SubCategory)
 from shopcore.models import Cart, CartItem, Offer, Order, Review, Wishlist
 
 
-#  ────────────────────────────────────────────────── Build sidebar filter options from a filtered QS ──────────────────────────────────────────────────
+#  ──────────────────────────────── Build sidebar filter options from a filtered QS ──────────────────────────────────────────────────
 def get_filter_options(products_qs):
     colors = (
         Color.objects.filter(
@@ -76,8 +76,6 @@ def build_category_tree(products_qs):
     )
     return categories
 
-
-#  SORT OPTIONS (used by product_list and search_products)
 SORT_OPTIONS = [
     {"key": "newest", "label": "Newest First"},
     {"key": "oldest", "label": "Oldest First"},
@@ -194,7 +192,6 @@ def product_list(request, category_id=None, subcategory_id=None):
     sort_by = request.GET.getlist("sort_by")
     sort_by = sort_by[0] if sort_by else ""
 
-    # Apply filters
     if query:
         products = products.filter(
             Q(product_name__icontains=query)
@@ -243,18 +240,14 @@ def product_list(request, category_id=None, subcategory_id=None):
         )
     )
 
-    # Sort
     products = _apply_sort(products, sort_by)
 
-    # Pagination
     paginator = Paginator(products, 15)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    # Sidebar options
     filter_options = get_filter_options(products)
     categories = build_category_tree(products)
 
-    # Resolve current category/subcategory for breadcrumb display
     current_category = None
     current_subcategory = None
     if subcategory_id:
@@ -288,7 +281,7 @@ def product_list(request, category_id=None, subcategory_id=None):
         "selected_brands": selected_brands,
         "sort_by": sort_by,
         "query": query,
-        # breadcrumb
+    
         "current_category": current_category,
         "current_subcategory": current_subcategory,
     }
@@ -335,7 +328,7 @@ def search_products(request):
         )
         .select_related("subcategory", "subcategory__category")
         .prefetch_related("images")
-        .distinct()[:8]  # Limit to top 8 results for autocomplete dropdown
+        .distinct()[:8] 
     )
 
     results = []
@@ -392,7 +385,6 @@ def product_detail_view(request, product_id):
         )
         return redirect("/products/user/products/")
 
-    #   ===================================== Variants =====================================
     variants_qs = (
         ProductVariant.objects.filter(product=product, is_active=True)
         .select_related("color", "age_group", "inventory")
@@ -427,8 +419,6 @@ def product_detail_view(request, product_id):
                 "in_cart": False,
             }
         )
-
-    #   ===================================== Images =====================================
     image_urls = []
     for img_obj in product.images.all():
         for field in ("image1", "image2", "image3", "image4", "image5"):
@@ -436,7 +426,6 @@ def product_detail_view(request, product_id):
             if val:
                 image_urls.append(val.url)
 
-    #   ===================================== Related products =====================================
     related_products = (
         Product.objects.filter(
             subcategory=product.subcategory,
@@ -448,12 +437,10 @@ def product_detail_view(request, product_id):
         .prefetch_related("images")[:6]
     )
 
-    # ===================================== Cart & Wishlist context =====================================
     uw = _cart_wishlist_ctx(request.user)
     for vd in variant_data:
         vd["in_cart"] = vd["id"] in uw["cart_variant_ids"]
 
-    # ===================================== Reviews =====================================
     reviews_qs = (
         Review.objects.filter(product=product, is_approved=True)
         .select_related("user")
@@ -464,25 +451,21 @@ def product_detail_view(request, product_id):
     avg_data = reviews_qs.aggregate(avg=Avg("rating"))
     average_rating = round(avg_data["avg"], 1) if avg_data["avg"] else None
 
-    #  Review eligibility — SINGLE source of truth for all review-related logic in the template.
     user_review = None
     user_has_reviewed = False
     user_can_review = False
 
     if request.user.is_authenticated:
-        # Check against ALL reviews (approved or pending) so a user who has submitted a review but is awaiting moderation doesn't get the "Write a Review" button back.
         user_review = Review.objects.filter(user=request.user, product=product).first()
         user_has_reviewed = user_review is not None
 
         if not user_has_reviewed:
-            # Eligible only if they have a DELIVERED order containing this product. This ensures they can only review products they've actually received.
             user_can_review = Order.objects.filter(
                 user=request.user,
                 order_status="DELIVERED",
                 order_items__variant__product=product,
             ).exists()
 
-    # ===================================== Active Offers =====================================
     now = timezone.now()
     product_offers = [
         o
@@ -512,7 +495,6 @@ def product_detail_view(request, product_id):
     )
 
     context = {
-        # product core data
         "product": product,
         "variant_data": variant_data,
         "image_urls": image_urls,
@@ -520,21 +502,20 @@ def product_detail_view(request, product_id):
         "any_in_stock": any_in_stock,
         "all_out_of_stock": all_out_of_stock,
         "related_products": related_products,
-        # cart / wishlist context for buttons and JS
         "cart_variant_ids": uw["cart_variant_ids"],
         "wishlist_product_ids": uw["wishlist_product_ids"],
         "cart_item_count": uw["cart_item_count"],
         "product_in_wishlist": product.id in uw["wishlist_product_ids"],
         "MAX_QTY": CartItem.MAX_QTY_PER_PRODUCT,
         "add_to_cart_url_base": "/shop/cart/add/",
-        # reviews
+
         "reviews": review_list,
         "review_count": review_count,
         "average_rating": average_rating,
         "user_review": user_review,
         "user_has_reviewed": user_has_reviewed,
         "user_can_review": user_can_review,
-        # offers
+
         "product_offers": product_offers,
         "category_offers": category_offers,
         "all_offers": all_offers,
@@ -567,7 +548,6 @@ def ajax_variant_info(request):
     else:
         stock_status, stock_label = "in_stock", f"In Stock ({qty} available)"
 
-    # Check if this variant is already in the user's cart to disable "Add to Cart" button if needed
     in_cart = False
     if request.user.is_authenticated:
         try:
@@ -578,7 +558,6 @@ def ajax_variant_info(request):
             pass
 
     data = {
-        #  original keys
         "variant_id": variant.id,
         "sku": variant.sku,
         "color": str(variant.color),
@@ -589,7 +568,7 @@ def ajax_variant_info(request):
         "base_price": str(variant.product.base_price),
         "final_price": str(variant.product.final_price),
         "discount_percent": variant.product.discount_percent,
-        # Used by the product-detail page JS to update button state
+
         "in_cart": in_cart,
         "max_cart_qty": min(CartItem.MAX_QTY_PER_PRODUCT, qty),
         "add_to_cart_url": f"/shop/cart/add/{variant.id}/",
@@ -600,6 +579,5 @@ def ajax_variant_info(request):
 #  ────────────────────────────────────────────────── AJAX: Get product grid HTML for filters/sorting without full page reload ──────────────────────────────────────────────────
 @never_cache
 def ajax_product_grid(request, category_id=None, subcategory_id=None):
-    # Re-use product_list with the AJAX header set
     request.META["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest"
     return product_list(request, category_id=category_id, subcategory_id=subcategory_id)

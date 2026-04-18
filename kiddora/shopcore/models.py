@@ -20,8 +20,7 @@ class Coupon(models.Model):
         ("PUBLIC", "Public"),
         ("REFERRAL", "Referral"),
     )
-    #   PERCENT type → discount_value = 10  means 10%
-    #   FLAT type    → discount_value = 100 means ₹100 off
+
     code = models.CharField(max_length=20, unique=True)
 
     coupon_type = models.CharField(
@@ -133,7 +132,7 @@ class Offer(models.Model):
         null=True,
         blank=True,
         related_name="referral_offers",
-    )  # Coupon associated with this referral offer, if applicable
+    ) 
 
     referrer_coupon = models.ForeignKey(
         Coupon,
@@ -141,7 +140,7 @@ class Offer(models.Model):
         null=True,
         blank=True,
         related_name="referrer_offers",
-    )  # Coupon awarded to the REFERRER (existing user) when their referral is successful
+    )  
 
     new_user_coupon = models.ForeignKey(
         Coupon,
@@ -149,7 +148,7 @@ class Offer(models.Model):
         null=True,
         blank=True,
         related_name="new_user_offers",
-    )  # Coupon awarded to the NEW USER who signs up via referral when the referral is successful
+    )  
 
     is_active = models.BooleanField(default=True)
 
@@ -287,7 +286,7 @@ class Cart(models.Model):
 
 
 class CartItem(models.Model):
-    MAX_QTY_PER_PRODUCT = 5  # handle maximum quantity per product
+    MAX_QTY_PER_PRODUCT = 5  
 
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
 
@@ -479,7 +478,7 @@ class OrderItem(models.Model):
         """Price for active units only, proportional to discount."""
         if self.quantity == 0:
             return Decimal("0")
-        unit_net = self.total_price / self.quantity  # per-unit net after discount
+        unit_net = self.total_price / self.quantity  
         return (unit_net * self.active_quantity).quantize(Decimal("0.01"))
 
     def save(self, *args, **kwargs):
@@ -630,11 +629,9 @@ class Banner(models.Model):
 
         now = timezone.now()
 
-        # If start_date is set, must be after or equal to it
         if self.start_date and now < self.start_date:
             return False
 
-        # If end_date is set, must be before or equal to it
         if self.end_date and now > self.end_date:
             return False
 

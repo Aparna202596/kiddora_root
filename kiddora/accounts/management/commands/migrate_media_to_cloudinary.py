@@ -6,14 +6,12 @@ import cloudinary.uploader
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-# Force configuration early
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
     api_key=os.getenv("CLOUDINARY_API_KEY"),
     api_secret=os.getenv("CLOUDINARY_API_SECRET"),
     secure=True,
 )
-
 
 class Command(BaseCommand):
     help = (
@@ -41,9 +39,8 @@ class Command(BaseCommand):
                 relative_path = local_path.relative_to(media_root)
                 folder = str(relative_path.parent).replace(
                     "\\", "/"
-                )  # normalize for Cloudinary
+                )  
 
-                # Optional: skip very small or non-image files if needed
                 if local_path.stat().st_size == 0:
                     self.stdout.write(
                         self.style.WARNING(f"⚠ Skipped empty file: {relative_path}")
@@ -54,13 +51,11 @@ class Command(BaseCommand):
                 try:
                     result = cloudinary.uploader.upload(
                         str(local_path),
-                        folder=folder or None,  # root folder if empty
+                        folder=folder or None,  
                         use_filename=True,
                         unique_filename=False,
                         overwrite=True,
                         resource_type="auto",
-                        # Optional: add tags for easier management
-                        # tags=["migrated", "django-media"]
                     )
 
                     public_id = result.get("public_id")

@@ -8,10 +8,11 @@ from shopcore.views import (cart_views, checkout_views, coupon_views,
 app_name = "shopcore"
 
 urlpatterns = [
-    # ── HOME (public) ─────────────────────────────────────────────────────────
+    # ────────────────────────────────────────── HOME (public) ─────────────────────────────────────────────────────────
     path("user/home/", store_views.home, name="home"),
     path("", store_views.anonymous_home, name="anonymous_home"),
-    # ── STORE (public) ────────────────────────────────────────────────────────
+
+    # ────────────────────────────────────────── STORE (public) ────────────────────────────────────────────────────────
     path("aboutus/", store_views.aboutus_view, name="about_us"),
     path("contactus/", store_views.contactus_view, name="contact_us"),
     path("privacy-policy/", store_views.privacy_policy_view, name="privacy_policy"),
@@ -22,7 +23,8 @@ urlpatterns = [
         "terms-conditions/", store_views.terms_conditions_view, name="terms_conditions"
     ),
     path("user/size-chart/", store_views.size_chart, name="size_chart"),
-    # ── BANNER — ADMIN ────────────────────────────────────────────────────────
+
+    # ────────────────────────────────────────── BANNER — ADMIN ────────────────────────────────────────────────────────
     path("admin/banners/", store_views.admin_banner_list, name="admin_banner_list"),
     path("admin/banners/add/", store_views.admin_add_banner, name="admin_add_banner"),
     path(
@@ -45,7 +47,7 @@ urlpatterns = [
         store_views.admin_delete_banner,
         name="admin_delete_banner",
     ),
-    # ── CART — USER ───────────────────────────────────────────────────────────
+    # ────────────────────────────────────────── CART — USER ───────────────────────────────────────────────────────────
     path("cart/", cart_views.cart_view, name="cart"),
     path("cart/add/<int:variant_id>/", cart_views.add_to_cart, name="add_to_cart"),
     path(
@@ -59,7 +61,7 @@ urlpatterns = [
         name="update_cart_quantity",
     ),
     path("cart/clear/", cart_views.clear_cart, name="clear_cart"),
-    # ── WISHLIST — USER ───────────────────────────────────────────────────────
+    # ────────────────────────────────────────── WISHLIST — USER ───────────────────────────────────────────────────────
     path("wishlist/", wishlist_views.wishlist_view, name="wishlist"),
     path(
         "wishlist/toggle/<int:product_id>/",
@@ -81,7 +83,7 @@ urlpatterns = [
         wishlist_views.wishlist_variant_popup,
         name="wishlist_variant_popup",
     ),
-    # ── CHECKOUT — USER ───────────────────────────────────────────────────────
+    # ────────────────────────────────────────── CHECKOUT — USER ───────────────────────────────────────────────────────
     path("checkout/", checkout_views.checkout, name="checkout"),
     path("checkout/place-order/", checkout_views.place_order, name="place_order"),
     path(
@@ -99,7 +101,7 @@ urlpatterns = [
         checkout_views.order_success,
         name="order_success",
     ),
-    # ── ORDER MANAGEMENT — USER ───────────────────────────────────────────────
+    # ────────────────────────────────────────── ORDER MANAGEMENT — USER ───────────────────────────────────────────────
     path("orders/", order_views.user_order_list, name="user_order_list"),
     path(
         "orders/<str:order_id>/",
@@ -124,7 +126,7 @@ urlpatterns = [
         order_views.download_invoice,
         name="download_invoice",
     ),
-    # ── ORDER MANAGEMENT — ADMIN ──────────────────────────────────────────────
+    # ────────────────────────────────────────── ORDER MANAGEMENT — ADMIN ──────────────────────────────────────────────
     path("admin/orders/", order_views.admin_order_list, name="admin_order_list"),
     path(
         "admin/orders/<str:order_id>/",
@@ -146,13 +148,13 @@ urlpatterns = [
         order_views.admin_handle_return,
         name="admin_handle_return",
     ),
-    # ── COUPON — USER ─────────────────────────────────────────────────────────
+    # ────────────────────────────────────────── COUPON — USER ─────────────────────────────────────────────────────────
     path("user/checkout/coupon/apply/", coupon_views.apply_coupon, name="apply_coupon"),
     path(
         "user/checkout/coupon/remove/", coupon_views.remove_coupon, name="remove_coupon"
     ),
     path("user/coupons/", coupon_views.user_coupon_list, name="user_coupon_list"),
-    # ── COUPON — ADMIN ────────────────────────────────────────────────────────
+    # ────────────────────────────────────────── COUPON — ADMIN ────────────────────────────────────────────────────────
     path("admin/coupons/", coupon_views.admin_coupon_list, name="admin_coupon_list"),
     path("admin/coupons/add/", coupon_views.admin_add_coupon, name="admin_add_coupon"),
     path(
@@ -180,7 +182,7 @@ urlpatterns = [
         coupon_views.admin_unblock_coupon,
         name="admin_unblock_coupon",
     ),
-    # ── OFFER — ADMIN ─────────────────────────────────────────────────────────
+    # ────────────────────────────────────────── OFFER — ADMIN ─────────────────────────────────────────────────────────
     path("admin/offers/", offer_views.admin_offer_list, name="admin_offer_list"),
     path("admin/offers/add/", offer_views.admin_add_offer, name="admin_add_offer"),
     path(
@@ -203,9 +205,9 @@ urlpatterns = [
         offer_views.admin_unblock_offer,
         name="admin_unblock_offer",
     ),
-    # ── REFERRALS — USER ──────────────────────────────────────
+    # ────────────────────────────────────────── REFERRALS — USER ──────────────────────────────────────
     path("user/my-referrals/", referral_views.my_referrals, name="my_referrals"),
-    # ── REFERRALS — ADMIN ─────────────────────────────────────
+    # ────────────────────────────────────────── REFERRALS — ADMIN ─────────────────────────────────────
     path(
         "admin/referrals/",
         referral_views.admin_referral_list,
@@ -216,13 +218,13 @@ urlpatterns = [
         referral_views.admin_referral_uses,
         name="admin_referral_uses",
     ),
-    # ── RETURN REQUESTS — USER ────────────────────────────────────────────────
+    # ────────────────────────────────────────── RETURN REQUESTS — USER ────────────────────────────────────────────────
     path(
         "orders/<str:order_id>/return/<int:item_id>/",
         return_views.request_return,
         name="request_return",
     ),
-    # ── RETURN MANAGEMENT — ADMIN ─────────────────────────────────────────────
+    # ────────────────────────────────────────── RETURN MANAGEMENT — ADMIN ─────────────────────────────────────────────
     path("admin/returns/", return_views.admin_return_list, name="admin_return_list"),
     path(
         "admin/returns/<int:return_id>/",
@@ -244,8 +246,8 @@ urlpatterns = [
         return_views.admin_process_refund,
         name="admin_process_refund",
     ),
-    # ── REVIEWS — USER ────────────────────────────────────────────────────────
-    # FIX: removed duplicate <int:product_id> from submit_review URL
+    # ────────────────────────────────────────── REVIEWS — USER ────────────────────────────────────────────────────────
+
     path(
         "user/products/<int:product_id>/reviews/",
         review_views.my_reviews,
@@ -261,7 +263,7 @@ urlpatterns = [
         review_views.delete_review,
         name="delete_review",
     ),
-    # ── REVIEW MANAGEMENT — ADMIN ─────────────────────────────────────────────
+    # ────────────────────────────────────────── REVIEW MANAGEMENT — ADMIN ─────────────────────────────────────────────
     path("admin/reviews/", review_views.admin_review_list, name="admin_review_list"),
     path(
         "admin/reviews/<int:review_id>/approve/",

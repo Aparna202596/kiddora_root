@@ -79,7 +79,6 @@ def _restore_inventory(order_item):
         inv.quantity_sold = max(0, inv.quantity_sold - order_item.quantity)
         inv.save(update_fields=["quantity_available", "quantity_sold"])
     except Exception as e:
-        # Log in production, but don't crash the transaction
         print(f"Warning: Could not restore inventory for item {order_item.id}: {e}")
 
 
@@ -90,7 +89,6 @@ def _recalculate_order_amount(order: Order) -> None:
     """
     active_items = order.order_items.filter(item_status="ACTIVE")
 
-    # Sum unit_price * active_quantity (not stored quantity) for each item
     subtotal = Decimal("0")
     for item in active_items:
         per_unit_net = (
@@ -254,7 +252,7 @@ def cancel_order(request, order_id):
                 amount=order.final_amount,
                 description=f"Refund for cancelled order {order.order_id}",
                 reference_type="CANCEL",
-                reference_id=str(order.order_id),  # ← already unique per order
+                reference_id=str(order.order_id),  
                 order=order,
             )
             order.payment_status = "REFUNDED"
@@ -300,7 +298,6 @@ def cancel_order_item(request, order_id, item_id):
 
     reason = request.POST.get("cancel_reason", "").strip()
 
-    # ── Quantity to cancel ────────────────────────────────────────────────
     try:
         cancel_qty = int(
             request.POST.get("cancel_quantity", order_item.active_quantity)
@@ -311,7 +308,6 @@ def cancel_order_item(request, order_id, item_id):
     cancel_qty = max(1, min(cancel_qty, order_item.active_quantity))
     cancel_all = cancel_qty >= order_item.active_quantity
 
-    # ── Inventory restore for cancelled qty ───────────────────────────────
     try:
         inv = order_item.variant.inventory
         inv.quantity_available += cancel_qty
@@ -320,7 +316,6 @@ def cancel_order_item(request, order_id, item_id):
     except Exception:
         pass
 
-    # ── Refund amount = proportional to cancelled qty ─────────────────────
     per_unit_net = (
         order_item.total_price / order_item.quantity
         if order_item.quantity
@@ -329,7 +324,7 @@ def cancel_order_item(request, order_id, item_id):
     item_refund_amount = (per_unit_net * cancel_qty).quantize(Decimal("0.01"))
 
     if order.payment_status == "PAID" and order.payment_method in ("PAYPAL", "WALLET"):
-        # Unique key per cancellation event: order-item-{id}-qty-{cancelled_so_far+cancel_qty}
+
         new_total_cancelled = order_item.cancelled_quantity + cancel_qty
         refund_ref = f"{order.order_id}-item-{order_item.id}-cq-{new_total_cancelled}"
         credit_refund_to_wallet(
@@ -344,7 +339,6 @@ def cancel_order_item(request, order_id, item_id):
             order=order,
         )
 
-    # ── Update item row ───────────────────────────────────────────────────
     order_item.cancelled_quantity += cancel_qty
     if cancel_all:
         order_item.item_status = "CANCELLED"
@@ -354,7 +348,6 @@ def cancel_order_item(request, order_id, item_id):
 
     _recalculate_order_amount(order)
 
-    # ── Check if whole order is now effectively cancelled ─────────────────
     remaining_active = order.order_items.filter(item_status="ACTIVE")
     if not remaining_active.exists():
         order.order_status = "CANCELLED"
@@ -672,7 +665,6 @@ def admin_handle_return(request, return_id):
 
         _restore_inventory(order_item)
 
-        # Refund only active (non-cancelled) portion
         refund_amount = order_item.active_total
         credit_refund_to_wallet(
             user=order.user,
@@ -733,7 +725,6 @@ def download_invoice(request, order_id):
 
     styles = getSampleStyleSheet()
 
-    # ── Style helpers ─────────────────────────────────────────────────────
     def ps(
         name,
         size=9,
@@ -766,7 +757,6 @@ def download_invoice(request, order_id):
 
     elements = []
 
-    # ── Logo + header band ────────────────────────────────────────────────
     logo_path = os.path.join(settings.BASE_DIR, "static/images/kiddora_logo.PNG")
     logo_cell = (
         Image(logo_path, width=110, height=45)
@@ -803,7 +793,6 @@ def download_invoice(request, order_id):
     elements.append(hdr)
     elements.append(Spacer(1, 12))
 
-    # ── Order meta + customer details side by side ────────────────────────
     address = order.address
     cust_name = (
         getattr(address, "full_name", None)
@@ -904,7 +893,6 @@ def download_invoice(request, order_id):
     elements.append(meta_tbl)
     elements.append(Spacer(1, 14))
 
-    # ── Items table ───────────────────────────────────────────────────────
     INACTIVE = {
         "CANCELLED",
         "RETURN_REQUESTED",
@@ -960,7 +948,6 @@ def download_invoice(request, order_id):
         label = STATUS_LABEL.get(oi.item_status, "")
         has_partial_cancel = oi.cancelled_quantity > 0 and not is_fully_inactive
 
-        # Offer % on this item
         offer_pct = get_max_offer_discount_percent(oi.variant.product)
         offer_str = f"{offer_pct}%" if offer_pct else "—"
 
@@ -1027,7 +1014,6 @@ def download_invoice(request, order_id):
                 Decimal("0.01")
             )
 
-            # Active row
             item_data.append(
                 [
                     Paragraph(name_base, ps(f"an_{row_idx}", 8, leading=11)),
@@ -1042,7 +1028,6 @@ def download_invoice(request, order_id):
             )
             row_idx += 1
 
-            # Cancelled portion row
             item_data.append(
                 [
                     Paragraph(
@@ -1098,7 +1083,6 @@ def download_invoice(request, order_id):
         )
         elements.append(Spacer(1, 8))
 
-    # ── Discount breakdown + totals ───────────────────────────────────────
     def tot_row(
         label,
         value,
@@ -1112,14 +1096,12 @@ def download_invoice(request, order_id):
 
     totals = []
 
-    # Items subtotal (before any discount)
     raw_subtotal = sum(
         oi.unit_price * oi.active_quantity
         for oi in order.order_items.filter(item_status="ACTIVE")
     )
     totals.append(tot_row("Items Subtotal", f"Rs.{raw_subtotal:.2f}"))
 
-    # Offer / product discounts
     if order.discount_amount and order.discount_amount > 0:
         totals.append(
             tot_row(
@@ -1128,14 +1110,13 @@ def download_invoice(request, order_id):
                 val_clr=GREEN_TXT,
             )
         )
-        # Show which offers are active on items
         offer_names = []
         for oi in order.order_items.filter(item_status="ACTIVE"):
             pct = get_max_offer_discount_percent(oi.variant.product)
             if pct:
                 offer_names.append(f"{oi.variant.product.product_name} ({pct}% off)")
         if offer_names:
-            for oname in offer_names[:4]:  # cap at 4 lines to keep it tidy
+            for oname in offer_names[:4]:  
                 totals.append(
                     tot_row(
                         f"  • {oname}",
@@ -1144,7 +1125,6 @@ def download_invoice(request, order_id):
                     )
                 )
 
-    # Coupon discount
     if order.coupon_discount and order.coupon_discount > 0:
         coupon = order.coupon
         if coupon:
@@ -1180,13 +1160,11 @@ def download_invoice(request, order_id):
                 )
             )
 
-    # Shipping
     if order.shipping_charge and order.shipping_charge > 0:
         totals.append(tot_row("Shipping Charge", f"+ Rs.{order.shipping_charge:.2f}"))
     else:
         totals.append(tot_row("Shipping Charge", "FREE", val_clr=GREEN_TXT))
 
-    # Separator + Grand Total
     n = len(totals)
     totals.append(
         [
@@ -1211,7 +1189,6 @@ def download_invoice(request, order_id):
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ("LEFTPADDING", (0, 0), (-1, -1), 4),
         ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-        # Grand Total row
         ("BACKGROUND", (1, n), (-1, n), PINK),
         ("TOPPADDING", (1, n), (-1, n), 9),
         ("BOTTOMPADDING", (1, n), (-1, n), 9),
@@ -1221,7 +1198,6 @@ def download_invoice(request, order_id):
     elements.append(tot_tbl)
     elements.append(Spacer(1, 16))
 
-    # ── Footer ────────────────────────────────────────────────────────────
     elements.append(
         Table(
             [

@@ -5,38 +5,33 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from accounts.decorators import admin_login_required
-from accounts.models import CustomUser, UserAddress
+from accounts.models import CustomUser
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import (Avg, Count, DecimalField, ExpressionWrapper, F,
-                              Max, Min, Q, Sum)
+from django.db.models import (Avg, Count, Max, Min, Sum)
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from payments.models import Payment, Wallet, WalletTransaction
-from products.models import (AgeGroup, Category, Color, Inventory, Product,
-                             ProductImage, ProductVariant, SubCategory)
+from products.models import (Category, Inventory, Product,
+                            ProductVariant, SubCategory)
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
-from reportlab.platypus import (HRFlowable, Image, KeepTogether, Paragraph,
+from reportlab.platypus import (HRFlowable, Image, Paragraph,
                                 SimpleDocTemplate, Spacer, Table, TableStyle)
 from shopcore.models import (Cart, CartItem, Coupon, CouponUsage, Offer, Order,
-                             OrderItem, ReferralCode, ReferralUse, Return,
-                             Review, Wishlist)
+                                OrderItem, ReferralCode, ReferralUse, Return,
+                                Review, Wishlist)
 
 User = get_user_model()
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────── HELPERS ──────────────────────────────────────────
 
 def get_date_range(request, default_days=10):
     today = timezone.now().date()
@@ -66,7 +61,6 @@ def growth_pct(current, previous):
 
 
 def _register_fonts():
-    """Register fonts for PDF generation — falls back gracefully."""
     try:
         font_path = os.path.join(settings.BASE_DIR, "static/fonts/arial.ttf")
         if not os.path.exists(font_path):
@@ -99,8 +93,6 @@ def _logo_path():
 def _build_pdf_header(
     elements, font_regular, font_bold, title_text, subtitle_text, start_date, end_date
 ):
-    """Shared header block for both PDF reports."""
-    # Logo
     logo = _logo_path()
     if logo:
         img = Image(logo, width=130, height=50)
@@ -108,22 +100,8 @@ def _build_pdf_header(
         elements.append(img)
     elements.append(Spacer(1, 8))
 
-    # Brand name + title row
     now_str = datetime.now().strftime("%d %B %Y, %I:%M %p")
-    # header_data = [
-    #     [
-    #         # Paragraph(f'<font size="18" color="#d98ab2"><b>KIDDORA</b></font>', ParagraphStyle("h", fontName=font_bold)),
-    #         Paragraph(f'<font size="9" color="#64748b">Downloaded: {now_str}</font>', ParagraphStyle("dt", fontName=font_regular, alignment=2)),
-    #     ]
-    # ]
-    # ht = Table(header_data, colWidths=[10 * cm, 9 * cm])
-    # ht.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), ('TOPPADDING', (0, 0), (-1, -1), 0), ('BOTTOMPADDING', (0, 0), (-1, -1), 0)]))
-    # elements.append(ht)
-    # elements.append(Spacer(1, 6))
-    # elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#e8a1c6")))
-    # elements.append(Spacer(1, 10))
 
-    # Report title
     elements.append(
         Paragraph(
             f'<font size="16" color="#1e293b"><b>{title_text}</b></font>',
@@ -137,7 +115,6 @@ def _build_pdf_header(
         )
     )
 
-    # Period banner
     period_data = [
         [
             Paragraph(
@@ -175,7 +152,7 @@ def _section_heading(text, font_bold, color="#1e293b"):
 
 
 def _kpi_table(rows_data, font_regular, font_bold, col_count=4):
-    """Build a coloured KPI grid table from list of (label, value) tuples."""
+
     BG_COLORS = [
         "#dbeafe",
         "#dcfce7",
@@ -196,7 +173,7 @@ def _kpi_table(rows_data, font_regular, font_bold, col_count=4):
         "#6b21a8",
         "#1e40af",
     ]
-    # Pad to full rows
+
     while len(rows_data) % col_count != 0:
         rows_data.append(("", ""))
 
@@ -220,7 +197,6 @@ def _kpi_table(rows_data, font_regular, font_bold, col_count=4):
                 )
             )
 
-        # Combine into single-row cells (label above value)
         cell_row = []
         for j, (label, value) in enumerate(chunk):
             idx = (i + j) % len(BG_COLORS)
@@ -246,7 +222,7 @@ def _kpi_table(rows_data, font_regular, font_bold, col_count=4):
         ("ROWBACKGROUNDS", (0, 0), (-1, -1), [colors.HexColor("#f8fafc")]),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]
-    # Apply per-cell background
+
     for row_i, row in enumerate(table_rows):
         for col_i in range(len(row)):
             global_idx = row_i * col_count + col_i
@@ -311,11 +287,7 @@ def _data_table(headers, rows, font_regular, font_bold, col_widths=None):
     t.setStyle(style)
     return t
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# ADMIN DASHBOARD VIEW
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────── ADMIN DASHBOARD VIEW ──────────────────────────────────────────
 
 @never_cache
 @admin_login_required
@@ -653,11 +625,7 @@ def admin_dashboard_view(request):
     }
     return render(request, "accounts/admin/admin_dashboard.html", context)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# DASHBOARD PDF DOWNLOAD
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────── DASHBOARD PDF DOWNLOAD ──────────────────────────────────────────
 
 @never_cache
 @admin_login_required
@@ -677,7 +645,6 @@ def download_dashboard_pdf(request):
     prev_paid_orders = prev_orders_qs.filter(payment_status="PAID")
     items_qs = OrderItem.objects.filter(order__in=orders_qs)
 
-    # ── Collect all metrics (same as dashboard view) ──
     total_orders = orders_qs.count()
     completed_orders = orders_qs.filter(order_status="DELIVERED").count()
     cancelled_orders = orders_qs.filter(order_status="CANCELLED").count()
@@ -798,7 +765,6 @@ def download_dashboard_pdf(request):
         .order_by("quantity_available")[:10]
     )
 
-    # ── Build PDF ──
     font_regular, font_bold = _register_fonts()
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -823,7 +789,6 @@ def download_dashboard_pdf(request):
         fe,
     )
 
-    # ── ORDER KPIs ──
     elements.append(_section_heading("Order Analytics", font_bold, "#1e40af"))
     order_kpis = [
         ("Total Orders", str(total_orders)),
@@ -842,7 +807,6 @@ def download_dashboard_pdf(request):
     elements.append(_kpi_table(order_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 8))
 
-    # ── REVENUE KPIs ──
     elements.append(_section_heading("Revenue Analytics", font_bold, "#166534"))
     rev_kpis = [
         ("Total Revenue", f"₹{total_revenue:,.0f}"),
@@ -857,7 +821,6 @@ def download_dashboard_pdf(request):
     elements.append(_kpi_table(rev_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 8))
 
-    # ── CUSTOMER KPIs ──
     elements.append(_section_heading("Customer Analytics", font_bold, "#5b21b6"))
     cust_kpis = [
         ("Total Customers", str(total_customers)),
@@ -872,7 +835,6 @@ def download_dashboard_pdf(request):
     elements.append(_kpi_table(cust_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 8))
 
-    # ── PRODUCT & INVENTORY KPIs ──
     elements.append(
         _section_heading("Product & Inventory Analytics", font_bold, "#0f766e")
     )
@@ -889,7 +851,6 @@ def download_dashboard_pdf(request):
     elements.append(_kpi_table(prod_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 8))
 
-    # ── PAYMENT & WALLET KPIs ──
     elements.append(
         _section_heading("Payment & Wallet Analytics", font_bold, "#92400e")
     )
@@ -906,7 +867,6 @@ def download_dashboard_pdf(request):
     elements.append(_kpi_table(pay_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 8))
 
-    # ── COUPON / OFFER / REFERRAL KPIs ──
     elements.append(
         _section_heading("Coupons, Offers & Referrals", font_bold, "#be185d")
     )
@@ -931,7 +891,6 @@ def download_dashboard_pdf(request):
     elements.append(_kpi_table(misc_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 14))
 
-    # ── TOP PRODUCTS TABLE ──
     elements.append(_section_heading("Top 10 Products by Quantity Sold", font_bold))
     if top_products:
         elements.append(
@@ -960,7 +919,6 @@ def download_dashboard_pdf(request):
         )
     elements.append(Spacer(1, 10))
 
-    # ── TOP CATEGORIES TABLE ──
     elements.append(_section_heading("Top 10 Categories by Quantity Sold", font_bold))
     if top_categories:
         elements.append(
@@ -989,7 +947,6 @@ def download_dashboard_pdf(request):
         )
     elements.append(Spacer(1, 10))
 
-    # ── TOP BRANDS TABLE ──
     elements.append(_section_heading("Top Brands by Quantity Sold", font_bold))
     if top_brands:
         elements.append(
@@ -1018,7 +975,6 @@ def download_dashboard_pdf(request):
         )
     elements.append(Spacer(1, 10))
 
-    # ── RECENT ORDERS TABLE ──
     elements.append(_section_heading("Recent Orders (Last 15)", font_bold))
     if recent_orders:
         elements.append(
@@ -1057,7 +1013,6 @@ def download_dashboard_pdf(request):
         )
     elements.append(Spacer(1, 10))
 
-    # ── LOW STOCK TABLE ──
     elements.append(_section_heading("Low Stock Alerts", font_bold, "#991b1b"))
     if low_stock_items:
         elements.append(
@@ -1083,7 +1038,6 @@ def download_dashboard_pdf(request):
             Paragraph("No low-stock items.", ParagraphStyle("n", fontName=font_regular))
         )
 
-    # ── Footer ──
     elements.append(Spacer(1, 20))
     elements.append(
         HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e8ecf0"))
@@ -1107,11 +1061,7 @@ def download_dashboard_pdf(request):
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SALES REPORT VIEW
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────── SALES REPORT VIEW ──────────────────────────────────────────
 
 @never_cache
 @admin_login_required
@@ -1290,11 +1240,7 @@ def admin_sales_report(request):
     }
     return render(request, "accounts/admin/admin_sales_report.html", context)
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# SALES REPORT PDF DOWNLOAD
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ────────────────────────────────────────── SALES REPORT PDF DOWNLOAD ──────────────────────────────────────────
 
 @never_cache
 @admin_login_required
@@ -1375,7 +1321,6 @@ def download_sales_report_pdf(request):
     )
     all_orders = list(orders_qs.order_by("-order_date"))
 
-    # ── Build PDF ──
     font_regular, font_bold = _register_fonts()
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -1395,7 +1340,6 @@ def download_sales_report_pdf(request):
         elements, font_regular, font_bold, "Sales Report", f" — {rtype_label}", fs, fe
     )
 
-    # ── SUMMARY STRIP TABLE ──
     elements.append(_section_heading("Summary Overview", font_bold, "#166534"))
     summary_kpis = [
         ("Total Orders", str(total_orders_count)),
@@ -1410,7 +1354,6 @@ def download_sales_report_pdf(request):
     elements.append(_kpi_table(summary_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 8))
 
-    # ── DEDUCTIONS KPIs ──
     elements.append(_section_heading("Revenue Deductions", font_bold, "#92400e"))
     deduct_kpis = [
         ("Total Discounts", f"₹{total_discount:,.0f}"),
@@ -1425,7 +1368,6 @@ def download_sales_report_pdf(request):
     elements.append(_kpi_table(deduct_kpis, font_regular, font_bold, col_count=4))
     elements.append(Spacer(1, 8))
 
-    # ── PAYMENT METHOD TABLE ──
     elements.append(_section_heading("Payment Method Breakdown", font_bold, "#1e40af"))
     elements.append(
         _data_table(
@@ -1458,7 +1400,6 @@ def download_sales_report_pdf(request):
     )
     elements.append(Spacer(1, 10))
 
-    # ── RETURNS TABLE ──
     elements.append(_section_heading("Returns & Refunds", font_bold, "#991b1b"))
     elements.append(
         _data_table(
@@ -1481,7 +1422,6 @@ def download_sales_report_pdf(request):
     )
     elements.append(Spacer(1, 10))
 
-    # ── TOP PRODUCTS TABLE ──
     elements.append(_section_heading("Top 10 Products by Revenue", font_bold))
     if top_products_sales:
         elements.append(
@@ -1507,7 +1447,6 @@ def download_sales_report_pdf(request):
         )
     elements.append(Spacer(1, 10))
 
-    # ── TOP CATEGORIES TABLE ──
     elements.append(_section_heading("Top Categories by Revenue", font_bold))
     if top_categories_sales:
         elements.append(
@@ -1533,7 +1472,6 @@ def download_sales_report_pdf(request):
         )
     elements.append(Spacer(1, 10))
 
-    # ── ALL ORDERS TABLE ──
     elements.append(_section_heading("Order Details", font_bold))
     if all_orders:
         elements.append(
@@ -1588,7 +1526,6 @@ def download_sales_report_pdf(request):
             )
         )
 
-    # ── Footer ──
     elements.append(Spacer(1, 20))
     elements.append(
         HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e8ecf0"))

@@ -94,7 +94,7 @@ def user_signup(request):
             rc = RC.objects.select_related("user").get(token=referral_token)
             prefill_referral_code = rc.code
         except Exception:
-            referral_token = ""  # invalid token — ignore silently
+            referral_token = ""
 
     context["referral_token"] = referral_token
     context["prefill_referral_code"] = prefill_referral_code
@@ -110,7 +110,6 @@ def user_signup(request):
         referral_code_str = request.POST.get("referral_code", "").strip()
         referral_token = request.POST.get("referral_token", "").strip()
 
-        # Validation
         if User.objects.filter(username__iexact=username).exists():
             messages.error(request, "Username already exists!")
             return render(request, "accounts/auth/signup.html", context)
@@ -147,7 +146,6 @@ def user_signup(request):
         user.otp_created_at = timezone.now()
         user.save()
 
-        # Process referral AFTER user is created
         if referral_code_str or referral_token:
             try:
                 process_referral_on_signup(
@@ -156,7 +154,6 @@ def user_signup(request):
                     referral_token=referral_token,
                 )
             except Exception as e:
-                # Referral failure must never block signup
                 print("REFERRAL ERROR:", e)
         try:
             send_mail(
@@ -202,7 +199,6 @@ def user_logout(request):
 #  ────────────────────────────────────────────────── ADMIN LOGIN ──────────────────────────────────────────────────
 @never_cache
 def admin_login(request):
-    # If already logged in as ADMIN
     if request.user.is_authenticated:
         if request.user.role == CustomUser.ROLE_ADMIN:
             return redirect("accounts:admin_dashboard")
@@ -256,7 +252,6 @@ def admin_logout(request):
         return redirect("shopcore:home")
     logout(request)
     response = redirect("accounts:admin_login")
-    # Remove role-specific remember-me cookie
     if role == CustomUser.ROLE_ADMIN:
         response.delete_cookie("remember_admin")
     return response

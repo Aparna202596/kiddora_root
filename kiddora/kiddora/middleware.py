@@ -4,10 +4,6 @@ from django.urls import reverse
 
 
 class AdminAccessMiddleware:
-    """
-    Protect admin URLs but allow admin login page itself.
-    """
-
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -16,11 +12,9 @@ class AdminAccessMiddleware:
         admin_logout_url = reverse("accounts:admin_logout")
         blocked_url = reverse("accounts:blocked")
 
-        # Allow auth-related admin URLs
         if request.path in [admin_login_url, admin_logout_url, blocked_url]:
             return self.get_response(request)
 
-        # Protect admin routes
         if request.path.startswith("/accounts/admin/"):
             if not request.user.is_authenticated:
                 return redirect("accounts:admin_login")

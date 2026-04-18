@@ -18,7 +18,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from payments.models import Payment, PaymentLog, Wallet
 from payments.views.wallet_helpers import (_finalize_order_after_payment,
-                                           _restore_inventory_for_order)
+                                        _restore_inventory_for_order)
 from shopcore.models import Order
 from utils.currency import convert_currency
 
@@ -39,7 +39,6 @@ def _paypal_base_url() -> str:
         else "https://api-m.paypal.com"
     )
 
-
 def _paypal_access_token() -> str:
     url = f"{_paypal_base_url()}/v1/oauth2/token"
     resp = requests.post(
@@ -51,22 +50,18 @@ def _paypal_access_token() -> str:
     resp.raise_for_status()
     return resp.json()["access_token"]
 
-
 def _paypal_headers() -> dict:
     return {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {_paypal_access_token()}",
     }
 
-
 def _sanitise_reference_id(order_id: str) -> str:
     clean = re.sub(r"[^A-Za-z0-9\-]", "", order_id)
     return clean[:128]
 
-
 def _format_amount(amount: Decimal) -> str:
     return str(amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-
 
 def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> dict:
     url = f"{_paypal_base_url()}/v2/checkout/orders"
@@ -110,10 +105,8 @@ def _paypal_capture_order(paypal_order_id: str) -> dict:
             resp.status_code,
             resp.text,
         )
-
     resp.raise_for_status()
     return resp.json()
-
 
 #   ────────────────────────────────────────────────── INITIATE PAYPAL PAYMENT ──────────────────────────────────────────────────
 @never_cache
@@ -203,7 +196,6 @@ def initiate_paypal_payment(request, order_id):
 
     return redirect(approve_url)
 
-
 # ────────────────────────────────────────────────── PAYPAL CALLBACK ──────────────────────────────────────────────────
 @never_cache
 @transaction.atomic
@@ -216,7 +208,6 @@ def paypal_callback(request):
     print("Session keys:", list(request.session.keys()))
     print("paypal_order_id from URL:", paypal_order_id)
 
-    # Try to find the Payment record using PayPal order ID (this works even if session is lost)
     payment = None
     order = None
 
@@ -230,7 +221,6 @@ def paypal_callback(request):
         except Payment.DoesNotExist:
             print("Payment record not found using paypal_order_id")
 
-    # If still no order, fall back to session (old way)
     if not order:
         kiddora_order_id = request.session.get("pending_kiddora_order_id")
         if kiddora_order_id:
@@ -246,7 +236,6 @@ def paypal_callback(request):
         messages.error(request, "Order not found. Please try again.")
         return redirect("shopcore:user_order_list")
 
-    # Recover user if not authenticated
     if not request.user.is_authenticated and order.user:
         try:
             from django.contrib.auth import login
@@ -258,7 +247,6 @@ def paypal_callback(request):
         except Exception as e:
             print(f"User recovery failed: {e}")
 
-    # Safety check
     if request.user.is_authenticated and order.user != request.user:
         messages.error(request, "This order does not belong to you.")
         return redirect("shopcore:user_order_list")
@@ -266,7 +254,6 @@ def paypal_callback(request):
     if order.payment_status == "PAID":
         return redirect("shopcore:order_success", order_id=order.order_id)
 
-    # Continue with capture
     try:
         capture_data = _paypal_capture_order(paypal_order_id)
     except Exception as exc:
@@ -373,7 +360,6 @@ def paypal_cancel(request):
     messages.warning(request, "Payment was cancelled.")
     return redirect("shopcore:user_order_list")
 
-
 #   ────────────────────────────────────────────────── PAYPAL SUCCESS PAGE ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -388,7 +374,6 @@ def paypal_success(request, order_id):
             "latest_payment": latest_payment,
         },
     )
-
 
 #   ────────────────────────────────────────────────── PAYPAL FAILURE PAGE ──────────────────────────────────────────────────
 @never_cache
@@ -407,7 +392,6 @@ def paypal_failure(request, order_id):
         },
     )
 
-
 #   ────────────────────────────────────────────────── RETRY PAYMENT ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -416,7 +400,6 @@ def retry_payment(request, order_id):
     if order.payment_status == "PAID":
         return redirect("shopcore:order_success", order_id=order.order_id)
     return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
-
 
 #   ────────────────────────────────────────────────── PAYPAL WEBHOOK ──────────────────────────────────────────────────
 @csrf_exempt

@@ -5,31 +5,29 @@ app_name = "payments"
 
 urlpatterns = [
     #    ────────────────────── PAYPAL ──────────────────────
-    # Step 1: Buyer clicks "Pay with PayPal" and we redirect them to PayPal
     path(
         "paypal/initiate/<str:order_id>/",
         paypal_views.initiate_paypal_payment,
         name="initiate_paypal_payment",
     ),
-    # Step 2: PayPal redirects back to our site after payment approval
     path("paypal/callback/", paypal_views.paypal_callback, name="paypal_callback"),
-    # Step 3: PayPal redirects back to our site if the buyer cancels the payment
+
     path("paypal/cancel/", paypal_views.paypal_cancel, name="paypal_cancel"),
-    # Step 4: PayPal sends webhook notifications for payment events (e.g., completed, failed)
+
     path("paypal/webhook/", paypal_views.paypal_webhook, name="paypal_webhook"),
-    # Step 5: Display success or failure pages based on the payment outcome
+
     path(
         "paypal/success/<str:order_id>/",
         paypal_views.paypal_success,
         name="paypal_success",
     ),
-    # Step 6: Handle payment failure (e.g., show error message, allow retry)
+
     path(
         "paypal/failure/<str:order_id>/",
         paypal_views.paypal_failure,
         name="paypal_failure",
     ),
-    # Step 7: Allow users to retry payment if it failed
+
     path(
         "paypal/retry/<str:order_id>/", paypal_views.retry_payment, name="retry_payment"
     ),

@@ -48,7 +48,6 @@ def admin_inventory_list(request):
         .order_by(order_field)
     )
 
-    # search — same logic as original
     if search:
         inventories = (
             inventories.filter(variant__product__product_name__icontains=search)

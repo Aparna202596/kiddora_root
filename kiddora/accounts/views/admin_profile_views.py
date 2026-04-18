@@ -54,7 +54,6 @@ def admin_edit_profile(request):
 def admin_activity_info(request):
     admin = request.user
 
-    # Active sessions (best-effort, Django-native)
     active_sessions = []
     for session in Session.objects.filter(expire_date__gte=timezone.now()):
         data = session.get_decoded()

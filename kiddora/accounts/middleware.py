@@ -2,12 +2,6 @@ from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
 
-# Logs out inactive users and redirects them to blocked page.
-# Prevents redirect conflicts with admin/user decorators.
-# BlockedUserMiddleware must NEVER block auth/OTP routes.
-# Inactive users must be allowed to verify OTP.
-
-
 class BlockedUserMiddleware:
 
     def __init__(self, get_response):

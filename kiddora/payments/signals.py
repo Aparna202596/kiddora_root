@@ -12,7 +12,6 @@ def auto_wallet_refund_on_failure(sender, instance, created, **kwargs):
     if instance.payment_method != "WALLET":
         return
 
-    # Prevent double refund
     if WalletTransaction.objects.filter(
         reference_type="ORDER", reference_id=str(instance.order.id), txn_type="REFUND"
     ).exists():

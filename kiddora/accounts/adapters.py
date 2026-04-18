@@ -6,8 +6,6 @@ from django.core.exceptions import MultipleObjectsReturned
 
 User = get_user_model()
 
-
-# This adapter ensures that users logging in via social accounts are properly linked to existing accounts based on email, and that their status is updated accordingly.
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
     def pre_social_login(self, request, sociallogin):
         email = sociallogin.user.email
@@ -24,7 +22,6 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             )
             return
 
-        # Google has already verified the email, so it's safe to activate
         changed = False
         if not user.is_active:
             user.is_active = True
@@ -41,8 +38,6 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         if not sociallogin.is_existing:
             sociallogin.connect(request, user)
 
-    # This method is called when a new social account is being created.
-    # It ensures that the new user is active, has a verified email, and is assigned a default role if not already set.
     def save_user(self, request, sociallogin, form=None):
 
         user = super().save_user(request, sociallogin, form)
