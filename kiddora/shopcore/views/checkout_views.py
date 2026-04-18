@@ -21,7 +21,6 @@ from shopcore.views.offer_views import (get_max_offer_discount_percent,
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
 
-
 def _get_cart(user):
     try:
         return user.cart
@@ -115,21 +114,18 @@ def _session_coupon(request, subtotal: Decimal):
     code = request.session.get("applied_coupon_code")
     if not code:
         return None, Decimal("0")
-
     try:
         coupon = Coupon.objects.get(code=code, is_active=True, is_deleted=False)
     except Coupon.DoesNotExist:
         request.session.pop("applied_coupon_code", None)
         request.session.pop("applied_coupon_discount", None)
         return None, Decimal("0")
-
     if (
         coupon.is_valid()
         and not _user_has_exhausted_coupon(coupon, request.user)
         and subtotal >= coupon.min_order_amount
     ):
         return coupon, compute_coupon_discount(coupon, subtotal)
-
     request.session.pop("applied_coupon_code", None)
     request.session.pop("applied_coupon_discount", None)
     return None, Decimal("0")
@@ -144,7 +140,6 @@ def _exhausted_coupon_ids(user) -> list[int]:
 
 
 def revalidate_order_after_item_change(order: Order) -> dict:
-
     result = {
         "coupon_invalidated": False,
         "shipping_changed": False,
@@ -175,11 +170,9 @@ def revalidate_order_after_item_change(order: Order) -> dict:
         if coupon.is_valid() and price_after_offers >= coupon.min_order_amount:
             new_coupon_discount = compute_coupon_discount(coupon, price_after_offers)
         else:
-            # Coupon condition no longer met → detach it
             result["coupon_invalidated"] = True
             order.coupon = None
             new_coupon_discount = Decimal("0")
-
     result["new_coupon_discount"] = new_coupon_discount
 
     temp_order = Order(
@@ -188,7 +181,6 @@ def revalidate_order_after_item_change(order: Order) -> dict:
         coupon_discount=new_coupon_discount,
     )
     new_shipping = temp_order.calculate_shipping()
-
     if new_shipping != order.shipping_charge:
         result["shipping_changed"] = True
     result["new_shipping_charge"] = new_shipping
@@ -211,12 +203,9 @@ def revalidate_order_after_item_change(order: Order) -> dict:
             "coupon",
         ]
     )
-
     return result
 
-
 # ────────────────────────────────────────────────── SAVE NEW ADDRESS ──────────────────────────────────────────────────
-
 
 @never_cache
 @user_login_required
@@ -319,7 +308,6 @@ def checkout(request):
         offer_pct = offer_detail["discount_percent"]
         offer_pct_dec = Decimal(str(offer_pct))
         discounted_price = base_price * (Decimal("1") - offer_pct_dec / 100)
-
         item_base_total = base_price * item.quantity
         item_offer_discount = (base_price - discounted_price) * item.quantity
         item_final_total = discounted_price * item.quantity
@@ -338,7 +326,7 @@ def checkout(request):
                 "base_item_total": item_base_total,
                 "offer_discount": item_offer_discount,
                 "offer_pct": offer_pct,
-                "offer_type": offer_detail["offer_type"], 
+                "offer_type": offer_detail["offer_type"],
                 "product_offer_pct": offer_detail["product_percent"],
                 "category_offer_pct": offer_detail["category_percent"],
                 "available": available,
@@ -367,7 +355,6 @@ def checkout(request):
     shipping_charge = temp_order.calculate_shipping()
     grand_total = price_after_offers - coupon_discount + shipping_charge
     cod_blocked = grand_total > Decimal("1000")
-
     wallet_balance = _wallet_balance(request.user)
     wallet_sufficient = wallet_balance >= grand_total
 
@@ -402,25 +389,26 @@ def checkout(request):
     tagged_coupons = []
     new_user_ids_list = list(new_user_referral_coupon_ids)
     referrer_ids_list = list(referrer_coupon_ids)
+
     for c in available_coupons:
         role = None
         if c.coupon_type == "REFERRAL":
             if c.id in new_user_ids_list:
-                role = "new_user"  
+                role = "new_user"
             elif c.id in referrer_ids_list:
-                role = "referrer"  
+                role = "referrer"
         tagged_coupons.append({"coupon": c, "referral_role": role})
 
     addresses = UserAddress.objects.filter(user=request.user, is_deleted=False)
     default_address = addresses.filter(is_default=True).first() or addresses.first()
 
     price_breakdown = {
-        "subtotal": subtotal,  
-        "offer_discount": offer_discount_total, 
-        "price_after_offers": price_after_offers,  
-        "coupon_discount": coupon_discount, 
-        "shipping_charge": shipping_charge,  
-        "grand_total": grand_total,  
+        "subtotal": subtotal,
+        "offer_discount": offer_discount_total,
+        "price_after_offers": price_after_offers,
+        "coupon_discount": coupon_discount,
+        "shipping_charge": shipping_charge,
+        "grand_total": grand_total,
         "free_shipping": shipping_charge == Decimal("0"),
         "free_shipping_threshold": Order.FREE_SHIPPING_THRESHOLD,
         "amount_to_free_shipping": max(
@@ -435,7 +423,6 @@ def checkout(request):
             "checkout_items": checkout_items,
             "addresses": addresses,
             "default_address": default_address,
-            
             "subtotal": subtotal,
             "offer_discount_total": offer_discount_total,
             "price_after_offers": price_after_offers,
@@ -447,9 +434,8 @@ def checkout(request):
             "wallet_balance": wallet_balance,
             "wallet_sufficient": wallet_sufficient,
             "available_coupons": available_coupons,
-            "tagged_coupons": tagged_coupons,  
+            "tagged_coupons": tagged_coupons,
             "address_type_choices": UserAddress.ADDRESS_TYPE_CHOICES,
-            
             "price_breakdown": price_breakdown,
         },
     )
@@ -548,7 +534,6 @@ def place_order(request):
         item_offer_data[item.variant_id] = item_disc
 
     price_after_offers = subtotal - offer_discount_total
-
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
 
     temp_order = Order(
@@ -557,7 +542,6 @@ def place_order(request):
         coupon_discount=coupon_discount,
     )
     shipping_charge = temp_order.calculate_shipping()
-
     final_amount = price_after_offers - coupon_discount + shipping_charge
 
     if payment_method == "COD" and final_amount > Decimal("1000"):
@@ -622,7 +606,6 @@ def place_order(request):
             amount=final_amount,
             initiated_at=timezone.now(),
         )
-
         if applied_coupon:
             usage, _ = CouponUsage.objects.get_or_create(
                 coupon=applied_coupon, user=request.user
@@ -649,138 +632,8 @@ def place_order(request):
 
 # ────────────────────────────────────────────────── ORDER SUCCESS ──────────────────────────────────────────────────
 
-
 @never_cache
 @user_login_required
 def order_success(request, order_id):
     order = get_object_or_404(Order, order_id=order_id, user=request.user)
     return render(request, "orders/user/order_success.html", {"order": order})
-
-
-# ────────────────────────────────────────────────── CANCEL ITEM ──────────────────────────────────────────────────
-@never_cache
-@user_login_required
-@require_POST
-@transaction.atomic
-def cancel_order_item(request, item_id):
-    order_item = get_object_or_404(
-        OrderItem,
-        id=item_id,
-        order__user=request.user,
-    )
-    order = order_item.order
-
-    if order_item.item_status not in ("PENDING", "CONFIRMED"):
-        messages.error(request, "This item cannot be cancelled at its current status.")
-        return redirect("shopcore:order_detail", order_id=order.order_id)
-
-    order_item.item_status = "CANCELLED"
-    order_item.save(update_fields=["item_status"])
-
-    # Restore inventory
-    try:
-        inv = order_item.variant.inventory
-        inv.quantity_available += order_item.quantity
-        inv.quantity_sold = max(0, inv.quantity_sold - order_item.quantity)
-        inv.save(update_fields=["quantity_available", "quantity_sold"])
-    except Exception:
-        pass
-
-    validation = revalidate_order_after_item_change(order)
-
-    active_items_count = order.order_items.filter(
-        item_status__in=("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED")
-    ).count()
-
-    if active_items_count == 0 and order.coupon:
-        try:
-            usage = CouponUsage.objects.get(coupon=order.coupon, user=order.user)
-            usage.times_used = max(0, usage.times_used - 1)
-            usage.save(update_fields=["times_used"])
-
-            order.coupon.used_count = max(0, order.coupon.used_count - 1)
-            order.coupon.save(update_fields=["used_count"])
-        except CouponUsage.DoesNotExist:
-            pass
-        except Exception:
-            pass 
-
-    feedback = []
-    if validation["coupon_invalidated"]:
-        feedback.append(
-            "The applied coupon has been removed because the remaining order "
-            "total no longer meets its minimum requirement."
-        )
-    if validation["shipping_changed"]:
-        if validation["new_shipping_charge"] == Decimal("0"):
-            feedback.append("Your order now qualifies for free shipping.")
-        else:
-            feedback.append(
-                f"Shipping charge updated to ₹{validation['new_shipping_charge']:.2f}."
-            )
-
-    messages.success(request, "Item cancelled successfully.")
-    for msg in feedback:
-        messages.info(request, msg)
-
-    return redirect("shopcore:order_detail", order_id=order.order_id)
-
-
-# ────────────────────────────────────────────────── RETURN ITEM ──────────────────────────────────────────────────
-@never_cache
-@user_login_required
-@require_POST
-@transaction.atomic
-def return_order_item(request, item_id):
-    order_item = get_object_or_404(
-        OrderItem,
-        id=item_id,
-        order__user=request.user,
-    )
-    order = order_item.order
-
-    if order_item.item_status != "DELIVERED":
-        messages.error(request, "Only delivered items can be returned.")
-        return redirect("shopcore:order_detail", order_id=order.order_id)
-
-    order_item.item_status = "RETURN_REQUESTED"
-    order_item.save(update_fields=["item_status"])
-
-    validation = revalidate_order_after_item_change(order)
-
-    active_items_count = order.order_items.filter(
-        item_status__in=("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED")
-    ).count()
-
-    if active_items_count == 0 and order.coupon:
-        try:
-            usage = CouponUsage.objects.get(coupon=order.coupon, user=order.user)
-            usage.times_used = max(0, usage.times_used - 1)
-            usage.save(update_fields=["times_used"])
-
-            order.coupon.used_count = max(0, order.coupon.used_count - 1)
-            order.coupon.save(update_fields=["used_count"])
-        except CouponUsage.DoesNotExist:
-            pass
-        except Exception:
-            pass
-
-    feedback = []
-    if validation["coupon_invalidated"]:
-        feedback.append(
-            "The applied coupon has been removed because the remaining order "
-            "total no longer meets its minimum requirement."
-        )
-    if validation["shipping_changed"]:
-        if validation["new_shipping_charge"] == Decimal("0"):
-            feedback.append("Your order now qualifies for free shipping.")
-        else:
-            feedback.append(
-                f"Shipping charge updated to ₹{validation['new_shipping_charge']:.2f}."
-            )
-
-    messages.success(request, "Return request submitted successfully.")
-    for msg in feedback:
-        messages.info(request, msg)
-
-    return redirect("shopcore:order_detail", order_id=order.order_id)

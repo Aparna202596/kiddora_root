@@ -1,6 +1,6 @@
 from accounts.views import (address_views, admin_profile_views, admin_views,
-                            auth_views, otp_views, profile_views, report_views)
-from django import views
+                            auth_views, otp_views, profile_views,
+                            report_views)
 from django.urls import path
 from django.views.generic import TemplateView
 
@@ -18,108 +18,50 @@ urlpatterns = [
     # ────────────────────── AUTHENTICATION – ADMIN ──────────────────────
     path("admin/admin-login/", auth_views.admin_login, name="admin_login"),
     path("admin/admin-logout/", auth_views.admin_logout, name="admin_logout"),
-    
-    # ────────────────────── AUTHENTICATION – ADMIN ──────────────────────
-    path(
-        "admin/admin-dashboard/",
-        report_views.admin_dashboard_view,
-        name="admin_dashboard",
-    ),
+
+    # ────────────────────── ADMIN DASHBOARD & REPORTS ──────────────────────
+    path("admin/admin-dashboard/", report_views.admin_dashboard_view, name="admin_dashboard"),
     path("admin/sales-report/", report_views.admin_sales_report, name="sales_report"),
-    path(
-        "admin/dashboard/pdf/",
-        report_views.download_dashboard_pdf,
-        name="download_dashboard_pdf",
-    ),
-    path(
-        "admin/sales/pdf/",
-        report_views.download_sales_report_pdf,
-        name="download_sales_report_pdf",
-    ),
-    path(
-        "admin/admin-profile/", admin_profile_views.admin_profile, name="admin_profile"
-    ),
-    path(
-        "admin/admin-profile/edit/",
-        admin_profile_views.admin_edit_profile,
-        name="admin_edit_profile",
-    ),
-    path(
-        "admin/admin-profile/activity/",
-        admin_profile_views.admin_activity_info,
-        name="admin_activity_info",
-    ),
+    path("admin/dashboard/pdf/", report_views.download_dashboard_pdf, name="download_dashboard_pdf"),
+    path("admin/sales/pdf/", report_views.download_sales_report_pdf, name="download_sales_report_pdf"),
+
+    # ────────────────────── ADMIN PROFILE ──────────────────────
+    path("admin/admin-profile/", admin_profile_views.admin_profile, name="admin_profile"),
+    path("admin/admin-profile/edit/", admin_profile_views.admin_edit_profile, name="admin_edit_profile"),
+    path("admin/admin-profile/activity/", admin_profile_views.admin_activity_info, name="admin_activity_info"),
+
     # ────────────────────── ADMIN – USER MANAGEMENT ──────────────────────
     path("admin/customers/", admin_views.admin_user_list, name="admin_user_list"),
-    path(
-        "admin/customers/customer_details/<int:user_id>/",
-        admin_views.admin_user_detail,
-        name="admin_user_detail",
-    ),
-    path(
-        "admin/customers/block/<int:user_id>/",
-        admin_views.admin_block_user,
-        name="admin_block_user",
-    ),
-    path(
-        "admin/customers/unblock/<int:user_id>/",
-        admin_views.admin_unblock_user,
-        name="admin_unblock_user",
-    ),
-    path(
-        "admin/customers/delete/<int:user_id>/",
-        admin_views.delete_user_view,
-        name="delete_user",
-    ),
+    path("admin/customers/customer_details/<int:user_id>/", admin_views.admin_user_detail, name="admin_user_detail"),
+    path("admin/customers/block/<int:user_id>/", admin_views.admin_block_user, name="admin_block_user"),
+    path("admin/customers/unblock/<int:user_id>/", admin_views.admin_unblock_user, name="admin_unblock_user"),
+    path("admin/customers/delete/<int:user_id>/", admin_views.delete_user_view, name="delete_user"),
+
     # ────────────────────── OTP VERIFICATION ──────────────────────
     path("user/verify-signup/", otp_views.verify_signup_otp, name="verify_signup_otp"),
     path("user/resend/", otp_views.resend_signup_otp, name="resend_signup_otp"),
+
     # ────────────────────── FORGOT PASSWORD (OTP FLOW) ──────────────────────
     path("user/forgot-password/", otp_views.forgot_password, name="forgot_password"),
-    path(
-        "user/verify-forgot-password/",
-        otp_views.verify_forgot_password_otp,
-        name="verify_forgot_password_otp",
-    ),
+    path("user/verify-forgot-password/", otp_views.verify_forgot_password_otp, name="verify_forgot_password_otp"),
     path("user/reset-password/", otp_views.reset_password, name="reset_password"),
-    path(
-        "user/resend-reset-password-otp/",
-        otp_views.resend_reset_password_otp,
-        name="resend_reset_password_otp",
-    ),
+    path("user/resend-reset-password-otp/", otp_views.resend_reset_password_otp, name="resend_reset_password_otp"),
+
     # ────────────────────── PROFILE ──────────────────────
     path("user/profile/", profile_views.user_profile, name="user_profile"),
     path("user/profile/delete/", profile_views.delete_profile, name="delete_profile"),
     path("user/profile/edit/", profile_views.edit_profile, name="edit_profile"),
-    path(
-        "user/profile/change-password/",
-        profile_views.change_password,
-        name="change_password",
-    ),
+    path("user/profile/change-password/", profile_views.change_password, name="change_password"),
     path("user/profile/change-email/", profile_views.change_email, name="change_email"),
-    path(
-        "user/profile/verify-email-otp/",
-        profile_views.verify_email_update,
-        name="verify_email_update",
-    ),
+    path("user/profile/verify-email-otp/", profile_views.verify_email_update, name="verify_email_update"),
+
     # ────────────────────── ADDRESS ──────────────────────
     path("user/addresses/", address_views.address_list, name="address_list"),
-    path(
-        "user/addresses/set-default/",
-        address_views.set_default_address,
-        name="set_default_address",
-    ),
+    path("user/addresses/set-default/<int:address_id>/", address_views.set_default_address, name="set_default_address"),
     path("user/addresses/add/", address_views.address_add, name="address_add"),
-    path(
-        "user/addresses/edit/<int:address_id>",
-        address_views.address_edit,
-        name="address_edit",
-    ),
-    path(
-        "user/addresses/delete/<int:address_id>",
-        address_views.address_delete,
-        name="address_delete",
-    ),
+    path("user/addresses/edit/<int:address_id>/", address_views.address_edit, name="address_edit"),
+    path("user/addresses/delete/<int:address_id>/", address_views.address_delete, name="address_delete"),
+
     # ────────────────────── ERROR HANDLING ──────────────────────
     path(
         "blocked/",

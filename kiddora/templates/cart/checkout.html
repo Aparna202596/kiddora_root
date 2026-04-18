@@ -361,37 +361,50 @@
         <!-- PRICE SUMMARY -->
         <div class="summary-card">
             <h3>💰 Price Details</h3>
+
             <div class="sum-row">
                 <span>Subtotal ({{ checkout_items|length }} item{{ checkout_items|length|pluralize }})</span>
                 <span>₹{{ price_breakdown.subtotal|floatformat:2 }}</span>
             </div>
+
             {% if price_breakdown.offer_discount and price_breakdown.offer_discount > 0 %}
             <div class="sum-row" style="color:#15803d;">
-                <span>🏷️ Offer Discount (Best of Product/Category)</span>
+                <span>🏷️ Offer Discount</span>
                 <span>– ₹{{ price_breakdown.offer_discount|floatformat:2 }}</span>
             </div>
             {% endif %}
+
             <div class="sum-row">
                 <span>Price After Offers</span>
                 <span>₹{{ price_breakdown.price_after_offers|floatformat:2 }}</span>
             </div>
-            {% if price_breakdown.coupon_discount and price_breakdown.coupon_discount > 0 %}
-            <div class="sum-row coupon">
-                <span>🏷️ Coupon ({{ applied_coupon.code }})</span>
-                <span>– ₹{{ price_breakdown.coupon_discount|floatformat:2 }}</span>
+
+            <div class="sum-row coupon" id="summCouponRow"
+                style="{% if not price_breakdown.coupon_discount or price_breakdown.coupon_discount == 0 %}display:none;{% endif %}">
+                <span>🏷️ Coupon (<span id="summCouponCode">{% if applied_coupon %}{{ applied_coupon.code }}{% endif %}</span>)</span>
+                <span>– ₹<span id="summCouponAmt">{{ price_breakdown.coupon_discount|floatformat:2 }}</span></span>
             </div>
-            {% endif %}
+
             <div class="sum-row">
                 <span>Shipping</span>
-                <span>{% if price_breakdown.free_shipping %}<span class="free">🎁 Free delivery on this order!</span>{% else %}₹{{ price_breakdown.shipping_charge }}{% endif %}</span>
+                <span>
+                    {% if price_breakdown.free_shipping %}
+                        <span class="free">🎁 Free</span>
+                    {% else %}
+                        ₹{{ price_breakdown.shipping_charge }}
+                    {% endif %}
+                </span>
             </div>
+
             <div class="sum-row total">
                 <span>Grand Total</span>
-                <span>₹{{ price_breakdown.grand_total|floatformat:2 }}</span>
+                <!-- ↓ updateSummary() writes the new total here -->
+                <span>₹<span id="summGrandTotal">{{ price_breakdown.grand_total|floatformat:2 }}</span></span>
             </div>
+
             {% if not price_breakdown.free_shipping %}
             <div style="font-size:11px;color:#16a34a;">
-                Add ₹{{ price_breakdown.amount_to_free_shipping|floatformat:0 }} more for FREE shipping. 🚚 Orders above ₹1,000 get free delivery.
+                Add ₹{{ price_breakdown.amount_to_free_shipping|floatformat:0 }} more for FREE shipping 🚚
             </div>
             {% endif %}
         </div>

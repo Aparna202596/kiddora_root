@@ -2,10 +2,8 @@
 {% load static %}
 {% block content %}
 {% include "admin_list_style.html" %}
-
 <div class="container">
     <h2>Inventory Management</h2>
-
     {% if messages %}
     <div class="messages" id="msgContainer">
         {% for message in messages %}
@@ -16,7 +14,6 @@
         {% endfor %}
     </div>
     {% endif %}
-
     <!-- Search -->
     <form method="get" class="search-box">
         <input type="text" name="search" placeholder="Search by product, SKU, brand..." value="{{ search }}">
@@ -29,16 +26,30 @@
         <table id="inventoryTable">
             <thead>
                 <tr>
-                    <th onclick="sortTable(0)">Product ⬍</th>
-                    <th onclick="sortTable(1)">Category ⬍</th>
-                    <th onclick="sortTable(2)">SubCategory ⬍</th>
-                    <th onclick="sortTable(3)">SKU ⬍</th>
-                    <th onclick="sortTable(4)">Color ⬍</th>
-                    <th onclick="sortTable(5)">Age Group ⬍</th>
-                    <th onclick="sortTable(6)">Available ⬍</th>
-                    <th onclick="sortTable(7)">Reserved ⬍</th>
-                    <th onclick="sortTable(8)">Sold ⬍</th>
+                    {% with base_url="?search="|add:search|add:"&stock_filter="|add:stock_f %}
+                    <th>
+                        <a href="{{ base_url }}&sort={% if sort == 'product' %}-product{% else %}product{% endif %}">
+                            Product {% if sort == 'product' %}▲{% elif sort == '-product' %}▼{% else %}⬍{% endif %}
+                        </a>
+                    </th>
+                    <th>Category</th>
+                    <th>SubCategory</th>
+                    <th>SKU</th>
+                    <th>Color</th>
+                    <th>Age Group</th>
+                    <th>
+                        <a href="{{ base_url }}&sort={% if sort == 'stock' %}-stock{% else %}stock{% endif %}">
+                            Available {% if sort == 'stock' %}▲{% elif sort == '-stock' %}▼{% else %}⬍{% endif %}
+                        </a>
+                    </th>
+                    <th>Reserved</th>
+                    <th>
+                        <a href="{{ base_url }}&sort={% if sort == 'sold' %}-sold{% else %}sold{% endif %}">
+                            Sold {% if sort == 'sold' %}▲{% elif sort == '-sold' %}▼{% else %}⬍{% endif %}
+                        </a>
+                    </th>
                     <th>Update Stock</th>
+                    {% endwith %}
                 </tr>
             </thead>
             <tbody>
@@ -63,8 +74,8 @@
                     <td>{{ item.quantity_sold }}</td>
                     <td>
                         <form method="post"
-                              action="{% url 'products:update_stock' item.id %}"
-                              class="update-form">
+                                action="{% url 'products:update_stock' item.id %}"
+                                class="update-form">
                             {% csrf_token %}
                             <input type="number" name="quantity" placeholder="qty" min="1" required>
                             <select name="action">
@@ -80,33 +91,9 @@
                     <td colspan="10">No inventory records found.</td>
                 </tr>
             {% endfor %}
-            </tbody>
+            </tbody> 
         </table>
     </div>
-
     {% include "pagination.html" %}
 </div>
-
-<script>
-function sortTable(colIndex) {
-    const table = document.getElementById("inventoryTable");
-    const tbody = table.tBodies[0];
-    const rows  = Array.from(tbody.rows);
-    const lastCol    = table.getAttribute('data-sort-col');
-    const currentDir = table.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
-    const dir = (lastCol == colIndex) ? currentDir : 'asc';
-    rows.sort((a, b) => {
-        let x = a.cells[colIndex].innerText.trim();
-        let y = b.cells[colIndex].innerText.trim();
-        const xN = parseFloat(x), yN = parseFloat(y);
-        if (!isNaN(xN) && !isNaN(yN)) return dir === 'asc' ? xN - yN : yN - xN;
-        return dir === 'asc'
-            ? x.localeCompare(y, undefined, {numeric:true, sensitivity:'base'})
-            : y.localeCompare(x, undefined, {numeric:true, sensitivity:'base'});
-    });
-    table.setAttribute('data-sort-dir', dir);
-    table.setAttribute('data-sort-col', colIndex);
-    rows.forEach(r => tbody.appendChild(r));
-}
-</script>
 {% endblock %}

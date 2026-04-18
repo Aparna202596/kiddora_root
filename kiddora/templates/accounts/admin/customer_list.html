@@ -39,8 +39,6 @@
                 <tr>
                     <th>Customer Name / Email</th>
                     <th>Customer ID</th>
-                    <th>Orders</th>
-                    <th>Balance (₹)</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -50,13 +48,12 @@
                 <tr>
                     <td>
                         <a href="{% url 'accounts:admin_user_detail' u.id %}"
-                           style="color:#f06292;font-weight:600;text-decoration:none;">
+                            style="color:#f06292;font-weight:600;text-decoration:none;">
                             {{ u.full_name|default:u.email }}
                         </a>
                     </td>
                     <td style="font-family:monospace;color:#666;">kid##{{ u.id }}</td>
-                    <td>{{ u.total_orders|default:"0" }}</td>
-                    <td>₹ {{ u.balance|default:"0" }}</td>
+
                     <td>
                         {% if u.is_active %}
                             <span class="status-active">Active</span>
@@ -67,21 +64,21 @@
                     <td class="action-icons">
                         {% if u.is_active %}
                             <a href="{% url 'accounts:admin_block_user' u.id %}"
-                               class="action-block"
-                               title="Block User">
+                                class="action-block"
+                                title="Block User">
                                 <i class="fa-solid fa-ban"></i>
                             </a>
                         {% else %}
                             <a href="{% url 'accounts:admin_unblock_user' u.id %}"
-                               class="action-unblock"
-                               title="Unblock User">
+                                class="action-unblock"
+                                title="Unblock User">
                                 <i class="fa-solid fa-circle-check"></i>
                             </a>
                         {% endif %}
                         <a href="{% url 'accounts:delete_user' u.id %}"
-                           class="icon-delete"
-                           onclick="confirmUserDelete(event, this.href, '{{ u.full_name|default:u.email|escapejs }}')"
-                           title="Delete User">🗑️</a>
+                            class="icon-delete"
+                            onclick="confirmUserDelete(event, this.href, '{{ u.full_name|default:u.email|escapejs }}')"
+                            title="Delete User">🗑️</a>
                     </td>
                 </tr>
             {% empty %}
