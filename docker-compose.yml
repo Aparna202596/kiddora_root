@@ -5,8 +5,8 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: kiddora_db
-      POSTGRES_USER: kiddora           
-      POSTGRES_PASSWORD: success       
+      POSTGRES_USER: kiddora
+      POSTGRES_PASSWORD: success
     ports:
       - "5432:5432"
     volumes:
@@ -31,8 +31,7 @@ services:
 
   web:
     build: .
-    ports:
-      - "8000:8000"
+    # ports: - "8000:8000"   # ← COMMENT OUT IN PRODUCTION (Nginx handles public traffic)
     env_file:
       - .env
     environment:
@@ -44,10 +43,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # For local development hot-reload; comment out for production
     volumes:
-      - .:/app
+      - static_volume:/app/staticfiles
+      # - .:/app          # ← COMMENT OUT IN PRODUCTION (no hot-reload)
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"          # ← Public HTTP (add 443:443 for HTTPS later)
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/static
+    depends_on:
+      - web
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  static_volume:
