@@ -139,9 +139,9 @@
             <div class="form-group conditional-field" id="discountField">
                 <label>Discount % <span style="color:#e91e63;">*</span></label>
                 <input type="number" name="discount_percent" id="discountPercentInput" 
-                       min="1" max="100"
-                       value="{{ offer.discount_percent|default:form_data.discount_percent|default:'' }}"
-                       placeholder="1 – 100" required>
+                        min="1" max="100"
+                        value="{{ offer.discount_percent|default:form_data.discount_percent|default:'' }}"
+                        placeholder="1 – 100">
                 <div class="hint">Applicable only for Product and Category offers</div>
             </div>
         </div>
@@ -191,6 +191,7 @@
 /* ── Conditional field visibility based on Offer Type ── */
 function toggleTargets() {
     const type = document.getElementById('offerType').value;
+    const discountInput = document.getElementById('discountPercentInput');
 
     // Hide all conditional fields
     document.getElementById('productField').style.display = 'none';
@@ -198,17 +199,22 @@ function toggleTargets() {
     document.getElementById('referralRewards').style.display = 'none';
     document.getElementById('discountField').style.display = 'none';
 
+    // Remove required by default; re-add only when field is shown
+    discountInput.required = false;
+
     if (type === 'PRODUCT') {
         document.getElementById('productField').style.display = 'block';
         document.getElementById('discountField').style.display = 'block';
+        discountInput.required = true;   // 
     } 
     else if (type === 'CATEGORY') {
         document.getElementById('categoryField').style.display = 'block';
         document.getElementById('discountField').style.display = 'block';
+        discountInput.required = true;   // 
     } 
     else if (type === 'REFERRAL') {
         document.getElementById('referralRewards').style.display = 'block';
-        // Discount field remains hidden for referral offers
+        
     }
 }
 
