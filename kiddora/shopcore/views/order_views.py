@@ -722,11 +722,12 @@ def download_invoice(request, order_id):
     )
     if platform.system() == "Windows":
         font_path = "C:/Windows/Fonts/arial.ttf"
+        font_bold_path = "C:/Windows/Fonts/arialbd.ttf"
     else:
-        # Path for Ubuntu/Linux
         font_path = "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"
+        font_bold_path = "/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf"
     pdfmetrics.registerFont(TTFont("Arial", font_path))
-    pdfmetrics.registerFont(TTFont("Arial-Bold", "C:/Windows/Fonts/arialbd.ttf"))
+    pdfmetrics.registerFont(TTFont("Arial-Bold", font_bold_path))
 
     styles = getSampleStyleSheet()
 
