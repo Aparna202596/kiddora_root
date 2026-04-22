@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import platform
 from decimal import Decimal
 
 from accounts.decorators import admin_login_required, user_login_required
@@ -719,7 +720,11 @@ def download_invoice(request, order_id):
         topMargin=40,
         bottomMargin=40,
     )
-    font_path = "C:/Windows/Fonts/arial.ttf"
+    if platform.system() == "Windows":
+        font_path = "C:/Windows/Fonts/arial.ttf"
+    else:
+        # Path for Ubuntu/Linux
+        font_path = "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"
     pdfmetrics.registerFont(TTFont("Arial", font_path))
     pdfmetrics.registerFont(TTFont("Arial-Bold", "C:/Windows/Fonts/arialbd.ttf"))
 
