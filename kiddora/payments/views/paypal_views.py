@@ -77,8 +77,8 @@ def _paypal_create_order(amount: Decimal, currency: str, reference_id: str) -> d
             }
         ],
         "application_context": {
-            "return_url": "http://localhost:8000/payments/paypal/callback/",
-            "cancel_url": "http://localhost:8000/payments/paypal/cancel/",
+            "return_url": settings.PAYPAL_RETURN_URL,
+            "cancel_url": settings.PAYPAL_CANCEL_URL,
         },
     }
 
@@ -203,11 +203,6 @@ def paypal_callback(request):
     paypal_order_id = request.GET.get("token")
     payer_id = request.GET.get("PayerID")
 
-    print("=== PAYPAL CALLBACK START ===")
-    print("User authenticated?", request.user.is_authenticated)
-    print("Session keys:", list(request.session.keys()))
-    print("paypal_order_id from URL:", paypal_order_id)
-
     payment = None
     order = None
 
@@ -243,7 +238,7 @@ def paypal_callback(request):
             login(
                 request, order.user, backend="django.contrib.auth.backends.ModelBackend"
             )
-            print(f"✅ User recovered: {order.user.email}")
+
         except Exception as e:
             print(f"User recovery failed: {e}")
 
@@ -309,7 +304,6 @@ def paypal_callback(request):
 
         _finalize_order_after_payment(request, order)
 
-        print("✅ Payment completed - redirecting to order success")
         return redirect("shopcore:order_success", order_id=order.order_id)
 
     else:

@@ -157,7 +157,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 # Payments 
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
 PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET")
-PAYPAL_MODE = "sandbox"
-PAYPAL_CURRENCY = "USD"
-PAYPAL_RETURN_URL = os.getenv("PAYPAL_RETURN_URL")
-PAYPAL_CANCEL_URL = os.getenv("PAYPAL_CANCEL_URL")
+PAYPAL_MODE = os.getenv("PAYPAL_MODE", default="sandbox")
+PAYPAL_CURRENCY = os.getenv("PAYPAL_CURRENCY", default="USD")
+PAYPAL_RETURN_URL = os.getenv("PAYPAL_RETURN_URL", default="http://localhost:8000/payments/paypal/callback/")
+PAYPAL_CANCEL_URL = os.getenv("PAYPAL_CANCEL_URL", default="http://localhost:8000/payments/paypal/cancel/")
