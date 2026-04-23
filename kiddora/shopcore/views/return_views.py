@@ -182,7 +182,6 @@ def admin_return_detail(request, return_id):
         },
     )
 
-
 # ─────────────────────────────────────────────── ADMIN: APPROVE RETURN ───────────────────────────────────────────────
 @never_cache
 @admin_login_required
@@ -217,39 +216,19 @@ def admin_approve_return(request, return_id):
     if is_full_return:
         oi.item_status = "RETURN_APPROVED"
     else:
-
         oi.cancelled_quantity = (oi.cancelled_quantity or 0) + return_qty
-        oi.item_status = "ACTIVE"  
+        oi.item_status = "ACTIVE"
     oi.save(update_fields=["item_status", "cancelled_quantity"])
 
     _restore_inventory_partial(oi, return_qty)
-
-    credit_refund_to_wallet(
-        user=order.user,
-        amount=refund_amount,
-        description=(
-            f"Refund for return of {return_qty} unit(s) of "
-            f"'{oi.variant.product.product_name}' in order {order.order_id}"
-        ),
-        reference_type="RETURN",
-        reference_id=f"{order.order_id}-return-{ret.id}",
-        order=order,
-    )
-
-    _recalculate_order_amount(order)
-
-    active_count = order.order_items.filter(item_status="ACTIVE").count()
-    order.payment_status = "REFUNDED" if active_count == 0 else "PARTIALLY_REFUNDED"
-    order.save(update_fields=["payment_status"])
 
     messages.success(
         request,
         f"Return approved for {return_qty} unit(s) of "
         f"'{oi.variant.product.product_name}'. "
-        f"₹{refund_amount} refunded to wallet.",
+        f"Proceed to 'Process Refund' to credit ₹{refund_amount} to the customer's wallet.",
     )
     return redirect("shopcore:admin_return_detail", return_id=return_id)
-
 
 # ─────────────────────────────────────────────── ADMIN: PROCESS REFUND ───────────────────────────────────────────────
 @never_cache
@@ -265,17 +244,22 @@ def admin_process_refund(request, return_id):
 
     refund_amount = ret.refund_amount or ret.calculated_refund_amount
 
-    credit_refund_to_wallet(
+    txn = credit_refund_to_wallet(
         user=order.user,
         amount=refund_amount,
         description=(
-            f"Final refund for return of '{oi.variant.product.product_name}' "
+            f"Refund for return of '{oi.variant.product.product_name}' "
             f"in order {order.order_id}"
         ),
         reference_type="RETURN",
-        reference_id=f"{order.order_id}-return-{ret.id}",  
+        reference_id=f"{order.order_id}-return-{ret.id}",
         order=order,
     )
+
+    if txn is None:
+        # Duplicate guard fired — refund was already processed.
+        messages.warning(request, "Refund was already processed for this return.")
+        return redirect("shopcore:admin_return_detail", return_id=return_id)
 
     ret.status = "REFUNDED"
     ret.refunded_at = timezone.now()
@@ -286,14 +270,12 @@ def admin_process_refund(request, return_id):
         oi.save(update_fields=["item_status"])
 
     _recalculate_order_amount(order)
-
     active_count = order.order_items.filter(item_status="ACTIVE").count()
     order.payment_status = "REFUNDED" if active_count == 0 else "PARTIALLY_REFUNDED"
     order.save(update_fields=["payment_status"])
 
-    messages.success(request, f"Refund of ₹{refund_amount} finalised.")
+    messages.success(request, f"Refund of ₹{refund_amount} finalised and credited to wallet.")
     return redirect("shopcore:admin_return_detail", return_id=return_id)
-
 
 # ─────────────────────────────────────────────── ADMIN: REJECT RETURN ───────────────────────────────────────────────
 @never_cache
