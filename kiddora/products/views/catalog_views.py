@@ -242,7 +242,7 @@ def product_list(request, category_id=None, subcategory_id=None):
 
     products = _apply_sort(products, sort_by)
 
-    paginator = Paginator(products, 15)
+    paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get("page"))
 
     filter_options = get_filter_options(products)
