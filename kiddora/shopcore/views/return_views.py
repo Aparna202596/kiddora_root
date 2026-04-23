@@ -80,13 +80,17 @@ def request_return(request, order_id, item_id):
 
     return_qty = max(1, min(return_qty, order_item.active_quantity))
 
-    per_unit_net = (
-        order_item.total_price / order_item.quantity
+    order_items_total = sum(
+        oi.total_price for oi in order.order_items.all()
+    ) or Decimal("1")  # guard against zero-total edge case
+
+    item_paid_total = (order_item.total_price / order_items_total) * order.final_amount
+    per_unit_paid = (
+        item_paid_total / order_item.quantity
         if order_item.quantity
         else Decimal("0")
     )
-    refund_amount = (per_unit_net * return_qty).quantize(Decimal("0.01"))
-
+    refund_amount = (per_unit_paid * return_qty).quantize(Decimal("0.01"))
     Return.objects.create(
         order_item=order_item,
         reason=reason,
@@ -195,7 +199,13 @@ def admin_approve_return(request, return_id):
     order = oi.order
 
     return_qty = ret.return_quantity or oi.active_quantity
-    refund_amount = ret.calculated_refund_amount
+    oi_total = sum(
+    x.total_price for x in order.order_items.all()
+    ) or Decimal("1")
+    item_paid_total = (oi.total_price / oi_total) * order.final_amount
+    return_qty = ret.return_quantity or oi.active_quantity
+    per_unit_paid = item_paid_total / oi.quantity if oi.quantity else Decimal("0")
+    refund_amount = (per_unit_paid * return_qty).quantize(Decimal("0.01"))
 
     ret.status = "APPROVED"
     ret.admin_note = request.POST.get("admin_note", "Return approved.").strip()
