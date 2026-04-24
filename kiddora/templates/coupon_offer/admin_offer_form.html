@@ -81,9 +81,29 @@
                     <option value="">— Select Product —</option>
                     {% for p in products %}
                     <option value="{{ p.id }}"
+                            data-base="{{ p.base_price }}"
+                            data-final="{{ p.final_price }}"
                         {% if offer.product_id == p.id or form_data.product_id == p.id|stringformat:"s" %}selected{% endif %}>
                         {{ p.product_name }}
                     </option>
+                    <div id="pricePreview" style="display:none; margin-top:12px;
+                        padding:12px; background:#fafafa; border:1px solid #eee;
+                        border-radius:8px; font-size:13px;">
+                        <div style="display:flex; gap:24px;">
+                            <div>
+                            <span style="color:#888; font-size:12px;">Base Price</span><br>
+                            <strong id="previewBase" style="font-size:16px;">—</strong>
+                            </div>
+                            <div>
+                            <span style="color:#888; font-size:12px;">Final Price</span><br>
+                            <strong id="previewFinal" style="font-size:16px; color:#e91e63;">—</strong>
+                            </div>
+                            <div>
+                            <span style="color:#888; font-size:12px;">You save</span><br>
+                            <strong id="previewSaving" style="font-size:16px; color:#22c55e;">—</strong>
+                            </div>
+                        </div>
+                        </div>
                     {% endfor %}
                 </select>
             </div>
@@ -152,13 +172,13 @@
                 <div class="form-group">
                     <label>Start Date <span style="color:#e91e63;">*</span></label>
                     <input type="datetime-local" name="start_date"
-                           value="{{ offer.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}"
-                           required>
+                            value="{{ offer.start_date|date:'Y-m-d\TH:i'|default:form_data.start_date|default:'' }}"
+                            required>
                 </div>
                 <div class="form-group">
                     <label>End Date <span style="color:#aaa;font-weight:400;">(optional)</span></label>
                     <input type="datetime-local" name="end_date"
-                           value="{{ offer.end_date|date:'Y-m-d\TH:i'|default:form_data.end_date|default:'' }}">
+                            value="{{ offer.end_date|date:'Y-m-d\TH:i'|default:form_data.end_date|default:'' }}">
                     <div class="hint">Leave blank to run indefinitely.</div>
                 </div>
             </div>
@@ -168,7 +188,7 @@
             <div class="card-title">Status</div>
             <div class="toggle-row">
                 <input type="checkbox" name="is_active" id="isActive" style="width:auto;"
-                       {% if offer.is_active or not offer %}checked{% endif %}>
+                        {% if offer.is_active or not offer %}checked{% endif %}>
                 <label for="isActive">Active</label>
             </div>
         </div>
@@ -232,7 +252,33 @@ document.getElementById('btnSaveTrigger').addEventListener('click', function () 
         document.getElementById('btnRealSubmit').click();
     });
 });
+// Add inside the existing <script> block
+const productSelect = document.querySelector('select[name="product_id"]');
+const discountInput = document.getElementById('discountPercentInput');
+const pricePreview  = document.getElementById('pricePreview');
 
+function updatePricePreview() {
+    const type = document.getElementById('offerType').value;
+    if (type !== 'PRODUCT') { pricePreview.style.display = 'none'; return; }
+    const opt  = productSelect.options[productSelect.selectedIndex];
+    const base = parseFloat(opt?.dataset?.base || 0);
+    const pct  = parseFloat(discountInput?.value || 0);
+    if (!base) { pricePreview.style.display = 'none'; return; }
+    const final  = base - (base * pct / 100);
+    const saving = base - final;
+    document.getElementById('previewBase').textContent   = '₹' + base.toFixed(2);
+    document.getElementById('previewFinal').textContent  = '₹' + final.toFixed(2);
+    document.getElementById('previewSaving').textContent = saving > 0 ? '₹' + saving.toFixed(2) : '—';
+    pricePreview.style.display = 'block';
+}
+
+productSelect?.addEventListener('change', updatePricePreview);
+discountInput?.addEventListener('input',  updatePricePreview);
+// Hook into existing toggleTargets so preview hides for CATEGORY/REFERRAL
+const _orig = window.toggleTargets;
+window.toggleTargets = function() { _orig(); updatePricePreview(); };
+// Init on page load (for edit mode where values are pre-filled)
+document.addEventListener('DOMContentLoaded', updatePricePreview);
 /* Auto-dismiss messages */
 (function () {
     const mc = document.getElementById('msgContainer');

@@ -371,17 +371,18 @@
     {% endif %}
 
     {# ── NEW ARRIVALS ── #}
-    {% if new_arrivals %}
+        {% if new_arrivals %}
     <section class="kd-section">
         <h3 class="kd-section-title">NEW ARRIVALS</h3>
         <div class="kd-product-grid">
             {% for prod in new_arrivals %}
             {% with img=prod.images.first %}
             <div class="kd-product-card">
-                {% if prod.discount_percent > 0 %}
-                <div class="kd-disc-badge">{{ prod.discount_percent }}% OFF</div>
+                {# FIX th1 (occurrence 1): badge condition #}
+                {% if prod.applied_offer_percent > 0 %}
+                <div class="kd-disc-badge">{{ prod.applied_offer_percent }}% OFF</div>
                 {% endif %}
-                
+
                 <a href="{% url 'products:product_detail' product_id=prod.id %}" class="kd-prod-img">
                     {% if img and img.image1 %}
                         <img src="{{ img.image1.url }}" alt="{{ prod.product_name }}" loading="lazy">
@@ -389,14 +390,15 @@
                         <span class="kd-no-img"><i class="fa-solid fa-shirt"></i></span>
                     {% endif %}
                 </a>
-                
+
                 <div class="kd-prod-info">
                     <a href="{% url 'products:product_detail' product_id=prod.id %}" class="kd-prod-name">
                         {{ prod.product_name }}
                     </a>
                     <div class="kd-prod-price">
                         ₹ {{ prod.final_price }}
-                        {% if prod.base_price != prod.final_price %}
+
+                        {% if prod.applied_offer_percent > 0 %}
                         <span class="kd-base">₹ {{ prod.base_price }}</span>
                         {% endif %}
                     </div>
@@ -406,32 +408,29 @@
                         {% endfor %}
                     </div>
 
-                    {# Dynamic Actions based on login status #}
                     <div class="kd-prod-actions">
                         {% if user.is_authenticated %}
-                            <!-- Logged-in user: functional buttons -->
-                            <a href="{% url 'products:product_detail' product_id=prod.id %}" 
-                               class="kd-cart-btn" title="Add to Cart">
+                            <a href="{% url 'products:product_detail' product_id=prod.id %}"
+                                class="kd-cart-btn" title="Add to Cart">
                                 <i class="fa fa-shopping-cart"></i>
                             </a>
-                            <form class="action-form" method="post" 
-                                  action="{% url 'shopcore:toggle_wishlist' product_id=prod.id %}"
-                                  data-ajax-wishlist data-product-id="{{ prod.id }}">
+                            <form class="action-form" method="post"
+                                    action="{% url 'shopcore:toggle_wishlist' product_id=prod.id %}"
+                                    data-ajax-wishlist data-product-id="{{ prod.id }}">
                                 {% csrf_token %}
-                                <button type="submit" 
+                                <button type="submit"
                                         class="kd-heart-btn {% if prod.id in wishlist_product_ids %}wishlisted{% endif %}"
                                         title="{% if prod.id in wishlist_product_ids %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}">
                                     <i class="fa{% if prod.id in wishlist_product_ids %}-solid{% else %}-regular{% endif %} fa-heart"></i>
                                 </button>
                             </form>
                         {% else %}
-                            <!-- Anonymous user: redirect to login -->
                             <a href="{% url 'accounts:login' %}?next={% url 'products:product_detail' product_id=prod.id %}"
-                               class="kd-cart-icon" title="Login to add to cart">
+                                class="kd-cart-icon" title="Login to add to cart">
                                 <i class="fa fa-shopping-cart"></i>
                             </a>
                             <a href="{% url 'accounts:login' %}?next={% url 'products:product_detail' product_id=prod.id %}"
-                               class="kd-heart-icon" title="Login to add to wishlist">
+                                class="kd-heart-icon" title="Login to add to wishlist">
                                 <i class="fa-regular fa-heart"></i>
                             </a>
                         {% endif %}

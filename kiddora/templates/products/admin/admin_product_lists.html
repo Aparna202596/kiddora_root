@@ -74,15 +74,15 @@
                 <tr>
                     <td>
                         <a href="{% url 'products:admin_product_details' prod.id %}"
-                           style="color:#f06292;font-weight:600;text-decoration:none;">
+                            style="color:#f06292;font-weight:600;text-decoration:none;">
                             {{ prod.product_name }}
                         </a>
                     </td>
                     <td>{{ prod.brand }}</td>
                     <td>
                         ₹{{ prod.final_price }}
-                        {% if prod.discount_percent > 0 %}
-                        <small style="color:#aaa;">({{ prod.discount_percent }}% off)</small>
+                        {% if prod.applied_offer_percent > 0 %}
+                        <small style="color:#aaa;">({{ prod.applied_offer_percent }}% off)</small>
                         {% endif %}
                     </td>
                     <td>{{ prod.subcategory.subcategory_name }}</td>
@@ -90,22 +90,22 @@
                     <td>{{ prod.get_gender_display }}</td>
                     <td class="action-icons">
                         <a class="icon-edit"
-                           href="{% url 'products:admin_edit_product' prod.id %}"
-                           title="Edit">✏️</a>
+                            href="{% url 'products:admin_edit_product' prod.id %}"
+                            title="Edit">✏️</a>
                         <a class="icon-delete"
-                           href="{% url 'products:admin_delete_product' prod.id %}"
-                           onclick="confirmDelete(event, this.href, '{{ prod.product_name|escapejs }}')"
-                           title="Delete">🗑️</a>
+                            href="{% url 'products:admin_delete_product' prod.id %}"
+                            onclick="confirmDelete(event, this.href, '{{ prod.product_name|escapejs }}')"
+                            title="Delete">🗑️</a>
                         {% if prod.is_active %}
                             <a href="{% url 'products:admin_block_product' prod.id %}"
-                               class="action-block"
-                               title="Block Product">
+                                class="action-block"
+                                title="Block Product">
                                 <i class="fa-solid fa-ban"></i>
                             </a>
                         {% else %}
                             <a href="{% url 'products:admin_unblock_product' prod.id %}"
-                               class="action-unblock"
-                               title="Unblock Product">
+                                class="action-unblock"
+                                title="Unblock Product">
                                 <i class="fa-solid fa-circle-check"></i>
                             </a>
                         {% endif %}

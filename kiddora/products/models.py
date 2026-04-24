@@ -57,13 +57,11 @@ class SubCategory(models.Model):
 
 #  ────────────────────────────────────────────────── PRODUCT ──────────────────────────────────────────────────
 class Product(models.Model):
-
     GENDER_CHOICES = [
         ("Boys", "Boys"),
         ("Girls", "Girls"),
         ("unisex", "Unisex"),
     ]
-
     FABRIC_CHOICES = [
         ("Cotton", "Cotton"),
         ("Organic_cotton", "Organic Cotton"),
@@ -86,52 +84,63 @@ class Product(models.Model):
         ("Wool_blends", "Wool Blends"),
         ("Other", "Other"),
     ]
-
     subcategory = models.ForeignKey(
         "SubCategory", on_delete=models.CASCADE, related_name="products"
     )
-
     product_name = models.CharField(max_length=200)
-
     brand = models.CharField(max_length=100)
-
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default="unisex")
-
     fabric = models.CharField(max_length=20, choices=FABRIC_CHOICES, default="Other")
-
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
-
-    discount_percent = models.PositiveIntegerField(default=0)
-
-    final_price = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-
+    product_offer = models.ForeignKey(
+        "shopcore.Offer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="applied_to_products",
+    )
+    final_price = models.DecimalField(
+        max_digits=10, decimal_places=2, editable=False
+    )
     about_product = models.TextField(blank=True)
-
     average_review = models.DecimalField(
         max_digits=3, decimal_places=2, default=Decimal("0.00")
     )
-
     is_active = models.BooleanField(default=True)
-
     is_deleted = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
-
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
 
     def save(self, *args, **kwargs):
-        base = Decimal(self.base_price or 0)
-        discount = Decimal(self.discount_percent or 0)
-        self.final_price = base - (base * discount / Decimal("100"))
+        base = Decimal(str(self.base_price or 0))
+        offer_pct = Decimal("0")
+        # Only apply the offer when the FK is set AND the offer is currently valid.
+        if self.product_offer_id:
+            try:
+                offer = self.product_offer
+                if offer and offer.is_valid():
+                    offer_pct = Decimal(str(offer.discount_percent))
+            except Exception:
+                pass
+        self.final_price = base - (base * offer_pct / Decimal("100"))
         super().save(*args, **kwargs)
+
+    @property
+    def applied_offer_percent(self):
+        if self.product_offer_id:
+            try:
+                if self.product_offer.is_valid():
+                    return self.product_offer.discount_percent
+            except Exception:
+                pass
+        return 0
 
     def __str__(self):
         return self.product_name
-
-
+    
 #  ────────────────────────────────────────────────── PRODUCT IMAGES ──────────────────────────────────────────────────
 class ProductImage(models.Model):
 

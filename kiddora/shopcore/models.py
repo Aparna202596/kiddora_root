@@ -6,7 +6,11 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from products.models import Category, Product, ProductVariant
+from products.models import Product, ProductVariant
+from django.db import models
+from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 #   ────────────────────────────────────────────────── COUPON ──────────────────────────────────────────────────
@@ -100,60 +104,56 @@ class CouponUsage(models.Model):
         verbose_name_plural = "Coupon Usages"
 
 
-#   ────────────────────────────────────────────────── OFFER ──────────────────────────────────────────────────
+# ────────────────────────────────────────────────── OFFER ──────────────────────────────────────────────────
 class Offer(models.Model):
     OFFER_TYPE_CHOICES = (
         ("PRODUCT", "Product Offer"),
         ("CATEGORY", "Category Offer"),
         ("REFERRAL", "Referral Offer"),
     )
-
     offer_type = models.CharField(max_length=20, choices=OFFER_TYPE_CHOICES)
-
     product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, null=True, blank=True, related_name="offers"
+        "products.Product",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="offers",
     )
-
     category = models.ForeignKey(
-        Category, on_delete=models.CASCADE, null=True, blank=True, related_name="offers"
+        "products.Category",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="offers",
     )
-
     discount_percent = models.PositiveIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(100)]
     )
-
     start_date = models.DateTimeField(default=timezone.now)
-
     end_date = models.DateTimeField(null=True, blank=True)
-
     referral_coupon = models.ForeignKey(
-        Coupon,
+        "Coupon",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="referral_offers",
-    ) 
-
+    )
     referrer_coupon = models.ForeignKey(
-        Coupon,
+        "Coupon",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="referrer_offers",
-    )  
-
+    )
     new_user_coupon = models.ForeignKey(
-        Coupon,
+        "Coupon",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="new_user_offers",
-    )  
-
+    )
     is_active = models.BooleanField(default=True)
-
     is_deleted = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -176,6 +176,10 @@ class Offer(models.Model):
         target = self.product or self.category or "Referral"
         return f"{self.get_offer_type_display()} – {self.discount_percent}% on {target}"
 
+@receiver(post_save, sender=Offer)
+def refresh_products_on_offer_change(sender, instance, **kwargs):
+    for product in instance.applied_to_products.select_related("product_offer").iterator():
+        product.save()
 
 #   ────────────────────────────────────────────────── REFERRAL ──────────────────────────────────────────────────
 class ReferralCode(models.Model):

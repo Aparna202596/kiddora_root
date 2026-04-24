@@ -308,12 +308,12 @@
         <!-- Price -->
         <div class="price-block">
             <div class="price-row">
-                {% if product.discount_percent %}
-                    <span class="price-final-red">₹{{ product.final_price|floatformat:0 }}</span>
-                    <span class="price-base-strike">₹{{ product.base_price|floatformat:0 }}</span>
-                    <span class="price-discount-badge">({{ product.discount_percent }}% off)</span>
+                {% if product.applied_offer_percent %}
+                    <span class="price-final-red">₹{{ product.final_price }}</span>
+                    <span class="price-base-strike">₹{{ product.base_price }}</span>
+                    <span>({{ product.applied_offer_percent }}% off)</span>
                 {% else %}
-                    <span class="price-final-black">₹{{ product.final_price|floatformat:0 }}</span>
+                    <span class="price-final-black">₹{{ product.final_price }}</span>
                 {% endif %}
             </div>
             <p class="price-note">Inclusive of all taxes &nbsp;·&nbsp; Free delivery on orders above ₹999</p>
@@ -418,7 +418,7 @@
                 <li>Fabric: {{ product.get_fabric_display }}</li>
                 <li>Gender: {{ product.get_gender_display }}</li>
                 <li>Category: {{ product.subcategory.category.category_name }} › {{ product.subcategory.subcategory_name }}</li>
-                {% if product.discount_percent %}<li>{{ product.discount_percent }}% discount — save ₹{% widthratio product.base_price 1 1 %}{% endif %}
+                {% if product.applied_offer_percent %}{{ product.applied_offer_percent }}% discount — save ₹{% widthratio product.base_price 1 1 %}{% endif %}
                 <li>SKU visible after selecting variant</li>
             </ul>
         </div>

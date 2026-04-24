@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from decimal import Decimal
-
 from accounts.decorators import user_login_required
 from accounts.models import UserAddress
 from django.contrib import messages
@@ -16,10 +14,9 @@ from payments.models import Payment, Wallet
 from shopcore.models import (Cart, Coupon, CouponUsage, Order, OrderItem,
                             ReferralUse)
 from shopcore.views.coupon_views import compute_coupon_discount
-from shopcore.views.offer_views import (get_max_offer_discount_percent,
-                                        get_offer_discount_detail)
+from shopcore.views.offer_views import (get_max_offer_discount_percent)
 
-# ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
+# ──────────────────────────────────────────── HELPER FUNCTIONS ───────────────────────────────────
 
 def _get_cart(user):
     try:
@@ -147,7 +144,6 @@ def revalidate_order_after_item_change(order: Order) -> dict:
         "new_shipping_charge": order.shipping_charge,
         "new_final_amount": order.final_amount,
     }
-
     active_items = order.order_items.filter(
         item_status__in=("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED")
     ).select_related("variant__product")
@@ -163,8 +159,8 @@ def revalidate_order_after_item_change(order: Order) -> dict:
         remaining_offer_discount += item_disc
 
     price_after_offers = remaining_subtotal - remaining_offer_discount
-
     new_coupon_discount = Decimal("0")
+
     if order.coupon:
         coupon = order.coupon
         if coupon.is_valid() and price_after_offers >= coupon.min_order_amount:
@@ -173,8 +169,8 @@ def revalidate_order_after_item_change(order: Order) -> dict:
             result["coupon_invalidated"] = True
             order.coupon = None
             new_coupon_discount = Decimal("0")
-    result["new_coupon_discount"] = new_coupon_discount
 
+    result["new_coupon_discount"] = new_coupon_discount
     temp_order = Order(
         total_amount=price_after_offers,
         discount_amount=remaining_offer_discount,
@@ -183,8 +179,8 @@ def revalidate_order_after_item_change(order: Order) -> dict:
     new_shipping = temp_order.calculate_shipping()
     if new_shipping != order.shipping_charge:
         result["shipping_changed"] = True
-    result["new_shipping_charge"] = new_shipping
 
+    result["new_shipping_charge"] = new_shipping
     new_final = price_after_offers - new_coupon_discount + new_shipping
     result["new_final_amount"] = new_final
 
@@ -205,8 +201,8 @@ def revalidate_order_after_item_change(order: Order) -> dict:
     )
     return result
 
-# ────────────────────────────────────────────────── SAVE NEW ADDRESS ──────────────────────────────────────────────────
 
+# ────────────────────────────────────────── SAVE NEW ADDRESS ─────────────────────────────────────
 @never_cache
 @user_login_required
 @require_POST
@@ -214,13 +210,11 @@ def save_new_address(request):
     errors = _validate_address_post(request.POST)
     if errors:
         return JsonResponse({"success": False, "errors": errors}, status=400)
-
     set_default = request.POST.get("set_default") == "1"
     if set_default:
         UserAddress.objects.filter(user=request.user, is_deleted=False).update(
             is_default=False
         )
-
     address = UserAddress.objects.create(
         user=request.user,
         address_line1=request.POST.get("address_line1", "").strip(),
@@ -235,8 +229,7 @@ def save_new_address(request):
     return JsonResponse({"success": True, "address": _address_to_dict(address)})
 
 
-# ────────────────────────────────────────────────── EDIT ADDRESS ──────────────────────────────────────────────────
-
+# ────────────────────────────────────────────── EDIT ADDRESS ─────────────────────────────────────
 @never_cache
 @user_login_required
 @require_POST
@@ -247,13 +240,11 @@ def edit_address(request, address_id):
     errors = _validate_address_post(request.POST)
     if errors:
         return JsonResponse({"success": False, "errors": errors}, status=400)
-
     set_default = request.POST.get("set_default") == "1"
     if set_default:
         UserAddress.objects.filter(user=request.user, is_deleted=False).update(
             is_default=False
         )
-
     address.address_line1 = request.POST.get("address_line1", "").strip()
     address.address_line2 = request.POST.get("address_line2", "").strip()
     address.city = request.POST.get("city", "").strip()
@@ -266,8 +257,7 @@ def edit_address(request, address_id):
     return JsonResponse({"success": True, "address": _address_to_dict(address)})
 
 
-# ────────────────────────────────────────────────── CHECKOUT PAGE (GET) ──────────────────────────────────────────────────
-
+# ──────────────────────────────────── CHECKOUT PAGE (GET) ────────────────────────────────────────
 @never_cache
 @user_login_required
 def checkout(request):
@@ -281,6 +271,7 @@ def checkout(request):
             "variant__product",
             "variant__product__subcategory",
             "variant__product__subcategory__category",
+            "variant__product__product_offer",
             "variant__color",
             "variant__age_group",
             "variant__inventory",
@@ -303,11 +294,10 @@ def checkout(request):
         if not available or stock == 0 or item.quantity > stock:
             blocked = True
 
-        base_price = product.final_price
-        offer_detail = get_offer_discount_detail(product)
-        offer_pct = offer_detail["discount_percent"]
-        offer_pct_dec = Decimal(str(offer_pct))
-        discounted_price = base_price * (Decimal("1") - offer_pct_dec / 100)
+        base_price = product.base_price
+        offer_pct = Decimal(str(product.applied_offer_percent))
+        discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
+
         item_base_total = base_price * item.quantity
         item_offer_discount = (base_price - discounted_price) * item.quantity
         item_final_total = discounted_price * item.quantity
@@ -325,10 +315,7 @@ def checkout(request):
                 "item_total": item_final_total,
                 "base_item_total": item_base_total,
                 "offer_discount": item_offer_discount,
-                "offer_pct": offer_pct,
-                "offer_type": offer_detail["offer_type"],
-                "product_offer_pct": offer_detail["product_percent"],
-                "category_offer_pct": offer_detail["category_percent"],
+                "offer_pct": int(offer_pct),
                 "available": available,
                 "stock": stock,
                 "img_url": _img_url_for(product),
@@ -344,9 +331,7 @@ def checkout(request):
         return redirect("shopcore:cart")
 
     price_after_offers = subtotal - offer_discount_total
-
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
-
     temp_order = Order(
         total_amount=price_after_offers,
         discount_amount=offer_discount_total,
@@ -359,15 +344,12 @@ def checkout(request):
     wallet_sufficient = wallet_balance >= grand_total
 
     now = timezone.now()
-
     new_user_referral_coupon_ids = ReferralUse.objects.filter(
         referred_user=request.user
     ).values_list("new_user_coupon_id", flat=True)
-
     referrer_coupon_ids = ReferralUse.objects.filter(
         referral_code__user=request.user
     ).values_list("coupon_awarded_id", flat=True)
-
     exhausted_ids = _exhausted_coupon_ids(request.user)
 
     available_coupons = (
@@ -389,7 +371,6 @@ def checkout(request):
     tagged_coupons = []
     new_user_ids_list = list(new_user_referral_coupon_ids)
     referrer_ids_list = list(referrer_coupon_ids)
-
     for c in available_coupons:
         role = None
         if c.coupon_type == "REFERRAL":
@@ -441,8 +422,7 @@ def checkout(request):
     )
 
 
-# ────────────────────────────────────────────────── PLACE ORDER (POST) ──────────────────────────────────────────────────
-
+# ──────────────────────────────────────── PLACE ORDER (POST) ─────────────────────────────────────
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -503,6 +483,7 @@ def place_order(request):
         "variant__product",
         "variant__product__subcategory",
         "variant__product__subcategory__category",
+        "variant__product__product_offer",
         "variant__inventory",
     ).all()
 
@@ -526,16 +507,16 @@ def place_order(request):
     item_offer_data: dict[int, Decimal] = {}
 
     for item in items:
-        base = item.variant.product.final_price * item.quantity
-        offer_pct = get_max_offer_discount_percent(item.variant.product)
-        item_disc = base * Decimal(str(offer_pct)) / 100
-        subtotal += base
+        base_price = item.variant.product.base_price
+        offer_pct = Decimal(str(item.variant.product.applied_offer_percent))
+        item_base = base_price * item.quantity
+        item_disc = item_base * offer_pct / Decimal("100")
+        subtotal += item_base
         offer_discount_total += item_disc
         item_offer_data[item.variant_id] = item_disc
 
     price_after_offers = subtotal - offer_discount_total
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
-
     temp_order = Order(
         total_amount=price_after_offers,
         discount_amount=offer_discount_total,
@@ -567,7 +548,6 @@ def place_order(request):
         shipping_charge=shipping_charge,
         final_amount=final_amount,
     )
-
     if payment_method == "COD":
         order = Order.objects.create(
             **order_kwargs,
@@ -583,14 +563,15 @@ def place_order(request):
 
     for item in items:
         variant = item.variant
-        base_price = variant.product.final_price
+        base_price = variant.product.base_price
         item_disc = item_offer_data.get(item.variant_id, Decimal("0"))
+
         OrderItem.objects.create(
             order=order,
             variant=variant,
             quantity=item.quantity,
-            unit_price=base_price,
-            discount_amount=item_disc,
+            unit_price=base_price,          
+            discount_amount=item_disc,      
             item_status="PENDING",
         )
         inv = variant.inventory
@@ -614,7 +595,6 @@ def place_order(request):
             usage.save(update_fields=["times_used"])
             applied_coupon.used_count += 1
             applied_coupon.save(update_fields=["used_count"])
-
         cart.items.all().delete()
         request.session.pop("applied_coupon_code", None)
         request.session.pop("applied_coupon_discount", None)
@@ -630,8 +610,7 @@ def place_order(request):
         return redirect("payments:initiate_paypal_payment", order_id=order.order_id)
 
 
-# ────────────────────────────────────────────────── ORDER SUCCESS ──────────────────────────────────────────────────
-
+# ──────────────────────────────────────────── ORDER SUCCESS ──────────────────────────────────────
 @never_cache
 @user_login_required
 def order_success(request, order_id):

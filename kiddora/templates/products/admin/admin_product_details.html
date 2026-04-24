@@ -146,15 +146,11 @@
                         <tr><th>Fabric</th><td>{{ product.get_fabric_display }}</td></tr>
                         <tr><th>About Product</th><td>{{ product.about_product }}</td></tr>
                         <tr><th>Base Price</th><td>₹{{ product.base_price }}</td></tr>
-                        <tr>
-                            <th>Final Price</th>
-                            <td>
-                                ₹{{ product.final_price }}
-                                {% if product.discount_percent > 0 %}
-                                (<small>{{ product.discount_percent }}% off</small>)
-                                {% endif %}
-                            </td>
-                        </tr>
+                        <tr><th>Offer %</th>
+                        <td>{% if product.applied_offer_percent %}
+                            {{ product.applied_offer_percent }}%
+                        {% else %}No offer{% endif %}</td></tr>
+                        <tr><th>Final Price</th><td>₹{{ product.final_price }}</td></tr>
                         <tr>
                             <th>Status</th>
                             <td>{{ product.is_active|yesno:"Active,Inactive" }}</td>

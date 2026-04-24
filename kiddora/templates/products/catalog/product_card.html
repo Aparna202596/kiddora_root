@@ -1,6 +1,6 @@
 <article class="product-card">
-    {% if product.discount_percent %}
-    <div class="pc-badge">{{ product.discount_percent }}% OFF</div>
+    {% if product.applied_offer_percent %}
+        <div class="pc-badge">{{ product.applied_offer_percent }}% OFF</div>
     {% endif %}
     <a href="{% url 'products:product_detail' product.id %}" aria-hidden="true" tabindex="-1">
         <div class="pc-img">
@@ -23,7 +23,7 @@
                 {% if product.discount_percent %}
                     <span class="pc-final red">₹{{ product.final_price|floatformat:0 }}</span>
                     <span class="pc-base">₹{{ product.base_price|floatformat:0 }}</span>
-                    <span class="pc-off">({{ product.discount_percent }}% off)</span>
+                    <span class="pc-off">({{ product.applied_offer_percent }}% off)</span>
                 {% else %}
                     <span class="pc-final black">₹{{ product.final_price|floatformat:0 }}</span>
                 {% endif %}
@@ -32,8 +32,8 @@
                 {# ── Wishlist toggle ── #}
                 {% if user.is_authenticated %}
                 <form method="post"
-                      action="/shop/wishlist/toggle/{{ product.id }}/"   {# ← FIXED #}
-                      class="pc-action-form">
+                        action="/shop/wishlist/toggle/{{ product.id }}/"   {# ← FIXED #}
+                        class="pc-action-form">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     <button type="submit"
