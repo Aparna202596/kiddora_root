@@ -187,12 +187,12 @@
         {% for d in cart_data %}
         {% with item=d.item variant=d.variant product=d.product %}
         <div class="cart-item {% if not d.available %}unavailable{% elif d.stock == 0 %}out-of-stock{% endif %}"
-             id="cartItem_{{ item.id }}"
-             data-item-id="{{ item.id }}"
-             data-product-id="{{ product.id }}"
-             data-product-name="{{ product.product_name|escapejs }}"
-             data-available="{{ d.available|yesno:'true,false' }}"
-             data-stock="{{ d.stock }}">
+                id="cartItem_{{ item.id }}"
+                data-item-id="{{ item.id }}"
+                data-product-id="{{ product.id }}"
+                data-product-name="{{ product.product_name|escapejs }}"
+                data-available="{{ d.available|yesno:'true,false' }}"
+                data-stock="{{ d.stock }}">
 
             <!-- Image -->
             <div class="item-img">

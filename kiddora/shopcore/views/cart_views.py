@@ -132,6 +132,25 @@ def cart_view(request):
                 "img_url": img_url,
                 "max_qty": min(MAX_QTY, stock) if stock > 0 else 0,
                 "exceeds_stock": (item.quantity > stock) if available else False,
+            
+                # "item": item,
+                # "variant": variant,
+                # "product": product,
+                # "product_name": product.product_name,
+                # "color": variant.color,
+                # "age_group": variant.age_group,
+                # "quantity": item.quantity,
+                # "unit_price": base_price,
+                # "discounted_price": discounted_price.quantize(Decimal("0.01")),
+                # "item_total": item_final_total.quantize(Decimal("0.01")),
+                # "base_item_total": item_base_total.quantize(Decimal("0.01")),
+                # "offer_discount": item_offer_discount.quantize(Decimal("0.01")),
+                # "offer_pct": int(offer_pct),
+                # "available": available,
+                # "stock": stock,
+                # "img_url": _img_url_for(product),
+                # "sku": getattr(variant, "sku", None),
+                # "variant_id": variant.id,
             }
         )
         if available:

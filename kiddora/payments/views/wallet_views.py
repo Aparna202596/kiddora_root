@@ -292,7 +292,7 @@ def wallet_balance(request):
         .order_by("-created_at")
     )
 
-    page_obj = Paginator(transactions, 2).get_page(request.GET.get("page"))
+    page_obj = Paginator(transactions, 15).get_page(request.GET.get("page"))
 
     return render(
         request,
