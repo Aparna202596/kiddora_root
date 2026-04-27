@@ -174,10 +174,19 @@
             {{ oi.variant.color }} · {{ oi.variant.age_group }}
             &nbsp;·&nbsp; Qty: {{ oi.active_quantity }}
             {% if oi.cancelled_quantity > 0 %}
-              <span style="font-size:11px;color:#e65100;">({{ oi.cancelled_quantity }} cancelled)</span>
+                <span style="font-size:11px;color:#e65100;">({{ oi.cancelled_quantity }} cancelled)</span>
             {% endif %}
-            &nbsp;·&nbsp; ₹{{ oi.unit_price }} each
-          </div>
+        </div>
+        <div class="oi-price-breakdown" style="font-size:12px;color:#888;margin-top:4px;line-height:1.7;">
+            Base price: ₹{{ oi.unit_price }} × {{ oi.quantity }}
+            {% if oi.discount_amount > 0 %}
+            · Offer discount: −₹{{ oi.discount_amount|floatformat:2 }}
+            {% endif %}
+            {% if oi.coupon_discount_share > 0 %}
+            · Coupon: −₹{{ oi.coupon_discount_share|floatformat:2 }}
+            {% endif %}
+            · <strong>Paid: ₹{{ oi.final_paid_price|floatformat:2 }}</strong>
+        </div>
           <span class="item-status is-{{ oi.item_status }}">{{ oi.get_item_status_display }}</span>
 
           {% if oi.cancel_reason %}

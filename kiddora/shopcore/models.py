@@ -456,11 +456,15 @@ class OrderItem(models.Model):
 
     cancelled_quantity = models.PositiveIntegerField(default=0)
 
+    coupon_discount_share = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
+
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    final_paid_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
 
     item_status = models.CharField(
         max_length=20, choices=ITEM_STATUS_CHOICES, default="ACTIVE"
@@ -487,6 +491,11 @@ class OrderItem(models.Model):
 
     def save(self, *args, **kwargs):
         self.total_price = (self.unit_price * self.quantity) - self.discount_amount
+        if not self.final_paid_price:
+            self.final_paid_price = max(
+                Decimal("0"),
+                self.total_price - self.coupon_discount_share
+            )
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -534,11 +543,13 @@ class Return(models.Model):
 
     @property
     def per_unit_refund(self) -> Decimal:
-        """Net price per unit after discount, used for partial refunds."""
         qty = self.order_item.quantity
         if not qty:
             return Decimal("0")
-        return (self.order_item.total_price / qty).quantize(Decimal("0.01"))
+        paid = self.order_item.final_paid_price
+        if not paid:
+            paid = self.order_item.total_price - self.order_item.coupon_discount_share
+        return (paid / qty).quantize(Decimal("0.01"))
 
     @property
     def calculated_refund_amount(self) -> Decimal:

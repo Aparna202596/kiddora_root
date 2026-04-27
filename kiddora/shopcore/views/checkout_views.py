@@ -258,6 +258,7 @@ def edit_address(request, address_id):
 
 
 # ──────────────────────────────────── CHECKOUT PAGE (GET) ────────────────────────────────────────
+
 @never_cache
 @user_login_required
 def checkout(request):
@@ -280,7 +281,8 @@ def checkout(request):
         .order_by("-added_at")
     )
 
-    checkout_items = []
+    # ── First pass: compute totals only ──────────────────────────────────────
+    raw_items = []
     subtotal = Decimal("0")
     offer_discount_total = Decimal("0")
     blocked = False
@@ -297,7 +299,6 @@ def checkout(request):
         base_price = product.base_price
         offer_pct = Decimal(str(product.applied_offer_percent))
         discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
-
         item_base_total = base_price * item.quantity
         item_offer_discount = (base_price - discounted_price) * item.quantity
         item_final_total = discounted_price * item.quantity
@@ -305,22 +306,26 @@ def checkout(request):
         subtotal += item_base_total
         offer_discount_total += item_offer_discount
 
-        checkout_items.append(
-            {
-                "item": item,
-                "variant": variant,
-                "product": product,
-                "unit_price": base_price,
-                "discounted_price": discounted_price,
-                "item_total": item_final_total,
-                "base_item_total": item_base_total,
-                "offer_discount": item_offer_discount,
-                "offer_pct": int(offer_pct),
-                "available": available,
-                "stock": stock,
-                "img_url": _img_url_for(product),
-            }
-        )
+        raw_items.append({
+            "item": item,
+            "variant": variant,
+            "product": product,
+            "product_name": product.product_name,
+            "color": variant.color,
+            "age_group": variant.age_group,
+            "quantity": item.quantity,
+            "unit_price": base_price,
+            "discounted_price": discounted_price.quantize(Decimal("0.01")),
+            "item_total": item_final_total.quantize(Decimal("0.01")),
+            "base_item_total": item_base_total.quantize(Decimal("0.01")),
+            "offer_discount": item_offer_discount.quantize(Decimal("0.01")),
+            "offer_pct": int(offer_pct),
+            "available": available,
+            "stock": stock,
+            "img_url": _img_url_for(product),
+            "sku": getattr(variant, "sku", None),
+            "variant_id": variant.id,
+        })
 
     if blocked:
         messages.error(
@@ -330,8 +335,10 @@ def checkout(request):
         )
         return redirect("shopcore:cart")
 
+    # ── Coupon + shipping now that totals are known ───────────────────────────
     price_after_offers = subtotal - offer_discount_total
     applied_coupon, coupon_discount = _session_coupon(request, price_after_offers)
+
     temp_order = Order(
         total_amount=price_after_offers,
         discount_amount=offer_discount_total,
@@ -339,11 +346,35 @@ def checkout(request):
     )
     shipping_charge = temp_order.calculate_shipping()
     grand_total = price_after_offers - coupon_discount + shipping_charge
+
+    # ── Second pass: attach per-item coupon share ─────────────────────────────
+    checkout_items = []
+    for entry in raw_items:
+        item_final_total = entry["item_total"]
+        item_coupon_display = (
+            (item_final_total / (price_after_offers or Decimal("1"))) * coupon_discount
+        ).quantize(Decimal("0.01")) if coupon_discount else Decimal("0")
+        item_final_after_coupon = (item_final_total - item_coupon_display).quantize(Decimal("0.01"))
+
+        savings_per_unit = (
+            (entry["unit_price"] - entry["discounted_price"]).quantize(Decimal("0.01"))
+            if entry["offer_pct"] > 0 else Decimal("0")
+        )
+
+        checkout_items.append({
+            **entry,
+            "coupon_share": item_coupon_display,
+            "item_final_after_coupon": item_final_after_coupon,
+            "savings_per_unit": savings_per_unit,
+            "total_savings": (entry["offer_discount"] + item_coupon_display).quantize(Decimal("0.01")),
+        })
+
+    # ── Rest of the view ─────────────────────────────────────────────────────
     cod_blocked = grand_total > Decimal("1000")
     wallet_balance = _wallet_balance(request.user)
     wallet_sufficient = wallet_balance >= grand_total
-
     now = timezone.now()
+
     new_user_referral_coupon_ids = ReferralUse.objects.filter(
         referred_user=request.user
     ).values_list("new_user_coupon_id", flat=True)
@@ -395,6 +426,10 @@ def checkout(request):
         "amount_to_free_shipping": max(
             Decimal("0"), Order.FREE_SHIPPING_THRESHOLD - price_after_offers
         ),
+        "total_items": sum(e["quantity"] for e in raw_items),
+        "total_offer_savings": offer_discount_total,
+        "total_coupon_savings": coupon_discount,
+        "total_savings": (offer_discount_total + coupon_discount).quantize(Decimal("0.01")),
     }
 
     return render(
@@ -420,8 +455,6 @@ def checkout(request):
             "price_breakdown": price_breakdown,
         },
     )
-
-
 # ──────────────────────────────────────── PLACE ORDER (POST) ─────────────────────────────────────
 @never_cache
 @user_login_required
@@ -561,19 +594,38 @@ def place_order(request):
             order_status="ORDER NOT PLACED",
         )
 
+    items_post_offer_total = sum(
+        (item.variant.product.base_price * item.quantity)
+        - item_offer_data.get(item.variant_id, Decimal("0"))
+        for item in items
+    ) or Decimal("1")  
+
     for item in items:
         variant = item.variant
         base_price = variant.product.base_price
         item_disc = item_offer_data.get(item.variant_id, Decimal("0"))
+        post_offer_line = (base_price * item.quantity) - item_disc
+
+        if coupon_discount and items_post_offer_total:
+            item_coupon_share = (
+                (post_offer_line / items_post_offer_total) * coupon_discount
+            ).quantize(Decimal("0.01"))
+        else:
+            item_coupon_share = Decimal("0")
+
+        item_final_paid = (post_offer_line - item_coupon_share).quantize(Decimal("0.01"))
 
         OrderItem.objects.create(
             order=order,
             variant=variant,
             quantity=item.quantity,
-            unit_price=base_price,          
-            discount_amount=item_disc,      
+            unit_price=base_price,
+            discount_amount=item_disc,
+            coupon_discount_share=item_coupon_share,
+            final_paid_price=item_final_paid,
             item_status="PENDING",
         )
+
         inv = variant.inventory
         inv.quantity_available = max(0, inv.quantity_available - item.quantity)
         inv.quantity_sold += item.quantity

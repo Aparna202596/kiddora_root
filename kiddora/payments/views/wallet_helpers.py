@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from payments.models import Wallet, WalletTransaction
-from shopcore.models import CouponUsage
+from shopcore.models import CouponUsage, Coupon
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +112,6 @@ def _finalize_order_after_payment(request, order):
 
     coupon_id = request.session.pop("pending_coupon_id", None)
     if coupon_id:
-        from shopcore.models import Coupon
 
         try:
             coupon = Coupon.objects.get(id=coupon_id)

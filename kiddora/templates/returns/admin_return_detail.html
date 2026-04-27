@@ -269,14 +269,25 @@
                 </div>
                 <div class="card-body">
 
-                    <!-- Return Details Meta -->
                     <div class="meta-info">
                         <strong>Order ID:</strong> {{ ret.order_item.order.order_id }}<br>
                         <strong>Customer:</strong> {{ ret.order_item.order.user.email }}<br>
                         <strong>Return Quantity:</strong> {{ ret.return_quantity|default:ret.order_item.quantity }} unit(s)<br>
-                        <strong>Refund Amount:</strong> ₹{{ ret.refund_amount|default:"944.10"|floatformat:2 }}
+                        <hr style="margin:8px 0;border:none;border-top:1px solid #eee;">
+                        <strong>Price breakdown (per item):</strong><br>
+                        Base price: ₹{{ ret.order_item.unit_price|floatformat:2 }}<br>
+                        {% if ret.order_item.discount_amount > 0 %}
+                        Offer discount: −₹{{ ret.order_item.discount_amount|floatformat:2 }}<br>
+                        {% endif %}
+                        {% if ret.order_item.coupon_discount_share > 0 %}
+                        Coupon share: −₹{{ ret.order_item.coupon_discount_share|floatformat:2 }}<br>
+                        {% endif %}
+                        Final paid (all {{ ret.order_item.quantity }} units): ₹{{ ret.order_item.final_paid_price|floatformat:2 }}<br>
+                        Per unit paid: ₹{{ ret.per_unit_refund|floatformat:2 }}<br>
+                        <hr style="margin:8px 0;border:none;border-top:1px solid #eee;">
+                        <strong>Refundable amount:</strong> ₹{{ ret.calculated_refund_amount|floatformat:2 }}<br>
+                        <strong>Approved refund:</strong> ₹{{ ret.refund_amount|default:ret.calculated_refund_amount|floatformat:2 }}
                     </div>
-
                     {% if ret.status == "REQUESTED" %}
                         <form method="post" action="{% url 'shopcore:admin_approve_return' return_id=ret.id %}">
                             {% csrf_token %}

@@ -92,27 +92,52 @@ def _recalculate_order_amount(order: Order) -> None:
 
     subtotal = Decimal("0")
     for item in active_items:
-        per_unit_net = (
-            item.total_price / item.quantity if item.quantity else Decimal("0")
-        )
-        subtotal += per_unit_net * item.active_quantity
+        if item.final_paid_price and item.quantity:
+            per_unit_paid = item.final_paid_price / item.quantity
+            subtotal += (per_unit_paid * item.active_quantity).quantize(Decimal("0.01"))
+        else:
+            per_unit_net = (
+                item.total_price / item.quantity if item.quantity else Decimal("0")
+            )
+            subtotal += per_unit_net * item.active_quantity
 
-    order.total_amount = subtotal
+    # Track post-offer subtotal separately for coupon validity check
+    post_offer_subtotal = Decimal("0")
+    paid_subtotal = Decimal("0")
+
+    for item in active_items:
+        post_offer_line = item.total_price  # post-offer, pre-coupon
+        if item.quantity and item.active_quantity < item.quantity:
+            # Proportional slice for partially cancelled items
+            ratio = Decimal(item.active_quantity) / Decimal(item.quantity)
+            post_offer_subtotal += (post_offer_line * ratio).quantize(Decimal("0.01"))
+        else:
+            post_offer_subtotal += post_offer_line
+
+        if item.final_paid_price and item.quantity:
+            per_unit_paid = item.final_paid_price / item.quantity
+            paid_subtotal += (per_unit_paid * item.active_quantity).quantize(Decimal("0.01"))
+        else:
+            per_unit_net = (
+                item.total_price / item.quantity if item.quantity else Decimal("0")
+            )
+            paid_subtotal += per_unit_net * item.active_quantity
+
+    order.total_amount = post_offer_subtotal  # what the coupon checks against
 
     if order.coupon:
-        if subtotal < order.coupon.min_order_amount:
+        if post_offer_subtotal < order.coupon.min_order_amount:
             order.coupon = None
             order.coupon_discount = Decimal("0")
         else:
-            order.coupon_discount = compute_coupon_discount(order.coupon, subtotal)
+            order.coupon_discount = compute_coupon_discount(order.coupon, post_offer_subtotal)
     else:
         order.coupon_discount = Decimal("0")
 
     order.shipping_charge = order.calculate_shipping()
-    total_deductions = order.discount_amount + order.coupon_discount
-    order.final_amount = max(
-        Decimal("0"), subtotal - total_deductions + order.shipping_charge
-    )
+    order.final_amount = max(Decimal("0"), paid_subtotal + order.shipping_charge)
+
+
     order.save(
         update_fields=[
             "total_amount",
@@ -317,11 +342,14 @@ def cancel_order_item(request, order_id, item_id):
     except Exception:
         pass
 
-    per_unit_net = (
-        order_item.total_price / order_item.quantity
-        if order_item.quantity
-        else Decimal("0")
-    )
+    if order_item.final_paid_price:
+        per_unit_net = (order_item.final_paid_price / order_item.quantity).quantize(Decimal("0.01"))
+    else:
+        per_unit_net = (
+            order_item.total_price / order_item.quantity
+            if order_item.quantity
+            else Decimal("0")
+        )
     item_refund_amount = (per_unit_net * cancel_qty).quantize(Decimal("0.01"))
 
     if order.payment_status == "PAID" and order.payment_method in ("PAYPAL", "WALLET"):
@@ -659,14 +687,26 @@ def admin_handle_return(request, return_id):
         ret.status = "APPROVED"
         ret.admin_note = admin_note or "Return approved by admin."
         ret.updated_at = timezone.now()
-        ret.save(update_fields=["status", "admin_note", "updated_at"])
+        ret.refund_amount = refund_amount
+        ret.save(update_fields=["status", "admin_note", "updated_at", "refund_amount"])
 
         order_item.item_status = "REFUNDED"
         order_item.save(update_fields=["item_status"])
 
         _restore_inventory(order_item)
 
-        refund_amount = order_item.active_total
+        if order_item.final_paid_price:
+            per_unit_paid = (order_item.final_paid_price / order_item.quantity
+                            if order_item.quantity else Decimal("0"))
+        else:
+            oi_total = sum(
+                x.total_price for x in order.order_items.all()
+            ) or Decimal("1")
+            item_paid = (order_item.total_price / oi_total) * order.final_amount
+            per_unit_paid = (item_paid / order_item.quantity
+                            if order_item.quantity else Decimal("0"))
+
+        refund_amount = (per_unit_paid * order_item.active_quantity).quantize(Decimal("0.01"))
         credit_refund_to_wallet(
             user=order.user,
             amount=refund_amount,

@@ -82,11 +82,18 @@ def request_return(request, order_id, item_id):
 
     order_items_total = sum(
         oi.total_price for oi in order.order_items.all()
-    ) or Decimal("1")  # guard against zero-total edge case
+    ) or Decimal("1") 
 
-    item_paid_total = (order_item.total_price / order_items_total) * order.final_amount
+    if order_item.final_paid_price:
+        paid_for_item = order_item.final_paid_price
+    else:
+        order_items_total = sum(
+            oi.total_price for oi in order.order_items.all()
+        ) or Decimal("1")
+        paid_for_item = (order_item.total_price / order_items_total) * order.final_amount
+
     per_unit_paid = (
-        item_paid_total / order_item.quantity
+        paid_for_item / order_item.quantity
         if order_item.quantity
         else Decimal("0")
     )
@@ -199,13 +206,19 @@ def admin_approve_return(request, return_id):
     order = oi.order
 
     return_qty = ret.return_quantity or oi.active_quantity
-    oi_total = sum(
-    x.total_price for x in order.order_items.all()
-    ) or Decimal("1")
-    item_paid_total = (oi.total_price / oi_total) * order.final_amount
-    return_qty = ret.return_quantity or oi.active_quantity
-    per_unit_paid = item_paid_total / oi.quantity if oi.quantity else Decimal("0")
-    refund_amount = (per_unit_paid * return_qty).quantize(Decimal("0.01"))
+
+    if ret.refund_amount:
+        refund_amount = ret.refund_amount
+    else:
+        if oi.final_paid_price:
+            per_unit_paid = (oi.final_paid_price / oi.quantity) if oi.quantity else Decimal("0")
+        else:
+            oi_total = sum(
+                x.total_price for x in order.order_items.all()
+            ) or Decimal("1")
+            item_paid_total = (oi.total_price / oi_total) * order.final_amount
+            per_unit_paid = item_paid_total / oi.quantity if oi.quantity else Decimal("0")
+        refund_amount = (per_unit_paid * return_qty).quantize(Decimal("0.01"))
 
     ret.status = "APPROVED"
     ret.admin_note = request.POST.get("admin_note", "Return approved.").strip()
@@ -213,13 +226,7 @@ def admin_approve_return(request, return_id):
     ret.updated_at = timezone.now()
     ret.approved_at = timezone.now()
     ret.save(
-        update_fields=[
-            "status",
-            "admin_note",
-            "refund_amount",
-            "updated_at",
-            "approved_at",
-        ]
+        update_fields=["status", "admin_note", "refund_amount", "updated_at", "approved_at"]
     )
 
     is_full_return = return_qty >= oi.active_quantity

@@ -254,7 +254,31 @@
                 </div>
                 <div class="ck-price-col">
                     <div class="ck-qty">Qty: {{ d.item.quantity }}</div>
+
+                    {% if d.offer_pct > 0 or d.coupon_share > 0 %}
+                    <!-- original price struck through -->
+                    <div style="font-size:11px; color:#aaa; text-decoration:line-through; margin-bottom:1px;">
+                        ₹{{ d.base_item_total|floatformat:2 }}
+                    </div>
+                    {% endif %}
+
+                    <!-- price after offer only -->
+                    {% if d.offer_pct > 0 %}
+                    <div style="font-size:12px; color:#555; margin-bottom:1px;">
+                        After offer: ₹{{ d.item_total|floatformat:2 }}
+                    </div>
+                    {% endif %}
+
+                    <!-- final price after offer + coupon -->
+                    {% if d.coupon_share and d.coupon_share > 0 %}
+                    <div class="ck-final-price" style="color:#7c3aed;">
+                        ₹{{ d.item_final_after_coupon|floatformat:2 }}
+                    </div>
+                    <div style="font-size:10px; color:#aaa; margin-top:1px;">after offer & coupon</div>
+                    {% else %}
                     <div class="ck-final-price">₹{{ d.item_total|floatformat:2 }}</div>
+                    {% endif %}
+
                     {% if d.offer_discount and d.offer_discount > 0 %}
                     <div class="ck-saving">Save ₹{{ d.offer_discount|floatformat:2 }}</div>
                     {% endif %}
@@ -358,56 +382,124 @@
     <!-- ══ RIGHT ══ -->
     <div class="checkout-right">
 
-        <!-- PRICE SUMMARY -->
-        <div class="summary-card">
-            <h3>💰 Price Details</h3>
+            <!-- PRICE SUMMARY -->
+            <div class="summary-card">
+                <h3>💰 Price Details</h3>
 
-            <div class="sum-row">
-                <span>Subtotal ({{ checkout_items|length }} item{{ checkout_items|length|pluralize }})</span>
-                <span>₹{{ price_breakdown.subtotal|floatformat:2 }}</span>
-            </div>
+                    <!-- Per-item breakdown -->
+                <div style="margin-bottom:12px; border-bottom:1px dashed #f0d6e0; padding-bottom:12px;">
+                    {% for d in checkout_items %}
+                    <div style="margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #f9f0f4;">
+                        
+                        <!-- Product name + variant -->
+                        <div style="font-size:12px; font-weight:700; color:#333; margin-bottom:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            {{ d.product_name }}
+                            <span style="font-weight:400; color:#999; font-size:11px;">× {{ d.quantity }}</span>
+                        </div>
+                        <div style="font-size:10px; color:#bbb; margin-bottom:6px;">{{ d.color }} · {{ d.age_group }}</div>
 
-            {% if price_breakdown.offer_discount and price_breakdown.offer_discount > 0 %}
-            <div class="sum-row" style="color:#15803d;">
-                <span>🏷️ Offer Discount</span>
-                <span>– ₹{{ price_breakdown.offer_discount|floatformat:2 }}</span>
-            </div>
-            {% endif %}
+                        <!-- Price rows table-style -->
+                        <div style="display:flex; flex-direction:column; gap:3px;">
 
-            <div class="sum-row">
-                <span>Price After Offers</span>
-                <span>₹{{ price_breakdown.price_after_offers|floatformat:2 }}</span>
-            </div>
+                            <!-- Row 1: Original price -->
+                            <div style="display:flex; justify-content:space-between; font-size:11px;">
+                                <span style="color:#aaa;">Original price</span>
+                                <span style="color:#aaa; text-decoration:line-through;">₹{{ d.base_item_total|floatformat:2 }}</span>
+                            </div>
 
-            <div class="sum-row coupon" id="summCouponRow"
-                style="{% if not price_breakdown.coupon_discount or price_breakdown.coupon_discount == 0 %}display:none;{% endif %}">
-                <span>🏷️ Coupon (<span id="summCouponCode">{% if applied_coupon %}{{ applied_coupon.code }}{% endif %}</span>)</span>
-                <span>– ₹<span id="summCouponAmt">{{ price_breakdown.coupon_discount|floatformat:2 }}</span></span>
-            </div>
+                            <!-- Row 2: After offer (only if offer exists) -->
+                            {% if d.offer_pct > 0 %}
+                            <div style="display:flex; justify-content:space-between; font-size:11px;">
+                                <span style="color:#15803d;">
+                                    After offer
+                                    <span style="background:#dcfce7; color:#15803d; border-radius:20px; padding:1px 5px; font-weight:700; font-size:10px; margin-left:2px;">{{ d.offer_pct }}% off</span>
+                                </span>
+                                <span style="color:#15803d; font-weight:600;">₹{{ d.item_total|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
 
-            <div class="sum-row">
-                <span>Shipping</span>
-                <span>
-                    {% if price_breakdown.free_shipping %}
-                        <span class="free">🎁 Free</span>
-                    {% else %}
-                        ₹{{ price_breakdown.shipping_charge }}
-                    {% endif %}
-                </span>
-            </div>
+                            <!-- Row 3: After coupon (only if coupon applied to this item) -->
+                            {% if d.coupon_share and d.coupon_share > 0 %}
+                            <div style="display:flex; justify-content:space-between; font-size:11px;">
+                                <span style="color:#7c3aed;">
+                                    After coupon
+                                    <span style="background:#ede9fe; color:#7c3aed; border-radius:20px; padding:1px 5px; font-weight:700; font-size:10px; margin-left:2px;">−₹{{ d.coupon_share|floatformat:2 }}</span>
+                                </span>
+                                <span style="color:#7c3aed; font-weight:600;">₹{{ d.item_final_after_coupon|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
 
-            <div class="sum-row total">
-                <span>Grand Total</span>
-                <!-- ↓ updateSummary() writes the new total here -->
-                <span>₹<span id="summGrandTotal">{{ price_breakdown.grand_total|floatformat:2 }}</span></span>
-            </div>
+                            <!-- Row 4: Final price (bold) -->
+                            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-top:2px; padding-top:3px; border-top:1px dashed #f0e4f0;">
+                                <span style="color:#222;">
+                                    You pay
+                                    <span style="font-size:10px; color:#aaa; font-weight:400;">
+                                        (₹{{ d.discounted_price|floatformat:2 }} × {{ d.quantity }})
+                                    </span>
+                                </span>
+                                <span style="color:{% if d.coupon_share and d.coupon_share > 0 %}#7c3aed{% elif d.offer_pct > 0 %}#15803d{% else %}#222{% endif %};">
+                                    ₹{% if d.coupon_share and d.coupon_share > 0 %}{{ d.item_final_after_coupon|floatformat:2 }}{% else %}{{ d.item_total|floatformat:2 }}{% endif %}
+                                </span>
+                            </div>
 
-            {% if not price_breakdown.free_shipping %}
-            <div style="font-size:11px;color:#16a34a;">
-                Add ₹{{ price_breakdown.amount_to_free_shipping|floatformat:0 }} more for FREE shipping 🚚
+                            <!-- Row 5: Total savings for this item -->
+                            {% if d.total_savings and d.total_savings > 0 %}
+                            <div style="font-size:10px; color:#16a34a; text-align:right; margin-top:1px;">
+                                🎉 You save ₹{{ d.total_savings|floatformat:2 }} on this item
+                            </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Totals -->
+                <div class="sum-row">
+                    <span>Subtotal ({{ checkout_items|length }} item{{ checkout_items|length|pluralize }})</span>
+                    <span>₹{{ price_breakdown.subtotal|floatformat:2 }}</span>
+                </div>
+                {% if price_breakdown.offer_discount and price_breakdown.offer_discount > 0 %}
+                <div class="sum-row" style="color:#15803d;">
+                    <span>🏷️ Offer Discount</span>
+                    <span>– ₹{{ price_breakdown.offer_discount|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                <div class="sum-row">
+                    <span>Price After Offers</span>
+                    <span>₹{{ price_breakdown.price_after_offers|floatformat:2 }}</span>
+                </div>
+                <div class="sum-row coupon" id="summCouponRow"
+                    style="{% if not price_breakdown.coupon_discount or price_breakdown.coupon_discount == 0 %}display:none;{% endif %}">
+                    <span>🏷️ Coupon (<span id="summCouponCode">{% if applied_coupon %}{{ applied_coupon.code }}{% endif %}</span>)</span>
+                    <span>– ₹<span id="summCouponAmt">{{ price_breakdown.coupon_discount|floatformat:2 }}</span></span>
+                </div>
+                <div class="sum-row">
+                    <span>Shipping</span>
+                    <span>
+                        {% if price_breakdown.free_shipping %}
+                            <span class="free">🎁 Free</span>
+                        {% else %}
+                            ₹{{ price_breakdown.shipping_charge }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% if price_breakdown.total_savings and price_breakdown.total_savings > 0 %}
+                <div class="sum-row" style="color:#15803d; font-size:12px; background:#f0fdf4; border-radius:8px; padding:6px 10px; margin-bottom:4px;">
+                    <span>🎉 Total Savings</span>
+                    <span>– ₹{{ price_breakdown.total_savings|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                <div class="sum-row total">
+                    <span>Grand Total</span>
+                    <span>₹<span id="summGrandTotal">{{ price_breakdown.grand_total|floatformat:2 }}</span></span>
+                </div>
+                {% if not price_breakdown.free_shipping %}
+                <div style="font-size:11px;color:#16a34a;">
+                    Add ₹{{ price_breakdown.amount_to_free_shipping|floatformat:0 }} more for FREE shipping 🚚
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
 
         <!-- PAYMENT METHOD -->
         <div class="ck-card">
