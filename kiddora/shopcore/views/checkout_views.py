@@ -16,6 +16,7 @@ from shopcore.models import (Cart, Coupon, CouponUsage, Order, OrderItem,
 from shopcore.views.coupon_views import compute_coupon_discount
 from shopcore.views.offer_views import (get_max_offer_discount_percent)
 
+import re
 # ──────────────────────────────────────────── HELPER FUNCTIONS ───────────────────────────────────
 
 def _get_cart(user):
@@ -201,7 +202,42 @@ def revalidate_order_after_item_change(order: Order) -> dict:
     )
     return result
 
+def _validate_user_profile(user):
+    from accounts.models import validate_full_name, validate_phone
+    from django.core.exceptions import ValidationError
+    errors = []
 
+    full_name = (user.full_name or "").strip()
+    if not full_name:
+        errors.append(
+            "Your profile is missing a full name. "
+            "Please update your profile before placing an order."
+        )
+    else:
+        try:
+            validate_full_name(full_name)
+        except ValidationError as e:
+            errors.append(
+                f"Invalid full name in your profile: {' '.join(e.messages)} "
+                "Please update your profile."
+            )
+
+    phone = (user.phone or "").strip()
+    if not phone:
+        errors.append(
+            "Your profile is missing a phone number. "
+            "Please update your profile before placing an order."
+        )
+    else:
+        try:
+            validate_phone(phone)
+        except ValidationError as e:
+            errors.append(
+                f"Invalid phone number in your profile: {' '.join(e.messages)} "
+                "Please update your profile."
+            )
+
+    return errors
 # ────────────────────────────────────────── SAVE NEW ADDRESS ─────────────────────────────────────
 @never_cache
 @user_login_required
@@ -297,7 +333,7 @@ def checkout(request):
             blocked = True
 
         base_price = product.base_price
-        offer_pct = Decimal(str(product.applied_offer_percent))
+        offer_pct = Decimal(str(get_max_offer_discount_percent(product)))
         discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
         item_base_total = base_price * item.quantity
         item_offer_discount = (base_price - discounted_price) * item.quantity
@@ -468,6 +504,11 @@ def place_order(request):
         messages.error(request, "Your cart is empty.")
         return redirect("shopcore:cart")
 
+    profile_errors = _validate_user_profile(request.user)
+    if profile_errors:
+        for err in profile_errors:
+            messages.error(request, err)
+        return redirect("accounts:edit_profile")
     payment_method = request.POST.get("payment_method", "COD").upper()
     if payment_method not in ("COD", "WALLET", "PAYPAL"):
         messages.error(request, "Invalid payment method selected.")

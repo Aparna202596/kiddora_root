@@ -118,10 +118,17 @@ def apply_coupon(request):
         if not cart:
             messages.error(request, "No active cart found.")
             return redirect("shopcore:checkout")
-        subtotal = sum(
-            item.variant.product.final_price * item.quantity
-            for item in cart.items.select_related("variant__product")
-        )
+        from shopcore.views.offer_views import get_max_offer_discount_percent
+        subtotal = Decimal("0")
+        for item in cart.items.select_related(
+            "variant__product",
+            "variant__product__subcategory",
+            "variant__product__subcategory__category",
+        ):
+            base_price = item.variant.product.base_price
+            offer_pct = Decimal(str(get_max_offer_discount_percent(item.variant.product)))
+            discounted = base_price * (Decimal("1") - offer_pct / Decimal("100"))
+            subtotal += discounted * item.quantity
 
     if subtotal < coupon.min_order_amount:
         msg = (

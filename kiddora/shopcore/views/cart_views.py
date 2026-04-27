@@ -9,6 +9,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from products.models import Product, ProductVariant
 from shopcore.models import Cart, CartItem, Order, Wishlist, WishlistItem
+from shopcore.views.offer_views import get_max_offer_discount_percent
 
 MAX_QTY = CartItem.MAX_QTY_PER_PRODUCT
 
@@ -48,8 +49,9 @@ def _is_ajax(request) -> bool:
     return request.headers.get("x-requested-with") == "XMLHttpRequest"
 
 
-def _cart_subtotal(cart) -> float:
-    total = 0
+def _cart_subtotal(cart) -> Decimal:
+    from shopcore.views.offer_views import get_max_offer_discount_percent
+    total = Decimal("0")
     for item in cart.items.select_related(
         "variant__product",
         "variant__product__subcategory",
@@ -57,8 +59,13 @@ def _cart_subtotal(cart) -> float:
         "variant__inventory",
     ).all():
         if _variant_is_available(item.variant):
-            total += float(item.variant.product.final_price) * item.quantity
+            product = item.variant.product
+            base_price = product.base_price
+            offer_pct = Decimal(str(get_max_offer_discount_percent(product)))
+            discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
+            total += discounted_price * item.quantity
     return total
+
 
 
 # ────────────────────────────────────────────────── CART VIEWS ──────────────────────────────────────────────────
@@ -90,7 +97,13 @@ def cart_view(request):
         available = _variant_is_available(variant)
         stock = _stock_for(variant)
         product = variant.product
-        item_total = product.final_price * item.quantity if available else 0
+        if available:
+            base_price = product.base_price
+            offer_pct = Decimal(str(get_max_offer_discount_percent(product)))
+            discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
+            item_total = discounted_price * item.quantity
+        else:
+            item_total = Decimal("0")
 
         img_url = None
         img_obj = (
@@ -268,14 +281,22 @@ def remove_from_cart(request, item_id):
     cart_item.delete()
 
     if ajax:
+        new_subtotal = _cart_subtotal(cart)
+        temp_order = Order(
+            total_amount=new_subtotal,
+            discount_amount=Decimal("0"),
+            coupon_discount=Decimal("0"),
+        )
+        new_shipping = temp_order.calculate_shipping()
         return JsonResponse(
             {
                 "success": True,
                 "item_id": item_id,
                 "product_name": product_name,
                 "saved_to_wishlist": saved_to_wishlist,
-                "subtotal": str(_cart_subtotal(cart)),
-                "grand_total": str(_cart_subtotal(cart)),
+                "subtotal": str(new_subtotal),
+                "shipping_charge": str(new_shipping),
+                "grand_total": str(new_subtotal + new_shipping),
                 "cart_count": cart.items.count(),
             }
         )
@@ -340,10 +361,19 @@ def update_cart_quantity(request, item_id):
     cart_item.quantity = qty
     cart_item.save()
 
-    item_total = float(variant.product.final_price) * qty
+    base_price = variant.product.base_price
+    offer_pct = Decimal(str(get_max_offer_discount_percent(variant.product)))
+    discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
+    item_total = discounted_price * qty
     subtotal = _cart_subtotal(cart)
 
     if ajax:
+        temp_order = Order(
+            total_amount=subtotal,
+            discount_amount=Decimal("0"),
+            coupon_discount=Decimal("0"),
+        )
+        shipping = temp_order.calculate_shipping()
         return JsonResponse(
             {
                 "success": True,
@@ -351,7 +381,8 @@ def update_cart_quantity(request, item_id):
                 "max_qty": min(MAX_QTY, stock),
                 "item_total": str(item_total),
                 "subtotal": str(subtotal),
-                "grand_total": str(subtotal),
+                "shipping_charge": str(shipping),
+                "grand_total": str(subtotal + shipping),
                 "warning": warning,
             }
         )

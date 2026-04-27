@@ -178,8 +178,19 @@ class Offer(models.Model):
 
 @receiver(post_save, sender=Offer)
 def refresh_products_on_offer_change(sender, instance, **kwargs):
-    for product in instance.applied_to_products.select_related("product_offer").iterator():
-        product.save()
+    if instance.offer_type == "PRODUCT" and instance.product_id:
+        products = Product.objects.filter(pk=instance.product_id)
+    elif instance.offer_type == "CATEGORY" and instance.category_id:
+        products = Product.objects.filter(
+            subcategory__category_id=instance.category_id,
+            is_active=True,
+            is_deleted=False,
+        )
+    else:
+        return
+
+    for product in products.select_related("product_offer"):
+        product.save(update_fields=["final_price", "updated_at"])
 
 #   ────────────────────────────────────────────────── REFERRAL ──────────────────────────────────────────────────
 class ReferralCode(models.Model):
@@ -397,6 +408,23 @@ class Order(models.Model):
     class Meta:
         ordering = ["-order_date"]
 
+    @property
+    def is_free_shipping(self) -> bool:
+        return self.shipping_charge == 0
+
+    def __str__(self):
+        return self.order_id
+
+
+    FREE_SHIPPING_THRESHOLD = Decimal("1000")
+    DEFAULT_SHIPPING_CHARGE = Decimal("100")
+
+    def calculate_shipping(self, price_after_offers: Decimal = None) -> Decimal:
+        check_amount = price_after_offers if price_after_offers is not None else self.total_amount
+        if check_amount >= self.FREE_SHIPPING_THRESHOLD:
+            return Decimal("0")
+        return self.DEFAULT_SHIPPING_CHARGE
+
     def save(self, *args, **kwargs):
         if not self.order_id:
             while True:
@@ -405,31 +433,18 @@ class Order(models.Model):
                     self.order_id = oid
                     break
 
-        if self.shipping_charge is None or self.shipping_charge == Decimal("100"):
-            self.shipping_charge = self.calculate_shipping()
+        if self.pk is None and self.shipping_charge == Decimal("100"):
+            price_after_offers = self.total_amount - self.discount_amount
+            self.shipping_charge = self.calculate_shipping(price_after_offers=price_after_offers)
 
-        if self.final_amount == 0 or self.final_amount is None:
+        if not self.final_amount:
             self.final_amount = (
                 self.total_amount
                 - self.discount_amount
                 - self.coupon_discount
                 + self.shipping_charge
             )
-
         super().save(*args, **kwargs)
-
-    def calculate_shipping(self) -> Decimal:
-        if self.total_amount >= self.FREE_SHIPPING_THRESHOLD:
-            return Decimal("0")
-        return self.DEFAULT_SHIPPING_CHARGE
-
-    @property
-    def is_free_shipping(self) -> bool:
-        return self.shipping_charge == 0
-
-    def __str__(self):
-        return self.order_id
-
 
 #  ────────────────────────────────────────────────── ORDER ITEM ──────────────────────────────────────────────────
 class OrderItem(models.Model):

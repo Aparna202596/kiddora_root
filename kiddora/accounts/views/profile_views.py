@@ -13,6 +13,8 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from shopcore.models import Order
 from shopcore.views.referral_views import get_or_create_referral_record
+from accounts.models import validate_full_name, validate_phone 
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -68,37 +70,61 @@ def delete_profile(request):
 
 
 #  ────────────────────────────────────────────────── EDIT PROFILE ──────────────────────────────────────────────────
+
+
 @never_cache
 @user_login_required
 def edit_profile(request):
     user = request.user
     if request.method == "POST":
+        form_data  = request.POST.dict()
+        full_name  = request.POST.get("full_name", "").strip()
+        phone      = request.POST.get("phone", "").strip()
+        errors = []
 
-        form_data = request.POST.dict()
+        if not full_name:
+            errors.append("Full name is required.")
+        else:
+            try:
+                validate_full_name(full_name)
+            except ValidationError as e:
+                errors.extend(e.messages)
 
-        full_name = request.POST.get("full_name")
-        phone = request.POST.get("phone")
+        if not phone:
+            errors.append("Phone number is required.")
+        else:
+            try:
+                validate_phone(phone)
+            except ValidationError as e:
+                errors.extend(e.messages)
+            else:
 
-        if not full_name or not phone:
-            messages.error(request, "Name & phone required")
+                if (
+                    CustomUser.objects.filter(phone=phone)
+                    .exclude(pk=user.pk)
+                    .exists()
+                ):
+                    errors.append("This phone number is already registered to another account.")
+
+        if errors:
+            for err in errors:
+                messages.error(request, err)
             return render(
                 request,
                 "accounts/profile/edit_profile.html",
                 {"user": user, "form_data": form_data},
             )
 
-        user.full_name = request.POST.get("full_name")
-        user.phone = request.POST.get("phone")
+        user.full_name = ' '.join(full_name.split())   # collapse any extra spaces
+        user.phone = phone
         user.gender = request.POST.get("gender")
-
         if "profile_image" in request.FILES:
             user.profile_image = request.FILES["profile_image"]
-
         user.save()
-        messages.success(request, "Profile updated successfully")
+        messages.success(request, "Profile updated successfully.")
         return redirect("accounts:user_profile")
-    return render(request, "accounts/profile/edit_profile.html", {"user": user})
 
+    return render(request, "accounts/profile/edit_profile.html", {"user": user})
 
 #  ────────────────────────────────────────────────── USER PROFILE ──────────────────────────────────────────────────
 @never_cache

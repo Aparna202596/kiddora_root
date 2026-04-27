@@ -115,28 +115,17 @@ class Product(models.Model):
         ordering = ["-created_at"]
 
     def save(self, *args, **kwargs):
+        from shopcore.views.offer_views import get_max_offer_discount_percent
         base = Decimal(str(self.base_price or 0))
-        offer_pct = Decimal("0")
-        # Only apply the offer when the FK is set AND the offer is currently valid.
-        if self.product_offer_id:
-            try:
-                offer = self.product_offer
-                if offer and offer.is_valid():
-                    offer_pct = Decimal(str(offer.discount_percent))
-            except Exception:
-                pass
-        self.final_price = base - (base * offer_pct / Decimal("100"))
+        # Use the same dynamic offer lookup as cart/checkout
+        offer_pct = Decimal(str(get_max_offer_discount_percent(self)))
+        self.final_price = (base - (base * offer_pct / Decimal("100"))).quantize(Decimal("0.01"))
         super().save(*args, **kwargs)
 
     @property
     def applied_offer_percent(self):
-        if self.product_offer_id:
-            try:
-                if self.product_offer.is_valid():
-                    return self.product_offer.discount_percent
-            except Exception:
-                pass
-        return 0
+        from shopcore.views.offer_views import get_max_offer_discount_percent
+        return get_max_offer_discount_percent(self)
 
     def __str__(self):
         return self.product_name
