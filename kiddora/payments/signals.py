@@ -6,14 +6,17 @@ from payments.models import Payment, WalletTransaction
 
 @receiver(post_save, sender=Payment)
 def auto_wallet_refund_on_failure(sender, instance, created, **kwargs):
-
     if instance.payment_status != "FAILED":
         return
     if instance.payment_method != "WALLET":
         return
 
+    ref_id = f"order-fail-{instance.order.id}"
+
     if WalletTransaction.objects.filter(
-        reference_type="ORDER", reference_id=str(instance.order.id), txn_type="REFUND"
+        reference_type="ORDER",
+        reference_id=ref_id,
+        txn_type="REFUND",
     ).exists():
         return
 
@@ -24,10 +27,12 @@ def auto_wallet_refund_on_failure(sender, instance, created, **kwargs):
 
     wallet.balance += instance.amount
     wallet.save(update_fields=["balance"])
+
     WalletTransaction.objects.create(
         wallet=wallet,
         txn_type="REFUND",
         amount=instance.amount,
         reference_type="ORDER",
-        reference_id=str(instance.order.id),
+        reference_id=ref_id,
+        description=f"Auto-refund: wallet payment failed for order {instance.order.order_id}",
     )

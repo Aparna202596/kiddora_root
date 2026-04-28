@@ -139,7 +139,8 @@ class WalletTransaction(models.Model):
         max_length=20, choices=REFERENCE_TYPE_CHOICES, blank=True
     )
 
-    reference_id = models.CharField(max_length=50, blank=True)
+    reference_id = models.CharField(max_length=50, unique=True, null=False,
+                                    blank=False, default=uuid.uuid4, db_index=True)
 
     description = models.CharField(max_length=255, blank=True)
 
@@ -156,7 +157,11 @@ class WalletTransaction(models.Model):
     @property
     def txn_id_display(self) -> str:
         return str(self.txn_id).replace("-", "").upper()[:12]
-
+    
+    def save(self, *args, **kwargs):
+        if not self.reference_id:
+            self.reference_id = str(uuid.uuid4())
+        super().save(*args, **kwargs)
 
 #  ────────────────────────────────────────────────── PAYMENT LOG ──────────────────────────────────────────────────
 class PaymentLog(models.Model):

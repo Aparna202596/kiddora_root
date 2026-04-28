@@ -238,8 +238,6 @@ def admin_approve_return(request, return_id):
         oi.item_status = "ACTIVE"
     oi.save(update_fields=["item_status", "cancelled_quantity"])
 
-    _restore_inventory_partial(oi, return_qty)
-
     messages.success(
         request,
         f"Return approved for {return_qty} unit(s) of "
@@ -249,6 +247,7 @@ def admin_approve_return(request, return_id):
     return redirect("shopcore:admin_return_detail", return_id=return_id)
 
 # ─────────────────────────────────────────────── ADMIN: PROCESS REFUND ───────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 @transaction.atomic
@@ -256,7 +255,18 @@ def admin_process_refund(request, return_id):
     if request.method != "POST":
         return redirect("shopcore:admin_return_detail", return_id=return_id)
 
-    ret = get_object_or_404(Return, id=return_id, status="APPROVED")
+    ret = get_object_or_404(Return, id=return_id)
+
+    if ret.status != "APPROVED":
+        if ret.status == "REFUNDED":
+            messages.warning(request, "Refund was already processed for this return.")
+        else:
+            messages.error(
+                request,
+                f"Cannot process refund: return is in '{ret.status}' status.",
+            )
+        return redirect("shopcore:admin_return_detail", return_id=return_id)
+
     oi = ret.order_item
     order = oi.order
 
@@ -275,9 +285,11 @@ def admin_process_refund(request, return_id):
     )
 
     if txn is None:
-        # Duplicate guard fired — refund was already processed.
         messages.warning(request, "Refund was already processed for this return.")
         return redirect("shopcore:admin_return_detail", return_id=return_id)
+
+    ret.locked = True
+    ret.save(update_fields=["locked"])
 
     ret.status = "REFUNDED"
     ret.refunded_at = timezone.now()
@@ -292,7 +304,10 @@ def admin_process_refund(request, return_id):
     order.payment_status = "REFUNDED" if active_count == 0 else "PARTIALLY_REFUNDED"
     order.save(update_fields=["payment_status"])
 
-    messages.success(request, f"Refund of ₹{refund_amount} finalised and credited to wallet.")
+    messages.success(
+        request,
+        f"Refund of ₹{refund_amount} finalised and credited to wallet.",
+    )
     return redirect("shopcore:admin_return_detail", return_id=return_id)
 
 # ─────────────────────────────────────────────── ADMIN: REJECT RETURN ───────────────────────────────────────────────

@@ -45,7 +45,6 @@ def debit_from_wallet(
     )
     return True, "", txn
 
-
 @transaction.atomic
 def credit_refund_to_wallet(
     user,
@@ -55,7 +54,6 @@ def credit_refund_to_wallet(
     reference_id: str = "",
     order=None,
 ) -> WalletTransaction | None:
-
     wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
 
     already_refunded = WalletTransaction.objects.filter(
@@ -77,18 +75,31 @@ def credit_refund_to_wallet(
     wallet.balance += amount
     wallet.save(update_fields=["balance", "updated_at"])
 
-    txn = WalletTransaction.objects.create(
-        wallet=wallet,
-        order=order,
-        txn_type="REFUND",
-        amount=amount,
-        balance_after=wallet.balance,
-        reference_type=reference_type,
-        reference_id=reference_id,
-        description=description,
-    )
+    try:
+        txn = WalletTransaction.objects.create(
+            wallet=wallet,
+            order=order,
+            txn_type="REFUND",
+            amount=amount,
+            balance_after=wallet.balance,
+            reference_type=reference_type,
+            reference_id=reference_id,
+            description=description,
+        )
+    except Exception:
+        logger.warning(
+            "Concurrent duplicate refund blocked via DB constraint: user=%s reference_id=%s",
+            user.email,
+            reference_id,
+        )
+        raise
+
     logger.info(
-        "Wallet refund: user=%s amount=%s txn=%s", user.email, amount, txn.txn_id
+        "Wallet refund: user=%s amount=%s reference_id=%s txn=%s",
+        user.email,
+        amount,
+        reference_id,
+        txn.txn_id,
     )
     return txn
 

@@ -24,19 +24,19 @@ function closeConfirmModal() {
 /* =========================
     BUTTON HELPERS
 ========================= */
-
+// Delete confirmation
 function confirmDelete(url) {
     openConfirmModal("Are you sure you want to delete this item?", () => {
         window.location.href = url;
     });
 }
-
+// Save confirmation
 function confirmSave(formId) {
     openConfirmModal("Confirm Save?", () => {
         document.getElementById(formId).submit();
     });
 }
-
+// Update confirmation
 function confirmUpdate(formId) {
     openConfirmModal("Update this record?", () => {
         document.getElementById(formId).submit();
