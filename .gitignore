@@ -30,3 +30,9 @@ Thumbs.db
 *.bak
 *.swp
 *.tmp
+
+# Ignore package list
+all-package.txt
+
+# Ignore uploaded media files
+media/
