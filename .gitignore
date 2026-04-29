@@ -32,7 +32,7 @@ Thumbs.db
 *.tmp
 
 # Ignore package list
-all-package.txt
+all-packages.txt
 
 # Ignore uploaded media files
-media/
+kiddora/media/
