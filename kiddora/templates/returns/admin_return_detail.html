@@ -4,244 +4,407 @@
 
 {% block content %}
 <style>
-    /* Container */
+    /* ── Layout ── */
     .return-container {
-        max-width: 1200px;
-        margin: auto;
-        padding: 20px;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 28px 24px;
     }
 
-    /* Header */
+    /* ── Header ── */
     .return-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 32px;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 14px;
     }
-
     .return-header h1 {
-        font-size: 22px;
+        font-size: 26px;
         font-weight: 800;
         color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
-
-    /* Status Badge */
-    .status-badge {
-        font-size: 13px;
-        font-weight: 700;
-        padding: 6px 14px;
-        border-radius: 20px;
+    .return-header h1 i {
+        color: #f06292;
+        font-size: 22px;
+    }
+    .back-link {
         display: inline-flex;
         align-items: center;
+        gap: 7px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #f06292;
+        padding: 8px 16px;
+        border-radius: 30px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .back-link:hover {
+        background: #f06292;
+        color: #fff;
+        border-color: #f06292;
+        transform: translateX(-2px);
     }
 
-    .status-REQUESTED { background: #fef9c3; color: #854d0e; }
-    .status-APPROVED { background: #dbeafe; color: #1e40af; }
-    .status-REJECTED { background: #fee2e2; color: #991b1b; }
-    .status-REFUNDED { background: #dcfce7; color: #15803d; }
+    /* ── Status Badges ── */
+    .status-badge {
+        font-size: 12.5px;
+        font-weight: 700;
+        padding: 7px 18px;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+    .status-REQUESTED { background: #fef9c3; color: #854d0e; border: 1.5px solid #fde68a; }
+    .status-APPROVED  { background: #dbeafe; color: #1e40af; border: 1.5px solid #bfdbfe; }
+    .status-REJECTED  { background: #fee2e2; color: #991b1b; border: 1.5px solid #fecaca; }
+    .status-REFUNDED  { background: #dcfce7; color: #15803d; border: 1.5px solid #bbf7d0; }
 
-    /* Layout Grid */
+    /* ── Grid ── */
     .main-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
         gap: 24px;
+        align-items: start;
     }
-
-    @media (max-width: 900px) {
-        .main-grid {
-            grid-template-columns: 1fr;
-        }
+    @media (max-width: 992px) {
+        .main-grid { grid-template-columns: 1fr; }
     }
+    .left-col { display: flex; flex-direction: column; gap: 24px; }
 
-    /* Card */
+    /* ── Cards ── */
     .card {
         background: #ffffff;
-        border-radius: 14px;
-        padding: 0;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-        border: 1px solid #f1f5f9;
+        border-radius: 18px;
+        box-shadow: 0 4px 18px rgba(240, 98, 146, 0.07);
+        border: 1.5px solid #fce7f3;
         overflow: hidden;
-        transition: 0.2s ease;
+        transition: all 0.25s ease;
     }
-
     .card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(240, 98, 146, 0.13);
     }
-
     .card-header {
-        padding: 16px 20px;
+        padding: 16px 22px;
+        background: linear-gradient(135deg, #fff0f6 0%, #fdf2f8 100%);
+        border-bottom: 1.5px solid #fce7f3;
         font-weight: 700;
         font-size: 15px;
-        border-bottom: 1px solid #f1f5f9;
+        color: #be185d;
         display: flex;
         align-items: center;
-        gap: 8px;
-        color: #334155;
+        gap: 10px;
     }
+    .card-header i { color: #f06292; font-size: 15px; }
+    .card-body { padding: 24px; }
 
-    .card-header i {
-        color: #f06292;
-    }
-
-    .card-body {
-        padding: 20px;
-    }
-
-    /* Item Section */
+    /* ── Item Detail ── */
     .item-detail {
         display: flex;
-        gap: 18px;
+        gap: 22px;
         align-items: flex-start;
     }
-
     .item-detail img {
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
+        width: 130px;
+        height: 155px;
+        object-fit: cover;
+        border-radius: 14px;
+        border: 2px solid #fce7f3;
+        box-shadow: 0 4px 12px rgba(240,98,146,0.12);
+        flex-shrink: 0;
     }
-
-    .item-image {
-        width: 120px;
-        height: 140px;
+    .item-image-placeholder {
+        width: 130px;
+        height: 155px;
+        background: linear-gradient(135deg, #fff0f6, #fce7f3);
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f1f5f9;
-        border-radius: 12px;
-        font-size: 32px;
+        font-size: 44px;
+        border: 2px solid #fce7f3;
+        flex-shrink: 0;
     }
-
+    .item-info { flex: 1; }
     .item-info h3 {
-        margin: 0 0 8px;
-        font-size: 16px;
-        font-weight: 700;
+        margin: 0 0 10px;
+        font-size: 17px;
+        font-weight: 800;
         color: #1e293b;
+        line-height: 1.3;
     }
-
     .item-meta {
-        font-size: 13px;
+        font-size: 13.5px;
         color: #475569;
-        line-height: 1.6;
+        line-height: 1.9;
+    }
+    .item-meta strong { color: #334155; }
+
+    /* ── Pill tags inside item-meta ── */
+    .meta-pill {
+        display: inline-block;
+        background: #fff0f6;
+        color: #be185d;
+        border: 1px solid #fce7f3;
+        border-radius: 20px;
+        padding: 2px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 4px;
+        vertical-align: middle;
     }
 
-    .price {
-        margin-top: 10px;
-        font-weight: 700;
-        font-size: 16px;
-        color: #16a34a;
+    .item-price {
+        margin-top: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f0fdf4;
+        border: 1.5px solid #bbf7d0;
+        color: #15803d;
+        font-weight: 800;
+        font-size: 18px;
+        padding: 7px 16px;
+        border-radius: 30px;
     }
 
-    /* Reason Box */
+    /* ── Reason Box ── */
     .reason-box {
-        background: #fff1f6;
-        border-left: 4px solid #f06292;
-        padding: 14px;
-        border-radius: 8px;
-        font-size: 14px;
+        background: linear-gradient(135deg, #fff8fb, #fff1f6);
+        border-left: 5px solid #f06292;
+        padding: 18px 20px;
+        border-radius: 12px;
+        font-size: 14.5px;
         color: #374151;
+        line-height: 1.75;
+        box-shadow: inset 0 1px 3px rgba(240,98,146,0.06);
+    }
+    .reason-box p { margin: 0; }
+
+    /* ── Sidebar Meta ── */
+    .meta-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 13.5px;
+        gap: 8px;
+    }
+    .meta-row:last-child { border-bottom: none; }
+    .meta-label {
+        color: #64748b;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .meta-value {
+        color: #1e293b;
+        font-weight: 700;
+        text-align: right;
+        word-break: break-all;
+    }
+    .meta-divider {
+        height: 1px;
+        background: linear-gradient(90deg, #fce7f3, transparent);
+        margin: 8px 0;
+    }
+
+    /* ── Refund Highlight Box ── */
+    .refund-highlight {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border: 1.5px solid #6ee7b7;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-top: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .refund-highlight .rh-label {
+        font-size: 13px;
+        color: #065f46;
+        font-weight: 600;
+    }
+    .refund-highlight .rh-amount {
+        font-size: 20px;
+        font-weight: 800;
+        color: #15803d;
+    }
+
+    /* ── Approved Status Banner ── */
+    .approved-banner {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe);
+        border: 1.5px solid #93c5fd;
+        border-radius: 12px;
+        padding: 14px 18px;
+        text-align: center;
+        color: #1e40af;
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+    .approved-banner small {
+        display: block;
+        margin-top: 4px;
+        font-weight: 500;
+        font-size: 12px;
+        color: #3b82f6;
+    }
+
+    /* ── Final State Box ── */
+    .final-state-box {
+        text-align: center;
+        padding: 36px 20px;
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 14px;
+        color: #64748b;
+        border: 1.5px dashed #cbd5e1;
+        font-size: 14px;
         line-height: 1.6;
     }
-
-    /* Sidebar Meta */
-    .meta-info {
-        font-size: 13px;
-        color: #475569;
-        line-height: 1.8;
-        margin-bottom: 16px;
+    .final-state-box .fsi {
+        font-size: 32px;
+        margin-bottom: 10px;
     }
 
-    /* Buttons */
+    /* ── Action Buttons ── */
     .action-btn {
         width: 100%;
-        padding: 12px;
-        margin-top: 10px;
+        padding: 13px 20px;
+        margin-top: 12px;
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         font-weight: 700;
-        font-size: 14px;
+        font-size: 14.5px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        letter-spacing: 0.2px;
     }
-
     .btn-approve {
-        background: #10b981;
-        color: white;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(16,185,129,0.25);
     }
-
     .btn-approve:hover {
-        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(16,185,129,0.38);
+        background: linear-gradient(135deg, #059669, #047857);
     }
-
     .btn-reject {
-        background: #ef4444;
-        color: white;
+        background: linear-gradient(135deg, #f43f5e, #e11d48);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(244,63,94,0.25);
     }
-
     .btn-reject:hover {
-        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(244,63,94,0.38);
+        background: linear-gradient(135deg, #e11d48, #be123c);
     }
-
     .btn-process {
-        background: #3b82f6;
-        color: white;
+        background: linear-gradient(135deg, #f06292, #e91e63);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(240,98,146,0.28);
     }
-
     .btn-process:hover {
-        background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(240,98,146,0.42);
+        background: linear-gradient(135deg, #e91e63, #c2185b);
     }
-
-    /* Approved Message */
-    .card-body p {
-        background: #ecfdf5;
-        border-radius: 10px;
-        padding: 12px;
+    .btn-back-bottom {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 12px;
+        width: 100%;
+        padding: 11px 20px;
+        justify-content: center;
+        background: #fff;
+        border: 1.5px solid #fce7f3;
+        border-radius: 12px;
+        color: #f06292;
+        font-weight: 700;
+        font-size: 13.5px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
     }
-
-    /* Final State Box */
-    .card-body > div[style] {
-        background: #f8fafc !important;
-        border: 1px dashed #e2e8f0;
-        font-size: 14px;
+    .btn-back-bottom:hover {
+        background: #fff0f6;
+        border-color: #f06292;
+        color: #be185d;
     }
 </style>
+
 <div class="return-container">
 
+    <!-- Header -->
     <div class="return-header">
-        <h1>Return Request #{{ ret.id }}</h1>
+        <h1>
+            <i class="fa fa-rotate-left"></i>
+            Return Request #{{ ret.id }}
+        </h1>
         <span class="status-badge status-{{ ret.status }}">
+            {% if ret.status == "REQUESTED" %}🕐{% elif ret.status == "APPROVED" %}✅{% elif ret.status == "REJECTED" %}❌{% elif ret.status == "REFUNDED" %}{% endif %}
             {{ ret.get_status_display }}
         </span>
+        <a href="{% url 'shopcore:admin_return_list' %}" class="back-link">
+            <i class="fa fa-arrow-left"></i> Back to Returns
+        </a>
     </div>
 
+    <!-- Grid -->
     <div class="main-grid">
-        <!-- Main Content -->
-        <div>
 
-            <!-- Item Details -->
+        <!-- Left Column -->
+        <div class="left-col">
+
+            <!-- Item Being Returned -->
             <div class="card">
                 <div class="card-header">
-                    <i class="fa fa-box"></i> Item Being Returned
+                    <i class="fa fa-box-open"></i> Item Being Returned
                 </div>
                 <div class="card-body">
                     <div class="item-detail">
                         {% if img_url %}
-                            <img src="{{ img_url }}" alt="{{ ret.order_item.variant.product.product_name }}" 
-                                 style="width:120px; height:140px; object-fit:cover; border-radius:12px;">
+                            <img src="{{ img_url }}" alt="{{ ret.order_item.variant.product.product_name }}">
                         {% else %}
-                            <div class="item-image">👕</div>
+                            <div class="item-image-placeholder">👕</div>
                         {% endif %}
-
                         <div class="item-info">
                             <h3>{{ ret.order_item.variant.product.product_name }}</h3>
                             <div class="item-meta">
-                                <strong>Color:</strong> {{ ret.order_item.variant.color }}<br>
-                                <strong>Age Group:</strong> {{ ret.order_item.variant.age_group }}<br>
-                                <strong>Quantity:</strong> {{ ret.order_item.quantity }} unit(s)<br>
-                                <strong>Unit Price:</strong> ₹{{ ret.order_item.unit_price|floatformat:2 }}
+                                <strong>Color:</strong>
+                                <span class="meta-pill">{{ ret.order_item.variant.color }}</span><br>
+                                <strong>Age Group:</strong>
+                                <span class="meta-pill">{{ ret.order_item.variant.age_group }}</span><br>
+                                <strong>Return Qty:</strong>
+                                <span class="meta-pill">{{ ret.return_quantity|default:ret.order_item.quantity }} unit(s)</span><br>
+                                <strong>Unit Price:</strong> ₹{{ ret.order_item.unit_price|floatformat:2 }}<br>
+                                <strong>Order Total:</strong> ₹{{ ret.order_item.total_price|floatformat:2 }}
                             </div>
-                            <div class="price">₹{{ ret.order_item.total_price|floatformat:2 }}</div>
+                            <div class="item-price">
+                                <i class="fa fa-tag" style="font-size:14px;"></i>
+                                ₹{{ ret.order_item.total_price|floatformat:2 }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -250,7 +413,7 @@
             <!-- Customer Reason -->
             <div class="card">
                 <div class="card-header">
-                    <i class="fa fa-comment-dots"></i> Customer Reason
+                    <i class="fa fa-comment-dots"></i> Customer's Reason for Return
                 </div>
                 <div class="card-body">
                     <div class="reason-box">
@@ -259,7 +422,47 @@
                 </div>
             </div>
 
+            <!-- Price Breakdown -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fa fa-receipt"></i> Price Breakdown
+                </div>
+                <div class="card-body">
+                    <div class="meta-section">
+                        <div class="meta-row">
+                            <span class="meta-label">Base Price (all units)</span>
+                            <span class="meta-value">₹{{ ret.order_item.unit_price|floatformat:2 }} × {{ ret.order_item.quantity }}</span>
+                        </div>
+                        {% if ret.order_item.discount_amount > 0 %}
+                        <div class="meta-row">
+                            <span class="meta-label">Offer Discount</span>
+                            <span class="meta-value" style="color:#ef4444;">− ₹{{ ret.order_item.discount_amount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        {% if ret.order_item.coupon_discount_share > 0 %}
+                        <div class="meta-row">
+                            <span class="meta-label">Coupon Share</span>
+                            <span class="meta-value" style="color:#f06292;">− ₹{{ ret.order_item.coupon_discount_share|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="meta-row">
+                            <span class="meta-label">Final Paid (all units)</span>
+                            <span class="meta-value">₹{{ ret.order_item.final_paid_price|floatformat:2 }}</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">Per Unit Paid</span>
+                            <span class="meta-value">₹{{ ret.per_unit_refund|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    <div class="refund-highlight">
+                        <span class="rh-label">💰 Refundable Amount<br><small style="font-weight:500;">{{ ret.return_quantity|default:ret.order_item.quantity }} unit(s)</small></span>
+                        <span class="rh-amount">₹{{ ret.refund_amount|default:ret.calculated_refund_amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
+        <!-- /Left Column -->
 
         <!-- Sidebar -->
         <div>
@@ -269,63 +472,255 @@
                 </div>
                 <div class="card-body">
 
-                    <div class="meta-info">
-                        <strong>Order ID:</strong> {{ ret.order_item.order.order_id }}<br>
-                        <strong>Customer:</strong> {{ ret.order_item.order.user.email }}<br>
-                        <strong>Return Quantity:</strong> {{ ret.return_quantity|default:ret.order_item.quantity }} unit(s)<br>
-                        <hr style="margin:8px 0;border:none;border-top:1px solid #eee;">
-                        <strong>Price breakdown (per item):</strong><br>
-                        Base price: ₹{{ ret.order_item.unit_price|floatformat:2 }}<br>
-                        {% if ret.order_item.discount_amount > 0 %}
-                        Offer discount: −₹{{ ret.order_item.discount_amount|floatformat:2 }}<br>
+                    <!-- Order & Customer Info -->
+                    <div class="meta-section" style="margin-bottom:16px;">
+                        <div class="meta-row">
+                            <span class="meta-label"><i class="fa fa-hashtag" style="font-size:11px;"></i> Order</span>
+                            <span class="meta-value" style="color:#f06292;">{{ ret.order_item.order.order_id }}</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label"><i class="fa fa-user" style="font-size:11px;"></i> Customer</span>
+                            <span class="meta-value" style="font-size:12.5px;">{{ ret.order_item.order.user.email }}</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label"><i class="fa fa-boxes-stacked" style="font-size:11px;"></i> Return Qty</span>
+                            <span class="meta-value">{{ ret.return_quantity|default:ret.order_item.quantity }} unit(s)</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label"><i class="fa fa-calendar" style="font-size:11px;"></i> Requested</span>
+                            <span class="meta-value">{{ ret.created_at|date:"d M Y" }}</span>
+                        </div>
+                        {% if ret.approved_at %}
+                        <div class="meta-row">
+                            <span class="meta-label"><i class="fa fa-check" style="font-size:11px;"></i> Approved</span>
+                            <span class="meta-value" style="color:#15803d;">{{ ret.approved_at|date:"d M Y" }}</span>
+                        </div>
                         {% endif %}
-                        {% if ret.order_item.coupon_discount_share > 0 %}
-                        Coupon share: −₹{{ ret.order_item.coupon_discount_share|floatformat:2 }}<br>
+                        {% if ret.refunded_at %}
+                        <div class="meta-row">
+                            <span class="meta-label"><i class="fa fa-wallet" style="font-size:11px;"></i> Refunded</span>
+                            <span class="meta-value" style="color:#15803d;">{{ ret.refunded_at|date:"d M Y" }}</span>
+                        </div>
                         {% endif %}
-                        Final paid (all {{ ret.order_item.quantity }} units): ₹{{ ret.order_item.final_paid_price|floatformat:2 }}<br>
-                        Per unit paid: ₹{{ ret.per_unit_refund|floatformat:2 }}<br>
-                        <hr style="margin:8px 0;border:none;border-top:1px solid #eee;">
-                        <strong>Refundable amount:</strong> ₹{{ ret.calculated_refund_amount|floatformat:2 }}<br>
-                        <strong>Approved refund:</strong> ₹{{ ret.refund_amount|default:ret.calculated_refund_amount|floatformat:2 }}
+                        {% if ret.admin_note %}
+                        <div class="meta-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                            <span class="meta-label"><i class="fa fa-note-sticky" style="font-size:11px;"></i> Admin Note</span>
+                            <span style="font-size:13px; color:#475569; background:#f8fafc; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; width:100%; box-sizing:border-box;">{{ ret.admin_note }}</span>
+                        </div>
+                        {% endif %}
                     </div>
+
+                    <!-- Refund amount quick view -->
+                    <div class="refund-highlight" style="margin-bottom:16px;">
+                        <span class="rh-label">Approved Refund</span>
+                        <span class="rh-amount">₹{{ ret.refund_amount|default:ret.calculated_refund_amount|floatformat:2 }}</span>
+                    </div>
+
                     {% if ret.status == "REQUESTED" %}
-                        <form method="post" action="{% url 'shopcore:admin_approve_return' return_id=ret.id %}">
+                        <form id="approveForm" method="post"
+                            action="{% url 'shopcore:admin_approve_return' return_id=ret.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="action-btn btn-approve" 
-                                    onclick="return confirm('Approve this return request?')">
-                                ✅ Approve Return
+                            <input type="hidden" name="admin_note" value="Return approved by admin.">
+                            <button type="button" class="action-btn btn-approve"
+                                    id="approveBtn">
+                                <i class="fa fa-check-circle"></i> Approve Return
                             </button>
                         </form>
 
-                        <form method="post" action="{% url 'shopcore:admin_reject_return' return_id=ret.id %}">
+                        <form id="rejectForm" method="post"
+                            action="{% url 'shopcore:admin_reject_return' return_id=ret.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="action-btn btn-reject" 
-                                    onclick="return confirm('Reject this return?')">
-                                ❌ Reject Return
+                            <input type="hidden" name="admin_note" id="rejectNote" value="">
+                            <button type="button" class="action-btn btn-reject"
+                                    id="rejectBtn">
+                                <i class="fa fa-times-circle"></i> Reject Return
                             </button>
                         </form>
 
                     {% elif ret.status == "APPROVED" %}
-                        <p style="color:#15803d; font-weight:600; text-align:center; padding:12px 0;">
-                            ✅ Return Approved<br>
-                            <small>Ready for refund processing</small>
-                        </p>
-                        <form method="post" action="{% url 'shopcore:admin_process_refund' return_id=ret.id %}">
+                        <div class="approved-banner">
+                            ✅ Return Approved
+                            <small>Inventory restored · Ready to process refund</small>
+                        </div>
+                        <form id="processRefundForm" method="post"
+                            action="{% url 'shopcore:admin_process_refund' return_id=ret.id %}">
                             {% csrf_token %}
-                            <button type="submit" class="action-btn btn-process">
-                                💰 Process Refund & Restock
+                            <button type="button" class="action-btn btn-process"
+                                    id="processBtn">
+                                <i class="fa fa-wallet"></i> Process Refund
                             </button>
                         </form>
 
                     {% else %}
-                        <div style="text-align:center; padding:30px 20px; background:#f8fafc; border-radius:12px; color:#64748b;">
+                        <div class="final-state-box">
+                            <div class="fsi">
+                                {% if ret.status == "REFUNDED" %}💚{% else %}❌{% endif %}
+                            </div>
                             This return has been <strong>{{ ret.get_status_display }}</strong>.
+                            {% if ret.admin_note %}
+                            <div style="margin-top:10px; font-size:13px; color:#94a3b8;">
+                                Note: {{ ret.admin_note }}
+                            </div>
+                            {% endif %}
                         </div>
                     {% endif %}
 
                 </div>
             </div>
         </div>
+        <!-- /Sidebar -->
+
     </div>
 </div>
+<script>
+(function () {
+
+    /* ── Data passed safely from Django ── */
+    var PRODUCT_NAME  = "{{ ret.order_item.variant.product.product_name|escapejs }}";
+    var RETURN_QTY    = "{{ ret.return_quantity|default:ret.order_item.quantity }}";
+    var CUSTOMER_EMAIL = "{{ ret.order_item.order.user.email|escapejs }}";
+    var REFUND_AMOUNT = "{{ ret.refund_amount|default:ret.calculated_refund_amount|floatformat:2 }}";
+
+    /* ── Approve button ── */
+    var approveBtn = document.getElementById('approveBtn');
+    if (approveBtn) {
+        approveBtn.addEventListener('click', function () {
+            openConfirmModal(
+                'Approve return for ' + RETURN_QTY + ' unit(s) of "' + PRODUCT_NAME + '"?\n\nInventory will be restored and the refund will be queued for processing.',
+                function () {
+                    document.getElementById('approveForm').submit();
+                }
+            );
+        });
+    }
+
+    /* ── Reject button — prompts for a reason first ── */
+    var rejectBtn = document.getElementById('rejectBtn');
+    if (rejectBtn) {
+        rejectBtn.addEventListener('click', function () {
+            /* Step 1: ask for rejection reason via a small inline prompt modal */
+            showRejectReasonModal(function (reason) {
+                document.getElementById('rejectNote').value = reason;
+                openConfirmModal(
+                    'Reject the return request for "' + PRODUCT_NAME + '"?\n\nReason: ' + reason + '\n\nThis action cannot be undone.',
+                    function () {
+                        document.getElementById('rejectForm').submit();
+                    }
+                );
+            });
+        });
+    }
+
+    /* ── Process Refund button ── */
+    var processBtn = document.getElementById('processBtn');
+    if (processBtn) {
+        processBtn.addEventListener('click', function () {
+            openConfirmModal(
+                'Credit ₹' + REFUND_AMOUNT + ' to ' + CUSTOMER_EMAIL + '\'s wallet?\n\nThis refund cannot be reversed once processed.',
+                function () {
+                    document.getElementById('processRefundForm').submit();
+                }
+            );
+        });
+    }
+
+    /* ── Inline reason modal for rejection ── */
+    function showRejectReasonModal(onConfirm) {
+        /* Build a lightweight reason-entry overlay */
+        var overlay = document.createElement('div');
+        overlay.id = 'rejectReasonOverlay';
+        overlay.style.cssText = [
+            'position:fixed', 'inset:0', 'background:rgba(0,0,0,0.5)',
+            'backdrop-filter:blur(4px)', 'z-index:999999',
+            'display:flex', 'align-items:center', 'justify-content:center'
+        ].join(';');
+
+        overlay.innerHTML = [
+            '<div style="background:#fff;border-radius:18px;padding:32px 28px;width:90%;',
+            'max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.18);',
+            'display:flex;flex-direction:column;gap:16px;',
+            'animation:kd-popIn 0.22s cubic-bezier(.34,1.56,.64,1);">',
+
+              '<div style="display:flex;align-items:center;gap:10px;">',
+                '<div style="width:40px;height:40px;background:#fff1f6;border-radius:50%;',
+                'display:flex;align-items:center;justify-content:center;">',
+                  '<i class="fa fa-times-circle" style="color:#f06292;font-size:18px;"></i>',
+                '</div>',
+                '<p style="margin:0;font-size:16px;font-weight:800;color:#1e293b;">',
+                  'Reason for Rejection',
+                '</p>',
+              '</div>',
+
+              '<p style="margin:0;font-size:13.5px;color:#64748b;line-height:1.6;">',
+                'Please provide a reason. This will be recorded against the return request.',
+              '</p>',
+
+              '<textarea id="rejectReasonInput" rows="3" placeholder="e.g. Item shows signs of use..." ',
+              'style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #fce7f3;',
+              'border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;',
+              'outline:none;color:#374151;" ',
+              'onfocus="this.style.borderColor=\'#f06292\'" ',
+              'onblur="this.style.borderColor=\'#fce7f3\'"></textarea>',
+
+              '<p id="rejectReasonError" style="margin:0;font-size:12.5px;color:#ef4444;display:none;">',
+                '⚠ Please enter a rejection reason.',
+              '</p>',
+
+              '<div style="display:flex;gap:10px;">',
+                '<button id="rejectReasonCancel" style="flex:1;padding:11px;border:1.5px solid #e8e8e8;',
+                'border-radius:10px;background:#f9f9f9;color:#555;font-size:14px;font-weight:600;',
+                'cursor:pointer;font-family:inherit;">Cancel</button>',
+
+                '<button id="rejectReasonConfirm" style="flex:1;padding:11px;border:none;',
+                'border-radius:10px;background:linear-gradient(135deg,#f43f5e,#e11d48);',
+                'color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;',
+                'box-shadow:0 4px 14px rgba(244,63,94,0.28);">',
+                  '<i class="fa fa-check" style="margin-right:5px;"></i>Continue',
+                '</button>',
+              '</div>',
+
+            '</div>'
+        ].join('');
+
+        document.body.appendChild(overlay);
+
+        /* Focus textarea */
+        setTimeout(function () {
+            var ta = document.getElementById('rejectReasonInput');
+            if (ta) ta.focus();
+        }, 80);
+
+        /* Cancel */
+        document.getElementById('rejectReasonCancel').addEventListener('click', function () {
+            document.body.removeChild(overlay);
+        });
+
+        /* Overlay click */
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) document.body.removeChild(overlay);
+        });
+
+        /* Confirm */
+        document.getElementById('rejectReasonConfirm').addEventListener('click', function () {
+            var reason = document.getElementById('rejectReasonInput').value.trim();
+            var errEl  = document.getElementById('rejectReasonError');
+            if (!reason) {
+                errEl.style.display = 'block';
+                return;
+            }
+            document.body.removeChild(overlay);
+            onConfirm(reason);
+        });
+
+        /* Enter key submits */
+        document.getElementById('rejectReasonInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('rejectReasonConfirm').click();
+            }
+        });
+    }
+
+})();
+</script>
 {% endblock %}

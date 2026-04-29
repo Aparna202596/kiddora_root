@@ -1,5 +1,4 @@
 from decimal import Decimal
-
 from accounts.decorators import user_login_required
 from django.contrib import messages
 from django.db import transaction
@@ -12,7 +11,6 @@ from shopcore.models import Cart, CartItem, Order, Wishlist, WishlistItem
 from shopcore.views.offer_views import get_max_offer_discount_percent
 
 MAX_QTY = CartItem.MAX_QTY_PER_PRODUCT
-
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
 def _get_or_create_cart(user):
@@ -67,7 +65,6 @@ def _cart_subtotal(cart) -> Decimal:
     return total
 
 
-
 # ────────────────────────────────────────────────── CART VIEWS ──────────────────────────────────────────────────
 @never_cache
 @user_login_required
@@ -88,7 +85,7 @@ def cart_view(request):
     )
 
     cart_data = []
-    subtotal = 0
+    subtotal = Decimal("0")          # sum of discounted (post-offer) item totals
     any_unavailable = False
     any_out_of_stock = False
 
@@ -97,13 +94,24 @@ def cart_view(request):
         available = _variant_is_available(variant)
         stock = _stock_for(variant)
         product = variant.product
+
         if available:
             base_price = product.base_price
             offer_pct = Decimal(str(get_max_offer_discount_percent(product)))
             discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
-            item_total = discounted_price * item.quantity
+            item_total = (discounted_price * item.quantity).quantize(Decimal("0.01"))
+
+            base_item_total = (base_price * item.quantity).quantize(Decimal("0.01"))
+            item_offer_discount = (
+                (base_price - discounted_price) * item.quantity
+            ).quantize(Decimal("0.01"))
         else:
+            base_price = product.base_price
+            offer_pct = Decimal("0")
+            discounted_price = base_price
             item_total = Decimal("0")
+            base_item_total = Decimal("0")
+            item_offer_discount = Decimal("0")
 
         img_url = None
         img_obj = (
@@ -132,29 +140,21 @@ def cart_view(request):
                 "img_url": img_url,
                 "max_qty": min(MAX_QTY, stock) if stock > 0 else 0,
                 "exceeds_stock": (item.quantity > stock) if available else False,
-            
-                # "item": item,
-                # "variant": variant,
-                # "product": product,
-                # "product_name": product.product_name,
-                # "color": variant.color,
-                # "age_group": variant.age_group,
-                # "quantity": item.quantity,
-                # "unit_price": base_price,
-                # "discounted_price": discounted_price.quantize(Decimal("0.01")),
-                # "item_total": item_final_total.quantize(Decimal("0.01")),
-                # "base_item_total": item_base_total.quantize(Decimal("0.01")),
-                # "offer_discount": item_offer_discount.quantize(Decimal("0.01")),
-                # "offer_pct": int(offer_pct),
-                # "available": available,
-                # "stock": stock,
-                # "img_url": _img_url_for(product),
-                # "sku": getattr(variant, "sku", None),
-                # "variant_id": variant.id,
+                "base_item_total": base_item_total,
+                "offer_discount": item_offer_discount,
+                "offer_pct": int(offer_pct),
+                "discounted_price": discounted_price.quantize(Decimal("0.01")),
             }
         )
+
         if available:
             subtotal += item_total
+
+    offer_discount_total = sum(
+        d["offer_discount"] for d in cart_data if d["available"]
+    )
+
+    price_after_offers = subtotal
 
     temp_order = Order(
         total_amount=subtotal,
@@ -163,11 +163,13 @@ def cart_view(request):
     )
     shipping_charge = temp_order.calculate_shipping()
     grand_total = subtotal + shipping_charge
+
     checkout_blocked = (
         any_unavailable
         or any_out_of_stock
         or any(d["exceeds_stock"] for d in cart_data)
     )
+
     return render(
         request,
         "cart/cart.html",
@@ -175,6 +177,8 @@ def cart_view(request):
             "cart": cart,
             "cart_data": cart_data,
             "subtotal": subtotal,
+            "offer_discount_total": offer_discount_total,
+            "price_after_offers": price_after_offers,
             "shipping_charge": shipping_charge,
             "grand_total": grand_total,
             "checkout_blocked": checkout_blocked,
@@ -196,7 +200,6 @@ def add_to_cart(request, variant_id):
         return redirect("shopcore:cart")
 
     ajax = _is_ajax(request)
-
     variant = get_object_or_404(
         ProductVariant.objects.select_related(
             "product",
@@ -224,7 +227,6 @@ def add_to_cart(request, variant_id):
 
     cart = _get_or_create_cart(request.user)
     new_item = False
-
     try:
         cart_item = cart.items.get(variant=variant)
         if cart_item.quantity >= MAX_QTY:
@@ -333,7 +335,6 @@ def remove_from_cart(request, item_id):
 @transaction.atomic
 def update_cart_quantity(request, item_id):
     ajax = _is_ajax(request)
-
     if request.method != "POST":
         return (
             JsonResponse({"error": "POST required"}, status=405)
@@ -384,6 +385,7 @@ def update_cart_quantity(request, item_id):
     offer_pct = Decimal(str(get_max_offer_discount_percent(variant.product)))
     discounted_price = base_price * (Decimal("1") - offer_pct / Decimal("100"))
     item_total = discounted_price * qty
+
     subtotal = _cart_subtotal(cart)
 
     if ajax:
@@ -432,7 +434,6 @@ def toggle_wishlist(request, product_id):
 
     ajax = _is_ajax(request)
     product = get_object_or_404(Product, id=product_id)
-
     wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
     existing = WishlistItem.objects.filter(wishlist=wishlist, product=product).first()
 

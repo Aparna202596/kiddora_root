@@ -1,7 +1,6 @@
 {% extends "base_products.html" %}
 {% load static %}
 {% block title %}My Cart – Kiddora{% endblock %}
-
 {% block extra_css %}
 {% include "responsive.html" %}
 <style>
@@ -9,11 +8,9 @@
 .cart-page  { display:flex; gap:28px; align-items:flex-start; }
 .cart-left  { flex:1; min-width:0; }
 .cart-right { width:320px; flex-shrink:0; position:sticky; top:20px; }
-
 /* ── SECTION HEADER ── */
 .section-title { font-size:20px; font-weight:700; color:#222; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
 .section-title span { font-size:14px; font-weight:500; color:#888; }
-
 /* ── CART ITEM CARD ── */
 .cart-item {
     display:flex; gap:16px; align-items:flex-start;
@@ -26,12 +23,10 @@
 .cart-item.out-of-stock { border-color:#fcd34d; background:#fffbeb; }
 /* fade-out animation on removal */
 .cart-item.removing { opacity:0; transform:translateX(30px); transition:all .35s ease; }
-
 /* ── IMAGE ── */
 .item-img { width:90px; height:110px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f8f8f8; display:flex; align-items:center; justify-content:center; }
 .item-img img { width:100%; height:100%; object-fit:cover; }
 .item-img .placeholder { font-size:2.2rem; color:#ddd; }
-
 /* ── BODY ── */
 .item-body { flex:1; min-width:0; }
 .item-name { font-size:15px; font-weight:700; color:#222; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -40,7 +35,6 @@
 .item-price-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
 .item-price { font-size:17px; font-weight:700; color:#222; }
 .item-discount { font-size:12px; color:#f06292; background:#fdeef4; padding:2px 7px; border-radius:20px; }
-
 /* ── QTY CONTROLS ── */
 .qty-row { display:flex; align-items:center; gap:12px; margin-top:10px; }
 .qty-box { display:flex; align-items:center; border:1.5px solid #e0e0e0; border-radius:8px; overflow:hidden; }
@@ -57,7 +51,6 @@
 .qty-spinner { display:none; width:16px; height:16px; border:2px solid #f06292; border-top-color:transparent; border-radius:50%; animation:spin .6s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 .qty-error { font-size:11px; color:#ef4444; margin-top:4px; display:none; }
-
 /* ── REMOVE ── */
 .remove-btn {
     font-size:12px; color:#ef4444; background:none; border:none;
@@ -66,16 +59,13 @@
     margin-left:auto;
 }
 .remove-btn:hover { background:#fee2e2; }
-
 /* ── ITEM TOTAL ── */
 .item-total { text-align:right; }
 .item-total-label { font-size:11px; color:#aaa; }
 .item-total-val { font-size:16px; font-weight:700; color:#222; }
-
 /* ── BADGES ── */
 .badge-warn { font-size:11px; color:#b45309; background:#fef3c7; padding:3px 8px; border-radius:20px; margin-top:6px; display:inline-block; }
 .badge-err  { font-size:11px; color:#991b1b; background:#fee2e2; padding:3px 8px; border-radius:20px; margin-top:6px; display:inline-block; }
-
 /* ── EMPTY ── */
 .cart-empty { text-align:center; padding:60px 20px; }
 .cart-empty .empty-icon { font-size:4rem; margin-bottom:16px; }
@@ -83,7 +73,6 @@
 .cart-empty p  { font-size:14px; color:#888; margin-bottom:24px; }
 .shop-btn { display:inline-block; padding:11px 28px; background:#f06292; color:#fff; border-radius:8px; font-size:15px; font-weight:600; transition:background .2s; }
 .shop-btn:hover { background:#e91e63; }
-
 /* ── SUMMARY ── */
 .summary-card { background:#fff; border:1.5px solid #eee; border-radius:14px; padding:24px; }
 .summary-card h3 { font-size:16px; font-weight:700; color:#222; margin-bottom:18px; }
@@ -98,7 +87,6 @@
 .blocked-notice { background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:10px 14px; font-size:13px; color:#991b1b; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
 #summarySubtotal, #summaryGrandTotal { transition:color .25s; }
 .summary-updating { color:#f06292 !important; }
-
 /* ── SAVE-TO-WISHLIST MODAL ── */
 #wlSaveModal {
     display:none; position:fixed; inset:0;
@@ -129,7 +117,6 @@
 .wl-modal-btn-remove:hover { opacity:.9; }
 .wl-modal-btn-cancel { background:#f9f9f9; color:#555; }
 .wl-modal-btn-cancel:hover { background:#f0f0f0; }
-
 /* ── TOAST ── */
 #kdToast {
     position:fixed; bottom:24px; right:24px; z-index:100000;
@@ -141,12 +128,10 @@
 #kdToast.show { opacity:1; transform:translateY(0); }
 #kdToast.success { background:#16a34a; }
 #kdToast.error   { background:#dc2626; }
-
 @media (max-width:900px) { .cart-page { flex-direction:column; } .cart-right { width:100%; position:static; } }
 @media (max-width:480px) { .item-img { width:70px; height:85px; } .item-price { font-size:15px; } .item-name { font-size:14px; } }
 </style>
 {% endblock %}
-
 {% block breadcrumb %}
 <div class="breadcrumb-bar">
     <a href="{% url 'shopcore:home' %}">Home</a>
@@ -154,16 +139,13 @@
     <strong>Shopping Cart</strong>
 </div>
 {% endblock %}
-
 {% block filter_sidebar %}{% endblock %}
-
 {% block content %}
 <div class="section-title">
     <i class="fa fa-shopping-cart" style="color:#f06292;"></i>
     Shopping Cart
     {% if cart_data %}<span id="cartItemCount">({{ cart_data|length }} item{{ cart_data|length|pluralize }})</span>{% endif %}
 </div>
-
 {% if not cart_data %}
 <div class="cart-empty">
     <div class="empty-icon">🛒</div>
@@ -173,7 +155,6 @@
         <i class="fa fa-arrow-left"></i> Continue Shopping
     </a>
 </div>
-
 {% else %}
 <div class="cart-page">
     <!-- ══ LEFT: ITEMS ══ -->
@@ -183,7 +164,6 @@
             ⚠️ Some items are no longer available. Remove them to proceed to checkout.
         </div>
         {% endif %}
-
         {% for d in cart_data %}
         {% with item=d.item variant=d.variant product=d.product %}
         <div class="cart-item {% if not d.available %}unavailable{% elif d.stock == 0 %}out-of-stock{% endif %}"
@@ -193,7 +173,6 @@
                 data-product-name="{{ product.product_name|escapejs }}"
                 data-available="{{ d.available|yesno:'true,false' }}"
                 data-stock="{{ d.stock }}">
-
             <!-- Image -->
             <div class="item-img">
                 {% if d.img_url %}
@@ -202,7 +181,6 @@
                 <span class="placeholder">👕</span>
                 {% endif %}
             </div>
-
             <!-- Body -->
             <div class="item-body">
                 {% if not d.available %}
@@ -226,13 +204,11 @@
                     <span class="item-discount">{{ product.discount_percent }}% off</span>
                     {% endif %}
                 </div>
-
                 {% if d.available and d.stock == 0 %}
                 <span class="badge-err">❌ Out of stock</span>
                 {% elif d.available and d.exceeds_stock %}
                 <span class="badge-warn">⚠️ Only {{ d.stock }} available</span>
                 {% endif %}
-
                 <!-- Qty Controls + Remove -->
                 <div class="qty-row">
                     {% if d.available and d.stock > 0 %}
@@ -250,7 +226,6 @@
                     <span style="font-size:11px;color:#aaa;">Max {{ MAX_QTY }}</span>
                     <div class="qty-spinner" id="qtySpinner_{{ item.id }}"></div>
                     {% endif %}
-
                     <!-- Remove button — triggers save-to-wishlist modal -->
                     <button class="remove-btn"
                             data-item="{{ item.id }}"
@@ -262,7 +237,6 @@
                 </div>
                 <div class="qty-error" id="qtyErr_{{ item.id }}"></div>
             </div>
-
             <!-- Item Total -->
             <div class="item-total">
                 <div class="item-total-label">Item Total</div>
@@ -276,27 +250,109 @@
     <!-- ══ RIGHT: SUMMARY ══ -->
     <div class="cart-right">
         <div class="summary-card">
-            <h3><i class="fa fa-receipt" style="color:#f06292;"></i> Order Summary</h3>
-            {% for d in cart_data %}
-            {% if d.available %}
-            <div class="summary-row" style="font-size:13px;color:#888;" id="summaryLine_{{ d.item.id }}">
-                <span>{{ d.product.product_name }} × <span id="summaryQty_{{ d.item.id }}">{{ d.item.quantity }}</span></span>
-                <span id="summaryLineTotal_{{ d.item.id }}">₹{{ d.item_total }}</span>
+            <h3><i class="fa fa-receipt" style="color:#f06292;"></i> 💰 Price Detail</h3>
+
+            <!-- ── Per-item breakdown (mirrors checkout) ── -->
+            <div style="margin-bottom:12px; border-bottom:1px dashed #f0d6e0; padding-bottom:12px;">
+                {% for d in cart_data %}
+                {% if d.available %}
+                <div style="margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #f9f0f4;"
+                     id="summaryLine_{{ d.item.id }}">
+
+                    <!-- Product name + variant -->
+                    <div style="font-size:12px; font-weight:700; color:#333; margin-bottom:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ d.product.product_name }}
+                        <span style="font-weight:400; color:#999; font-size:11px;">
+                            × <span id="summaryQty_{{ d.item.id }}">{{ d.item.quantity }}</span>
+                        </span>
+                    </div>
+                    <div style="font-size:10px; color:#bbb; margin-bottom:6px;">
+                        {{ d.variant.color }} · {{ d.variant.age_group }}
+                    </div>
+
+                    <!-- Price rows -->
+                    <div style="display:flex; flex-direction:column; gap:3px;">
+
+                        <!-- Row 1: Original price -->
+                        <div style="display:flex; justify-content:space-between; font-size:11px;">
+                            <span style="color:#aaa;">Original price</span>
+                            <span style="color:#aaa; text-decoration:line-through;">
+                                ₹<span id="summaryBaseTotal_{{ d.item.id }}">{{ d.base_item_total|floatformat:2 }}</span>
+                            </span>
+                        </div>
+
+                        <!-- Row 2: After offer (only if offer exists) -->
+                        {% if d.offer_pct > 0 %}
+                        <div style="display:flex; justify-content:space-between; font-size:11px;">
+                            <span style="color:#15803d;">
+                                After offer
+                                <span style="background:#dcfce7; color:#15803d; border-radius:20px; padding:1px 5px; font-weight:700; font-size:10px; margin-left:2px;">{{ d.offer_pct }}% off</span>
+                            </span>
+                            <span style="color:#15803d; font-weight:600;">
+                                ₹<span id="summaryLineTotal_{{ d.item.id }}">{{ d.item_total|floatformat:2 }}</span>
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Row 3: You pay (bold) -->
+                        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-top:2px; padding-top:3px; border-top:1px dashed #f0e4f0;">
+                            <span style="color:#222;">
+                                You pay
+                                <span style="font-size:10px; color:#aaa; font-weight:400;">
+                                    (₹{{ d.discounted_price|floatformat:2 }} × <span id="summaryQtyPay_{{ d.item.id }}">{{ d.item.quantity }}</span>)
+                                </span>
+                            </span>
+                            <span style="color:{% if d.offer_pct > 0 %}#15803d{% else %}#222{% endif %};">
+                                ₹<span id="summaryLineFinal_{{ d.item.id }}">{{ d.item_total|floatformat:2 }}</span>
+                            </span>
+                        </div>
+
+                        <!-- Row 4: Savings for this item -->
+                        {% if d.offer_discount and d.offer_discount > 0 %}
+                        <div style="font-size:10px; color:#16a34a; text-align:right; margin-top:1px;">
+                            🎉 You save ₹{{ d.offer_discount|floatformat:2 }} on this item
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
             </div>
-            {% endif %}
-            {% endfor %}
-            <div class="summary-row" style="margin-top:10px;">
-                <span>Subtotal</span>
-                <span id="summarySubtotal">₹{{ subtotal }}</span>
+            <!-- ── Totals ── -->
+            <div class="summary-row">
+                <span>Subtotal ({{ cart_data|length }} item{{ cart_data|length|pluralize }})</span>
+                <span id="summarySubtotal">₹{{ subtotal|floatformat:2 }}</span>
+            </div>
+            {% if offer_discount_total and offer_discount_total > 0 %}
+            <div class="summary-row" style="color:#15803d;">
+                <span>🏷️ Offer Discount</span>
+                <span>– ₹{{ offer_discount_total|floatformat:2 }}</span>
             </div>
             <div class="summary-row">
-                <span>Shipping</span>
-                <span class="free">{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
+                <span>Price After Offers</span>
+                <span>₹{{ price_after_offers|floatformat:2 }}</span>
             </div>
+            {% endif %}
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span class="free">{% if shipping_charge == 0 %}🎁 Free{% else %}₹{{ shipping_charge }}{% endif %}</span>
+            </div>
+            {% if offer_discount_total and offer_discount_total > 0 %}
+            <div class="summary-row" style="color:#15803d; font-size:12px; background:#f0fdf4; border-radius:8px; padding:6px 10px; margin-bottom:4px;">
+                <span>🎉 Total Savings</span>
+                <span>– ₹{{ offer_discount_total|floatformat:2 }}</span>
+            </div>
+            {% endif %}
             <div class="summary-row total">
                 <span>Grand Total</span>
-                <span id="summaryGrandTotal">₹{{ grand_total }}</span>
+                <span id="summaryGrandTotal">₹{{ grand_total|floatformat:2 }}</span>
             </div>
+            {% if shipping_charge > 0 %}
+            <div style="font-size:11px; color:#16a34a; margin-top:4px;">
+                Add ₹{% widthratio 1000 1 1 %} more for FREE shipping 🚚
+            </div>
+            {% endif %}
 
             {% if checkout_blocked %}
             <div class="blocked-notice" style="margin-top:14px;" id="checkoutBlockedNotice">
@@ -308,7 +364,6 @@
                 Proceed to Checkout →
             </a>
             {% endif %}
-
             <form method="post" action="{% url 'shopcore:clear_cart' %}"
                   onsubmit="return confirmClear(event)">
                 {% csrf_token %}
@@ -383,10 +438,8 @@ function updateSummary(subtotal, grandTotal) {
 
 // ── Update the cart item count badge ─────────────────────
 function updateCartCountBadge(count) {
-    // Update the "(N items)" label in section title
     const badge = document.getElementById('cartItemCount');
     if (badge) badge.textContent = '(' + count + ' item' + (count !== 1 ? 's' : '') + ')';
-    // Update header cart icon badge if exists
     const hdr = document.querySelector('.cart-count-badge, [data-cart-count]');
     if (hdr) hdr.textContent = count;
 }
@@ -396,13 +449,11 @@ document.addEventListener('click', function(e) {
     const btn = e.target.closest('.qty-btn[data-action]');
     if (!btn || btn.disabled) return;
     e.preventDefault();
-
     const itemId  = btn.dataset.item;
     const action  = btn.dataset.action;
     const spinner = document.getElementById('qtySpinner_' + itemId);
     const errEl   = document.getElementById('qtyErr_'    + itemId);
 
-    // Disable both buttons while request is in flight
     const box = document.getElementById('qtyBox_' + itemId);
     box.querySelectorAll('.qty-btn').forEach(b => b.disabled = true);
     if (spinner) { spinner.style.display = 'block'; }
@@ -410,7 +461,6 @@ document.addEventListener('click', function(e) {
 
     const fd = new FormData();
     fd.append('action', action);
-
     fetch("{% url 'shopcore:update_cart_quantity' item_id=0 %}".replace('/0/', '/' + itemId + '/'), {
         method:  'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
@@ -419,32 +469,31 @@ document.addEventListener('click', function(e) {
     .then(r => r.json())
     .then(data => {
         if (spinner) spinner.style.display = 'none';
-
         if (data.error) {
             if (errEl) { errEl.textContent = data.error; errEl.style.display = 'block'; }
             showToast(data.error, 'error');
-            // Restore qty num to last valid value from data if given
             if (data.quantity) document.getElementById('qtyNum_' + itemId).textContent = data.quantity;
         } else {
             const qty    = data.quantity;
             const maxQty = data.max_qty;
 
-            // Update qty display
             document.getElementById('qtyNum_' + itemId).textContent = qty;
 
-            // Update item total
             const totEl = document.getElementById('itemTotal_' + itemId);
             if (totEl) totEl.textContent = '₹' + parseFloat(data.item_total).toFixed(2);
 
-            // Update summary line qty
+            // Update per-item summary lines
             const sqEl = document.getElementById('summaryQty_' + itemId);
             if (sqEl) sqEl.textContent = qty;
+            const sqpEl = document.getElementById('summaryQtyPay_' + itemId);
+            if (sqpEl) sqpEl.textContent = qty;
             const sltEl = document.getElementById('summaryLineTotal_' + itemId);
-            if (sltEl) sltEl.textContent = '₹' + parseFloat(data.item_total).toFixed(2);
+            if (sltEl) sltEl.textContent = parseFloat(data.item_total).toFixed(2);
+            const slfEl = document.getElementById('summaryLineFinal_' + itemId);
+            if (slfEl) slfEl.textContent = parseFloat(data.item_total).toFixed(2);
 
             updateSummary(data.subtotal, data.grand_total);
 
-            // Re-enable/disable +/- correctly
             const decBtn = box.querySelector('[data-action="decrement"]');
             const incBtn = box.querySelector('[data-action="increment"]');
             if (decBtn) decBtn.disabled = (qty <= 1);
@@ -455,7 +504,6 @@ document.addEventListener('click', function(e) {
                 showToast(data.warning, 'error');
             }
         }
-        // Re-enable buttons that weren't clamped
         if (!data.error) {
             box.querySelectorAll('.qty-btn').forEach(b => {
                 b.disabled = (
@@ -464,7 +512,6 @@ document.addEventListener('click', function(e) {
                 );
             });
         } else {
-            // restore on error
             box.querySelectorAll('.qty-btn').forEach(b => b.disabled = false);
         }
     })
@@ -484,13 +531,9 @@ function openRemoveModal(btn) {
     _removeItemId      = btn.dataset.item;
     _removeItemName    = btn.dataset.name;
     _removeIsAvailable = btn.dataset.available === 'true';
-
     document.getElementById('wlModalName').textContent = _removeItemName;
-
-    // Hide the "save to wishlist" option if product is blocked/unavailable
     const saveBtn = document.getElementById('wlSaveYesBtn');
     if (saveBtn) saveBtn.style.display = _removeIsAvailable ? '' : 'none';
-
     const modal = document.getElementById('wlSaveModal');
     modal.classList.add('open');
 }
@@ -500,17 +543,14 @@ function closeRemoveModal() {
     _removeItemId = _removeItemName = null;
 }
 
-// Close on backdrop click
 document.getElementById('wlSaveModal').addEventListener('click', function(e) {
     if (e.target === this) closeRemoveModal();
 });
 
 function doRemove(saveToWishlist) {
-    const itemId = _removeItemId;   // ✅ store first
+    const itemId = _removeItemId;
     const itemName = _removeItemName;
-
-    closeRemoveModal();             // now safe
-
+    closeRemoveModal();
     if (!itemId) return;
 
     const itemEl = document.getElementById('cartItem_' + itemId);
@@ -518,7 +558,6 @@ function doRemove(saveToWishlist) {
 
     const fd = new FormData();
     fd.append('save_to_wishlist', saveToWishlist ? '1' : '0');
-
     fetch("{% url 'shopcore:remove_from_cart' item_id=0 %}".replace('/0/', '/' + itemId + '/'), {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF },
@@ -532,16 +571,12 @@ function doRemove(saveToWishlist) {
                 const sl = document.getElementById('summaryLine_' + itemId);
                 if (sl) sl.remove();
             }, 350);
-
             updateSummary(data.subtotal, data.grand_total);
             updateCartCountBadge(data.cart_count);
-
             const msg = data.saved_to_wishlist
                 ? `"${itemName}" removed and saved to wishlist.`
                 : `"${itemName}" removed from cart.`;
-
             showToast(msg, 'success');
-
             if (data.cart_count === 0) {
                 setTimeout(() => location.reload(), 500);
             }

@@ -1,23 +1,153 @@
 {% extends "base_products.html" %}
 {% block content %}
-<div style="max-width:500px;margin:80px auto;text-align:center;">
-    <h2>Pay with Wallet</h2>
-    <p>You are about to pay <strong>₹{{ order.final_amount }}</strong> from your wallet for order <strong>#{{ order.order_id }}</strong>.</p>
-    
-    <form method="post" action="{% url 'payments:pay_with_wallet' order_id=order.order_id %}">
-        {% csrf_token %}
-        <button type="submit" style="padding:14px 32px; background:#f06292; color:white; border:none; border-radius:10px; font-size:16px; font-weight:700; cursor:pointer;">
-            Confirm Payment from Wallet
-        </button>
-    </form>
-    
-    <p style="margin-top:20px;">
-        <a href="{% url 'shopcore:checkout' %}">Cancel</a>
-    </p>
+
+<div class="wallet-pay-container">
+    <div class="wallet-pay-card">
+        <h2>💳 Pay with Wallet</h2>
+        
+        <div class="payment-details">
+            <p>You are about to pay</p>
+            <div class="amount">
+                ₹{{ order.final_amount }}
+            </div>
+            <p class="order-info">
+                for order <strong>#{{ order.order_id }}</strong>
+            </p>
+        </div>
+
+        <form method="post" action="{% url 'payments:pay_with_wallet' order_id=order.order_id %}">
+            {% csrf_token %}
+            
+            <button type="submit" class="confirm-btn">
+                ✅ Confirm Payment from Wallet
+            </button>
+        </form>
+
+        <div class="cancel-section">
+            <a href="{% url 'shopcore:checkout' %}" class="cancel-link">
+                ← Cancel and go back
+            </a>
+        </div>
+    </div>
 </div>
 
+<style>
+    .wallet-pay-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+    }
+
+    .wallet-pay-card {
+        max-width: 480px;
+        width: 100%;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+        padding: 50px 40px;
+        text-align: center;
+        border: 1px solid #f0f0f0;
+    }
+
+    .wallet-pay-card h2 {
+        color: #2c3e50;
+        margin-bottom: 30px;
+        font-size: 25px;
+        font-weight: 700;
+    }
+
+    .payment-details {
+        margin-bottom: 40px;
+    }
+
+    .payment-details p {
+        color: #666;
+        margin-bottom: 8px;
+        font-size: 15px;
+    }
+
+    .amount {
+        font-size: 28px;
+        font-weight: 800;
+        color: #e91e63;
+        margin: 12px 0;
+        letter-spacing: -1px;
+    }
+
+    .order-info {
+        color: #555;
+        font-size: 16px;
+    }
+
+    .order-info strong {
+        color: #2c3e50;
+    }
+
+    .confirm-btn {
+        width: 100%;
+        padding: 16px 32px;
+        background: linear-gradient(135deg, #f06292, #e91e63);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 20px rgba(233, 30, 99, 0.25);
+        margin-bottom: 25px;
+    }
+
+    .confirm-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(233, 30, 99, 0.35);
+        background: linear-gradient(135deg, #e91e63, #d81b60);
+    }
+
+    .confirm-btn:active {
+        transform: translateY(1px);
+    }
+
+    .cancel-section {
+        margin-top: 20px;
+    }
+
+    .cancel-link {
+        color: #777;
+        text-decoration: none;
+        font-size: 15px;
+        transition: color 0.3s ease;
+    }
+
+    .cancel-link:hover {
+        color: #e91e63;
+        text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+        .wallet-pay-card {
+            padding: 40px 25px;
+            border-radius: 16px;
+        }
+        
+        .amount {
+            font-size: 36px;
+        }
+    }
+</style>
+
 <script>
-    // Optional: Auto submit after 1 second for smoother UX
-    // setTimeout(() => document.querySelector('form').submit(), 800);
+    // Optional: Disable button after click to prevent double submission
+    document.querySelector('form').addEventListener('submit', function() {
+        const btn = document.querySelector('.confirm-btn');
+        btn.innerHTML = 'Processing...';
+        btn.disabled = true;
+        btn.style.opacity = '0.8';
+    });
 </script>
+
 {% endblock %}

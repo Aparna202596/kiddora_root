@@ -1,10 +1,8 @@
 from __future__ import annotations
-
 import io
 import os
 import platform
 from decimal import Decimal
-
 from accounts.decorators import admin_login_required, user_login_required
 from django.conf import settings
 from django.contrib import messages
@@ -30,6 +28,7 @@ from shopcore.views.coupon_views import compute_coupon_discount
 
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ─────────────────────────────────────────────────────────────
+
 def _get_cart(user):
     try:
         return user.cart
@@ -84,10 +83,6 @@ def _restore_inventory(order_item):
 
 
 def _recalculate_order_amount(order: Order) -> None:
-    """
-    Recalculate order totals using active_quantity on every item.
-    Works correctly for both full-item and partial-quantity cancellations.
-    """
     active_items = order.order_items.filter(item_status="ACTIVE")
 
     subtotal = Decimal("0")
@@ -101,14 +96,11 @@ def _recalculate_order_amount(order: Order) -> None:
             )
             subtotal += per_unit_net * item.active_quantity
 
-    # Track post-offer subtotal separately for coupon validity check
     post_offer_subtotal = Decimal("0")
     paid_subtotal = Decimal("0")
-
     for item in active_items:
-        post_offer_line = item.total_price  # post-offer, pre-coupon
+        post_offer_line = item.total_price  
         if item.quantity and item.active_quantity < item.quantity:
-            # Proportional slice for partially cancelled items
             ratio = Decimal(item.active_quantity) / Decimal(item.quantity)
             post_offer_subtotal += (post_offer_line * ratio).quantize(Decimal("0.01"))
         else:
@@ -123,8 +115,7 @@ def _recalculate_order_amount(order: Order) -> None:
             )
             paid_subtotal += per_unit_net * item.active_quantity
 
-    order.total_amount = post_offer_subtotal  # what the coupon checks against
-
+    order.total_amount = post_offer_subtotal  
     if order.coupon:
         if post_offer_subtotal < order.coupon.min_order_amount:
             order.coupon = None
@@ -136,8 +127,6 @@ def _recalculate_order_amount(order: Order) -> None:
 
     order.shipping_charge = order.calculate_shipping()
     order.final_amount = max(Decimal("0"), paid_subtotal + order.shipping_charge)
-
-
     order.save(
         update_fields=[
             "total_amount",
@@ -152,7 +141,6 @@ def _recalculate_order_amount(order: Order) -> None:
 def get_max_offer_discount_percent(product) -> int:
     if not product:
         return 0
-
     now = timezone.now()
     active_offers = Offer.objects.filter(
         is_active=True, is_deleted=False, start_date__lte=now
@@ -167,30 +155,27 @@ def get_max_offer_discount_percent(product) -> int:
             ).first()
     except Exception:
         pass
-
     max_pct = 0
     if product_offer and product_offer.is_valid():
         max_pct = max(max_pct, product_offer.discount_percent)
     if category_offer and category_offer.is_valid():
         max_pct = max(max_pct, category_offer.discount_percent)
-
     return max_pct
 
 
 # ────────────────────────────────────────────────── USER: ORDER LIST ─────────────────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 def user_order_list(request):
     query = request.GET.get("q", "").strip()
     orders = Order.objects.filter(user=request.user).order_by("-order_date")
-
     if query:
         orders = orders.filter(
             Q(order_id__icontains=query)
             | Q(order_status__icontains=query)
             | Q(order_items__variant__product__product_name__icontains=query)
         ).distinct()
-
     page_obj = Paginator(orders, 15).get_page(request.GET.get("page"))
     return render(
         request,
@@ -203,6 +188,7 @@ def user_order_list(request):
 
 
 # ────────────────────────────────────────────────── USER: ORDER DETAIL ─────────────────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 def user_order_detail(request, order_id):
@@ -231,6 +217,7 @@ def user_order_detail(request, order_id):
 
 
 #   ────────────────────────────────────────────────── USER: CANCEL ORDER ─────────────────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -273,12 +260,14 @@ def cancel_order(request, order_id):
 
     if order.payment_status == "PAID":
         if order.payment_method in ("PAYPAL", "WALLET"):
+            # Full cancellation: refund the entire amount the customer paid,
+            # which already includes any shipping charge collected at order time.
             credit_refund_to_wallet(
                 user=order.user,
                 amount=order.final_amount,
                 description=f"Refund for cancelled order {order.order_id}",
                 reference_type="CANCEL",
-                reference_id=str(order.order_id),  
+                reference_id=str(order.order_id),
                 order=order,
             )
             order.payment_status = "REFUNDED"
@@ -286,12 +275,11 @@ def cancel_order(request, order_id):
             order.payment_status = "CANCELLED"
 
     order.save()
-
     messages.success(request, f"Order {order.order_id} has been cancelled.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
-
 # ───────────────────────────────────────────────────────────── CANCEL ORDER ITEM (partial cancellation) ─────────────────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -323,7 +311,6 @@ def cancel_order_item(request, order_id, item_id):
         )
 
     reason = request.POST.get("cancel_reason", "").strip()
-
     try:
         cancel_qty = int(
             request.POST.get("cancel_quantity", order_item.active_quantity)
@@ -352,21 +339,7 @@ def cancel_order_item(request, order_id, item_id):
         )
     item_refund_amount = (per_unit_net * cancel_qty).quantize(Decimal("0.01"))
 
-    if order.payment_status == "PAID" and order.payment_method in ("PAYPAL", "WALLET"):
-
-        new_total_cancelled = order_item.cancelled_quantity + cancel_qty
-        refund_ref = f"{order.order_id}-item-{order_item.id}-cq-{new_total_cancelled}"
-        credit_refund_to_wallet(
-            user=order.user,
-            amount=item_refund_amount,
-            description=(
-                f"Refund for {cancel_qty} unit(s) of "
-                f"'{order_item.variant.product.product_name}' cancelled in order {order.order_id}"
-            ),
-            reference_type="CANCEL",
-            reference_id=refund_ref,
-            order=order,
-        )
+    old_shipping = order.shipping_charge
 
     order_item.cancelled_quantity += cancel_qty
     if cancel_all:
@@ -378,14 +351,30 @@ def cancel_order_item(request, order_id, item_id):
     _recalculate_order_amount(order)
 
     remaining_active = order.order_items.filter(item_status="ACTIVE")
-    if not remaining_active.exists():
+    no_items_remain = not remaining_active.exists()
+
+    if no_items_remain:
+        full_refund_amount = item_refund_amount + old_shipping
+        if order.payment_status == "PAID" and order.payment_method in ("PAYPAL", "WALLET"):
+            new_total_cancelled = order_item.cancelled_quantity
+            refund_ref = f"{order.order_id}-item-{order_item.id}-cq-{new_total_cancelled}"
+            credit_refund_to_wallet(
+                user=order.user,
+                amount=full_refund_amount,
+                description=(
+                    f"Refund for {cancel_qty} unit(s) of "
+                    f"'{order_item.variant.product.product_name}' — "
+                    f"full order cancellation (last item) in order {order.order_id}"
+                ),
+                reference_type="CANCEL",
+                reference_id=refund_ref,
+                order=order,
+            )
+
         order.order_status = "CANCELLED"
         order.cancel_reason = "All items cancelled"
         order.cancelled_at = timezone.now()
-        if (
-            order.payment_method in ("PAYPAL", "WALLET")
-            and order.payment_status == "PAID"
-        ):
+        if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
             order.payment_status = "REFUNDED"
         elif order.payment_method == "COD":
             order.payment_status = "CANCELLED"
@@ -397,27 +386,60 @@ def cancel_order_item(request, order_id, item_id):
                 "payment_status",
             ]
         )
-    else:
-        if (
-            order.payment_method in ("PAYPAL", "WALLET")
-            and order.payment_status == "PAID"
-        ):
-            order.payment_status = "PARTIALLY_REFUNDED"
-            order.save(update_fields=["payment_status"])
+
+        if cancel_all:
+            msg = f"Item '{order_item.variant.product.product_name}' fully cancelled."
+        else:
+            msg = f"{cancel_qty} unit(s) of '{order_item.variant.product.product_name}' cancelled."
+        if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status in ("PAID", "REFUNDED"):
+            msg += f" ₹{full_refund_amount:.2f} refunded to your wallet."
+        messages.success(request, msg)
+        return redirect("shopcore:user_order_detail", order_id=order.order_id)
+
+    new_shipping = order.shipping_charge  
+    shipping_delta = new_shipping - old_shipping  
+
+    adjusted_refund_amount = max(
+        Decimal("0"),
+        item_refund_amount - shipping_delta,
+    )
+
+    if order.payment_status == "PAID" and order.payment_method in ("PAYPAL", "WALLET"):
+        new_total_cancelled = order_item.cancelled_quantity
+        refund_ref = f"{order.order_id}-item-{order_item.id}-cq-{new_total_cancelled}"
+        credit_refund_to_wallet(
+            user=order.user,
+            amount=adjusted_refund_amount,
+            description=(
+                f"Refund for {cancel_qty} unit(s) of "
+                f"'{order_item.variant.product.product_name}' cancelled in order {order.order_id}"
+                + (
+                    f" (shipping adjustment: –₹{shipping_delta:.2f})"
+                    if shipping_delta > 0
+                    else ""
+                )
+            ),
+            reference_type="CANCEL",
+            reference_id=refund_ref,
+            order=order,
+        )
+        order.payment_status = "PARTIALLY_REFUNDED"
+        order.save(update_fields=["payment_status"])
 
     if cancel_all:
         msg = f"Item '{order_item.variant.product.product_name}' fully cancelled."
     else:
         msg = f"{cancel_qty} unit(s) of '{order_item.variant.product.product_name}' cancelled."
-
-    if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PAID":
-        msg += f" ₹{item_refund_amount:.2f} refunded to your wallet."
-
+    if order.payment_method in ("PAYPAL", "WALLET") and order.payment_status == "PARTIALLY_REFUNDED":
+        msg += f" ₹{adjusted_refund_amount:.2f} refunded to your wallet."
+        if shipping_delta > 0:
+            msg += f" (Shipping adjusted: free shipping no longer applies to remaining order.)"
     messages.success(request, msg)
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
 
 # ────────────────────────────────────────────────── REQUEST RETURN ─────────────────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -458,12 +480,12 @@ def request_return(request, order_id, item_id):
     Return.objects.create(order_item=order_item, reason=reason)
     order_item.item_status = "RETURN_REQUESTED"
     order_item.save(update_fields=["item_status"])
-
     messages.success(request, "Return request submitted successfully.")
     return redirect("shopcore:user_order_detail", order_id=order.order_id)
 
 
 # ───────────────────────────────────────────────────────────── ADMIN: ORDER LIST ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_order_list(request):
@@ -477,7 +499,6 @@ def admin_order_list(request):
         .prefetch_related("order_items")
         .order_by("-order_date")
     )
-
     if search:
         orders = orders.filter(
             Q(order_id__icontains=search)
@@ -486,13 +507,11 @@ def admin_order_list(request):
         )
     if status_f:
         orders = orders.filter(order_status=status_f)
-
     if sort in ("order_date", "final_amount", "order_status"):
         order_field = f"-{sort}" if direction == "desc" else sort
         orders = orders.order_by(order_field)
 
     page_obj = Paginator(orders, 15).get_page(request.GET.get("page"))
-
     return render(
         request,
         "orders/admin/admin_order_list.html",
@@ -506,8 +525,8 @@ def admin_order_list(request):
         },
     )
 
-
 # ───────────────────────────────────────────────────────────── ADMIN: ORDER DETAIL ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 def admin_order_detail(request, order_id):
@@ -534,8 +553,8 @@ def admin_order_detail(request, order_id):
         },
     )
 
-
 # ───────────────────────────────────────────────────────────── ADMIN: UPDATE ORDER STATUS ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 @transaction.atomic
@@ -581,7 +600,6 @@ def admin_update_order_status(request, order_id):
         )
         if order.payment_method == "COD":
             order.payment_status = "PAID"
-
             Payment.objects.filter(
                 order=order, payment_method="COD", payment_status="PENDING"
             ).update(
@@ -594,6 +612,7 @@ def admin_update_order_status(request, order_id):
         order.cancel_reason = request.POST.get(
             "cancel_reason", "Cancelled by admin"
         ).strip()
+
         for oi in order.order_items.filter(item_status="ACTIVE"):
             try:
                 inv = oi.variant.inventory
@@ -609,7 +628,6 @@ def admin_update_order_status(request, order_id):
 
         if order.payment_status == "PAID":
             if order.payment_method in ("PAYPAL", "WALLET"):
-
                 credit_refund_to_wallet(
                     user=order.user,
                     amount=order.final_amount,
@@ -621,6 +639,7 @@ def admin_update_order_status(request, order_id):
                 order.payment_status = "REFUNDED"
             elif order.payment_method == "COD":
                 order.payment_status = "CANCELLED"
+
     order.save()
     messages.success(
         request,
@@ -630,6 +649,7 @@ def admin_update_order_status(request, order_id):
 
 
 # ───────────────────────────────────────────────────────────── ADMIN: UPDATE ORDER ITEM STATUS ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 @transaction.atomic
@@ -657,8 +677,8 @@ def admin_update_item_status(request, order_id, item_id):
     )
     return redirect("shopcore:admin_order_detail", order_id=order_id)
 
-
 # ───────────────────────────────────────────────────────────── ADMIN: HANDLE RETURN REQUEST ─────────────────────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 @transaction.atomic
@@ -684,17 +704,6 @@ def admin_handle_return(request, return_id):
     admin_note = request.POST.get("admin_note", "").strip()
 
     if action == "APPROVE":
-        ret.status = "APPROVED"
-        ret.admin_note = admin_note or "Return approved by admin."
-        ret.updated_at = timezone.now()
-        ret.refund_amount = refund_amount
-        ret.save(update_fields=["status", "admin_note", "updated_at", "refund_amount"])
-
-        order_item.item_status = "REFUNDED"
-        order_item.save(update_fields=["item_status"])
-
-        _restore_inventory(order_item)
-
         if order_item.final_paid_price:
             per_unit_paid = (order_item.final_paid_price / order_item.quantity
                             if order_item.quantity else Decimal("0"))
@@ -707,6 +716,18 @@ def admin_handle_return(request, return_id):
                             if order_item.quantity else Decimal("0"))
 
         refund_amount = (per_unit_paid * order_item.active_quantity).quantize(Decimal("0.01"))
+
+        ret.status = "APPROVED"
+        ret.admin_note = admin_note or "Return approved by admin."
+        ret.updated_at = timezone.now()
+        ret.refund_amount = refund_amount
+        ret.save(update_fields=["status", "admin_note", "updated_at", "refund_amount"])
+
+        order_item.item_status = "REFUNDED"
+        order_item.save(update_fields=["item_status"])
+
+        _restore_inventory(order_item)
+
         credit_refund_to_wallet(
             user=order.user,
             amount=refund_amount,
@@ -726,6 +747,7 @@ def admin_handle_return(request, return_id):
         else:
             order.payment_status = "PARTIALLY_REFUNDED"
         order.save(update_fields=["payment_status"])
+
         messages.success(request, f"Return approved and ₹{refund_amount:.2f} refunded.")
 
     elif action == "REJECT":
@@ -733,14 +755,17 @@ def admin_handle_return(request, return_id):
         ret.admin_note = admin_note or "Return rejected by admin."
         ret.updated_at = timezone.now()
         ret.save(update_fields=["status", "admin_note", "updated_at"])
+
         order_item.item_status = "RETURN_REJECTED"
         order_item.save(update_fields=["item_status"])
+
         messages.success(request, "Return request rejected.")
 
     return redirect("shopcore:admin_order_detail", order_id=order.order_id)
 
 
 # ───────────────────────────────────────────────────────────── DOWNLOAD INVOICE ─────────────────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 def download_invoice(request, order_id):
@@ -751,6 +776,7 @@ def download_invoice(request, order_id):
         order_id=order_id,
         user=request.user,
     )
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -760,12 +786,14 @@ def download_invoice(request, order_id):
         topMargin=40,
         bottomMargin=40,
     )
+
     if platform.system() == "Windows":
         font_path = "C:/Windows/Fonts/arial.ttf"
         font_bold_path = "C:/Windows/Fonts/arialbd.ttf"
     else:
         font_path = "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"
         font_bold_path = "/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf"
+
     pdfmetrics.registerFont(TTFont("Arial", font_path))
     pdfmetrics.registerFont(TTFont("Arial-Bold", font_bold_path))
 
@@ -814,7 +842,7 @@ def download_invoice(request, order_id):
         [
             logo_cell,
             Paragraph(
-                "Kids Fashion &amp; Apparel<br/>www.kiddora.com",
+                "Kids Fashion &amp; Apparel<br/>www.kiddora-store.live",
                 ps("hs", 8, color=colors.HexColor("#fce4ec"), leading=12),
             ),
             Paragraph(
@@ -970,7 +998,6 @@ def download_invoice(request, order_id):
             th("Amount", "RIGHT"),
         ]
     ]
-
     item_cmds = [
         ("BACKGROUND", (0, 0), (-1, 0), PINK),
         ("FONTNAME", (0, 0), (-1, -1), "Arial"),
@@ -993,10 +1020,8 @@ def download_invoice(request, order_id):
         is_return = oi.item_status in INACTIVE and not is_cancelled
         label = STATUS_LABEL.get(oi.item_status, "")
         has_partial_cancel = oi.cancelled_quantity > 0 and not is_fully_inactive
-
         offer_pct = get_max_offer_discount_percent(oi.variant.product)
         offer_str = f"{offer_pct}%" if offer_pct else "—"
-
         muted_clr = (
             AMBER_TXT if is_cancelled else (ROSE_TXT if is_return else colors.black)
         )
@@ -1059,7 +1084,6 @@ def download_invoice(request, order_id):
             cancel_price = (per_unit_net * oi.cancelled_quantity).quantize(
                 Decimal("0.01")
             )
-
             item_data.append(
                 [
                     Paragraph(name_base, ps(f"an_{row_idx}", 8, leading=11)),
@@ -1073,7 +1097,6 @@ def download_invoice(request, order_id):
                 ]
             )
             row_idx += 1
-
             item_data.append(
                 [
                     Paragraph(
@@ -1141,7 +1164,6 @@ def download_invoice(request, order_id):
         return ["", Paragraph(label, lp), Paragraph(value, vp)]
 
     totals = []
-
     raw_subtotal = sum(
         oi.unit_price * oi.active_quantity
         for oi in order.order_items.filter(item_status="ACTIVE")
@@ -1162,7 +1184,7 @@ def download_invoice(request, order_id):
             if pct:
                 offer_names.append(f"{oi.variant.product.product_name} ({pct}% off)")
         if offer_names:
-            for oname in offer_names[:4]:  
+            for oname in offer_names[:4]:
                 totals.append(
                     tot_row(
                         f"  • {oname}",
@@ -1249,7 +1271,7 @@ def download_invoice(request, order_id):
             [
                 [
                     Paragraph(
-                        "Thank you for shopping with Kiddora!  |  www.kiddora.com  |  support@kiddora.com",
+                        "Thank you for shopping with Kiddora!  |  www.kiddora-store.live  |  support@kiddora.com",
                         ps("ft", 7, color=MUTED, align="CENTER"),
                     )
                 ]

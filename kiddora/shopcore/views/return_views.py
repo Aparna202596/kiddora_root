@@ -16,8 +16,8 @@ from shopcore.views.order_views import _recalculate_order_amount
 
 
 # ────────────────────────────────────────────────── HELPER FUNCTIONS ──────────────────────────────────────────────────
-def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
 
+def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
     try:
         inv = order_item.variant.inventory
         inv.quantity_available += qty
@@ -26,7 +26,9 @@ def _restore_inventory_partial(order_item: OrderItem, qty: int) -> None:
     except Exception:
         pass
 
+
 # ────────────────────────────────────────────────── RETURN REQUEST VIEWS ──────────────────────────────────────────────────
+
 @never_cache
 @user_login_required
 @transaction.atomic
@@ -82,7 +84,7 @@ def request_return(request, order_id, item_id):
 
     order_items_total = sum(
         oi.total_price for oi in order.order_items.all()
-    ) or Decimal("1") 
+    ) or Decimal("1")
 
     if order_item.final_paid_price:
         paid_for_item = order_item.final_paid_price
@@ -98,6 +100,7 @@ def request_return(request, order_id, item_id):
         else Decimal("0")
     )
     refund_amount = (per_unit_paid * return_qty).quantize(Decimal("0.01"))
+
     Return.objects.create(
         order_item=order_item,
         reason=reason,
@@ -118,7 +121,6 @@ def request_return(request, order_id, item_id):
 
 
 # ──────────────────────────────────────────────── ADMIN: RETURN REQUEST LIST ────────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
@@ -155,7 +157,6 @@ def admin_return_list(request):
 
 
 # ─────────────────────────────────────────────── ADMIN: RETURN REQUEST DETAIL ───────────────────────────────────────────────
-
 
 @never_cache
 @admin_login_required
@@ -195,6 +196,7 @@ def admin_return_detail(request, return_id):
 
 
 # ─────────────────────────────────────────────── ADMIN: APPROVE RETURN ───────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 @transaction.atomic
@@ -246,6 +248,7 @@ def admin_approve_return(request, return_id):
     )
     return redirect("shopcore:admin_return_detail", return_id=return_id)
 
+
 # ─────────────────────────────────────────────── ADMIN: PROCESS REFUND ───────────────────────────────────────────────
 
 @never_cache
@@ -257,6 +260,7 @@ def admin_process_refund(request, return_id):
 
     ret = get_object_or_404(Return, id=return_id)
 
+    # Idempotency guard — status must be exactly APPROVED
     if ret.status != "APPROVED":
         if ret.status == "REFUNDED":
             messages.warning(request, "Refund was already processed for this return.")
@@ -270,15 +274,59 @@ def admin_process_refund(request, return_id):
     oi = ret.order_item
     order = oi.order
 
-    refund_amount = ret.refund_amount or ret.calculated_refund_amount
+    item_refund_amount = ret.refund_amount or ret.calculated_refund_amount
+
+    old_shipping = order.shipping_charge
+
+    if oi.item_status == "RETURN_APPROVED":
+        oi.item_status = "REFUNDED"
+        oi.save(update_fields=["item_status"])
+
+    _recalculate_order_amount(order)
+
+    active_count = order.order_items.filter(item_status="ACTIVE").count()
+    no_items_remain = active_count == 0
+
+    if no_items_remain:
+        final_refund_amount = (item_refund_amount + old_shipping).quantize(Decimal("0.01"))
+    else:
+
+        new_shipping = order.shipping_charge  
+        shipping_delta = new_shipping - old_shipping  
+        final_refund_amount = max(
+            Decimal("0"),
+            item_refund_amount - shipping_delta,
+        ).quantize(Decimal("0.01"))
+
+    if no_items_remain and old_shipping > 0:
+        description = (
+            f"Refund for return of '{oi.variant.product.product_name}' "
+            f"in order {order.order_id} (includes ₹{old_shipping:.2f} shipping refund)"
+        )
+    elif not no_items_remain:
+        new_shipping = order.shipping_charge
+        shipping_delta = new_shipping - old_shipping
+        if shipping_delta > 0:
+            description = (
+                f"Refund for return of '{oi.variant.product.product_name}' "
+                f"in order {order.order_id} "
+                f"(shipping adjustment: –₹{shipping_delta:.2f}, free shipping no longer applies)"
+            )
+        else:
+            description = (
+                f"Refund for return of '{oi.variant.product.product_name}' "
+                f"in order {order.order_id}"
+            )
+    else:
+        description = (
+            f"Refund for return of '{oi.variant.product.product_name}' "
+            f"in order {order.order_id}"
+        )
 
     txn = credit_refund_to_wallet(
         user=order.user,
-        amount=refund_amount,
-        description=(
-            f"Refund for return of '{oi.variant.product.product_name}' "
-            f"in order {order.order_id}"
-        ),
+        amount=final_refund_amount,
+        description=description,
         reference_type="RETURN",
         reference_id=f"{order.order_id}-return-{ret.id}",
         order=order,
@@ -290,27 +338,22 @@ def admin_process_refund(request, return_id):
 
     ret.locked = True
     ret.save(update_fields=["locked"])
-
     ret.status = "REFUNDED"
     ret.refunded_at = timezone.now()
     ret.save(update_fields=["status", "refunded_at"])
 
-    if oi.item_status == "RETURN_APPROVED":
-        oi.item_status = "REFUNDED"
-        oi.save(update_fields=["item_status"])
-
-    _recalculate_order_amount(order)
-    active_count = order.order_items.filter(item_status="ACTIVE").count()
-    order.payment_status = "REFUNDED" if active_count == 0 else "PARTIALLY_REFUNDED"
+    order.payment_status = "REFUNDED" if no_items_remain else "PARTIALLY_REFUNDED"
     order.save(update_fields=["payment_status"])
 
     messages.success(
         request,
-        f"Refund of ₹{refund_amount} finalised and credited to wallet.",
+        f"Refund of ₹{final_refund_amount} finalised and credited to wallet.",
     )
     return redirect("shopcore:admin_return_detail", return_id=return_id)
 
+
 # ─────────────────────────────────────────────── ADMIN: REJECT RETURN ───────────────────────────────────────────────
+
 @never_cache
 @admin_login_required
 @transaction.atomic

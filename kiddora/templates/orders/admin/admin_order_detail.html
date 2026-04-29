@@ -3,8 +3,19 @@
 {% block title %}Order {{ order.order_id }} – Admin{% endblock %}
 {% block content %}
 <style>
-  .od-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:24px; }
-  .od-header h2 { font-size:20px; font-weight:800; color:#222; }
+  .od-header { 
+    display:flex; 
+    align-items:center; 
+    justify-content:space-between; 
+    flex-wrap:wrap; 
+    gap:14px; 
+    margin-bottom:24px; 
+  }
+  .od-header h2 { 
+    font-size:20px; 
+    font-weight:800; 
+    color:#222; }
+    
   .back-link { font-size:13px; color:#f06292; text-decoration:none; display:flex; align-items:center; gap:6px; }
   .back-link:hover { text-decoration:underline; }
   .od-layout { display:flex; gap:22px; align-items:flex-start; flex-wrap:wrap; }

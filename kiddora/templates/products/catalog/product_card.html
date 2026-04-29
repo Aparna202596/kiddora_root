@@ -20,10 +20,9 @@
         </a>
         <div class="pc-price-row">
             <div class="pc-price">
-                {% if product.discount_percent %}
+                {% if product.applied_offer_percent %}
                     <span class="pc-final red">₹{{ product.final_price|floatformat:0 }}</span>
                     <span class="pc-base">₹{{ product.base_price|floatformat:0 }}</span>
-                    <span class="pc-off">({{ product.applied_offer_percent }}% off)</span>
                 {% else %}
                     <span class="pc-final black">₹{{ product.final_price|floatformat:0 }}</span>
                 {% endif %}
