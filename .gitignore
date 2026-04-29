@@ -34,5 +34,5 @@ Thumbs.db
 # Ignore package list
 all-packages.txt
 
-# Ignore uploaded media files
+kiddora/staticfiles/
 kiddora/media/
