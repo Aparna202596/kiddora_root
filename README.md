@@ -54,6 +54,7 @@ Kiddora is a production-ready monolithic Django e-commerce platform that integra
 ### 💳 Payment Integration
 - PayPal Sandbox
 - Cash on Delivery (COD)
+- Wallet 
 
 ---
 
