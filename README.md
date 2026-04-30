@@ -1,257 +1,229 @@
-👶 Kiddora – Kids E-Commerce Platform 👕🛍️
+# 👶 Kiddora – Kids E-Commerce Platform
 
-Kiddora is a full-featured monolithic Django-based e-commerce web application designed for kids’ clothing (Newborn to 15 years). It is a production-ready online shopping platform with secure authentication, robust admin controls, seamless checkout experience, payment integration, offer management, and scalable deployment architecture.
+> A full-featured Django-based e-commerce web application for kids' clothing (Newborn to 15 years), built for production with secure authentication, seamless checkout, payment integration, and scalable cloud deployment.
 
-The platform integrates both frontend and backend within a single Django project, delivering a complete e-commerce ecosystem with efficient administration tools and a smooth customer shopping experience.
+---
 
-🚀 Tech Stack
-🖥️ Backend
-Python
-Django
-Django ORM
-PostgreSQL
-🎨 Frontend
-HTML5
-CSS3
-Bootstrap
-JavaScript
-AJAX
-🔐 Authentication & Security
-Email OTP Verification
-Social Login (Single Sign-On)
-Forgot Password Flow
-Secure Session Handling
-CSRF Protection
-Role-Based Access Control
-☁️ Storage & Deployment
-Cloudinary (Media & Static Files)
-AWS EC2 (Hosting)
-Gunicorn (WSGI Server)
-Nginx (Reverse Proxy & Static Serving)
-💳 Payment Integration
-PayPal Sandbox
-Cash on Delivery (COD)
-✨ Key Features
-🛠️ 1. Admin Module
+## 📋 Table of Contents
 
-A powerful admin dashboard for complete business control.
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+  - [Admin Module](#admin-module)
+  - [User Module](#user-module)
+- [Core Business Logic](#core-business-logic)
+- [Architecture](#architecture)
+- [Deployment](#deployment)
+- [Database](#database)
+- [Project Status](#project-status)
+- [Author](#author)
 
-👤 User Management
-Secure admin authentication
-Role-based dashboard access
-Block / Unblock users
-Confirmation prompts for critical actions
-Backend search with clear functionality
-Pagination for large datasets
-Latest-first sorting
-📦 Category Management
-Add / Edit / Soft Delete categories
-Search & filter categories
-Pagination support
-Optimized sorting
-🧸 Product Management
-Add / Edit / Soft Delete products
-Multiple image upload
-Image cropping & resizing
-Product optimization for UI
-Backend search & pagination
-📊 Orders & Inventory
-Order tracking dashboard
-Order status management
-Return & cancellation handling
-Stock synchronization
-Automated inventory updates
-🎟️ Offers & Coupons
-Coupon creation and control
-Single-use coupon enforcement
-Dynamic discount calculation
-Maximum discount logic engine
-Referral reward system
-Wallet credit integration
-Sales analytics dashboard
-🛍️ 2. User Module
-🔐 Authentication System
-Secure signup & login
-OTP-based verification with timer
-Resend OTP functionality
-Social login (SSO)
-Forgot password flow
-👤 Profile Management
-View & edit profile
-Profile image upload
-Email change verification (OTP/token)
-Password change
-Address management (Add/Edit/Delete)
-🔍 Product Discovery
-Product browsing
-Advanced search
-Multi-filter support
-Sorting options
-Optimized UX browsing flow
-❤️ Wishlist & Cart
-Wishlist
-Add / Remove items
-AJAX-powered updates
-Cart
-Add / Remove items
-Quantity increment/decrement
-Stock validation
-Out-of-stock prevention
-Real-time updates via AJAX
-💳 Checkout & Payments
-Address selection
-Order summary with breakdown
-Coupon application
-Wallet usage
-PayPal payment integration
-COD support
-Payment success/failure handling
-📦 Order Lifecycle
-Order history & tracking
-Detailed order view
-Search orders
-Invoice download
-Cancel / Return orders
-Return reason capture
-Refund processing
-Wallet-based refunds
-Stock restoration logic
-🧠 Core Business Logic
-💰 Discount Engine
+---
 
-Kiddora intelligently calculates best discounts using:
+## Overview
 
-Product offers
-Category offers
-Coupons
-Referral bonuses
-Wallet credits
+Kiddora is a production-ready monolithic Django e-commerce platform that integrates frontend and backend within a single project. It delivers a complete online shopping ecosystem for children's clothing, featuring a powerful admin dashboard, smooth customer experience, wallet and referral systems, and full payment gateway integration.
 
-✔ Automatically applies the maximum valid discount while preserving business rules.
+---
 
-👛 Wallet System
+## Tech Stack
 
-Users earn and use wallet credits from:
+### 🖥️ Backend
+- **Python** & **Django**
+- **Django ORM**
+- **PostgreSQL**
 
-Returns & refunds
-Referral rewards
-Promotional credits
+### 🎨 Frontend
+- **HTML5**, **CSS3**, **Bootstrap**
+- **JavaScript** & **AJAX**
 
-Wallet can be used during checkout.
+### 🔐 Authentication & Security
+- Email OTP Verification
+- Social Login (SSO)
+- Forgot Password Flow
+- Secure Session Handling
+- CSRF Protection
+- Role-Based Access Control
 
-🔁 Referral System
-Invite-based rewards
-Referral bonus credits
-Wallet integration
-🔎 Search & Pagination
+### ☁️ Storage & Deployment
+- **Cloudinary** – Media & Static Files
+- **AWS EC2** – Hosting
+- **Gunicorn** – WSGI Server
+- **Nginx** – Reverse Proxy & Static Serving
 
-Implemented across:
+### 💳 Payment Integration
+- PayPal Sandbox
+- Cash on Delivery (COD)
 
-Users
-Categories
-Products
-Orders
+---
 
-Features:
+## Features
 
-Backend search
-Clear search functionality
-Efficient pagination
-Sorted listings
-🗑️ Soft Delete Strategy
+### 🛠️ Admin Module
 
-Applied to:
+A powerful dashboard for complete business control.
 
-Categories
-Products
-Key business entities
+**User Management**
+- Secure admin authentication with role-based access
+- Block / Unblock users with confirmation prompts
+- Backend search, pagination, and latest-first sorting
 
-Benefits:
+**Category Management**
+- Add, Edit, and Soft Delete categories
+- Search, filter, and paginated listings
 
-Data recovery support
-Reporting integrity
-Prevents accidental permanent deletion
-🏗️ Architecture
+**Product Management**
+- Add, Edit, and Soft Delete products
+- Multiple image upload with cropping and resizing
+- Backend search and pagination
 
-Kiddora follows a Monolithic Django Architecture:
+**Orders & Inventory**
+- Order tracking dashboard with status management
+- Return and cancellation handling
+- Automated stock synchronization
 
-Frontend + Backend + Business Logic + Database in a unified system
+**Offers & Coupons**
+- Coupon creation with single-use enforcement
+- Dynamic discount calculation with maximum discount logic
+- Referral reward system with wallet credit integration
+- Sales analytics dashboard
 
-✔ Advantages
-Simplified deployment
-Centralized logic
-Faster development cycle
-Easier maintenance
-Strong Django ORM integration
-☁️ Deployment
+---
 
-Deployed on AWS EC2 using production-ready stack:
+### 🛍️ User Module
 
+**Authentication**
+- Secure signup & login
+- OTP-based email verification with resend and countdown timer
+- Social login (SSO) and forgot password flow
+
+**Profile Management**
+- View and edit profile with image upload
+- OTP/token-based email change verification
+- Password change and address management (Add / Edit / Delete)
+
+**Product Discovery**
+- Browse products with advanced search, multi-filter support, and sorting options
+
+**Wishlist & Cart**
+- AJAX-powered wishlist and cart management
+- Real-time quantity updates, stock validation, and out-of-stock prevention
+
+**Checkout & Payments**
+- Address selection with order summary and breakdown
+- Coupon and wallet application at checkout
+- PayPal and COD payment with success/failure handling
+
+**Order Lifecycle**
+- Order history, tracking, and detailed order view
+- Invoice download
+- Cancel / Return with reason capture
+- Refund processing via wallet with stock restoration
+
+---
+
+## Core Business Logic
+
+### 💰 Discount Engine
+Kiddora intelligently calculates the best available discount using:
+- Product-level offers
+- Category-level offers
+- Coupons
+- Referral bonuses
+- Wallet credits
+
+The engine automatically applies the maximum valid discount while preserving all business rules.
+
+### 👛 Wallet System
+Users earn wallet credits from returns, refunds, referral rewards, and promotional credits. Credits can be applied at checkout.
+
+### 🔁 Referral System
+Invite-based referral system that rewards users with wallet credits upon successful signups via their referral link.
+
+### 🔎 Search & Pagination
+Implemented across Users, Categories, Products, and Orders with backend search, clear functionality, efficient pagination, and sorted listings.
+
+### 🗑️ Soft Delete Strategy
+Applied to categories, products, and key business entities — supports data recovery, preserves reporting integrity, and prevents accidental permanent deletion.
+
+---
+
+## Architecture
+
+Kiddora follows a **Monolithic Django Architecture**, with Frontend, Backend, Business Logic, and Database unified in a single system.
+
+**Advantages:**
+- Simplified deployment
+- Centralized logic and easier maintenance
+- Faster development cycle
+- Strong Django ORM integration
+
+---
+
+## Deployment
+
+Deployed on **AWS EC2** using a production-ready stack:
+
+```
 AWS EC2
    ↓
-Nginx
+Nginx  (Reverse Proxy & Static Serving)
    ↓
-Gunicorn
+Gunicorn  (WSGI Server)
    ↓
-Django
+Django  (Application)
    ↓
-PostgreSQL
+PostgreSQL  (Database)
    ↓
-Cloudinary CDN
-✔ Features
-Production-ready hosting
-Secure environment configuration
-Static/media offloading to Cloudinary
-Scalable infrastructure
-🗄️ Database
+Cloudinary CDN  (Media & Static Files)
+```
 
-Uses PostgreSQL for robust data handling:
+- Production-ready hosting with secure environment configuration
+- Static and media offloading to Cloudinary
+- Scalable and maintainable infrastructure
 
-Entities:
+---
 
-Users
-Products
-Categories
-Orders
-Coupons
-Wallet
-Referrals
-Inventory
-Returns & Refunds
-✔ Benefits
-ACID compliance
-High performance
-Scalability
-Reliability
-🌟 Highlights
+## Database
 
-✔ Production-ready full-stack project
-✔ Secure authentication system
-✔ Advanced admin dashboard
-✔ Payment gateway integration
-✔ Wallet + referral system
-✔ Coupons & discount engine
-✔ Inventory synchronization
-✔ Invoice generation system
-✔ Return & refund workflows
-✔ AJAX-powered user experience
-✔ Cloud deployment (AWS EC2 + Cloudinary)
+Uses **PostgreSQL** for robust, ACID-compliant data handling.
 
-📌 Project Status
+**Key Entities:**
+- Users
+- Products & Categories
+- Orders
+- Coupons
+- Wallet & Referrals
+- Inventory
+- Returns & Refunds
 
-✔ Completed
+---
 
-Kiddora is fully developed with complete:
+## Project Highlights
 
-Admin Module
-Customer Module
-E-commerce Engine
-Payment System
-Analytics Dashboard
+| Feature | Status |
+|---|---|
+| Secure Authentication System | ✅ |
+| Advanced Admin Dashboard | ✅ |
+| Payment Gateway Integration (PayPal + COD) | ✅ |
+| Wallet + Referral System | ✅ |
+| Coupons & Discount Engine | ✅ |
+| Inventory Synchronization | ✅ |
+| Invoice Generation | ✅ |
+| Return & Refund Workflows | ✅ |
+| AJAX-Powered UX | ✅ |
+| Cloud Deployment (AWS EC2 + Cloudinary) | ✅ |
 
-Ready for production scaling and future enhancements.
+---
 
-👨‍💻 Author
+## Project Status
 
-Developed using:
-Django • PostgreSQL • Cloudinary • AWS ☁️
+**✅ Completed**
+
+Kiddora is fully developed with a complete Admin Module, Customer Module, E-commerce Engine, Payment System, and Analytics Dashboard. The platform is ready for production scaling and future enhancements.
+
+---
+
+## Author
+
+Developed with Django • PostgreSQL • Cloudinary • AWS ☁️
