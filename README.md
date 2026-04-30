@@ -1,227 +1,213 @@
-Kiddora 👶👕🛍️
-Kiddora is a full-featured monolithic Django-based e-commerce web application built for kids’ clothing (Newborn to 15 years). It is designed as a production-ready online shopping platform with secure authentication, robust admin management, seamless checkout, payment gateway integration, offer management, and scalable deployment architecture.
+👶 Kiddora – Kids E-Commerce Platform 👕🛍️
 
-The platform combines both frontend and backend in a single Django application, delivering a complete e-commerce ecosystem with efficient admin workflows and a smooth customer shopping experience.
+Kiddora is a full-featured monolithic Django-based e-commerce web application designed for kids’ clothing (Newborn to 15 years). It is a production-ready online shopping platform with secure authentication, robust admin controls, seamless checkout experience, payment integration, offer management, and scalable deployment architecture.
+
+The platform integrates both frontend and backend within a single Django project, delivering a complete e-commerce ecosystem with efficient administration tools and a smooth customer shopping experience.
 
 🚀 Tech Stack
-Backend
+🖥️ Backend
 Python
 Django
 Django ORM
 PostgreSQL
-Frontend
+🎨 Frontend
 HTML5
 CSS3
 Bootstrap
 JavaScript
 AJAX
-Authentication & Security
+🔐 Authentication & Security
 Email OTP Verification
 Social Login (Single Sign-On)
 Forgot Password Flow
 Secure Session Handling
 CSRF Protection
-Role-based Access Control
-Storage & Deployment
-Cloudinary – Static / Media file storage
-AWS EC2 – Deployment & Hosting
-Gunicorn – WSGI Application Server
-Nginx – Reverse Proxy / Static Serving
-Payment Integration
-PayPal Sandbox Integration
+Role-Based Access Control
+☁️ Storage & Deployment
+Cloudinary (Media & Static Files)
+AWS EC2 (Hosting)
+Gunicorn (WSGI Server)
+Nginx (Reverse Proxy & Static Serving)
+💳 Payment Integration
+PayPal Sandbox
 Cash on Delivery (COD)
-Key Features
-1) Admin Module
-Kiddora includes a secure and feature-rich Admin Dashboard for complete business management.
+✨ Key Features
+🛠️ 1. Admin Module
 
-User Management
+A powerful admin dashboard for complete business control.
+
+👤 User Management
 Secure admin authentication
-Dashboard access control
+Role-based dashboard access
 Block / Unblock users
-Confirmation prompts before critical actions
-Backend-powered search
-Clear search functionality
+Confirmation prompts for critical actions
+Backend search with clear functionality
 Pagination for large datasets
-Descending order sorting (latest users first)
-Category Management
-Add categories
-Edit categories
-Soft delete categories
-Search categories
-Clear search button
+Latest-first sorting
+📦 Category Management
+Add / Edit / Soft Delete categories
+Search & filter categories
 Pagination support
-Descending sorting order
-Product Management
-Add products
-Edit products
-Soft delete products
-Multiple image uploads
-Image cropping before upload
-Image resizing for consistency
-Product presentation optimization
-Backend search
-Pagination support
-Order & Inventory Management
-Order listing
-Detailed order management
-Order status tracking
-Return approvals
-Cancellation handling
+Optimized sorting
+🧸 Product Management
+Add / Edit / Soft Delete products
+Multiple image upload
+Image cropping & resizing
+Product optimization for UI
+Backend search & pagination
+📊 Orders & Inventory
+Order tracking dashboard
+Order status management
+Return & cancellation handling
 Stock synchronization
-Inventory management automation
-Offer / Coupon / Sales Management
-Coupon creation & control
-Apply / remove coupon logic
-Single-use coupon restriction
-Transparent discount breakdown
-Dynamic offer calculation
-Maximum discount prioritization
-Referral rewards
-Wallet credit system
+Automated inventory updates
+🎟️ Offers & Coupons
+Coupon creation and control
+Single-use coupon enforcement
+Dynamic discount calculation
+Maximum discount logic engine
+Referral reward system
+Wallet credit integration
 Sales analytics dashboard
-2) User Module
-Authentication System
-Signup validation
-Secure login
-OTP-based registration
-OTP timer functionality
-Resend OTP capability
-Social single sign-on
-Forgot password recovery flow
-Profile Management
-View profile
-Edit profile
+🛍️ 2. User Module
+🔐 Authentication System
+Secure signup & login
+OTP-based verification with timer
+Resend OTP functionality
+Social login (SSO)
+Forgot password flow
+👤 Profile Management
+View & edit profile
 Profile image upload
-Email change verification (OTP / token)
-Change password
-Address management:
-Add address
-Edit address
-Delete address
-Product Discovery
+Email change verification (OTP/token)
+Password change
+Address management (Add/Edit/Delete)
+🔍 Product Discovery
 Product browsing
 Advanced search
+Multi-filter support
 Sorting options
-Filter combinations
-Optimized browsing experience
-Wishlist & Cart
+Optimized UX browsing flow
+❤️ Wishlist & Cart
 Wishlist
-Add to wishlist
-Remove from wishlist
+Add / Remove items
 AJAX-powered updates
 Cart
-Add to cart
-Remove from cart
-Quantity increment / decrement
+Add / Remove items
+Quantity increment/decrement
 Stock validation
-Blocked item restriction
 Out-of-stock prevention
-Real-time AJAX updates
-Checkout & Payments
+Real-time updates via AJAX
+💳 Checkout & Payments
 Address selection
-Order summary
-Pricing breakdown
+Order summary with breakdown
 Coupon application
 Wallet usage
-Cash on Delivery support
 PayPal payment integration
-Payment success page
-Payment failure page
-Navigation recovery flows
-Order Lifecycle
-Order listing
-Detailed order page
+COD support
+Payment success/failure handling
+📦 Order Lifecycle
+Order history & tracking
+Detailed order view
 Search orders
-Download invoice
-Cancel order
-Return order
+Invoice download
+Cancel / Return orders
 Return reason capture
-Refund handling
-Wallet credit refunds
-Stock restoration on cancel/return
-Core Business Logic
-Discount Engine
-Kiddora includes smart discount prioritization:
+Refund processing
+Wallet-based refunds
+Stock restoration logic
+🧠 Core Business Logic
+💰 Discount Engine
+
+Kiddora intelligently calculates best discounts using:
 
 Product offers
 Category offers
 Coupons
-Referral benefits
-Wallet credits
-System automatically chooses:
-
-Maximum applicable discount while preserving business rules
-
-Wallet System
-Users receive wallet credits from:
-
-Returns
-Refunds
 Referral bonuses
+Wallet credits
+
+✔ Automatically applies the maximum valid discount while preserving business rules.
+
+👛 Wallet System
+
+Users earn and use wallet credits from:
+
+Returns & refunds
+Referral rewards
 Promotional credits
+
 Wallet can be used during checkout.
 
-Referral System
-Invite rewards
+🔁 Referral System
+Invite-based rewards
 Referral bonus credits
 Wallet integration
-Search & Pagination
+🔎 Search & Pagination
+
 Implemented across:
 
 Users
 Categories
 Products
 Orders
-Includes:
-
-Backend search
-Clear button
-Efficient pagination
-Sorted listing
-Soft Delete Strategy
-Used for:
-
-Categories
-Products
-Select business entities
-Benefits:
-
-Data recovery possible
-Reporting integrity maintained
-Prevent accidental permanent deletion
-Architecture
-Kiddora follows a Monolithic Django Architecture:
-
-Frontend + Backend + Business Logic + Database
-inside a unified Django project.
-
-Advantages:
-
-Easier deployment
-Centralized business logic
-Faster development cycle
-Simplified maintenance
-Strong ORM integration
-Deployment
-Hosted on AWS EC2
-
-Deployment stack:
-
-AWS EC2
-→ Nginx
-→ Gunicorn
-→ Django
-→ PostgreSQL
-→ Cloudinary CDN
 
 Features:
 
+Backend search
+Clear search functionality
+Efficient pagination
+Sorted listings
+🗑️ Soft Delete Strategy
+
+Applied to:
+
+Categories
+Products
+Key business entities
+
+Benefits:
+
+Data recovery support
+Reporting integrity
+Prevents accidental permanent deletion
+🏗️ Architecture
+
+Kiddora follows a Monolithic Django Architecture:
+
+Frontend + Backend + Business Logic + Database in a unified system
+
+✔ Advantages
+Simplified deployment
+Centralized logic
+Faster development cycle
+Easier maintenance
+Strong Django ORM integration
+☁️ Deployment
+
+Deployed on AWS EC2 using production-ready stack:
+
+AWS EC2
+   ↓
+Nginx
+   ↓
+Gunicorn
+   ↓
+Django
+   ↓
+PostgreSQL
+   ↓
+Cloudinary CDN
+✔ Features
 Production-ready hosting
-Static/media offloaded to Cloudinary
 Secure environment configuration
+Static/media offloading to Cloudinary
 Scalable infrastructure
-Database
-PostgreSQL is used for:
+🗄️ Database
+
+Uses PostgreSQL for robust data handling:
+
+Entities:
 
 Users
 Products
@@ -231,32 +217,41 @@ Coupons
 Wallet
 Referrals
 Inventory
-Returns / Refunds
-Benefits:
-
-Reliability
+Returns & Refunds
+✔ Benefits
 ACID compliance
-Performance
+High performance
 Scalability
-Highlights
-✔ Production-ready project
-✔ Full authentication system
-✔ Admin analytics dashboard
+Reliability
+🌟 Highlights
+
+✔ Production-ready full-stack project
+✔ Secure authentication system
+✔ Advanced admin dashboard
 ✔ Payment gateway integration
 ✔ Wallet + referral system
-✔ Coupons + offers engine
+✔ Coupons & discount engine
 ✔ Inventory synchronization
-✔ Invoice generation
-✔ Return / refund workflows
-✔ AJAX-powered UX
-✔ Cloud deployment on AWS
+✔ Invoice generation system
+✔ Return & refund workflows
+✔ AJAX-powered user experience
+✔ Cloud deployment (AWS EC2 + Cloudinary)
 
-Project Status
-Completed ✅
+📌 Project Status
 
-Kiddora is fully developed with complete Admin, Customer, Commerce, Payment, Order, and Analytics modules.
+✔ Completed
 
-Ready for production scaling and future feature enhancements.
+Kiddora is fully developed with complete:
 
-Author
-Developed with Django + PostgreSQL + Cloudinary + AWS ☁️
+Admin Module
+Customer Module
+E-commerce Engine
+Payment System
+Analytics Dashboard
+
+Ready for production scaling and future enhancements.
+
+👨‍💻 Author
+
+Developed using:
+Django • PostgreSQL • Cloudinary • AWS ☁️
