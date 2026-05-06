@@ -184,7 +184,7 @@
                     </form>
                     <div class="search-dropdown" id="searchDropdown"></div>
                 </div>
-                <a href="{% url 'accounts:admin_login' %}" class="auth-btn outline">Admin</a>
+                {% comment %} <a href="{% url 'accounts:admin_login' %}" class="auth-btn outline">Admin</a> {% endcomment %}
                 <a href="{% url 'accounts:login' %}" class="auth-btn outline">Login</a>
                 <a href="{% url 'accounts:signup' %}" class="auth-btn">Sign Up</a>
             </div>

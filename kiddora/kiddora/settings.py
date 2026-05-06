@@ -1,3 +1,5 @@
+#http://127.0.0.1:8000/accounts/admin/admin-login/
+#http://127.0.0.1:8000/shop/
 import os
 from pathlib import Path
 
@@ -62,6 +64,7 @@ TEMPLATES = [
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
+            "builtins": ['django.templatetags.static'],
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
